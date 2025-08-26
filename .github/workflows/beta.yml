@@ -103,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: artifact
-          path: ./packages/app/.output/public
+          path: ./packages/frontend/.output/public
 
   deploy-ghpages:
     name: Deploy (Github-Pages)
