@@ -1,0 +1,1 @@
+import{u as t}from"./BMJA9sD4.js";import{d as n,x as o,y as a,F as r}from"./DSBH_P4y.js";const u=n({__name:"default",setup(s){return t({link:[{rel:"shortcut icon",type:"image/png",href:"/favicon.png"}]}),(e,l)=>(a(),o("div",null,[r(e.$slots,"default")]))}});export{u as default};
