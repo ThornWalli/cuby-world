@@ -1,0 +1,12 @@
+rm -rf ./node_modules/
+rm -rf ./packages/app/node_modules/
+rm -rf ./packages/core/node_modules/
+rm -rf ./packages/disk-debug/node_modules/
+rm -rf ./packages/disk-extras!3/node_modules/
+rm -rf ./packages/disk-moon-city/node_modules/
+rm -rf ./packages/disk-synthesizer/node_modules/
+rm -rf ./packages/disk-workbench13/node_modules/
+rm -rf ./packages/disk-web-paint/node_modules/
+rm -rf ./packages/firebase-functions/node_modules/
+rm -rf ./packages/disk-third-dimension/node_modules/
+rm -rf ./packages/wasm/node_modules/

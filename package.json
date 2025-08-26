@@ -1,0 +1,61 @@
+{
+  "name": "cuby-world",
+  "version": "0.0.0",
+  "description": "Cuby World",
+  "author": "Thorn-Welf Walli",
+  "contributors": [
+    {
+      "name": "Thorn-Welf Walli",
+      "email": "lammpee@gmail.com"
+    }
+  ],
+  "license": "MIT",
+  "private": true,
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "prepare": "husky || true",
+    "vitest:run": "vitest run",
+    "vitest:dev": "vitest dev",
+    "test": "pnpm run lint && pnpm run vitest:run",
+    "lint": "pnpm run -r prepare && pnpm run lint:es && pnpm run lint:css",
+    "lint:es": "npx --node-options='--experimental-strip-types' eslint --flag unstable_native_nodejs_ts_config .",
+    "lint:css": "stylelint \"**/*.{vue,css,pcss}\""
+  },
+  "devDependencies": {
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "@nuxt/eslint": "catalog:",
+    "@types/node": "catalog:",
+    "@types/web": "catalog:",
+    "@cuby-world/frontend": "workspace:*",
+    "@cuby-world/app": "workspace:*",
+    "@cuby-world/units": "workspace:*",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "eslint-plugin-security": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
+    "prettier": "catalog:",
+    "rxjs": "catalog:",
+    "stylelint": "catalog:",
+    "stylelint-config-css-modules": "catalog:",
+    "stylelint-config-recess-order": "catalog:",
+    "stylelint-config-standard": "catalog:",
+    "stylelint-prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:",
+    "vue": "catalog:",
+    "vue-eslint-parser": "catalog:",
+    "vue-tsc": "catalog:"
+  },
+  "overrides": {
+    "@typescript-eslint/eslint-plugin": "workspace:*"
+  },
+  "workspaces": [
+    "./packages/*"
+  ]
+}
