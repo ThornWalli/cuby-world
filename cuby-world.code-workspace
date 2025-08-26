@@ -72,9 +72,9 @@
     "path-intellisense.mappings": {
       "@": "${workspaceRoot}/src",
       "@@": "${workspaceRoot}",
-      "@web-workbench/app": "${workspaceRoot}/packages/app",
-      "@web-workbench/core": "${workspaceRoot}/packages/core",
-      "@web-workbench/disks": "${workspaceRoot}/packages/disks"
+      "@cuby-world/app": "${workspaceRoot}/packages/app",
+      "@cuby-world/frontend": "${workspaceRoot}/packages/frontend",
+      "@cuby-world/units": "${workspaceRoot}/packages/units"
     },
     "window.title": "${dirty} ${activeEditorMedium}${separator}${rootName}",
     "workbench.settings.enableNaturalLanguageSearch": false
