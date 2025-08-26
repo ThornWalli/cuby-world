@@ -83,7 +83,7 @@ jobs:
 
       - name: Build
         run: |
-          pnpm run --filter=cuby-world/frontend generate
+          pnpm run --filter=@cuby-world/frontend generate
           mkdir artifact
           cp -r ./packages/app/.output/public ./artifact/public
           cp ./firebase.json ./artifact/firebase.json

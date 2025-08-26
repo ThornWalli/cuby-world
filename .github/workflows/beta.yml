@@ -85,7 +85,7 @@ jobs:
 
       - name: Build
         run: |
-          pnpm run --filter=cuby-world/frontend generate
+          pnpm run --filter=@cuby-world/frontend generate
         env:
           WEBSITE_HOST: https://cubyworld.lammpee.de
 
