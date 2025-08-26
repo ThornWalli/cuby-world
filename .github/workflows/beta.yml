@@ -36,8 +36,6 @@ jobs:
       - name: Test
         run: pnpm run test
         env:
-          NUXT_PUBLIC_SITE_URL: https://cubyworld.lammpee.de
-
           RECAPTCHA_PUBLIC_KEY: ${{ vars.RECAPTCHA_PUBLIC_KEY }}
           FIREBASE_REGION: ${{ vars.FIREBASE_REGION }}
           FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
@@ -87,7 +85,9 @@ jobs:
         run: |
           pnpm run --filter=@cuby-world/frontend generate
         env:
-          WEBSITE_HOST: https://cubyworld.lammpee.de
+          WEBSITE_HOST: https://thornwalli.github.io
+          NUXT_PUBLIC_SITE_URL: https://thornwalli.github.io
+          BASE_URL: /cuby-world/
 
           RECAPTCHA_PUBLIC_KEY: ${{ vars.RECAPTCHA_PUBLIC_KEY }}
           FIREBASE_REGION: ${{ vars.FIREBASE_REGION }}
