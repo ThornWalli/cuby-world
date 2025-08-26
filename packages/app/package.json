@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@types/pathfinding": "catalog:",
-    "@types/three": "catalog:"
+    "@types/three": "catalog:",
+    "vite": "catalog:"
   }
 }
