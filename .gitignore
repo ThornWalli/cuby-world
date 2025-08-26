@@ -24,8 +24,8 @@ logs
 .scannerwork
 
 sw.*
-packages/app/.certs/*
-!packages/app/.certs/README.md
+packages/frontend/.certs/*
+!packages/frontend/.certs/README.md
 
 .old
 .env
