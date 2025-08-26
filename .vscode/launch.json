@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "command": "pnpm run --filter=app dev",
+      "name": "Debug (dev)",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "command": "pnpm run --filter=app generate",
+      "name": "Debug (generate)",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "command": "pnpm run --filter=app build",
+      "name": "Debug (build)",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "command": "pnpm run --filter=app start",
+      "name": "Debug (start)",
+      "request": "launch",
+      "type": "node-terminal"
+    }
+  ]
+}

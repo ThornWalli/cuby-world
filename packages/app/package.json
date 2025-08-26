@@ -1,0 +1,27 @@
+{
+  "name": "@cuby-world/app",
+  "version": "0.0.0",
+  "author": "Thorn-Welf Walli",
+  "contributors": [
+    {
+      "name": "Thorn-Welf Walli",
+      "email": "lammpee@gmail.com"
+    }
+  ],
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "@js-basics/vector": "catalog:",
+    "change-case": "catalog:",
+    "pathfinding": "0.4.18",
+    "rxjs": "catalog:",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@types/pathfinding": "catalog:",
+    "@types/three": "catalog:",
+    "vite": "catalog:"
+  }
+}

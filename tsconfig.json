@@ -1,0 +1,6 @@
+{
+  "extends": "./packages/frontend/.nuxt/tsconfig.json",
+  "exclude": [
+    "./history"
+  ]
+}

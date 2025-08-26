@@ -1,0 +1,47 @@
+{
+  "name": "@cuby-world/frontend",
+  "version": "0.0.0",
+  "author": "Thorn-Welf Walli",
+  "contributors": [
+    {
+      "name": "Thorn-Welf Walli",
+      "email": "lammpee@gmail.com"
+    }
+  ],
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "nuxt prepare",
+    "dev": "nuxt dev",
+    "dev:https": "nuxt dev --https",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "start": "npx serve .output/public"
+  },
+  "dependencies": {
+    "@fullhuman/postcss-purgecss": "catalog:",
+    "@nuxtjs/critters": "catalog:",
+    "@nuxtjs/robots": "catalog:",
+    "@nuxtjs/sitemap": "catalog:",
+    "dotenv-mono": "catalog:",
+    "nuxt": "catalog:",
+    "pathe": "catalog:",
+    "postcss-html": "catalog:",
+    "postcss-nested": "catalog:",
+    "postcss-normalize": "catalog:",
+    "postcss-preset-env": "catalog:",
+    "postcss-url": "catalog:",
+    "read-pkg": "catalog:",
+    "rucksack-css": "catalog:",
+    "tsx": "catalog:",
+    "ufo": "catalog:",
+    "vite-plugin-checker": "catalog:",
+    "vite-plugin-markdown": "catalog:",
+    "vite-plugin-mkcert": "catalog:",
+    "vite-plugin-node-polyfills": "catalog:",
+    "vite-plugin-eslint2": "catalog:",
+    "vite-svg-loader": "catalog:"
+  }
+}
