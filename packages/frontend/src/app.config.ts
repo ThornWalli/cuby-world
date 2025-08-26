@@ -1,6 +1,6 @@
 import { defineAppConfig } from '#imports';
 
 export default defineAppConfig({
-  title: 'Web-Workbench',
-  shortTitle: 'WB'
+  title: 'Cuby-World',
+  shortTitle: 'CW'
 });

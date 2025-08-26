@@ -144,16 +144,20 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
 
-        { key: 'og:site_name', property: 'og:site_name', content: 'Lammpee' },
+        {
+          key: 'og:site_name',
+          property: 'og:site_name',
+          content: 'Cuby-World'
+        },
         { key: 'og:type', property: 'og:type', content: 'website' },
 
-        { name: 'title', content: 'Lammpee.de' },
-        { name: 'description', content: 'Old operating system as homepage.' },
+        { name: 'title', content: 'Cuby World' },
+        { name: 'description', content: 'The world of Cuby.' },
         // { name: 'description', content: '' },
-        { key: 'og:title', property: 'og:title', content: 'Lammpee.de' },
+        { key: 'og:title', property: 'og:title', content: 'Cuby World' },
         {
           name: 'og:description',
-          content: 'Old operating system as homepage.'
+          content: 'Cuby World'
         },
         {
           key: 'og:url',
