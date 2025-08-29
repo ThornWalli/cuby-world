@@ -1,4 +1,4 @@
-import { Vector3, Euler } from 'three';
+import { Vector3, Euler, Vector2 } from 'three';
 
 import PathFinder from 'pathfinding';
 import UnitModule from '../UnitModule';
@@ -6,6 +6,9 @@ import {
   matrixPositionToPosition,
   positionToMatrixPosition
 } from '../../utils/matrix';
+import type Unit from '../Unit';
+import { ReplaySubject } from 'rxjs';
+import { UNIT_ROTATION } from '../Unit';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -22,6 +25,10 @@ interface RotateOptions {
 
 export default class MovementUnitModule extends UnitModule {
   static override TYPE = 'movement';
+
+  moveStart$ = new ReplaySubject<void>(0);
+  moveStep$ = new ReplaySubject<Vector3>(0);
+  moveEnd$ = new ReplaySubject<void>(0);
 
   private moveOptions: MoveOptions = {
     startDuration: 0,
@@ -41,15 +48,21 @@ export default class MovementUnitModule extends UnitModule {
 
   moveTo(position: Vector3) {
     if (this.unit.room?.description) {
-      const grid = this.unit.room.description.grid;
+      const grid = prepareRoomGridGrid(this.unit);
+      const data = grid.data;
 
-      const gridData = new PathFinder.Grid(
-        grid.map(row => row.map(value => (value ? 0 : 1)))
-      );
+      let isBlocked = false;
+      if (Array.isArray(data[position.z])) {
+        const i =
+          position.z * this.unit.room.description.grid.width + position.x;
+
+        isBlocked = data[i] === 1;
+        data[i] = 0;
+      }
+
+      const gridData = new PathFinder.Grid(grid.toMatrix());
       // Convert positions to matrix positions
-      const startPosition = positionToMatrixPosition(
-        this.unit.getRootPosition()
-      );
+      const startPosition = positionToMatrixPosition(this.unit.getPosition());
       const endPosition = position.clone();
 
       // Use PathFinder to find the path
@@ -63,18 +76,17 @@ export default class MovementUnitModule extends UnitModule {
           gridData
         )
         .map(point => new Vector3(point[0], 0, point[1]));
-      this.currentPath = path.slice(1);
+
+      this.currentPath = path.slice(1, path.length - (isBlocked ? 1 : 0)); // Exclude the starting position and the blocked end position if necessary
 
       if (this.rotateOptions.nextRotation && this.moveOptions.nextPosition) {
         this.moveOptions.nextPosition = null;
       }
+
+      this.moveStart$.next();
     } else {
       throw new Error('Unit is not in a room, cannot move to position');
     }
-  }
-
-  get room() {
-    return this.unit.room;
   }
 
   /**
@@ -93,7 +105,7 @@ export default class MovementUnitModule extends UnitModule {
       const { nextPosition, startPosition, startDuration } = moveOptions;
       if (!nextPosition) {
         moveOptions.startPosition = positionToMatrixPosition(
-          unit.getRootPosition()
+          unit.getPosition()
         );
         moveOptions.nextPosition = this.currentPath.shift()!;
         rotateOptions.startDuration = time;
@@ -120,7 +132,7 @@ export default class MovementUnitModule extends UnitModule {
         const position = startPosition!
           .clone()
           .add(distance!.clone().multiplyScalar(Math.min(progress, 1)));
-        this.unit.setRootPosition(matrixPositionToPosition(position));
+        this.unit.setPosition(matrixPositionToPosition(position));
 
         if (progress >= 1) {
           this.moveOptions.nextPosition = null;
@@ -158,6 +170,10 @@ export default class MovementUnitModule extends UnitModule {
             rotateOptions.nextRotation?.clone() || null;
           rotateOptions.nextRotation = null;
           moveOptions.startDuration = time;
+          this.moveStep$.next(unit.getPosition());
+          if (!this.currentPath.length) {
+            this.moveEnd$.next();
+          }
         }
       }
     }
@@ -221,4 +237,48 @@ function getRotateByDirection(direction: DIRECTION) {
     default:
       return 0;
   }
+}
+
+function prepareRoomGridGrid(unit: Unit) {
+  const room = unit.room;
+
+  if (!room) {
+    throw new Error('Unit is not in a room, cannot create grid data');
+  }
+
+  const grid = room.grid.clone();
+  const gridSize = new Vector2(grid.width, grid.height);
+
+  room.units
+    .values()
+    .filter(unit => !unit.accessible)
+    .forEach(otherUnit => {
+      if (unit.id !== otherUnit.id) {
+        const pos = positionToMatrixPosition(otherUnit.getPosition());
+        const size = otherUnit.size;
+
+        for (let x = 0; x < size.x; x++) {
+          for (let z = 0; z < size.z; z++) {
+            // const x_ = pos.x + x;
+            // const z_ = pos.z + z;
+
+            const x_ =
+              pos.x +
+              (UNIT_ROTATION.UP === otherUnit.rotation
+                ? x
+                : UNIT_ROTATION.LEFT === otherUnit.rotation
+                  ? -x
+                  : x);
+            const z_ =
+              pos.z + (UNIT_ROTATION.UP === otherUnit.rotation ? -z : z);
+            if (x_ >= 0 && x_ < gridSize.x && z_ >= 0 && z_ < gridSize.y) {
+              grid.data[z_ * gridSize.x + x_] = 0;
+            }
+          }
+        }
+      }
+    });
+  grid.data = grid.data.map(value => (value ? 0 : 1));
+
+  return grid;
 }

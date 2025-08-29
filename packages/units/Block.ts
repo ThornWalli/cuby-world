@@ -8,7 +8,6 @@ import Unit, {
 } from '../app/lib/classes/Unit';
 
 export interface BlockOptions extends UnitOptions {
-  size: Vector3;
   color: number;
 }
 export default class Block extends Unit<BlockOptions> {
@@ -22,11 +21,12 @@ export default class Block extends Unit<BlockOptions> {
     > = {}
   ) {
     super({
+      size: new Vector3(1, 1 / 3, 1),
       ...options,
       name: 'Block',
       selectable: true,
+      placeable: true,
       options: {
-        size: new Vector3(1, 1 / 3, 1),
         color: 0xd70000,
         ...options.options
       }
@@ -36,15 +36,28 @@ export default class Block extends Unit<BlockOptions> {
   override createMesh() {
     const material = new MeshPhongMaterial({ color: this.options.color });
 
-    const size = this.options.size;
-    const geometry = new BoxGeometry(size.x, size.y, size.z);
+    const size = this.size;
+    const geometry = new BoxGeometry(size.z, size.y, size.x);
 
     const mesh: Object3D = new Mesh(geometry, material);
     mesh.name = OBJECT_NAME.MESH;
     mesh.castShadow = true;
     mesh.position.set(0, size.y / 2, 0);
 
+    mesh.add(helper());
+
     this.materialReady$.next();
     return mesh;
   }
+}
+
+function helper() {
+  const material = new MeshPhongMaterial({ color: 0xff0000 });
+  const geometry = new BoxGeometry(1, 1, 1);
+  const mesh: Object3D = new Mesh(geometry, material);
+  mesh.name = OBJECT_NAME.MESH;
+  mesh.castShadow = true;
+  mesh.position.set(0, 1 / 2 + 0.5, 0);
+
+  return mesh;
 }

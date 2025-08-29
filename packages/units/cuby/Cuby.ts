@@ -50,6 +50,7 @@ export default class Cuby extends Unit<
         ...options,
         name: 'Cuby',
         selectable: true,
+        placeable: true,
         options: {
           size: 0.5,
           ...options.options

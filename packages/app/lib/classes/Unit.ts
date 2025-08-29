@@ -9,15 +9,20 @@ import type AssetLoader from './AssetLoader';
 import SelectionUnitModule from './unitModule/Selection';
 import { matrixPositionToPosition } from '../utils/matrix';
 import type { AnimationUnitModule } from './unitModule/Animation';
+import { PlacementUnitModule } from './unitModule/Placement';
+import { findAllMeshes } from '@cuby-world/units/utils/mesh';
 
 export type UnitModuleList =
   | typeof PlayerUnitModule
   | typeof MovementUnitModule
   | typeof SelectionUnitModule
-  | typeof AnimationUnitModule;
+  | typeof AnimationUnitModule
+  | typeof PlacementUnitModule;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type UnitOptions = {};
+export type UnitOptions = {
+  canPlaced?: boolean;
+  canRotate?: boolean;
+};
 
 export interface AnimatedUnit {
   // animation: UnitModule;
@@ -34,7 +39,10 @@ export interface UnitConstructorOptions<
 > {
   name: string;
   selectable?: boolean;
+  placeable?: boolean;
+  accessible?: boolean;
   position?: Vector3;
+  size?: Vector3;
   rotation?: UNIT_ROTATION;
   options?: Options;
 }
@@ -73,6 +81,7 @@ export interface UnitModules {
   player: PlayerUnitModule;
   movement: MovementUnitModule;
   selection?: SelectionUnitModule;
+  placement?: PlacementUnitModule;
 }
 
 export interface SetupContext {
@@ -98,17 +107,27 @@ export default class Unit<
 
   room?: Room;
   subscription = new Subscription();
-  options: Options = {} as Options;
+  options: Options = {
+    canPlaced: true,
+    canRotate: true
+  } as Options;
   root: Object3D;
 
-  position: Vector3;
+  accessible: boolean;
+
+  private _position: Vector3;
   rotation: UNIT_ROTATION = UNIT_ROTATION.DOWN;
+
+  size: Vector3 = new Vector3(1, 1, 1);
 
   constructor(
     {
       name,
       selectable,
+      placeable,
+      accessible,
       position,
+      size,
       rotation,
       options
     }: UnitConstructorOptions<Options> = {
@@ -121,10 +140,18 @@ export default class Unit<
       ...(options || {})
     } as Options;
 
+    this.size = size || this.size;
+    this.accessible = accessible ?? false;
+
     modules.push(PlayerUnitModule);
     modules.push(MovementUnitModule);
+
     if (selectable) {
       modules.push(SelectionUnitModule);
+    }
+
+    if (placeable) {
+      modules.push(PlacementUnitModule);
     }
 
     const preparedModules = modules.map(ModuleClass => {
@@ -134,7 +161,7 @@ export default class Unit<
     this.modules = Object.fromEntries(preparedModules);
 
     this.root = new Object3D();
-    this.position = position || new Vector3(0, 0, 0);
+    this._position = position || new Vector3(0, 0, 0);
     this.setRotation(
       rotation || getRotationByEuler(this.root.rotation) || UNIT_ROTATION.DOWN
     );
@@ -146,8 +173,10 @@ export default class Unit<
 
   destroy() {
     this.subscription.unsubscribe();
-    this.mesh.geometry?.dispose();
-    this.mesh.remove();
+    findAllMeshes(this.root).forEach(mesh => {
+      mesh.geometry?.dispose();
+    });
+    this.root.remove();
   }
 
   get name() {
@@ -163,7 +192,17 @@ export default class Unit<
   }
 
   setRootPosition(position: Vector3) {
-    this.root.position.copy(position);
+    this.root.position.copy(this.centerInTile(position));
+  }
+
+  getPosition() {
+    return this._position;
+  }
+  setPosition(position: Vector3) {
+    this._position.copy(position);
+    this.setRootPosition(
+      new Vector3(position.x, this.root.position.y, position.z)
+    );
   }
 
   getRootRotation() {
@@ -195,6 +234,9 @@ export default class Unit<
         this.setRootRotation(new Euler(0, 0, 0));
         break;
     }
+
+    // position fix
+    this.setPosition(this.getPosition());
     this.rotate$.next(rotation);
   }
   rotateLeft() {
@@ -209,8 +251,29 @@ export default class Unit<
     const index = (directions.indexOf(this.rotation) + 1) % length;
     this.setRotation(rotationDirections[index]!);
   }
-
   // #endregion
+
+  centerInTile(position: Vector3) {
+    let offset: Vector3 = new Vector3(0, 0, 0);
+    switch (this.rotation) {
+      case UNIT_ROTATION.LEFT:
+        offset = new Vector3(-(this.size.z - 1) / 2, 0, (this.size.x - 1) / 2);
+        break;
+      case UNIT_ROTATION.RIGHT:
+        offset = new Vector3((this.size.z - 1) / 2, 0, (this.size.x - 1) / 2);
+        break;
+      case UNIT_ROTATION.UP:
+        offset = new Vector3((this.size.x - 1) / 2, 0, -(this.size.z - 1) / 2);
+        break;
+      case UNIT_ROTATION.DOWN:
+        offset = new Vector3((this.size.x - 1) / 2, 0, (this.size.z - 1) / 2);
+        break;
+      default:
+        offset = new Vector3(0, 0, 0);
+        break;
+    }
+    return position.add(offset);
+  }
 
   async setup(context: SetupContext) {
     this.room = context.room;
@@ -224,7 +287,13 @@ export default class Unit<
     }, Promise.resolve(mesh));
 
     this.root.add(mesh);
-    this.root.position.copy(matrixPositionToPosition(this.position));
+
+    // center unit in tile
+    const position = this.centerInTile(
+      matrixPositionToPosition(this._position)
+    );
+
+    this.root.position.copy(position);
 
     // Filter modules that have update method
     const updateModules = modules.filter(

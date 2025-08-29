@@ -13,10 +13,6 @@ export default class Mirror extends Unit<MirrorOptions> {
   static override KEY = 'mirror';
   static override NAME = 'Mirror';
 
-  override options = {
-    size: 0.5
-  };
-
   constructor(
     options: Omit<
       UnitConstructorOptions<MirrorOptions>,
@@ -26,7 +22,9 @@ export default class Mirror extends Unit<MirrorOptions> {
     super({
       ...options,
       name: 'Mirror',
-      selectable: true
+      selectable: true,
+      placeable: true,
+      accessible: true
     });
   }
 

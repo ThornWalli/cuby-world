@@ -8,6 +8,12 @@
     <cw-panel-unit-preview v-if="selectedUnit" :unit="selectedUnit">
       <template #actions>
         <cw-button @click="onClickRotate">Rotate</cw-button>
+        <cw-button
+          v-if="canPlaced"
+          :selected="!!placedUnit"
+          @click="onClickPlacement"
+          >Move</cw-button
+        >
       </template>
     </cw-panel-unit-preview>
     <cw-panel-camera-control v-if="app" :app="app" />
@@ -16,8 +22,16 @@
 
 <script lang="ts" setup>
 import Renderer from './Renderer.vue';
-import { markRaw, nextTick, onMounted, onUnmounted, ref, type Raw } from 'vue';
-import { Subscription } from 'rxjs';
+import {
+  computed,
+  markRaw,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  type Raw
+} from 'vue';
+import { fromEvent, Subscription } from 'rxjs';
 import { Vector2 } from 'three';
 import Player from '../lib/classes/Player';
 import App from '../lib/classes/App';
@@ -37,7 +51,6 @@ const rendererEl = ref<InstanceType<typeof Renderer> | null>(null);
 const subscription = new Subscription();
 
 const dimension = ref<Vector2>();
-let resizeObserver: ResizeObserver;
 
 setupFonts();
 defineProps<{
@@ -46,6 +59,9 @@ defineProps<{
 
 const app = ref<App>();
 const selectedUnit = ref<Raw<Unit> | null>(null);
+const placedUnit = ref<Raw<Unit> | null>(null);
+const canPlaced = computed(() => selectedUnit.value?.options.canPlaced);
+
 // let sceneUnsubscribe;
 onMounted(async () => {
   nextTick(() => {
@@ -54,7 +70,7 @@ onMounted(async () => {
 });
 
 function setup() {
-  const { $el, renderer } = rendererEl.value!;
+  const { renderer } = rendererEl.value!;
 
   if (!renderer) {
     throw new Error('Renderer not ready');
@@ -77,25 +93,49 @@ function setup() {
       selectedUnit.value = unit ? markRaw(unit) : null;
     })
   );
+  subscription.add(
+    app.value.modules.placement.startPlace$.subscribe(unit => {
+      placedUnit.value = unit;
+    })
+  );
+  subscription.add(
+    app.value.modules.placement.stopPlace$.subscribe(() => {
+      placedUnit.value = null;
+    })
+  );
 
-  const onResize = () => {
-    dimension.value = new Vector2($el.offsetWidth, $el.offsetHeight);
-    renderer.resize(dimension.value);
-  };
-  resizeObserver = new ResizeObserver(onResize);
+  subscription.add(
+    fromEvent(window, 'resize', {
+      passive: true
+    }).subscribe(() => {
+      onResize();
+    })
+  );
 
-  resizeObserver.observe($el);
+  onResize();
 }
 
 onUnmounted(() => {
-  resizeObserver.disconnect();
   subscription.unsubscribe();
   app.value?.destroy();
 });
 
+const rootEl = ref<HTMLElement>();
+function onResize() {
+  const { width, height } = rootEl.value!.getBoundingClientRect();
+  dimension.value = new Vector2(width, height);
+  rendererEl.value?.renderer?.resize(dimension.value);
+}
+
 function onClickRotate() {
   if (selectedUnit.value) {
     selectedUnit.value.rotateRight();
+  }
+}
+
+function onClickPlacement() {
+  if (selectedUnit.value) {
+    app.value?.modules.placement?.startPlace(selectedUnit.value);
   }
 }
 </script>

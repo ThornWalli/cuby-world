@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import type { Vector3 } from 'three';
 import type Unit from './Unit';
 import PlayerUnitModule from './unitModule/Player';
 
@@ -17,7 +17,7 @@ export default class Player {
     if (PlayerUnitModule.TYPE in this.unit.modules) {
       this.unit.modules.player.setPlayer(this);
     }
-    this.unit.setRootPosition(new Vector3(0, 0, 0));
+
     console.log('Player unit set:', this.unit.name);
   }
 
@@ -31,7 +31,7 @@ export default class Player {
 
   set position(position: Vector3) {
     if (this.unit) {
-      this.unit.setRootPosition(position);
+      this.unit.setPosition(position);
     } else {
       throw new Error('Player unit is not set, cannot update position');
     }

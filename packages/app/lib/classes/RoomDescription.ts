@@ -1,12 +1,13 @@
 import type { Vector3 } from 'three';
 import type { UNIT_ROTATION } from './Unit';
 import type Unit from './Unit';
+import type RoomGrid from './RoomGrid';
 
 export default class RoomDescription {
   id: string;
   name: string;
   description: string;
-  grid: number[][];
+  grid: RoomGrid;
   units: Unit[];
 
   start?: {
@@ -25,7 +26,7 @@ export default class RoomDescription {
     id: string;
     name: string;
     description: string;
-    grid: number[][];
+    grid: RoomGrid;
     units?: Unit[];
     start?: {
       position: Vector3;

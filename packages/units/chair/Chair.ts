@@ -16,10 +16,6 @@ export default class Chair extends Unit<ChairOptions> {
   static override KEY = 'chair';
   static override NAME = 'Chair';
 
-  override options = {
-    size: 0.5
-  };
-
   constructor(
     options: Omit<
       UnitConstructorOptions<ChairOptions>,
@@ -29,7 +25,8 @@ export default class Chair extends Unit<ChairOptions> {
     super({
       ...options,
       name: 'Chair',
-      selectable: true
+      selectable: true,
+      placeable: true
     });
   }
 

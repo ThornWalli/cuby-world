@@ -1,3 +1,5 @@
+import type { WebGLProgramParametersWithUniforms } from 'three';
+
 export const lightShader = {
   vertex: `
   varying vec3 vNormal;
@@ -31,3 +33,35 @@ export const lightShader = {
   }
 `
 };
+
+export function useGroundTileShader(
+  shader: WebGLProgramParametersWithUniforms
+) {
+  // Correctly declare and pass vUv from the vertex to the fragment shader
+  shader.vertexShader = 'varying vec2 vUv;\n' + shader.vertexShader;
+  shader.vertexShader = shader.vertexShader.replace(
+    '#include <begin_vertex>',
+    `
+        #include <begin_vertex>
+        vUv = uv;
+        `
+  );
+
+  shader.fragmentShader = 'varying vec2 vUv;\n' + shader.fragmentShader;
+
+  // Modify diffuseColor directly based on vUv, without scaling
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <map_fragment>',
+    `
+        #include <map_fragment>
+
+        vec2 uv = vUv;
+        float border = 0.01;
+
+        if (uv.x < border || uv.x > (1.0 - border) || uv.y < border || uv.y > (1.0 - border)) {
+            // Ändern Sie die diffuseColor, um die Fugen zu erstellen
+            diffuseColor.rgb = vec3(0.2, 0.2, 0.2);
+        }
+        `
+  );
+}

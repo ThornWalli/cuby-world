@@ -7,18 +7,21 @@ import UnitFocusAppModule from './appModule/UnitFocus';
 import RoomAppModule from './appModule/Room';
 import PlayerAppModule from './appModule/Player';
 import SelectionAppModule from './appModule/Selection';
+import PlacementAppModule from './appModule/Placement';
 
 type AppModuleList = (
   | typeof UnitFocusAppModule
   | typeof PlayerAppModule
   | typeof RoomAppModule
   | typeof SelectionAppModule
+  | typeof PlacementAppModule
 )[];
 interface AppModules {
   room: RoomAppModule;
   player: PlayerAppModule;
   unitFocus: UnitFocusAppModule;
   selection: SelectionAppModule;
+  placement: PlacementAppModule;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -43,7 +46,8 @@ export default class App {
       RoomAppModule,
       PlayerAppModule,
       UnitFocusAppModule,
-      SelectionAppModule
+      SelectionAppModule,
+      PlacementAppModule
     );
 
     // #region Modules

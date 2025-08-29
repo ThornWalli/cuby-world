@@ -101,6 +101,7 @@ function setupScene(renderer: Renderer) {
   const groundMesh = new Mesh(groundTile.geometry, groundTile.material);
   groundMesh.material.side = DoubleSide;
   groundMesh.receiveShadow = true;
+  groundMesh.material.side = DoubleSide;
   scene.add(groundMesh);
   // #endregion
 

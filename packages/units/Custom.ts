@@ -11,10 +11,6 @@ export default class Custom extends Unit<CustomOptions> {
   static override KEY = 'custom';
   static override NAME = 'Custom';
 
-  override options = {
-    size: 0.5
-  };
-
   constructor(
     options: Omit<
       UnitConstructorOptions<CustomOptions>,
@@ -24,7 +20,8 @@ export default class Custom extends Unit<CustomOptions> {
     super({
       ...options,
       name: 'Custom',
-      selectable: true
+      selectable: true,
+      placeable: true
     });
   }
 

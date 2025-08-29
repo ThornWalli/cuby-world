@@ -98,7 +98,7 @@ export default class IntersectionRendererModule extends RendererModule<State> {
       clickIntersects$,
       unregister
     };
-    this.listeners.push(listener); // Set a name for identification
+    this.listeners.push(listener);
     return listener;
   }
 

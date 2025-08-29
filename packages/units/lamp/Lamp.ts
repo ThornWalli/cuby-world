@@ -51,6 +51,7 @@ export default class Lamp extends Unit<
         ...options,
         name: 'Lamp',
         selectable: true,
+        placeable: true,
         options: {
           size: 0.5,
           ...options.options
@@ -78,7 +79,7 @@ export default class Lamp extends Unit<
     mesh.name = OBJECT_NAME.MESH;
     mesh.position.set(0, 0.5, 0);
 
-    const light = new PointLight(0xffffff, 3, 10);
+    const light = new PointLight(0xffffff, 1, 8);
     light.position.set(0, 0, 0);
     light.castShadow = true;
 

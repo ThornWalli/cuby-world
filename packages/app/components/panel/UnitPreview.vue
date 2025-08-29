@@ -11,7 +11,7 @@
       </li>
     </ul>
 
-    <div v-if="$slots.actions">
+    <div v-if="$slots.actions" class="actions">
       <slot name="actions"></slot>
     </div>
   </cw-panel>
@@ -48,13 +48,15 @@ function refresh(unit: Unit) {
 }
 
 function refreshDebugInfo(unit: Unit) {
-  const position = unit.getRootPosition();
+  const position = unit.getPosition();
   const rotation = unit.getRootRotation();
+  const size = unit.size;
 
   const info = {
     Pos: `${position.x.toFixed(2)}x${position.y.toFixed(2)}x${position.z.toFixed(2)}`,
     Rot: `${rotation.x.toFixed(2)}x${rotation.y.toFixed(2)}`,
-    URot: `${$props.unit.rotation}`
+    URot: `${$props.unit.rotation}`,
+    Size: `${size.x}x${size.y}`
   };
   debugInfo.value = Object.entries(info);
 }
@@ -209,6 +211,13 @@ watch(
   & .image {
     display: flex;
     align-items: center;
+    justify-content: center;
+  }
+
+  & .actions {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
     justify-content: center;
   }
 }

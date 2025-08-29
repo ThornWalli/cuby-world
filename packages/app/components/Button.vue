@@ -1,7 +1,7 @@
 <template>
   <base-button
     class="cw-button"
-    :class="{ [`style-type-${styleType}`]: styleType }">
+    :class="{ selected, [`style-type-${styleType}`]: styleType }">
     <slot>Button</slot>
   </base-button>
 </template>
@@ -11,6 +11,7 @@ import BaseButton from './base/Button.vue';
 
 defineProps<{
   styleType?: 'light' | 'dark';
+  selected?: boolean;
 }>();
 </script>
 
@@ -30,6 +31,7 @@ defineProps<{
     opacity: 0.5;
   }
 
+  &.selected,
   &:not([disabled]):hover {
     background: rgb(255 255 255 / 10%);
   }

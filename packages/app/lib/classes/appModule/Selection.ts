@@ -4,21 +4,25 @@ import type Unit from '../Unit';
 import type { Object3D } from 'three';
 
 interface State extends AppModuleState {
-  selectedUnit?: Unit;
+  selectedUnit: Unit | null;
 }
 export default class SelectionAppModule extends AppModule<State> {
   static override TYPE = 'selection';
   state: State = {
-    selectedUnit: undefined
+    selectedUnit: null
   };
 
-  selectUnit$ = new ReplaySubject<Unit | undefined>(1);
+  selectUnit$ = new ReplaySubject<Unit | null>(1);
 
   getSelectedUnit() {
     return this.state.selectedUnit;
   }
 
-  setSelectedUnit(unit: Unit | undefined) {
+  setSelectedUnit(unit: Unit | null) {
+    if (unit && !unit.modules.selection) {
+      throw new Error('Unit does not have selection module');
+    }
+
     const player = this.app.modules.player.getPlayer()!;
     const selectedObjects = [];
 
@@ -31,7 +35,7 @@ export default class SelectionAppModule extends AppModule<State> {
       this.state.selectedUnit = unit;
       selectedObjects.push(unit.mesh);
     } else {
-      this.state.selectedUnit = undefined;
+      this.state.selectedUnit = null;
     }
     this.app.renderer.setSelectedObjects(selectedObjects);
     this.selectUnit$.next(unit);

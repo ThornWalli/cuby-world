@@ -58,40 +58,8 @@ export default class DebugRendererModule extends RendererModule<DebugState> {
   }
 }
 
-function debugGui(context: Renderer) {
+function debugGui(_context: Renderer) {
   const gui = new GUI();
-  const params = {
-    pixelSize: context.pixelSize,
-    normalEdgeStrength: 0,
-    depthEdgeStrength: 1
-  };
-  if (context.passes.renderPixelated) {
-    gui
-      .add(params, 'pixelSize')
-      .min(1)
-      .max(16)
-      .step(1)
-      .onChange(() => {
-        context.passes.renderPixelated?.setPixelSize(params.pixelSize);
-      });
-    gui
-      .add(params, 'normalEdgeStrength')
-      .min(0)
-      .max(2)
-      .step(0.05)
-      .onChange(() => {
-        context.passes.renderPixelated!.normalEdgeStrength =
-          params.normalEdgeStrength;
-      });
-    gui
-      .add(params, 'depthEdgeStrength')
-      .min(0)
-      .max(1)
-      .step(0.05)
-      .onChange(() => {
-        context.passes.renderPixelated!.depthEdgeStrength =
-          params.depthEdgeStrength;
-      });
-    return gui;
-  }
+  // const params = {};
+  return gui;
 }

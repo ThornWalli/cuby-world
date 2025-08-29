@@ -39,18 +39,16 @@ interface Passes {
 export default class Renderer<
   Modules extends RendererModules = RendererModules
 > {
+  animationLoop$ = new ReplaySubject<number>(0);
+
   renderer: WebGLRenderer;
   scene!: Scene;
   camera!: OrthographicCamera;
   controls!: OrbitControls;
   composer!: EffectComposer;
-  animationLoop$ = new ReplaySubject<number>(0);
   dimension: Vector2;
 
-  /**
-   * @deprecated Wird die noch benötigt wenn pass eh weg soll?
-   */
-  pixelSize: number;
+  pixelated: boolean;
 
   modules: Modules;
   passes!: Passes;
@@ -61,7 +59,7 @@ export default class Renderer<
     dirLight: DirectionalLight;
   };
 
-  private _debug: boolean = false;
+  private _debug: boolean;
   get debug() {
     return this._debug;
   }
@@ -74,7 +72,7 @@ export default class Renderer<
     canvas: HTMLCanvasElement,
     dimension: Vector2,
     options: {
-      pixelSize?: number;
+      pixelated?: boolean;
       controls?: boolean;
       debug?: boolean;
     } = {},
@@ -85,16 +83,16 @@ export default class Renderer<
     }
 
     this.dimension = dimension;
-    this.pixelSize = options.pixelSize ?? 3;
     this._debug = options.debug ?? false;
 
     this.initScene();
     this.setOrthographicCamera();
     this.setupLights();
 
+    this.pixelated = options.pixelated ?? false;
     const renderer = new WebGLRenderer({
       canvas,
-      antialias: false
+      antialias: options.pixelated ? false : true
     });
 
     renderer.shadowMap.enabled = true;

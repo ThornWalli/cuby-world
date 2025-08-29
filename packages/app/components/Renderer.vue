@@ -1,5 +1,8 @@
 <template>
-  <div ref="rootEl" class="cw-renderer">
+  <div
+    ref="rootEl"
+    class="cw-renderer"
+    :class="{ pixelated: renderer?.pixelated }">
     <canvas ref="canvasEl" />
   </div>
 </template>
@@ -35,7 +38,7 @@ const canvasEl = ref();
 const subscription = new Subscription();
 
 const defaultRendererOptions: RendererOptions = {
-  pixelSize: 1,
+  pixelated: false,
   controls: true
 };
 
@@ -44,7 +47,7 @@ onMounted(async () => {
     rootEl.value.offsetWidth,
     rootEl.value.offsetHeight
   );
-  const { pixelSize, controls } = $props.options || defaultRendererOptions;
+  const { pixelated, controls } = $props.options || defaultRendererOptions;
 
   renderer.value = markRaw(
     new Renderer(
@@ -52,7 +55,7 @@ onMounted(async () => {
       dimension,
       {
         debug: !!$props.debug,
-        pixelSize: pixelSize,
+        pixelated: pixelated,
         controls: controls
       },
       $props.modules
@@ -86,10 +89,15 @@ defineExpose({
 </script>
 
 <style lang="postcss" scoped>
-canvas {
-  touch-action: none;
-  image-rendering: optimizeSpeed; /* Für ältere Browser */
-  image-rendering: crisp-edges; /* Für moderne Browser */
-  image-rendering: pixelated;
+.cw-renderer {
+  &.pixelated {
+    image-rendering: optimizeSpeed;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+
+  & canvas {
+    touch-action: none;
+  }
 }
 </style>

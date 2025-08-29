@@ -6,9 +6,6 @@ import {
 } from 'three';
 
 export default class GroundTile {
-  /**
-   * @deprecated Wird die noch benötigt?
-   */
   position: Vector3;
   type: string = 'GroundTile';
 

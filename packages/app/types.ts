@@ -1,4 +1,4 @@
 export interface RendererOptions {
-  pixelSize: number;
+  pixelated: boolean;
   controls: boolean;
 }

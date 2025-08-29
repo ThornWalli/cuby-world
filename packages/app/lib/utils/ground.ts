@@ -1,14 +1,23 @@
 import GroundTile from '../classes/GroundTile';
-import { InstancedMesh, Vector3, Matrix4 } from 'three';
+import {
+  InstancedMesh,
+  Vector3,
+  Matrix4,
+  DoubleSide,
+  MeshStandardMaterial
+} from 'three';
+import { useGroundTileShader } from './shader';
+import type RoomGrid from '../classes/RoomGrid';
 
 export function createGroundChunks(
-  tileGrid: number[][],
+  roomGrid: RoomGrid,
   chunkSize = 16
 ): InstancedMesh[] {
-  const rows = tileGrid.length;
-  const cols = tileGrid[0]!.length;
+  const rows = roomGrid.width;
+  const cols = roomGrid.height;
   const chunks: InstancedMesh[] = [];
 
+  const matrix = roomGrid.toMatrix();
   // Grundgeometrie für alle Tiles
   // const baseGeometry = new PlaneGeometry(1, 1);
   // baseGeometry.rotateX(-Math.PI / 2);
@@ -19,7 +28,7 @@ export function createGroundChunks(
       const tilesInChunk: GroundTile[] = [];
       for (let r = y; r < y + chunkSize && r < rows; r++) {
         for (let c = x; c < x + chunkSize && c < cols; c++) {
-          if (tileGrid[r]![c] === 1) {
+          if (matrix[r]![c] === 1) {
             tilesInChunk.push(new GroundTile(new Vector3(c, 0, r)));
           }
         }
@@ -36,13 +45,19 @@ export function createGroundChunks(
         {}
       );
 
-      Object.entries(splittedTiles).forEach(([type, tiles]) => {
+      const customMaterial = new MeshStandardMaterial({ color: 0xcccccc });
+      const tiles = Object.entries(splittedTiles);
+
+      customMaterial.onBeforeCompile = shader => useGroundTileShader(shader);
+
+      tiles.forEach(([type, tiles]) => {
         const instancedMesh = new InstancedMesh(
           // baseGeometry,
           tiles[0]!.plane.geometry,
-          tiles[0]!.plane.material,
+          customMaterial,
           tiles.length
         );
+        instancedMesh.material.side = DoubleSide;
         instancedMesh.castShadow = false;
         instancedMesh.receiveShadow = true;
         instancedMesh.name = `chunk_${y}_${x}_${type}`;
