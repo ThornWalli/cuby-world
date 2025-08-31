@@ -1,4 +1,4 @@
-import type { Object3D } from 'three';
+import type { Color, Object3D } from 'three';
 import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
 
 import Unit, {
@@ -8,7 +8,7 @@ import Unit, {
 } from '../app/lib/classes/Unit';
 
 export interface BlockOptions extends UnitOptions {
-  color: number;
+  color: string | number | Color;
 }
 export default class Block extends Unit<BlockOptions> {
   static override KEY = 'box';
@@ -44,20 +44,20 @@ export default class Block extends Unit<BlockOptions> {
     mesh.castShadow = true;
     mesh.position.set(0, size.y / 2, 0);
 
-    mesh.add(helper());
+    // mesh.add(helper());
 
     this.materialReady$.next();
     return mesh;
   }
 }
 
-function helper() {
-  const material = new MeshPhongMaterial({ color: 0xff0000 });
-  const geometry = new BoxGeometry(1, 1, 1);
-  const mesh: Object3D = new Mesh(geometry, material);
-  mesh.name = OBJECT_NAME.MESH;
-  mesh.castShadow = true;
-  mesh.position.set(0, 1 / 2 + 0.5, 0);
+// function helper() {
+//   const material = new MeshPhongMaterial({ color: 0xff0000 });
+//   const geometry = new BoxGeometry(1, 1, 1);
+//   const mesh: Object3D = new Mesh(geometry, material);
+//   mesh.name = OBJECT_NAME.MESH;
+//   mesh.castShadow = true;
+//   mesh.position.set(0, 1 / 2 + 0.5, 0);
 
-  return mesh;
-}
+//   return mesh;
+// }

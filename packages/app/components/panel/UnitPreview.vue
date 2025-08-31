@@ -49,13 +49,13 @@ function refresh(unit: Unit) {
 
 function refreshDebugInfo(unit: Unit) {
   const position = unit.getPosition();
-  const rotation = unit.getRootRotation();
+  const rotation = unit.rotation;
   const size = unit.size;
 
   const info = {
-    Pos: `${position.x.toFixed(2)}x${position.y.toFixed(2)}x${position.z.toFixed(2)}`,
-    Rot: `${rotation.x.toFixed(2)}x${rotation.y.toFixed(2)}`,
-    URot: `${$props.unit.rotation}`,
+    Ply: unit.modules.player.player?.name || 'n/a',
+    Pos: `${position.x}x${position.y}x${position.z}`,
+    Rot: `${rotation}`,
     Size: `${size.x}x${size.y}`
   };
   debugInfo.value = Object.entries(info);

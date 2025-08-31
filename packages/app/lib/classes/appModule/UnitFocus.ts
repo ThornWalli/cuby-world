@@ -17,7 +17,7 @@ export default class UnitFocusAppModule extends AppModule<State> {
   }
 
   setPlayerAsFocusedUnit() {
-    const player = this.app.modules.player.getPlayer();
+    const player = this.app.modules.player.getCurrentPlayer();
     if (!player?.unit) {
       throw new Error('No player unit to focus on');
     }

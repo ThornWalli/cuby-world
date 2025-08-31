@@ -25,6 +25,7 @@
     "@nuxtjs/critters": "catalog:",
     "@nuxtjs/robots": "catalog:",
     "@nuxtjs/sitemap": "catalog:",
+    "@types/stats.js": "^0.17.4",
     "dotenv-mono": "catalog:",
     "nuxt": "catalog:",
     "pathe": "catalog:",
@@ -35,13 +36,14 @@
     "postcss-url": "catalog:",
     "read-pkg": "catalog:",
     "rucksack-css": "catalog:",
+    "stats.js": "^0.17.0",
     "tsx": "catalog:",
     "ufo": "catalog:",
     "vite-plugin-checker": "catalog:",
+    "vite-plugin-eslint2": "catalog:",
     "vite-plugin-markdown": "catalog:",
     "vite-plugin-mkcert": "catalog:",
     "vite-plugin-node-polyfills": "catalog:",
-    "vite-plugin-eslint2": "catalog:",
     "vite-svg-loader": "catalog:"
   }
 }

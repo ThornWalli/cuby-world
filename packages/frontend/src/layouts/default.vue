@@ -5,7 +5,10 @@
 </template>
 
 <script lang="ts" setup>
-import { useHead } from '#imports';
+import { onMounted, onUnmounted, useHead } from '#imports';
+import useStats from '~/composables/useStats';
+
+const { start: startStats, stop: stopStats } = useStats();
 
 useHead({
   link: [
@@ -15,5 +18,13 @@ useHead({
       href: '/favicon.png'
     }
   ]
+});
+
+onMounted(async () => {
+  await startStats();
+});
+
+onUnmounted(() => {
+  stopStats();
 });
 </script>

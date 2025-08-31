@@ -8,6 +8,7 @@ import RoomAppModule from './appModule/Room';
 import PlayerAppModule from './appModule/Player';
 import SelectionAppModule from './appModule/Selection';
 import PlacementAppModule from './appModule/Placement';
+import MultiplayerAppModule from './appModule/Multiplayer';
 
 type AppModuleList = (
   | typeof UnitFocusAppModule
@@ -15,6 +16,7 @@ type AppModuleList = (
   | typeof RoomAppModule
   | typeof SelectionAppModule
   | typeof PlacementAppModule
+  | typeof MultiplayerAppModule
 )[];
 interface AppModules {
   room: RoomAppModule;
@@ -22,10 +24,14 @@ interface AppModules {
   unitFocus: UnitFocusAppModule;
   selection: SelectionAppModule;
   placement: PlacementAppModule;
+  multiplayer?: MultiplayerAppModule;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface AppState {}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface AppConfig {}
 
 export default class App {
   texturePreloader = new AssetLoader();
@@ -38,7 +44,10 @@ export default class App {
 
   modules: AppModules;
 
+  ready = false;
+
   constructor(
+    public config: AppConfig,
     public renderer: Renderer,
     modules: AppModuleList = []
   ) {
@@ -50,14 +59,27 @@ export default class App {
       PlacementAppModule
     );
 
+    if (config.multiplayer) {
+      modules.push(MultiplayerAppModule);
+    }
+
     // #region Modules
     const preparedModules = modules.map(ModuleClass => {
       const moduleInstance = new ModuleClass(this);
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
-    Object.values(this.modules).forEach(module => module.setup());
     // #endregion
+  }
+
+  async setup() {
+    if (this.ready) return;
+
+    await Promise.all(
+      Object.values(this.modules).map(module => module.setup())
+    );
+
+    this.ready = true;
   }
 
   destroy() {

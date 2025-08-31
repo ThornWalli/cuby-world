@@ -23,7 +23,7 @@ export default class SelectionAppModule extends AppModule<State> {
       throw new Error('Unit does not have selection module');
     }
 
-    const player = this.app.modules.player.getPlayer()!;
+    const player = this.app.modules.player.getCurrentPlayer()!;
     const selectedObjects = [];
 
     if (!unit && player!.unit!.id === this.state.selectedUnit?.id) {

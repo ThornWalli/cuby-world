@@ -1,5 +1,5 @@
 <template>
-  <cw-panel class="cw-panel-controls">
+  <cw-panel class="cw-debug-panel-controls">
     <cw-select
       v-model="selectedUnit"
       label-top

@@ -1,5 +1,5 @@
 import { map, type Observable } from 'rxjs';
-import type { Intersection, Object3D, Object3DEventMap } from 'three';
+import type { Object3D, Intersection, Object3DEventMap } from 'three';
 import { Vector3 } from 'three';
 import type Unit from '../classes/Unit';
 
@@ -22,6 +22,13 @@ export function matrixPositionToPosition(
   const y = matrixPosition.y;
   const z = matrixPosition.z;
   return new Vector3(x, y, z);
+}
+
+export interface PreparedPosition {
+  unit?: Unit;
+  object: Object3D | null;
+  matrixPosition: THREE.Vector3 | null;
+  worldPosition: THREE.Vector3 | null;
 }
 
 export function preparePosition(onlyTopFace = false) {
@@ -57,7 +64,7 @@ export function preparePosition(onlyTopFace = false) {
           object,
           matrixPosition,
           worldPosition
-        };
+        } as PreparedPosition;
       })
     );
 }

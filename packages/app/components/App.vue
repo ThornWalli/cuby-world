@@ -5,7 +5,8 @@
       debug
       :options="rendererOptions"
       :modules="[IntersectionRendererModule]" />
-    <cw-panel-unit-preview v-if="selectedUnit" :unit="selectedUnit">
+    <cw-messages v-if="ready && app && isMessagingActive" :app="app" />
+    <cw-panel-unit-preview v-if="ready && selectedUnit" :unit="selectedUnit">
       <template #actions>
         <cw-button @click="onClickRotate">Rotate</cw-button>
         <cw-button
@@ -16,7 +17,10 @@
         >
       </template>
     </cw-panel-unit-preview>
-    <cw-panel-camera-control v-if="app" :app="app" />
+    <cw-panel-camera-control v-if="ready && app" :app="app" />
+    <cw-debug-panel-unit-settings
+      v-if="ready && selectedUnit"
+      :unit="selectedUnit" />
   </div>
 </template>
 
@@ -34,13 +38,15 @@ import {
 import { fromEvent, Subscription } from 'rxjs';
 import { Vector2 } from 'three';
 import Player from '../lib/classes/Player';
-import App from '../lib/classes/App';
+import App, { type AppConfig } from '../lib/classes/App';
 import DefaultRoom from '../lib/rooms/Default';
 import type { RendererOptions } from '../types';
 import type Unit from '../lib/classes/Unit';
 
+import CwMessages from './Messages.vue';
 import CwPanelCameraControl from './panel/CameraControl.vue';
 import CwPanelUnitPreview from './panel/UnitPreview.vue';
+import CwDebugPanelUnitSettings from './debug/panel/UnitSettings.vue';
 import CwButton from './Button.vue';
 import IntersectionRendererModule from '../lib/classes/rendererModule/Intersection';
 import UnitFocusAppModule from '../lib/classes/appModule/UnitFocus';
@@ -53,7 +59,8 @@ const subscription = new Subscription();
 const dimension = ref<Vector2>();
 
 setupFonts();
-defineProps<{
+const $props = defineProps<{
+  config: AppConfig;
   rendererOptions?: RendererOptions;
 }>();
 
@@ -69,19 +76,25 @@ onMounted(async () => {
   });
 });
 
-function setup() {
+const ready = ref(false);
+async function setup() {
   const { renderer } = rendererEl.value!;
 
   if (!renderer) {
     throw new Error('Renderer not ready');
   }
-  app.value = markRaw(new App(renderer, [UnitFocusAppModule]));
+
+  app.value = markRaw(new App($props.config, renderer, [UnitFocusAppModule]));
+  await app.value.setup();
+  ready.value = true;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).cubyWorld = app.value;
 
-  app.value.modules.player.setPlayer(
+  app.value.modules.player.addPlayer(
     new Player({
+      id: app.value.modules.multiplayer?.playerId || undefined,
+      client: true,
       name: 'Player 1'
     })
   );
@@ -119,6 +132,10 @@ onUnmounted(() => {
   subscription.unsubscribe();
   app.value?.destroy();
 });
+
+const isMessagingActive = computed(
+  () => app.value?.modules.multiplayer?.state.active
+);
 
 const rootEl = ref<HTMLElement>();
 function onResize() {
@@ -162,6 +179,12 @@ function onClickPlacement() {
     bottom: var(--panel-offset);
   }
 
+  & .cw-debug-panel-unit-settings {
+    position: absolute;
+    bottom: var(--panel-offset);
+    left: var(--panel-offset);
+  }
+
   & .cw-renderer {
     position: absolute;
     top: 50%;
@@ -169,6 +192,14 @@ function onClickPlacement() {
     width: 100%;
     height: 100%;
     transform: translate(-50%, -50%);
+  }
+
+  & .cw-messages {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
 }
 </style>

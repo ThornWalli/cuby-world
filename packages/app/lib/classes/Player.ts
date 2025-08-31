@@ -1,15 +1,37 @@
 import type { Vector3 } from 'three';
 import type Unit from './Unit';
 import PlayerUnitModule from './unitModule/Player';
+import { ReplaySubject } from 'rxjs';
 
 export default class Player {
+  private _client: boolean = false;
+  get client() {
+    return this._client;
+  }
+
   id: string;
   name: string;
   unit?: Unit;
 
-  constructor({ id, name }: { id?: string; name: string }) {
+  unit$ = new ReplaySubject<Unit>(1);
+
+  constructor({
+    client,
+    id,
+    name
+  }: {
+    client?: boolean;
+    id?: string;
+    name: string;
+  }) {
+    this._client = client ?? false;
     this.id = id || crypto.randomUUID();
     this.name = name;
+  }
+
+  destroy() {
+    this.unit?.destroy();
+    this.unit$.unsubscribe();
   }
 
   setUnit(unit: Unit) {
@@ -18,6 +40,7 @@ export default class Player {
       this.unit.modules.player.setPlayer(this);
     }
 
+    this.unit$.next(unit);
     console.log('Player unit set:', this.unit.name);
   }
 

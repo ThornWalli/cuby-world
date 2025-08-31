@@ -1,5 +1,5 @@
 <template>
-  <cw-panel class="cw-panel-unit-manager">
+  <cw-panel class="cw-debug-panel-unit-manager">
     <cw-form-field-upload @file="$emit('file', $event)"></cw-form-field-upload>
   </cw-panel>
 </template>
@@ -14,7 +14,7 @@ const $emit = defineEmits<{
 </script>
 
 <style lang="postcss" scoped>
-.cw-panel-unit-manager {
+.cw-debug-panel-unit-manager {
   /* empty */
 }
 </style>

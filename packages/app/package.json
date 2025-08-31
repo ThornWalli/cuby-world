@@ -15,9 +15,11 @@
   "dependencies": {
     "@js-basics/vector": "catalog:",
     "change-case": "catalog:",
+    "firebase": "^12.2.1",
     "pathfinding": "0.4.18",
     "rxjs": "catalog:",
-    "three": "catalog:"
+    "three": "catalog:",
+    "trystero": "^0.21.7"
   },
   "devDependencies": {
     "@types/pathfinding": "catalog:",

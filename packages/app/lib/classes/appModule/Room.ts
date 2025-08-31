@@ -3,7 +3,8 @@ import {
   distinctUntilChanged,
   filter,
   ReplaySubject,
-  Subscription
+  Subscription,
+  throttleTime
 } from 'rxjs';
 import type App from '../App';
 import AppModule, { type AppModuleState } from '../AppModule';
@@ -12,11 +13,12 @@ import type RoomDescription from '../RoomDescription';
 import Cuby from '@cuby-world/units/cuby/Cuby';
 import {
   matrixPositionToPosition,
-  positionToMatrixPosition,
-  preparePosition
+  preparePosition,
+  type PreparedPosition
 } from '../../utils/matrix';
-import type { Vector3 } from 'three';
-import type IntersectionRendererModule from '../rendererModule/Intersection';
+import { Vector3 } from 'three';
+import { getYPositionByPosition } from '../../utils/room';
+import type Player from '../Player';
 
 interface State extends AppModuleState {
   room?: Room;
@@ -51,6 +53,28 @@ export default class RoomAppModule extends AppModule<State> {
     return this.state.room;
   }
 
+  async addPlayerUnit(player: Player) {
+    const { unitFocus: unitFocusModule } = this.app.modules!;
+    const room = this.getRoom()!;
+    const cuby = new Cuby({
+      position: room.description!.start!.position.clone(),
+      rotation: room.description!.start!.rotation
+    });
+
+    player.setUnit(cuby);
+
+    await room.add(cuby);
+
+    if (player.client) {
+      this.app.modules.selection.setSelectedUnit(cuby);
+      unitFocusModule?.setFocusedUnit(cuby);
+    }
+  }
+
+  /**
+   * Set the current room from a room description.
+   * @param roomDescription
+   */
   async fromDescription(roomDescription: RoomDescription) {
     const app = this.app;
     const renderer = app.renderer;
@@ -76,28 +100,47 @@ export default class RoomAppModule extends AppModule<State> {
     this.roomSubscription = this.registerRoomSubscriptions(app);
 
     if (playerModule && room.description?.start) {
-      const cuby = new Cuby({
-        position: room.description.start.position.clone(),
-        rotation: room.description.start.rotation
+      playerModule.addPlayer$.subscribe(player => {
+        console.log('XXXXXX', 222);
+        this.addPlayerUnit(player);
       });
+      playerModule.getPlayers().forEach(player => {
+        console.log('XXXXXX', 111);
+        this.addPlayerUnit(player);
+      });
+      // setTimeout(async () => {
+      // await
+      // this.addPlayerUnit(playerModule.getCurrentPlayer()!);
+      // const cuby = new Cuby({
+      //   position: room.description.start.position.clone(),
+      //   rotation: room.description.start.rotation
+      // });
 
-      const player = playerModule.getPlayer()!;
-      player.setUnit(cuby);
+      // const player = playerModule.getCurrentPlayer()!;
+      // player.setUnit(cuby);
 
-      await room.add(cuby);
-      app.modules.selection.setSelectedUnit(cuby);
+      // await room.add(cuby);
+      // app.modules.selection.setSelectedUnit(cuby);
 
-      unitFocusModule?.setFocusedUnit(cuby);
+      // unitFocusModule?.setFocusedUnit(cuby);
     }
 
-    renderer.animationLoop$.subscribe(time => {
-      room.update(time);
-      if (unitFocusModule?.focusedUnit) {
-        const position = unitFocusModule.focusedUnit.getRootPosition();
-        renderer.updateCamera(position);
-        renderer.updateLight(position);
-      }
-    });
+    this.subscription.add(
+      renderer.animationLoop$.pipe(throttleTime(250)).subscribe(tim => {
+        room.updateThrottle(tim);
+      })
+    );
+
+    this.subscription.add(
+      renderer.animationLoop$.subscribe(time => {
+        room.update(time);
+        if (unitFocusModule?.focusedUnit) {
+          const position = unitFocusModule.focusedUnit.getScenePosition();
+          renderer.updateCamera(position);
+          renderer.updateLight(position);
+        }
+      })
+    );
 
     console.log('Set room:', roomDescription.name, room);
   }
@@ -106,7 +149,11 @@ export default class RoomAppModule extends AppModule<State> {
     this.state.room = room;
   }
 
-  subscribeGroundSelection(intersection: IntersectionRendererModule) {
+  subscribeGroundSelection() {
+    const intersection = this.app.renderer.modules.intersection;
+    if (!intersection) {
+      throw new Error('Intersection module is not available');
+    }
     // const subscription = new Subscription();
     const room = this.getRoom()!;
 
@@ -121,32 +168,33 @@ export default class RoomAppModule extends AppModule<State> {
         preparePosition(),
         filter(({ worldPosition }) => !!worldPosition)
       )
-      .subscribe(({ worldPosition }) => {
-        room.setSelectionPosition(worldPosition!);
-        this._selectionPosition$.next(worldPosition!);
-      });
+      .subscribe(this.onHover.bind(this));
   }
 
-  private registerRoomSubscriptions(app: App) {
+  subscribePlacement() {
     const subscription = new Subscription();
-    const room = app.modules.room.getRoom()!;
-    const player = app.modules.player.getPlayer()!;
-    const renderer = app.renderer;
+    const app = this.app;
+    const room = this.getRoom();
+
+    if (!room) {
+      throw new Error('No room available for placement subscription');
+    }
 
     let placeSubscription: Subscription;
     let lastPosition: Vector3 | null = null;
     subscription.add(
       app.modules.placement.startPlace$.subscribe(unit => {
-        lastPosition = unit.getRootPosition().clone();
-
-        console.log('Start placing - ignoring selection');
+        lastPosition = unit.getPosition().clone();
         placeSubscription = this.selectionPosition$.subscribe(position => {
-          console.log(
-            'Placing at position:',
-            position,
-            matrixPositionToPosition(position)
+          unit.setPosition(
+            matrixPositionToPosition(
+              new Vector3(
+                position.x,
+                getYPositionByPosition(room, position),
+                position.z
+              )
+            )
           );
-          unit.setPosition(matrixPositionToPosition(position));
         });
       })
     );
@@ -164,50 +212,68 @@ export default class RoomAppModule extends AppModule<State> {
       })
     );
 
+    return subscription;
+  }
+
+  private registerRoomSubscriptions(app: App) {
+    const subscription = new Subscription();
+    const room = app.modules.room.getRoom()!;
+    const renderer = app.renderer;
+
+    this.subscribePlacement();
+
+    // #region intersection
+
     if (renderer.modules.intersection) {
-      subscription.add(
-        this.subscribeGroundSelection(renderer.modules.intersection)
-      );
+      subscription.add(this.subscribeGroundSelection());
 
       subscription.add(
         renderer.modules.intersection
           .register(room.mesh)
-          .clickIntersect$.pipe(
-            // filter(() => ignoreSelect)
-            preparePosition()
-          )
-          .subscribe(data => {
-            if (data) {
-              const { unit, object, worldPosition } = data;
-              if (app.modules.placement.hasPlace()) {
-                // placing mode
-                app.modules.placement.stopPlace();
-                app.modules.selection.setSelectedUnit(null);
-              } else if (
-                unit &&
-                app.modules.selection.getSelectedUnit()?.id === unit?.id
-              ) {
-                // move selected unit
-                player.moveTo(unit.getPosition());
-              } else if (unit) {
-                // select unit
-                app.modules.selection.setSelectedUnit(unit);
-              } else {
-                // move player
-                console.log(
-                  'Current intersected object:',
-                  unit,
-                  object,
-                  worldPosition
-                );
-                player.moveTo(positionToMatrixPosition(worldPosition!));
-              }
-            } else {
-              console.log('No intersected object');
-            }
-          })
+          .clickIntersect$.pipe(preparePosition())
+          .subscribe(this.onSelect.bind(this))
       );
     }
+
+    // #endregion
     return subscription;
+  }
+
+  onHover({ worldPosition }: PreparedPosition) {
+    const room = this.app.modules.room.getRoom()!;
+    room.setSelectionPosition(worldPosition!);
+    this._selectionPosition$.next(worldPosition!);
+  }
+
+  onSelect(data: PreparedPosition) {
+    const app = this.app;
+    const player = app.modules.player.getCurrentPlayer();
+    if (!player) {
+      throw new Error('No player available');
+    }
+    if (data) {
+      const { unit, object, worldPosition } = data;
+      if (app.modules.placement.hasPlace()) {
+        // placing mode
+        app.modules.placement.stopPlace();
+        app.modules.selection.setSelectedUnit(null);
+      } else if (
+        unit &&
+        app.modules.selection.getSelectedUnit()?.id === unit?.id
+      ) {
+        console.log('Move player to selected unit');
+        // move selected unit
+        player.moveTo(unit.getPosition());
+      } else if (unit) {
+        // select unit
+        app.modules.selection.setSelectedUnit(unit);
+      } else {
+        // move player
+        console.log('Current intersected object:', unit, object, worldPosition);
+        player.moveTo(worldPosition!);
+      }
+    } else {
+      console.log('No intersected object');
+    }
   }
 }

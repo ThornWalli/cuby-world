@@ -1,7 +1,12 @@
 import { ReplaySubject } from 'rxjs';
 import UnitModule from '../UnitModule';
-import type { Material } from 'three';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
+import { normalizeMaterialList } from '../../utils/material';
+
+interface TransparentDescription {
+  transparent: boolean;
+  opacity: number;
+}
 
 export class PlacementUnitModule extends UnitModule {
   static override TYPE = 'placement';
@@ -10,18 +15,12 @@ export class PlacementUnitModule extends UnitModule {
   stopPlace$ = new ReplaySubject<void>(1);
   abortPlace$ = new ReplaySubject<void>(1);
 
-  lastMaterial = new Map<
-    string,
-    {
-      transparent: boolean;
-      opacity: number;
-    }
-  >();
+  lastMaterial = new Map<string, TransparentDescription>();
 
   startPlace() {
     this.lastMaterial.clear();
     findAllMeshes(this.unit.root).forEach(mesh => {
-      getMaterial(mesh.material).forEach(material => {
+      normalizeMaterialList(mesh.material).forEach(material => {
         this.lastMaterial.set(material.uuid, {
           transparent: material.transparent,
           opacity: material.opacity
@@ -35,7 +34,7 @@ export class PlacementUnitModule extends UnitModule {
 
   stopPlace() {
     findAllMeshes(this.unit.root).forEach(mesh => {
-      getMaterial(mesh.material).forEach(material => {
+      normalizeMaterialList(mesh.material).forEach(material => {
         console.log(material.uuid, this.lastMaterial);
         const last = this.lastMaterial.get(material.uuid);
         if (last) {
@@ -49,13 +48,5 @@ export class PlacementUnitModule extends UnitModule {
 
   abortPlace() {
     this.abortPlace$.next();
-  }
-}
-
-function getMaterial(material: Material | Material[]) {
-  if (Array.isArray(material)) {
-    return material;
-  } else {
-    return [material];
   }
 }

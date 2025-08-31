@@ -1,4 +1,4 @@
-import type { Camera, InstancedMesh, Vector3 } from 'three';
+import type { Vector3, Camera, InstancedMesh } from 'three';
 import {
   Box3,
   Frustum,
@@ -16,12 +16,64 @@ import { createGroundChunks } from '../utils/ground';
 import type RoomDescription from './RoomDescription';
 import type App from './App';
 import RoomGrid from './RoomGrid';
+import { distinctUntilChanged, map } from 'rxjs';
+import UnitChunkManager from './UnitChunkManager';
+
+class PositionMap {
+  data = new Map<string, Unit[]>();
+  listsByUnits = new Map<string, Unit[][]>();
+
+  getKey(position: Vector3) {
+    return position.clone().floor().toArray().toString();
+  }
+
+  getByPosition(position: Vector3) {
+    const key = this.getKey(position);
+    return this.data.get(key) || [];
+  }
+
+  remove(unit: Unit) {
+    if (this.listsByUnits.has(unit.id)) {
+      const lists = this.listsByUnits.get(unit.id)!;
+      lists.forEach(list => {
+        const index = list.indexOf(unit);
+        if (index !== -1) {
+          list.splice(index, 1);
+        }
+      });
+    }
+  }
+
+  add(unit: Unit) {
+    // Entferne die Unit aus allen vorherigen Positionen
+    this.remove(unit);
+
+    unit.getMatrixPositions().forEach(pos => {
+      const key = this.getKey(pos);
+      const list = this.data.get(key) || [];
+      list.push(unit);
+      if (!this.listsByUnits.has(unit.id)) {
+        this.listsByUnits.set(unit.id, []);
+      }
+      this.listsByUnits.get(unit.id)?.push(list);
+
+      this.data.set(key, list);
+    });
+  }
+}
 
 export default class Room {
-  units = new Map<string, Unit>();
   mesh = new Object3D();
   groundMesh?: Object3D;
   selectionMesh?: Object3D;
+
+  units = new Map<string, Unit>();
+
+  /**
+   * Gibt eine Liste an Units zurück die auf der Position liegen.
+   */
+  untiPositionMap = new PositionMap();
+  chunkManager: UnitChunkManager = new UnitChunkManager();
 
   private _grid: RoomGrid;
   get grid() {
@@ -44,20 +96,32 @@ export default class Room {
   get gridSize() {
     return new Vector2(this.grid.width, this.grid.height);
   }
-
   async add(unit: Unit) {
     await unit.setup({
       unit,
       assetLoader: this.app.texturePreloader,
       room: this
     });
+
+    unit.subscription.add(
+      unit.position$
+        .pipe(
+          map(pos => pos.clone().floor()),
+          distinctUntilChanged((prev, next) => prev.equals(next))
+        )
+        .subscribe(() => {
+          this.untiPositionMap.add(unit);
+          this.chunkManager.assignToChunk(unit);
+        })
+    );
     this.units.set(unit.id, unit);
-    console.log('Adding unit:', unit.name, 'with ID:', unit.id);
+    this.chunkManager.assignToChunk(unit);
     this.mesh.add(unit.root);
   }
 
   remove(unit: Unit) {
     this.units.delete(unit.id);
+    this.chunkManager.removeFromChunk(unit);
     this.mesh.remove(unit.root);
   }
 
@@ -108,27 +172,29 @@ export default class Room {
     this.mesh.add(groundMesh);
   }
 
-  updateUnitsVisibility(camera: Camera) {
+  updateVisibility(camera: Camera) {
     const frustum = new Frustum();
     const projScreenMatrix = new Matrix4();
     projScreenMatrix.multiplyMatrices(
       camera.projectionMatrix,
       camera.matrixWorldInverse
     );
+
+    const units = this.chunkManager.updateVisibility(camera);
+    this.updateChunksVisibility(frustum, projScreenMatrix);
+    return { units };
+  }
+
+  updateUnitsVisibility(frustum: Frustum, projScreenMatrix: Matrix4) {
     frustum.setFromProjectionMatrix(projScreenMatrix);
-    this.units.forEach(unit => {
+    return this.units.values().reduce((result, unit) => {
       const box = new Box3().setFromObject(unit.root);
       unit.root.visible = frustum.intersectsBox(box);
-    });
+      result.push(unit);
+      return result;
+    }, [] as Unit[]);
   }
-  updateChunksVisibility(camera: Camera) {
-    const frustum = new Frustum();
-    const projScreenMatrix = new Matrix4();
-
-    projScreenMatrix.multiplyMatrices(
-      camera.projectionMatrix,
-      camera.matrixWorldInverse
-    );
+  updateChunksVisibility(frustum: Frustum, projScreenMatrix: Matrix4) {
     frustum.setFromProjectionMatrix(projScreenMatrix);
     this.groundChunks.forEach(chunk => {
       const box = new Box3().setFromObject(chunk);
@@ -148,11 +214,18 @@ export default class Room {
     return new Vector2(this.grid.width, this.grid.height);
   }
 
-  update(_time: number) {
-    this.updateChunksVisibility(this.app.renderer.camera);
-    this.units.forEach(unit => {
-      unit.update(_time);
+  update(time: number) {
+    this.visibleUnits.forEach(unit => {
+      unit.update(time);
     });
+  }
+
+  visibleUnits: Unit[] = [];
+  updateThrottle(_time: number) {
+    const { units: visibleUnits } = this.updateVisibility(
+      this.app.renderer.camera
+    );
+    this.visibleUnits = visibleUnits;
   }
 
   setSelectionPosition(position: Vector3) {

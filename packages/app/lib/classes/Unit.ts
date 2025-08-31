@@ -1,5 +1,5 @@
 import { ReplaySubject, Subscription } from 'rxjs';
-import { Euler, Vector3, type Mesh } from 'three';
+import { Box3, Euler, Vector3, type Mesh } from 'three';
 import { Object3D } from 'three';
 import type Room from './Room';
 import MovementUnitModule from './unitModule/Movement';
@@ -7,7 +7,10 @@ import PlayerUnitModule from './unitModule/Player';
 import type UnitModule from './UnitModule';
 import type AssetLoader from './AssetLoader';
 import SelectionUnitModule from './unitModule/Selection';
-import { matrixPositionToPosition } from '../utils/matrix';
+import {
+  matrixPositionToPosition,
+  positionToMatrixPosition
+} from '../utils/matrix';
 import type { AnimationUnitModule } from './unitModule/Animation';
 import { PlacementUnitModule } from './unitModule/Placement';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
@@ -61,7 +64,7 @@ export const rotationDirections: UNIT_ROTATION[] = [
   UNIT_ROTATION.DOWN
 ];
 
-function getRotationByEuler(euler: Euler): UNIT_ROTATION | null {
+export function getRotationByEuler(euler: Euler): UNIT_ROTATION | null {
   if (euler.x === 0 && euler.y === 0 && euler.z === 0) {
     return null;
   }
@@ -75,6 +78,21 @@ function getRotationByEuler(euler: Euler): UNIT_ROTATION | null {
     return UNIT_ROTATION.LEFT;
   }
   return null;
+}
+
+export function getRadByRotation(rotation: UNIT_ROTATION): number {
+  switch (rotation) {
+    case UNIT_ROTATION.LEFT:
+      return Math.PI;
+    case UNIT_ROTATION.RIGHT:
+      return 0;
+    case UNIT_ROTATION.UP:
+      return Math.PI / 2;
+    case UNIT_ROTATION.DOWN:
+      return -Math.PI / 2;
+    default:
+      return 0;
+  }
 }
 
 export interface UnitModules {
@@ -94,6 +112,7 @@ export default class Unit<
   Options extends UnitOptions = UnitOptions,
   Modules extends UnitModules = UnitModules
 > {
+  currentChunkKeys: string[] = [];
   static KEY = 'unit';
   static NAME = 'Unit';
   // #region subscriptions
@@ -115,7 +134,8 @@ export default class Unit<
 
   accessible: boolean;
 
-  private _position: Vector3;
+  position$: ReplaySubject<Vector3> = new ReplaySubject(0);
+  private _position: Vector3 = new Vector3(0, 0, 0);
   rotation: UNIT_ROTATION = UNIT_ROTATION.DOWN;
 
   size: Vector3 = new Vector3(1, 1, 1);
@@ -161,7 +181,7 @@ export default class Unit<
     this.modules = Object.fromEntries(preparedModules);
 
     this.root = new Object3D();
-    this._position = position || new Vector3(0, 0, 0);
+    this.setPosition(position ?? this._position);
     this.setRotation(
       rotation || getRotationByEuler(this.root.rotation) || UNIT_ROTATION.DOWN
     );
@@ -172,10 +192,15 @@ export default class Unit<
   }
 
   destroy() {
+    this.position$.unsubscribe();
+    this.rotate$.unsubscribe();
+    this.ready$.unsubscribe();
+    this.materialReady$.unsubscribe();
     this.subscription.unsubscribe();
     findAllMeshes(this.root).forEach(mesh => {
       mesh.geometry?.dispose();
     });
+    this.root.removeFromParent();
     this.root.remove();
   }
 
@@ -187,22 +212,12 @@ export default class Unit<
     return this.root.uuid;
   }
 
-  getRootPosition(): Vector3 {
+  getScenePosition(): Vector3 {
     return this.root.position;
   }
 
-  setRootPosition(position: Vector3) {
+  setScenePosition(position: Vector3) {
     this.root.position.copy(this.centerInTile(position));
-  }
-
-  getPosition() {
-    return this._position;
-  }
-  setPosition(position: Vector3) {
-    this._position.copy(position);
-    this.setRootPosition(
-      new Vector3(position.x, this.root.position.y, position.z)
-    );
   }
 
   getRootRotation() {
@@ -211,6 +226,27 @@ export default class Unit<
 
   setRootRotation(rotation: Euler) {
     this.root.rotation.copy(rotation);
+  }
+
+  getBoundingBox() {
+    return new Box3().setFromObject(this.root);
+  }
+
+  getPosition() {
+    return this._position;
+  }
+  setPosition(position: Vector3) {
+    this._position.copy(position);
+    this.setScenePosition(new Vector3(position.x, position.y, position.z));
+    this.position$.next(this._position);
+  }
+
+  /**
+   * Positioniert die Unit neu anhand der offset losen Position.
+   * Wichtig zumbeispiel beim rotieren eines Großen objektes.
+   */
+  fixPosition() {
+    this.setPosition(this.getPosition());
   }
 
   // #region rotation
@@ -235,10 +271,10 @@ export default class Unit<
         break;
     }
 
-    // position fix
-    this.setPosition(this.getPosition());
+    this.fixPosition();
     this.rotate$.next(rotation);
   }
+
   rotateLeft() {
     const directions = rotationDirections;
     const length = directions.length;
@@ -273,6 +309,35 @@ export default class Unit<
         break;
     }
     return position.add(offset);
+  }
+
+  getMatrixPositions(): Vector3[] {
+    const positions: Vector3[] = [];
+    const pos = positionToMatrixPosition(this.getPosition());
+    const size = this.size;
+
+    for (let x = 0; x < size.x; x++) {
+      for (let z = 0; z < size.z; z++) {
+        let x_ = pos.x;
+        if (UNIT_ROTATION.UP === this.rotation) {
+          x_ = x_ + x;
+        } else if (UNIT_ROTATION.LEFT === this.rotation) {
+          x_ = x_ - x;
+        } else {
+          x_ = x_ + x;
+        }
+
+        let z_ = pos.z;
+        if (UNIT_ROTATION.UP === this.rotation) {
+          z_ = z_ - z;
+        } else {
+          z_ = z_ + z;
+        }
+
+        positions.push(new Vector3(x_, 0, z_));
+      }
+    }
+    return positions;
   }
 
   async setup(context: SetupContext) {
@@ -312,6 +377,15 @@ export default class Unit<
     });
   }
 
+  // #region visible
+  getVisible() {
+    return this.root.visible;
+  }
+  setVisible(visible: boolean) {
+    this.root.visible = visible;
+  }
+  // #endregion
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   createMesh(context: SetupContext): Object3D {
     // Override in subclasses to create a mesh
@@ -320,6 +394,10 @@ export default class Unit<
 
   get mesh() {
     return this.root.getObjectByName(OBJECT_NAME.MESH) as Mesh;
+  }
+
+  toString() {
+    return `${(this.constructor as typeof Unit).NAME}(${this.name})(${this.id})`;
   }
 }
 export enum OBJECT_NAME {

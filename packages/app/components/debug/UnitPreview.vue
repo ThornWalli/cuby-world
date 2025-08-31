@@ -192,13 +192,13 @@ async function onFile(file: File | undefined) {
     transform: translate(-50%, -50%);
   }
 
-  & .cw-panel-controls {
+  & .cw-debug-panel-controls {
     position: absolute;
     top: 1em;
     left: 1em;
   }
 
-  & .cw-panel-unit-manager {
+  & .cw-debug-panel-unit-manager {
     position: absolute;
     bottom: 1em;
     left: 1em;

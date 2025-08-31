@@ -1,14 +1,12 @@
-import { Vector3, Euler, Vector2 } from 'three';
+/* eslint-disable complexity */
+import { Vector3, Euler } from 'three';
 
 import PathFinder from 'pathfinding';
 import UnitModule from '../UnitModule';
-import {
-  matrixPositionToPosition,
-  positionToMatrixPosition
-} from '../../utils/matrix';
 import type Unit from '../Unit';
-import { ReplaySubject } from 'rxjs';
-import { UNIT_ROTATION } from '../Unit';
+import { Subject } from 'rxjs';
+import { getYPositionByPosition } from '../../utils/room';
+import { getRadByRotation, UNIT_ROTATION } from '../Unit';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -26,9 +24,9 @@ interface RotateOptions {
 export default class MovementUnitModule extends UnitModule {
   static override TYPE = 'movement';
 
-  moveStart$ = new ReplaySubject<void>(0);
-  moveStep$ = new ReplaySubject<Vector3>(0);
-  moveEnd$ = new ReplaySubject<void>(0);
+  moveStart$ = new Subject<Vector3>();
+  moveStep$ = new Subject<Vector3>();
+  moveEnd$ = new Subject<void>();
 
   private moveOptions: MoveOptions = {
     startDuration: 0,
@@ -48,7 +46,7 @@ export default class MovementUnitModule extends UnitModule {
 
   moveTo(position: Vector3) {
     if (this.unit.room?.description) {
-      const grid = prepareRoomGridGrid(this.unit);
+      const grid = prepareRoomGridGrid(this.unit, 1 / (1 / 4));
       const data = grid.data;
 
       let isBlocked = false;
@@ -61,9 +59,10 @@ export default class MovementUnitModule extends UnitModule {
       }
 
       const gridData = new PathFinder.Grid(grid.toMatrix());
+
       // Convert positions to matrix positions
-      const startPosition = positionToMatrixPosition(this.unit.getPosition());
-      const endPosition = position.clone();
+      const startPosition = this.unit.getPosition().round();
+      const endPosition = position.clone().round();
 
       // Use PathFinder to find the path
       const finder = new PathFinder.AStarFinder();
@@ -77,13 +76,14 @@ export default class MovementUnitModule extends UnitModule {
         )
         .map(point => new Vector3(point[0], 0, point[1]));
 
-      this.currentPath = path.slice(1, path.length - (isBlocked ? 1 : 0)); // Exclude the starting position and the blocked end position if necessary
+      // Exclude the starting position and the blocked end position if necessary
+      this.currentPath = path.slice(1, path.length - (isBlocked ? 1 : 0));
 
       if (this.rotateOptions.nextRotation && this.moveOptions.nextPosition) {
         this.moveOptions.nextPosition = null;
       }
 
-      this.moveStart$.next();
+      this.moveStart$.next(position);
     } else {
       throw new Error('Unit is not in a room, cannot move to position');
     }
@@ -96,46 +96,58 @@ export default class MovementUnitModule extends UnitModule {
   override update(time: number) {
     this.movementUpdate(time);
   }
-  // eslint-disable-next-line complexity
+
   movementUpdate(time: number) {
     const rotateOptions = this.rotateOptions;
     const moveOptions = this.moveOptions;
     const unit = this.unit;
+
     if (this.currentPath.length || moveOptions.nextPosition) {
-      const { nextPosition, startPosition, startDuration } = moveOptions;
+      const { startDuration } = moveOptions;
+      const nextPosition = moveOptions.nextPosition;
+      const startPosition = moveOptions.startPosition;
       if (!nextPosition) {
-        moveOptions.startPosition = positionToMatrixPosition(
-          unit.getPosition()
-        );
+        moveOptions.startPosition = unit.getPosition();
         moveOptions.nextPosition = this.currentPath.shift()!;
         rotateOptions.startDuration = time;
         rotateOptions.startRotation = unit.root.rotation.clone();
-        const nextRotation = new Euler(
-          0,
-          getRotateByDirection(
-            getDirection(
-              this.moveOptions
-                .nextPosition!.clone()
-                .sub(this.moveOptions.startPosition!)
-            )
-          ),
-          0
-        );
 
+        const rotation = getRotateByDirection(
+          getDirection(
+            this.moveOptions
+              .nextPosition!.clone()
+              .sub(this.moveOptions.startPosition!)
+          )
+        );
+        const nextRotation = new Euler(0, getRadByRotation(rotation), 0);
         rotateOptions.nextRotation = nextRotation;
       }
 
       if (!this.rotateOptions.nextRotation && nextPosition) {
         const elapsedTime = time - startDuration;
+
         const progress = elapsedTime / this.stepDuration;
-        const distance = nextPosition!.clone().sub(startPosition!);
+        let preparedNextPosition = nextPosition!.clone();
+        const y = getYPositionByPosition(unit.room!, preparedNextPosition, [
+          unit
+        ]);
+        preparedNextPosition = new Vector3(
+          preparedNextPosition.x,
+          y,
+          preparedNextPosition.z
+        );
+
+        const distance = preparedNextPosition.sub(startPosition!);
         const position = startPosition!
           .clone()
-          .add(distance!.clone().multiplyScalar(Math.min(progress, 1)));
-        this.unit.setPosition(matrixPositionToPosition(position));
+          .add(distance!.multiplyScalar(Math.min(progress, 1)));
+        this.unit.setPosition(new Vector3(position.x, position.y, position.z));
 
         if (progress >= 1) {
           this.moveOptions.nextPosition = null;
+          if (!this.currentPath.length) {
+            this.moveEnd$.next();
+          }
         }
       }
       if (
@@ -171,12 +183,73 @@ export default class MovementUnitModule extends UnitModule {
           rotateOptions.nextRotation = null;
           moveOptions.startDuration = time;
           this.moveStep$.next(unit.getPosition());
-          if (!this.currentPath.length) {
-            this.moveEnd$.next();
-          }
         }
       }
     }
+  }
+
+  movementTimeline = new Timeline();
+  lastPosition: Vector3 = new Vector3();
+  createTimeline(unit: Unit, nextPosition: Vector3) {
+    const timeline = new Timeline();
+
+    // Setze die erste Position als Startpunkt für die Berechnung der ersten Rotation
+    this.lastPosition = unit.getPosition().clone();
+    const startPosition = unit.getPosition().clone();
+
+    let rotationDuration = 0;
+    let startRotation: Euler | null = null;
+    let nextRotation: Euler | null = null;
+
+    // Berechne die Vektoren für die alte und neue Richtung
+    const lastDirection = nextPosition.clone().sub(this.lastPosition);
+    const newDirection = nextPosition.clone().sub(startPosition);
+
+    // Prüfe, ob sich die Richtung geändert hat
+    if (!lastDirection.equals(newDirection)) {
+      rotationDuration = this.rotationDuration;
+      startRotation = unit.root.rotation.clone();
+
+      const rotation = getRotateByDirection(getDirection(newDirection));
+      nextRotation = new Euler(0, getRadByRotation(rotation), 0);
+
+      // Füge den Rotationsschritt zur Timeline hinzu
+      timeline.addStep((time: number, step: TimelineStep) => {
+        const progress = step.progress(time);
+        const rotationDifference = getShortestRotationDifference(
+          startRotation!,
+          nextRotation!
+        );
+        const interpolatedRotation = new Euler(
+          startRotation!.x + rotationDifference.x * progress,
+          startRotation!.y + rotationDifference.y * progress,
+          startRotation!.z + rotationDifference.z * progress
+        );
+        unit.setRootRotation(interpolatedRotation);
+      }, rotationDuration);
+    }
+
+    // Füge immer den Bewegungsschritt hinzu
+    timeline.addStep((time: number, step: TimelineStep) => {
+      const progress = step.progress(time);
+      let preparedNextPosition = nextPosition.clone();
+      const y = getYPositionByPosition(unit.room!, preparedNextPosition, [
+        unit
+      ]);
+      preparedNextPosition = new Vector3(
+        preparedNextPosition.x,
+        y,
+        preparedNextPosition.z
+      );
+      const distance = preparedNextPosition.clone().sub(startPosition);
+      const position = startPosition
+        .clone()
+        .add(distance.multiplyScalar(Math.min(progress, 1)));
+      unit.setPosition(position);
+    }, this.stepDuration);
+
+    // Aktualisiere die letzte Position für den nächsten Schleifendurchlauf
+    this.lastPosition = nextPosition.clone();
   }
 }
 
@@ -227,19 +300,19 @@ function getDirection(position: Vector3): DIRECTION {
 function getRotateByDirection(direction: DIRECTION) {
   switch (direction) {
     case DIRECTION.LEFT:
-      return Math.PI;
+      return UNIT_ROTATION.LEFT;
     case DIRECTION.RIGHT:
-      return 0;
+      return UNIT_ROTATION.RIGHT;
     case DIRECTION.UP:
-      return Math.PI / 2;
+      return UNIT_ROTATION.UP;
     case DIRECTION.DOWN:
-      return -Math.PI / 2;
+      return UNIT_ROTATION.DOWN;
     default:
-      return 0;
+      return UNIT_ROTATION.DOWN;
   }
 }
 
-function prepareRoomGridGrid(unit: Unit) {
+function prepareRoomGridGrid(unit: Unit, heightMultiplicator = 4) {
   const room = unit.room;
 
   if (!room) {
@@ -247,38 +320,151 @@ function prepareRoomGridGrid(unit: Unit) {
   }
 
   const grid = room.grid.clone();
-  const gridSize = new Vector2(grid.width, grid.height);
+  const unitY = unit.getPosition().y;
+
+  grid.data = grid.data.map(v => {
+    if (
+      unitY > 0 &&
+      unitY * heightMultiplicator >= 1 && // Optimierter Vergleich für 1/3
+      unitY * heightMultiplicator >= -1
+    ) {
+      return unitY * 3 > 1 ? 0 : 1;
+    }
+    return v;
+  });
 
   room.units
     .values()
-    .filter(unit => !unit.accessible)
-    .forEach(otherUnit => {
-      if (unit.id !== otherUnit.id) {
-        const pos = positionToMatrixPosition(otherUnit.getPosition());
-        const size = otherUnit.size;
+    .reduce(
+      (result, unit_) => {
+        const unitPosition = unit_.getPosition();
+        const y_diff = unitPosition.y + unit_.size.y - unit.getPosition().y;
 
-        for (let x = 0; x < size.x; x++) {
-          for (let z = 0; z < size.z; z++) {
-            // const x_ = pos.x + x;
-            // const z_ = pos.z + z;
-
-            const x_ =
-              pos.x +
-              (UNIT_ROTATION.UP === otherUnit.rotation
-                ? x
-                : UNIT_ROTATION.LEFT === otherUnit.rotation
-                  ? -x
-                  : x);
-            const z_ =
-              pos.z + (UNIT_ROTATION.UP === otherUnit.rotation ? -z : z);
-            if (x_ >= 0 && x_ < gridSize.x && z_ >= 0 && z_ < gridSize.y) {
-              grid.data[z_ * gridSize.x + x_] = 0;
-            }
-          }
+        if (!unit_.accessible) {
+          result.push({ unit: unit_, value: 0 });
+        } else if (
+          unit_.accessible &&
+          y_diff * heightMultiplicator > 1 && // Optimierter Vergleich für 1/3
+          y_diff * heightMultiplicator > -1 // Optimierter Vergleich für -2/3
+        ) {
+          result.push({ unit: unit_, value: 0 });
+        } else if (
+          unit_.accessible &&
+          y_diff * heightMultiplicator <= 1 && // Optimierter Vergleich für 1/3
+          y_diff * heightMultiplicator >= -1 // Optimierter Vergleich für -2/3
+        ) {
+          result.push({ unit: unit_, value: 1 });
         }
+        return result;
+      },
+      [] as { unit: Unit; value: number }[]
+    )
+    .forEach(({ unit: otherUnit, value }) => {
+      if (unit.id !== otherUnit.id) {
+        otherUnit
+          .getMatrixPositions()
+          .filter(
+            p => p.x >= 0 && p.x < grid.width && p.z >= 0 && p.z < grid.height
+          )
+          .forEach(p => {
+            grid.data[p.z * grid.width + p.x] = value;
+          });
       }
     });
   grid.data = grid.data.map(value => (value ? 0 : 1));
-
+  console.log('Grid data for pathfinding:', grid.toMatrix());
   return grid;
+}
+
+class TimelineStep {
+  constructor(
+    public cb: (time: number, step: TimelineStep) => void,
+    public startTime: number,
+    public endTime: number
+  ) {
+    if (endTime <= startTime) {
+      throw new Error('End time must be greater than start time');
+    }
+  }
+
+  get duration() {
+    return this.endTime - this.startTime;
+  }
+
+  progress(currentTime: number) {
+    if (currentTime <= this.startTime) return 0;
+    if (currentTime >= this.endTime) return 1;
+    return (currentTime - this.startTime) / this.duration;
+  }
+}
+
+class Timeline {
+  private steps: TimelineStep[] = [];
+  private currentStepIndex: number = -1;
+
+  addStep(
+    cb: (time: number, step: TimelineStep) => void,
+    duration: number,
+    startTime?: number
+  ) {
+    let effectiveStartTime: number;
+
+    if (startTime !== undefined) {
+      effectiveStartTime = startTime;
+    } else {
+      // Wenn startTime nicht gegeben ist, beginnt der Schritt nach dem letzten.
+      effectiveStartTime =
+        this.steps.length > 0 ? this.steps[this.steps.length - 1]!.endTime : 0;
+    }
+
+    if (duration <= 0) {
+      throw new Error('Duration must be positive');
+    }
+
+    const endTime = effectiveStartTime + duration;
+    this.steps.push(new TimelineStep(cb, effectiveStartTime, endTime));
+
+    // Schritte nach ihrer Startzeit sortieren
+    this.steps.sort((a, b) => a.startTime - b.startTime);
+  }
+
+  // Die update-Methode bleibt für parallele Schritte gleich
+  update(currentTime: number) {
+    const activeSteps = this.steps.filter(
+      step => currentTime >= step.startTime && currentTime <= step.endTime
+    );
+    for (const step of activeSteps) {
+      step.cb(currentTime, step);
+    }
+  }
+
+  getCurrentStep(currentTime: number): TimelineStep | null {
+    if (
+      this.currentStepIndex >= 0 &&
+      this.currentStepIndex < this.steps.length
+    ) {
+      const currentStep = this.steps[this.currentStepIndex]!;
+      if (
+        currentTime >= currentStep.startTime &&
+        currentTime <= currentStep.endTime
+      ) {
+        return currentStep;
+      }
+    }
+
+    for (let i = 0; i < this.steps.length; i++) {
+      const step = this.steps[i]!;
+      if (currentTime >= step.startTime && currentTime <= step.endTime) {
+        this.currentStepIndex = i;
+        return step;
+      }
+    }
+
+    this.currentStepIndex = -1;
+    return null;
+  }
+
+  reset() {
+    this.currentStepIndex = -1;
+  }
 }
