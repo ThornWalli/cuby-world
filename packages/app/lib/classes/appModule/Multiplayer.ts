@@ -8,6 +8,15 @@ import type { FirebaseApp } from 'firebase/app';
 import { Observable, Subject, Subscription } from 'rxjs';
 import Player from '../Player';
 import { Vector3 } from 'three';
+// import {
+//   createUser,
+//   getUser,
+//   hasUser,
+//   type User
+// } from './multiplayer/database';
+import CurrentPlayer from '../player/Current';
+import type { PlayerSettings } from '@cuby-world/app/components/dialogs/UserSettings.vue';
+import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
 
 export interface Message {
   timestamp: number;
@@ -16,7 +25,6 @@ export interface Message {
 }
 
 interface State extends AppModuleState {
-  active: boolean;
   roomId: string;
   // Trystero
   room?: TrysteroRoom;
@@ -26,8 +34,10 @@ interface State extends AppModuleState {
 declare module '../App' {
   interface AppConfig {
     firebase?: FirebaseFullConfig;
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    multiplayer?: {};
+
+    multiplayer?: {
+      enabled: boolean;
+    };
   }
 }
 
@@ -35,15 +45,21 @@ type MoveToPayload = DataPayload & {
   position: [number, number, number];
 };
 type MessagePayload = DataPayload & Message;
+type PlayerInfoPayload = DataPayload & PlayerInfo;
 
 const DEFAULT_ROOM_ID = 'lobby';
+
+interface PlayerInfo {
+  peerId: string;
+  name: string;
+  position?: [number, number, number];
+}
 export default class MultiplayerAppModule extends AppModule<State> {
   static override TYPE = 'multiplayer';
 
-  players: Player[] = [];
+  players = new Map<string, Player>();
 
   state: State = {
-    active: true,
     roomId: DEFAULT_ROOM_ID,
     playerId: selfId
   };
@@ -54,6 +70,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
   // #endregion
 
   observables?: {
+    // userInfo: Observable<PlayerInfo>;
     peerJoin$: Observable<string>;
     peerLeave$: Observable<string>;
     moveTo$?: Observable<{
@@ -66,10 +83,13 @@ export default class MultiplayerAppModule extends AppModule<State> {
   actions: {
     setMoveTo?: (data: MoveToPayload, targetPeers?: string[]) => void;
     sendMessage?: (data: MessagePayload, targetPeers?: string[]) => void;
+    sendPlayerInfo?: (data: PlayerInfoPayload, targetPeers?: string[]) => void;
   } = {};
 
   getOtherPlayers() {
-    return this.players.filter(p => !p.client).map(p => p.id);
+    return Array.from(this.players.values())
+      .filter(p => !p.client)
+      .map(p => p.id);
   }
 
   get playerId() {
@@ -79,9 +99,6 @@ export default class MultiplayerAppModule extends AppModule<State> {
   override async setup() {
     super.setup();
 
-    if (!this.state.active) {
-      return;
-    }
     window.setTimeout(() => {
       window.localStorage.removeItem('firebase:previous_websocket_failure');
     }, 2000);
@@ -92,9 +109,8 @@ export default class MultiplayerAppModule extends AppModule<State> {
       throw new Error('No multiplayer config found');
     }
 
-    await this.join();
+    await this.joinRoom(this.state.roomId);
 
-    this.setupRoomEvents();
     this.setupActions();
 
     let playerSubscription = new Subscription();
@@ -124,11 +140,14 @@ export default class MultiplayerAppModule extends AppModule<State> {
     );
 
     this.observables?.moveTo$?.subscribe(({ data, peerId }) => {
-      const player = this.players.find(p => p.id === peerId);
+      const player = this.players.get(peerId);
       console.log('Received moveTo from', peerId, data);
       if (player && player.unit) {
         player.unit.modules.movement.moveTo(
-          new Vector3().fromArray(data.position)
+          new Vector3().fromArray(data.position),
+          {
+            force: true
+          }
         );
       }
     });
@@ -137,18 +156,29 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
     this.subscription.add(
       this.observables?.peerJoin$?.subscribe(peerId => {
-        const player = new Player({ id: peerId, name: 'Player ' + peerId });
+        const player = new Player({ id: peerId, name: peerId });
+        const currentPlayer = this.app.modules.player.getCurrentPlayer();
+        if (currentPlayer && this.actions.sendPlayerInfo) {
+          this.actions.sendPlayerInfo(
+            {
+              peerId: currentPlayer.id,
+              name: currentPlayer.name,
+              position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
+            },
+            [peerId]
+          );
+        }
         this.app.modules.player.addPlayer(player);
-        this.players.push(player);
+        this.players.set(player.id, player);
         console.log('Peer joined:', peerId);
       })
     );
     this.subscription.add(
       this.observables?.peerLeave$?.subscribe(peerId => {
-        const player = this.players.find(p => p.id === peerId);
+        const player = this.players.get(peerId);
         if (player && player.unit) {
           this.app.modules.player.removePlayer(player);
-          this.players = this.players.filter(({ id }) => id !== player.id);
+          this.players.delete(player.id);
           player.destroy();
         }
         console.log('Peer left:', peerId);
@@ -164,13 +194,15 @@ export default class MultiplayerAppModule extends AppModule<State> {
     }
 
     const config = this.app.config.firebase;
-    firebase.initApp(this.app.config.firebase);
+    console.log('Initializing firebase with config', config);
+    firebase.initApp(config);
     const modules = await firebase.get();
     this.firebaseAppId = config.appId;
     const firebaseApp = modules.app.initializeApp(
       {
         apiKey: config.apiKey,
-        databaseURL: config.databaseURL
+        databaseURL: config.databaseURL,
+        projectId: config.projectId
       },
       'default'
     );
@@ -178,9 +210,43 @@ export default class MultiplayerAppModule extends AppModule<State> {
     console.log('Firebase initialized', firebaseApp);
   }
 
-  async join() {
+  async login(playerSettings: PlayerSettings): Promise<CurrentPlayer> {
+    if (!this.firebaseApp) {
+      throw new Error('Firebase not initialized');
+    }
+
+    // get or create user
+    // const { auth, firestore } = await firebase.getImports();
+
+    // const userCredential = await auth.signInAnonymously(
+    //   auth.getAuth(this.firebaseApp)
+    // );
+    // console.log('Signed in anonymously', userCredential);
+
+    // const user: User = {};
+    // const userId = userCredential.user.uid;
+    // const db = firestore.getFirestore(this.firebaseApp);
+    // if (await hasUser(db, userId)) {
+    //   user = await getUser(db, userId);
+    // } else {
+    //   user = await createUser(db, userId, { username: 'Player ' + userId });
+    // }
+
+    const player = new CurrentPlayer({
+      name: playerSettings.name || 'Unknown',
+      color: playerSettings.color || CUBY_COLOR.BLUE
+      // firebase: {
+      //   userId: userCredential.user.uid
+      // }
+    });
+    console.log(player);
+    return player;
+  }
+
+  async joinRoom(roomId: string) {
     if (this.state.room) {
-      throw new Error('Already in a room');
+      console.log('Leaving current room');
+      this.state.room.leave();
     }
     const { joinRoom } = await import('trystero/firebase').then(
       m => m.default || m
@@ -190,12 +256,23 @@ export default class MultiplayerAppModule extends AppModule<State> {
     }
     this.state.room = joinRoom(
       { firebaseApp: this.firebaseApp, appId: this.firebaseAppId },
-      this.state.roomId
+      roomId
+    );
+
+    this.setupRoomEvents(this.state.room);
+
+    const currentPlayer = this.app.modules.player.getCurrentPlayer()!;
+    this.actions.sendPlayerInfo?.(
+      {
+        peerId: this.state.playerId,
+        name: currentPlayer.name || 'Unknown',
+        position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
+      },
+      this.getOtherPlayers()
     );
   }
 
-  setupRoomEvents() {
-    const room = this.state.room;
+  setupRoomEvents(room: TrysteroRoom) {
     if (!room) {
       throw new Error('Not in a room');
     }
@@ -259,6 +336,27 @@ export default class MultiplayerAppModule extends AppModule<State> {
       this.observables.message$ = message$;
     }
     this.actions.sendMessage = sendMessage;
+
+    // #endregion
+
+    // #region send player info action
+
+    const [sendPlayerInfo, getPlayerInfo] = room.makeAction<
+      PlayerInfo & DataPayload
+    >('playerInfo');
+
+    getPlayerInfo((data, peerId) => {
+      const player = this.players.get(peerId);
+      if (player) {
+        player.name = data.name;
+        // übernehme position
+        if (data.position) {
+          player.unit?.setPosition(new Vector3().fromArray(data.position));
+        }
+      }
+    });
+
+    this.actions.sendPlayerInfo = sendPlayerInfo;
 
     // #endregion
   }

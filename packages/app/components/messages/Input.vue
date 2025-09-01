@@ -37,19 +37,15 @@ defineExpose({
 
 <style lang="postcss" scoped>
 .cw-messages-input {
-  position: absolute;
-  bottom: 40px;
-  left: 50%;
+  position: relative;
   display: flex;
   align-items: stretch;
-  width: calc(100% / 3);
   min-width: 240px;
   overflow: hidden;
   pointer-events: auto;
   background: #fff;
   border: solid 2px #000;
   border-radius: 9px;
-  transform: translateX(-50%);
 
   & input {
     flex: 1;

@@ -1,5 +1,11 @@
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { BoxGeometry, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
+import {
+  BoxGeometry,
+  Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  Vector3
+} from 'three';
 
 import Unit, {
   OBJECT_NAME,
@@ -26,6 +32,7 @@ export default class Mirror extends Unit<MirrorOptions> {
       placeable: true,
       accessible: true
     });
+    this.size = new Vector3(1, 0, 1);
   }
 
   override createMesh(_context: SetupContext) {

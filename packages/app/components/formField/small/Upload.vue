@@ -1,5 +1,9 @@
 <template>
-  <cw-form-field :label="preparedLabel" hide-colon class="cw-form-field-upload">
+  <cw-form-field
+    mode="compact"
+    :label="preparedLabel"
+    hide-colon
+    class="cw-form-field-upload">
     <template #default="ctx">
       <input :id="ctx.id" :accept="accept" type="file" @change="onChange" />
       <div class="indicator">
@@ -10,8 +14,8 @@
 </template>
 
 <script lang="ts" setup>
-import CwFormField from '../base/FormField.vue';
-import SvgIndicatorUpload from '../../assets/icons/indicator/upload.svg';
+import CwFormField from '../../base/FormField.vue';
+import SvgIndicatorUpload from '../../../assets/icons/indicator/upload.svg';
 import { computed, ref } from 'vue';
 
 const file = ref<File | undefined>(undefined);

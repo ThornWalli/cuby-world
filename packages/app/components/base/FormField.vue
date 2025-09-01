@@ -1,5 +1,11 @@
 <template>
-  <div class="cw-base-form-field" :class="{ 'label-top': labelTop }">
+  <div
+    class="cw-base-form-field"
+    :class="{
+      'label-top': labelTop,
+      [`mode-${mode}`]: mode,
+      [`style-${styleType ?? 'light'}`]: true
+    }">
     <label :for="preparedId" :class="{ colon: !hideColon }">
       <slot name="label" :label="label">{{ label }}</slot>
     </label>
@@ -17,6 +23,8 @@ const $props = defineProps<{
   label?: string;
   labelTop?: boolean;
   hideColon?: boolean;
+  mode?: 'compact';
+  styleType?: 'dark' | 'light';
 }>();
 
 const preparedId = computed(() => $props.id || defaultId);
@@ -28,9 +36,7 @@ const preparedId = computed(() => $props.id || defaultId);
   flex-direction: column;
   gap: 0.25em;
   font-family: var(--font-base);
-  font-size: 12px;
   font-weight: bold;
-  color: #fff;
 
   &:not(.label-top) {
     flex-direction: row;
@@ -46,6 +52,15 @@ const preparedId = computed(() => $props.id || defaultId);
         content: ':';
       }
     }
+  }
+
+  &:not(mode-compact) {
+    font-size: 14px;
+  }
+
+  &.mode-compact {
+    font-size: 12px;
+    color: #fff;
   }
 }
 </style>

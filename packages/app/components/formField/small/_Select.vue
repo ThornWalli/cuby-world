@@ -2,11 +2,12 @@
   <cw-form-field
     :id="id"
     v-slot="ctx"
+    mode="compact"
     :label="label"
     :hide-label="hideLabel"
     class="cw-select"
     :class="{
-      [`mode-${mode}`]: mode
+      [`mode-${mode ?? 'normal'}`]: true
     }">
     <div class="input">
       <select :id="ctx.id" :value="modelValue" @change="onChange">
@@ -22,15 +23,13 @@
 </template>
 
 <script lang="ts" setup>
-import { provide } from 'vue';
-import CwFormField from '../base/FormField.vue';
-import SvgIndicatorSelect from '../../assets/icons/indicator/select.svg';
-
-const $props = defineProps<{
-  modelValue: string | number;
+import CwFormField from '../../base/FormField.vue';
+import SvgIndicatorSelect from '../../../assets/icons/indicator/select.svg';
+defineProps<{
+  modelValue: string;
   id?: string;
   label: string;
-  mode?: 'compact';
+  mode?: 'compact' | 'normal';
   hideLabel?: boolean;
 }>();
 
@@ -43,16 +42,10 @@ function onChange(event: Event) {
   const value = select.value;
   $emit('update:model-value', value);
 }
-
-provide('parentSelectValue', $props.modelValue);
 </script>
 
 <style lang="postcss" scoped>
 .cw-select {
-  --color-border: var(--color-black);
-  --color-background: var(--color-white);
-
-  /* indicator */
   --indicator-width: 30px;
   --indicator-foreground: var(--color-white);
   --indicator-background: var(--color-blue-7);
@@ -60,12 +53,8 @@ provide('parentSelectValue', $props.modelValue);
   & .input {
     position: relative;
     display: flex;
-    flex: 1;
-    overflow: hidden;
     font-family: var(--font-base);
     cursor: pointer;
-    background-color: var(--color-background);
-    border-radius: 3px;
   }
 
   & select {
@@ -85,15 +74,7 @@ provide('parentSelectValue', $props.modelValue);
     }
   }
 
-  &:not(.mode-compact) {
-    & .input {
-      padding: 2px;
-      border: solid 3px var(--color-border);
-    }
-  }
-
   &.mode-compact {
-    --color-border: var(--color-white);
     --color-background: rgb(var(--rgb-white) / 20%);
 
     & .input {
@@ -101,7 +82,9 @@ provide('parentSelectValue', $props.modelValue);
       font-size: 12px;
       font-weight: bold;
       color: var(--color-white);
-      border: solid 1px var(--color-border);
+      background-color: rgb(var(--rgb-white) / 20%);
+      border: solid 1px var(--color-white);
+      border-radius: 3px;
 
       & select {
         padding: 3px 6px;
@@ -110,21 +93,21 @@ provide('parentSelectValue', $props.modelValue);
         font-weight: bold;
       }
     }
-  }
 
-  & .indicator {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: var(--indicator-width);
-    color: var(--indicator-foreground);
-    pointer-events: none;
-    background-color: var(--indicator-background);
+    & .indicator {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: var(--indicator-width);
+      color: var(--indicator-foreground);
+      pointer-events: none;
+      background-color: var(--indicator-background);
+    }
   }
 }
 </style>

@@ -52,8 +52,8 @@ export interface UnitConstructorOptions<
 
 export enum UNIT_ROTATION {
   LEFT = 'left',
-  RIGHT = 'right',
   UP = 'up',
+  RIGHT = 'right',
   DOWN = 'down'
 }
 

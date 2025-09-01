@@ -31,6 +31,7 @@ export interface FirebaseModules {
   auth: typeof import('firebase/auth');
   database: typeof import('firebase/database');
   functions: typeof import('firebase/functions');
+  firestore: typeof import('firebase/firestore');
 }
 
 export default new (class Firebase {
@@ -121,13 +122,15 @@ export default new (class Firebase {
       import('firebase/app').then(module => module.default || module),
       import('firebase/auth').then(module => module.default || module),
       import('firebase/database').then(module => module.default || module),
-      import('firebase/functions').then(module => module.default || module)
-    ]).then(([app, auth, database, functions]) => {
+      import('firebase/functions').then(module => module.default || module),
+      import('firebase/firestore').then(module => module.default || module)
+    ]).then(([app, auth, database, functions, firestore]) => {
       return {
         app,
         auth,
         database,
-        functions
+        functions,
+        firestore
       };
     });
   }

@@ -6,6 +6,7 @@ import type Unit from '../classes/Unit';
 import { UNIT_ROTATION } from '../classes/Unit';
 import Block from '@cuby-world/units/Block';
 import RoomGrid from '../classes/RoomGrid';
+import Door from '@cuby-world/units/Door';
 
 // const count = [6, 6];
 // const test = Array(count[0])
@@ -19,20 +20,20 @@ export default class DefaultRoom extends RoomDescription {
       name: 'Default Room',
       description: 'This is the default room in Cuby World.',
       grid: RoomGrid.fromGrid([
-        [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0],
-        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+        [0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
       ]),
       start: {
-        position: new Vector3(2, 0, 2),
+        position: new Vector3(0, 0, 2),
         rotation: UNIT_ROTATION.RIGHT
       },
       units: getUnits()
@@ -42,6 +43,10 @@ export default class DefaultRoom extends RoomDescription {
 
 function getUnits() {
   const units: Unit[] = [
+    new Door({
+      position: new Vector3(0, 0, 2),
+      rotation: UNIT_ROTATION.LEFT
+    }),
     // new Block({
     //   position: new Vector3(1, 0, 0),
     //   options: { color: 0xff0000, size: new Vector3(1, 1, 1) }
@@ -75,11 +80,11 @@ function getUnits() {
     //   options: { color: 0x0000ff, size: new Vector3(1, 1 / 3, 1) }
     // }),
     new Lamp({
-      position: new Vector3(0, 0, 0)
+      position: new Vector3(1, 0, 0)
     }),
     new Mirror({
-      position: new Vector3(0, 0, 2),
-      rotation: UNIT_ROTATION.RIGHT
+      position: new Vector3(3, 0, 0),
+      rotation: UNIT_ROTATION.DOWN
     }),
     new Lamp({
       position: new Vector3(6, 0, 0)
@@ -88,7 +93,7 @@ function getUnits() {
       position: new Vector3(6, 0, 4)
     }),
     new Lamp({
-      position: new Vector3(0, 0, 4)
+      position: new Vector3(1, 0, 4)
     })
     // new Debug({
     //   position: new Vector3(2, 0, 0)
@@ -102,7 +107,7 @@ function getUnits() {
       new Block({
         accessible: true,
         size: new Vector3(1, 1 / count, 1),
-        position: new Vector3(1, (1 / count) * i, 0),
+        position: new Vector3(2, (1 / count) * i, 0),
         options: { color: getColorByIndex(i, count) }
       })
     );

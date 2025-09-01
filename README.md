@@ -12,3 +12,8 @@
 <!-- | Instance | Url                        |
 | -------- | -------------------------- |
 | `beta`   | <https://cubyworld.lammpee.de/> | -->
+
+## Links
+
+- App: <https://thornwalli.github.io/cuby-world/>
+- Unit Preview: <https://thornwalli.github.io/cuby-world/unit/>

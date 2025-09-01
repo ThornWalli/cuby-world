@@ -1,7 +1,7 @@
 <template>
   <base-button
     class="cw-button"
-    :class="{ selected, [`style-type-${styleType}`]: styleType }">
+    :class="{ selected, [`style-type-${styleType ?? 'light'}`]: true }">
     <slot>Button</slot>
   </base-button>
 </template>

@@ -47,6 +47,11 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       version: pkg.version,
+      cubyWorld: {
+        multiplayerEnabled:
+          String(process.env.MODULE_MULTIPLAYER_ENABLED).toLowerCase() ===
+          'true'
+      },
       firebase: {
         appCheck: {
           recaptchaPublicKey: process.env.RECAPTCHA_PUBLIC_KEY,

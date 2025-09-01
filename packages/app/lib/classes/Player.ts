@@ -2,7 +2,16 @@ import type { Vector3 } from 'three';
 import type Unit from './Unit';
 import PlayerUnitModule from './unitModule/Player';
 import { ReplaySubject } from 'rxjs';
+import { CUBY_COLOR as PLAYER_COLOR } from '@cuby-world/units/cuby/Cuby';
 
+export interface PlayerConstructorOptions {
+  client?: boolean;
+  id?: string;
+  name: string;
+  color?: PLAYER_COLOR;
+}
+
+export { PLAYER_COLOR };
 export default class Player {
   private _client: boolean = false;
   get client() {
@@ -11,22 +20,16 @@ export default class Player {
 
   id: string;
   name: string;
+  color: PLAYER_COLOR;
   unit?: Unit;
 
   unit$ = new ReplaySubject<Unit>(1);
 
-  constructor({
-    client,
-    id,
-    name
-  }: {
-    client?: boolean;
-    id?: string;
-    name: string;
-  }) {
+  constructor({ client, id, name, color }: PlayerConstructorOptions) {
     this._client = client ?? false;
     this.id = id || crypto.randomUUID();
     this.name = name;
+    this.color = color || PLAYER_COLOR.BLUE;
   }
 
   destroy() {

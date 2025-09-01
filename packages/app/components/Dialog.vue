@@ -3,14 +3,18 @@
     <div class="wrapper">
       <div class="header">
         <header v-if="$slots.header">
-          <slot name="header"></slot>
+          <slot :close="close" name="header"></slot>
         </header>
-        <base-button class="close-button" aria-label="Close" @click="close()">
+        <base-button
+          v-if="!hideClose"
+          class="close-button"
+          aria-label="Close"
+          @click="close()">
           <svg-dialog-close />
         </base-button>
       </div>
       <div class="content">
-        <slot></slot>
+        <slot :close="close"></slot>
       </div>
       <div v-if="$slots.actions" class="actions">
         <slot name="actions" :close="close"></slot>
@@ -23,17 +27,23 @@
 import BaseDialog from './base/Dialog.vue';
 import BaseButton from './base/Button.vue';
 import SvgDialogClose from '../assets/icons/dialog_close_2.svg';
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 const dialog = ref<InstanceType<typeof BaseDialog> | null>(null);
 
+const $props = defineProps<{
+  forceOpen?: boolean;
+  hideClose?: boolean;
+}>();
+
+onMounted(() => {
+  if ($props.forceOpen) {
+    dialog.value!.open();
+  }
+});
+
 defineExpose({
-  open: () => {
-    return dialog.value!.open();
-  },
-  close: () => {
-    return dialog.value!.close();
-  },
+  dialog: computed<InstanceType<typeof BaseDialog> | null>(() => dialog.value),
   visible: () => dialog.value!.visible
 });
 </script>
@@ -51,14 +61,21 @@ defineExpose({
   }
 
   & .header {
+    box-sizing: border-box;
     display: flex;
+    align-items: center;
     justify-content: space-between;
     padding: 5px;
     font-weight: bold;
+    color: var(--color-white);
+    background: var(--color-blue-7);
 
     & header {
       display: flex;
       align-items: center;
+      padding-right: 5px;
+      font-size: 14px;
+      line-height: 24px;
     }
   }
 
@@ -71,12 +88,16 @@ defineExpose({
   }
 
   .close-button {
-    padding: 2px;
+    padding: 4px;
     cursor: pointer;
     background: none;
-    background: #f00;
+    background: var(--color-red-6);
     border: solid 2px var(--color-black);
     border-radius: 3px;
+
+    &:active {
+      background: var(--color-red-7);
+    }
 
     & svg {
       display: block;

@@ -28,7 +28,7 @@ export function createGroundChunks(
       const tilesInChunk: GroundTile[] = [];
       for (let r = y; r < y + chunkSize && r < rows; r++) {
         for (let c = x; c < x + chunkSize && c < cols; c++) {
-          if (matrix[r]![c] === 1) {
+          if (matrix[r]?.[c] === 1) {
             tilesInChunk.push(new GroundTile(new Vector3(c, 0, r)));
           }
         }

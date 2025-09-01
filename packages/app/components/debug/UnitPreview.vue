@@ -32,6 +32,7 @@ import type { DebugState } from '@cuby-world/app/lib/classes/rendererModule/Debu
 import DebugRendererModule from '@cuby-world/app/lib/classes/rendererModule/Debug';
 import { getGltfObjectFromFile } from '@cuby-world/app/utils/file';
 import Custom from '@cuby-world/units/Custom';
+import { UNIT_ROTATION } from '@cuby-world/app/lib/classes/Unit';
 
 let unitWrapper: Object3D;
 let resizeObserver: ResizeObserver;
@@ -41,6 +42,7 @@ const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 
 const assetLoader = new AssetLoader();
 const currentUnit = ref<Unit>();
+const currentRotation = ref<UNIT_ROTATION>(UNIT_ROTATION.DOWN);
 const debugState = ref<DebugState>({
   axes: false,
   gui: false
@@ -126,13 +128,15 @@ function onSelectUnit(key: string) {
   if (key !== 'upload') {
     console.log('select unit', key);
     const UnitClass = preparedUnits.value.find(u => u.value === key)?.class;
+
     setUnit(UnitClass ? new UnitClass() : undefined);
   }
 }
 
-function onRotateUnit() {
+function onRotateUnit(rotation: UNIT_ROTATION) {
+  currentRotation.value = rotation;
   if (currentUnit.value) {
-    currentUnit.value.rotateRight();
+    currentUnit.value.setRotation(rotation);
   }
 }
 
@@ -148,6 +152,8 @@ async function setUnit(unit?: Unit) {
       unit,
       assetLoader
     });
+
+    unit.setRotation(currentRotation.value);
     currentUnit.value = markRaw(unit);
     unitWrapper.add(unit.root);
   }

@@ -1,6 +1,6 @@
 <template>
-  <div class="cw-panel">
-    <div v-if="title || $slots.title" class="title">
+  <div class="cw-panel" :class="{ 'has-title': hasTitle }">
+    <div v-if="hasTitle" class="title">
       <slot name="title">{{ title }}</slot>
     </div>
     <div class="content">
@@ -10,9 +10,15 @@
 </template>
 
 <script lang="ts" setup>
-defineProps<{
+import { useSlots, computed } from 'vue';
+
+const $slots = useSlots();
+
+const $props = defineProps<{
   title?: string;
 }>();
+
+const hasTitle = computed(() => $props.title || $slots.title);
 </script>
 
 <style lang="postcss" scoped>
@@ -26,6 +32,10 @@ defineProps<{
   border: solid 1px rgb(255 255 255 / 80%);
   border-radius: 9px;
   box-shadow: 0 0 4px 0 rgb(0 0 0 / 40%);
+
+  &.has-title {
+    padding-top: 0.5em;
+  }
 
   & .title {
     display: block;

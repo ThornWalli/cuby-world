@@ -1,6 +1,5 @@
 <template>
   <cw-panel class="cw-debug-panel-unit-settings" title="Unit Settings">
-    {{ unit.accessible }}
     <cw-toggle
       :model-value="unit.accessible"
       @update:model-value="onToggleAccessible">
@@ -11,7 +10,7 @@
 
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
-import CwToggle from '../../formField/Toggle.vue';
+import CwToggle from '../../formField/small/Toggle.vue';
 import { onUnmounted } from 'vue';
 import { Subscription } from 'rxjs';
 import type Unit from '@cuby-world/app/lib/classes/Unit';

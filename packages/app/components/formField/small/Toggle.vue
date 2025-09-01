@@ -1,5 +1,5 @@
 <template>
-  <cw-form-field hide-colon class="cw-form-field-toggle">
+  <cw-form-field mode="compact" hide-colon class="cw-form-field-toggle">
     <template #label="{ label }">
       <slot>{{ label }}</slot>
     </template>
@@ -18,9 +18,9 @@
 </template>
 
 <script lang="ts" setup>
-import CwFormField from '../base/FormField.vue';
-import SvgIndicatorTrue from '../../assets/icons/indicator/true.svg';
-import SvgIndicatorFalse from '../../assets/icons/indicator/false.svg';
+import CwFormField from '../../base/FormField.vue';
+import SvgIndicatorTrue from '../../../assets/icons/indicator/true.svg';
+import SvgIndicatorFalse from '../../../assets/icons/indicator/false.svg';
 
 defineProps<{
   modelValue?: boolean;

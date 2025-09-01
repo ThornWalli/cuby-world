@@ -130,5 +130,18 @@ async function onSend(message: Message) {
 <style lang="postcss" scoped>
 .cw-messages {
   pointer-events: none;
+
+  .cw-messages-input {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    width: calc(100% / 3);
+    transform: translateX(-50%);
+
+    @media (width <= 767px) {
+      bottom: 20px;
+      width: calc(100% * 4 / 5);
+    }
+  }
 }
 </style>

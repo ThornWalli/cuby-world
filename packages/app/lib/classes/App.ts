@@ -59,7 +59,7 @@ export default class App {
       PlacementAppModule
     );
 
-    if (config.multiplayer) {
+    if (config.multiplayer?.enabled) {
       modules.push(MultiplayerAppModule);
     }
 

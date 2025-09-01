@@ -32,7 +32,7 @@ export default class PlayerAppModule extends AppModule<State> {
     return this.state.currentPlayer;
   }
 
-  private setCurrentPlayer(player: Player) {
+  setCurrentPlayer(player: Player) {
     this.state.currentPlayer = player;
     this.currentPlayer$.next(player);
   }

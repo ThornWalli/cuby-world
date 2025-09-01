@@ -129,6 +129,17 @@ export default class Room {
     return this.units.get(id);
   }
 
+  isPositionFree(position: Vector3, ignoredUnits?: Unit[]) {
+    return (
+      this.untiPositionMap
+        .getByPosition(position)
+        .filter(
+          unit =>
+            !unit.accessible && (!ignoredUnits || !ignoredUnits.includes(unit))
+        ).length === 0
+    );
+  }
+
   setupSelection() {
     const size = 0.9;
     const outerShape = new Shape();

@@ -14,7 +14,9 @@ const runtimeConfig = useRuntimeConfig();
 
 const config = ref<AppConfig>({
   firebase: runtimeConfig.public.firebase,
-  multiplayer: {}
+  multiplayer: {
+    enabled: runtimeConfig.public.cubyWorld.multiplayerEnabled
+  }
 });
 </script>
 

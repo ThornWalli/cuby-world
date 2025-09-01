@@ -1,7 +1,7 @@
 <template>
   <div class="base-dialog" :class="{ visible }">
     <div>
-      <div class="trigger"></div>
+      <div class="trigger" @click="onClickTrigger"></div>
       <transition name="fade" mode="out-in">
         <div v-if="visible" class="base-dialog-inner">
           <slot :close="close"></slot>
@@ -15,21 +15,33 @@
 import { ref } from 'vue';
 
 const $props = defineProps<{
-  forceVisible?: boolean;
+  forceOpen?: boolean;
+  backgroundClose?: boolean;
 }>();
 const $emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const visible = ref($props.forceVisible ?? false);
+const visible = ref($props.forceOpen ?? false);
 
-function close() {
+function close<Result = unknown>(value?: Result) {
   visible.value = false;
   $emit('close');
+  _resolve(value);
 }
 
-function open() {
-  visible.value = true;
+let _resolve: CallableFunction;
+function open<Result = unknown>() {
+  return new Promise<Result>(resolve => {
+    visible.value = true;
+    _resolve = resolve;
+  });
+}
+
+function onClickTrigger() {
+  if ($props.backgroundClose) {
+    close();
+  }
 }
 
 defineExpose({

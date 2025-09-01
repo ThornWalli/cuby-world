@@ -6,7 +6,7 @@
 
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
-import CwFormFieldUpload from '../../formField/Upload.vue';
+import CwFormFieldUpload from '../../formField/small/Upload.vue';
 
 const $emit = defineEmits<{
   (e: 'file', value: File | undefined): void;
