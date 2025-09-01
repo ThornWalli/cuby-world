@@ -60,6 +60,7 @@ export const colors = [
 export interface CubyOptions extends UnitOptions {
   size: number;
   state: CUBY_STATE;
+  color: CUBY_COLOR;
 }
 export default class Cuby extends Unit<
   CubyOptions,
@@ -72,7 +73,10 @@ export default class Cuby extends Unit<
   mixer?: AnimationMixer;
 
   constructor(
-    options: Omit<UnitConstructorOptions, 'name' | 'selectable'> = {}
+    options: Omit<
+      UnitConstructorOptions<Partial<CubyOptions>>,
+      'name' | 'selectable'
+    > = {}
   ) {
     super(
       {
@@ -82,6 +86,7 @@ export default class Cuby extends Unit<
         placeable: true,
         options: {
           size: 0.5,
+          color: CUBY_COLOR.BLUE,
           state: CUBY_STATE.DEFAULT,
           ...options.options
         }
@@ -99,10 +104,10 @@ export default class Cuby extends Unit<
 
     const mesh: Mesh = new Mesh(geometry, defaultMaterial());
 
-    setupMaterials(assetLoader, mesh).then(assets => {
-      this.materialReady$.next();
+    setupMaterials(this, mesh, assetLoader).then(assets => {
       this.assetsByCubyState = assets;
       this.setCubyState(this.options.state);
+      this.materialReady$.next();
     });
 
     mesh.name = NAME_MESH;
@@ -129,7 +134,7 @@ enum CUBY_STATE {
   SPEAK_1
 }
 
-async function setupMaterials(textures: AssetLoader, mesh: Mesh) {
+async function setupMaterials(unit: Cuby, mesh: Mesh, textures: AssetLoader) {
   const faceAssets = {
     [CUBY_STATE.DEFAULT]: image_cuby_face_default,
     [CUBY_STATE.DEAD]: image_cuby_face_dead,
@@ -175,7 +180,7 @@ async function setupMaterials(textures: AssetLoader, mesh: Mesh) {
   if (!mesh.getObjectByName('cuby_background')) {
     const backgroundMesh = new Mesh(
       mesh.geometry.clone(),
-      new MeshPhongMaterial({ color: colors[0] })
+      new MeshPhongMaterial({ color: unit.options.color })
     );
     backgroundMesh.name = 'cuby_background';
     mesh.add(backgroundMesh);

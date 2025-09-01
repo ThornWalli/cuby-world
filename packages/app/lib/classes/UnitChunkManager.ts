@@ -50,12 +50,6 @@ export default class UnitChunkManager {
 
   removeFromChunk(unit: Unit) {
     unit.currentChunkKeys.forEach(key => {
-      console.log(
-        'Removing unit from chunk:',
-        unit.name,
-        'from chunk key:',
-        key
-      );
       if (key && this.chunks.has(key)) {
         this.chunks.get(key)!.units.delete(unit);
         unit.currentChunkKeys = [];

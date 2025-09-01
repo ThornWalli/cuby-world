@@ -1,5 +1,5 @@
 <template>
-  <cw-panel class="cw-panel-unit-preview" :title="unit.name">
+  <cw-panel class="cw-panel-unit-preview" :title="panelTitle">
     <div class="image">
       <canvas ref="canvasEl" />
     </div>
@@ -18,20 +18,18 @@
 </template>
 
 <script lang="ts" setup>
-import type { Mesh } from 'three';
-import {
-  DirectionalLight,
-  OrthographicCamera,
-  Scene,
-  Vector3,
-  WebGLRenderer
-} from 'three';
+import type { Mesh, OrthographicCamera, Scene } from 'three';
+import { WebGLRenderer } from 'three';
 import type Unit from '../../lib/classes/Unit';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { OBJECT_NAME } from '../../lib/classes/Unit';
 import { Subscription } from 'rxjs';
 
 import CwPanel from '../Panel.vue';
+import {
+  createPreviewCamera,
+  createPreviewScene
+} from '@cuby-world/app/utils/unitPreview';
 
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
@@ -40,6 +38,10 @@ const $props = defineProps<{
 }>();
 
 const debugInfo = ref();
+
+const panelTitle = computed(
+  () => $props.unit.modules.player.player?.name || $props.unit.name || 'n/a'
+);
 
 function refresh(unit: Unit) {
   refreshDebugInfo(unit);
@@ -64,59 +66,6 @@ function refreshDebugInfo(unit: Unit) {
 let previewScene: Scene;
 let previewCamera: OrthographicCamera;
 let previewMesh: Mesh;
-function createPreviewScene() {
-  previewScene = new Scene();
-
-  const cameraZoom = 1;
-  previewCamera = new OrthographicCamera(
-    cameraZoom * -1,
-    cameraZoom * 1,
-    cameraZoom * 1,
-    cameraZoom * -1,
-    1,
-    1000
-  );
-
-  previewCamera.position.set(20, 20, 20);
-  previewCamera.lookAt(0, 0, 0);
-
-  const lightPosition = new Vector3(10, 5, 15);
-  const zoom = 1;
-
-  // #region light
-
-  let light;
-  light = new DirectionalLight(0xffffff, 3);
-  light.position.set(lightPosition.x, lightPosition.y, lightPosition.z);
-  light.shadow.mapSize.width = 128;
-  light.shadow.mapSize.height = 128;
-  light.shadow.camera.left = -zoom;
-  light.shadow.camera.right = zoom;
-  light.shadow.camera.top = zoom;
-  light.shadow.camera.bottom = -zoom;
-  light.shadow.camera.near = 1;
-  light.shadow.camera.far = 50;
-  light.shadow.camera.updateProjectionMatrix();
-
-  previewScene.add(light);
-
-  light = new DirectionalLight(0xffffff, 0.6);
-  light.position.set(0, 3, 0);
-  light.castShadow = true;
-  light.shadow.mapSize.width = 128;
-  light.shadow.mapSize.height = 128;
-
-  light.shadow.camera.left = -zoom;
-  light.shadow.camera.right = zoom;
-  light.shadow.camera.top = zoom;
-  light.shadow.camera.bottom = -zoom;
-  light.shadow.camera.near = 1;
-  light.shadow.camera.far = 50;
-  light.shadow.camera.updateProjectionMatrix();
-  previewScene.add(light);
-
-  // #endregion
-}
 
 function updatePreview(mesh: Mesh) {
   if (previewMesh) {
@@ -154,7 +103,9 @@ function setup() {
     console.error('Canvas-Element wurde nicht gefunden.');
     return;
   }
-  createPreviewScene();
+
+  previewScene = createPreviewScene();
+  previewCamera = createPreviewCamera();
 
   renderer = new WebGLRenderer({ canvas: canvasEl.value, alpha: true });
   const canvas = canvasEl.value;
@@ -168,6 +119,7 @@ onMounted(() => {
   setup();
   registerUnit($props.unit);
 });
+
 function registerUnit(unit: Unit) {
   unitSubscriptions?.unsubscribe();
   unitSubscriptions = new Subscription();

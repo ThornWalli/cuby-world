@@ -77,12 +77,14 @@ async function setup() {
   (window as any).cubyWorld = app;
 }
 
+const STORAGE_PLAYER_KEY = 'cuby-world:player';
+
 async function getPlayerSettings() {
   let playerSettings: PlayerSettings | undefined = undefined;
-  if (window.sessionStorage.getItem('cuby-world-player')) {
+  if (window.sessionStorage.getItem(STORAGE_PLAYER_KEY)) {
     try {
       playerSettings = JSON.parse(
-        window.sessionStorage.getItem('cuby-world-player')!
+        window.sessionStorage.getItem(STORAGE_PLAYER_KEY)!
       );
     } catch (e) {
       console.warn('Failed to parse player settings from localStorage', e);
@@ -93,7 +95,7 @@ async function getPlayerSettings() {
       .getDialog()
       ?.open<PlayerSettings>();
     window.sessionStorage.setItem(
-      'cuby-world-player',
+      STORAGE_PLAYER_KEY,
       JSON.stringify(playerSettings)
     );
   }
@@ -135,7 +137,6 @@ async function setupPlayer(app: App) {
       color: playerSettings.color || CUBY_COLOR.BLUE
     });
   }
-  console.log('XXX', player);
   app.modules.player.addPlayer(player);
 }
 

@@ -41,6 +41,7 @@ function getGroupById(id: string) {
 }
 
 function onMessage(message: Message) {
+  console.log('onMessage', message);
   const player = $props.app.modules.player.getPlayerById(message.playerId);
   if (!player || !player.unit) return;
 
@@ -61,8 +62,10 @@ function onMessage(message: Message) {
     messageGroups.value.push(group);
   }
   const data = {
+    id: crypto.randomUUID(),
     timestamp: Date.now(),
     playerId: message.playerId,
+    name: player.name,
     message: message.message
   };
   group?.messages.push(data);
@@ -78,8 +81,13 @@ function onMessage(message: Message) {
 const subscription = new Subscription();
 onMounted(() => {
   const app = $props.app;
+
+  if (!app.modules.multiplayer) {
+    throw new Error('Multiplayer module is not enabled');
+  }
+
   subscription.add(
-    app.modules.multiplayer?.observables?.message$?.subscribe(({ data }) =>
+    app.modules.multiplayer.observables.message$.subscribe(({ data }) =>
       onMessage(data)
     )
   );

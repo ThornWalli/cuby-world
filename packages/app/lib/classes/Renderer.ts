@@ -6,8 +6,9 @@ import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 
 import { ReplaySubject } from 'rxjs';
-import { Vector2, type Object3D, type Vector3 } from 'three';
+import { Vector3, type Object3D } from 'three';
 import {
+  Vector2,
   AmbientLight,
   Color,
   DirectionalLight,
@@ -230,30 +231,31 @@ export default class Renderer<
       1000
     );
 
-    camera.position.set(20, 20, 20);
+    camera.position.copy(Renderer.ISOMETRIC_OFFSET);
     camera.lookAt(0, 0, 0);
     this.camera = camera;
   }
 
   resetCamera() {
-    this.camera.position.set(20, 20, 20);
+    this.camera.position.copy(Renderer.ISOMETRIC_OFFSET);
     this.camera.lookAt(0, 0, 0);
     this.controls?.update();
   }
 
+  static ISOMETRIC_OFFSET = new Vector3(20, 20, 20);
+
   updateCamera(position: Vector3) {
     if (position) {
-      // Kamera bleibt relativ zu Cuby
-      this.camera.position.set(
-        position.x + 20, // Abstand rechts
-        position.y + 20, // Höhe
-        position.z + 20 // Abstand vorne
-      );
+      this.controls.target.copy(position);
 
-      // Kamera schaut immer auf Cuby
-      this.camera.lookAt(position);
+      const newCameraPosition = new Vector3()
+        .copy(position)
+        .add(Renderer.ISOMETRIC_OFFSET);
+
+      this.camera.position.copy(newCameraPosition);
+      this.controls.update();
     } else {
-      this.camera.position.set(20, 20, 20);
+      this.camera.position.copy(Renderer.ISOMETRIC_OFFSET);
       this.camera.lookAt(0, 0, 0);
     }
   }

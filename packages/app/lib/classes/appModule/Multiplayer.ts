@@ -5,7 +5,7 @@ import AppModule, { type AppModuleState } from '../AppModule';
 import { selfId, type DataPayload, type Room as TrysteroRoom } from 'trystero';
 
 import type { FirebaseApp } from 'firebase/app';
-import { Observable, Subject, Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import Player from '../Player';
 import { Vector3 } from 'three';
 // import {
@@ -19,7 +19,9 @@ import type { PlayerSettings } from '@cuby-world/app/components/dialogs/UserSett
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
 
 export interface Message {
+  id: string;
   timestamp: number;
+  name?: string;
   message: string;
   playerId: string;
 }
@@ -69,15 +71,15 @@ export default class MultiplayerAppModule extends AppModule<State> {
   firebaseApp?: FirebaseApp;
   // #endregion
 
-  observables?: {
+  observables = {
     // userInfo: Observable<PlayerInfo>;
-    peerJoin$: Observable<string>;
-    peerLeave$: Observable<string>;
-    moveTo$?: Observable<{
+    peerJoin$: new Subject<string>(),
+    peerLeave$: new Subject<string>(),
+    moveTo$: new Subject<{
       data: MoveToPayload;
       peerId: string;
-    }>;
-    message$?: Subject<{ data: MessagePayload; peerId: string }>;
+    }>(),
+    message$: new Subject<{ data: MessagePayload; peerId: string }>()
   };
 
   actions: {
@@ -94,6 +96,14 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
   get playerId() {
     return this.state.playerId;
+  }
+
+  override destroy(): void {
+    super.destroy();
+    this.observables.message$.unsubscribe();
+    this.observables.moveTo$.unsubscribe();
+    this.observables.peerJoin$.unsubscribe();
+    this.observables.peerLeave$.unsubscribe();
   }
 
   override async setup() {
@@ -276,13 +286,9 @@ export default class MultiplayerAppModule extends AppModule<State> {
     if (!room) {
       throw new Error('Not in a room');
     }
-    const peerJoin$ = new Observable<string>(subscriber => {
-      room.onPeerJoin(peerId => subscriber.next(peerId));
-    });
-    const peerLeave$ = new Observable<string>(subscriber => {
-      room.onPeerLeave(peerId => subscriber.next(peerId));
-    });
-    this.observables = { peerJoin$, peerLeave$ };
+
+    room.onPeerJoin(peerId => this.observables.peerJoin$.next(peerId));
+    room.onPeerLeave(peerId => this.observables.peerLeave$.next(peerId));
   }
 
   setupActions() {
@@ -299,16 +305,10 @@ export default class MultiplayerAppModule extends AppModule<State> {
     const [setMoveTo, getMoveTo] =
       room.makeAction<MoveToPayload>('playerMoveTo');
 
-    const moveTo$ = new Observable<{
-      data: MoveToPayload;
-      peerId: string;
-    }>(subscriber => {
-      getMoveTo((data, peerId) => subscriber.next({ data, peerId }));
-    });
+    getMoveTo((data, peerId) =>
+      this.observables.moveTo$.next({ data, peerId })
+    );
 
-    if (this.observables) {
-      this.observables.moveTo$ = moveTo$;
-    }
     this.actions.setMoveTo = setMoveTo;
 
     // #endregion
@@ -319,22 +319,10 @@ export default class MultiplayerAppModule extends AppModule<State> {
       'plyMessage'
     );
 
-    const message$ = new Subject<{
-      data: Message & DataPayload;
-      peerId: string;
-    }>();
-    getMessage((data, peerId) => message$.next({ data, peerId }));
+    getMessage((data, peerId) =>
+      this.observables.message$.next({ data, peerId })
+    );
 
-    // const message$ = new Observable<{
-    //   data: Message & DataPayload;
-    //   peerId: string;
-    // }>(subscriber => {
-    //   getMessage((data, peerId) => subscriber.next({ data, peerId }));
-    // });
-
-    if (this.observables) {
-      this.observables.message$ = message$;
-    }
     this.actions.sendMessage = sendMessage;
 
     // #endregion
@@ -373,7 +361,8 @@ export default class MultiplayerAppModule extends AppModule<State> {
         playerId: player.id
       };
       this.actions.sendMessage(data, this.getOtherPlayers());
-      this.observables?.message$?.next({
+
+      this.observables.message$.next({
         data,
         peerId: player.id
       });

@@ -213,7 +213,7 @@ export default class Unit<
   }
 
   getScenePosition(): Vector3 {
-    return this.root.position;
+    return this.getPosition().clone();
   }
 
   setScenePosition(position: Vector3) {

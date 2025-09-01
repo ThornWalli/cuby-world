@@ -57,6 +57,9 @@ export default class RoomAppModule extends AppModule<State> {
     const { unitFocus: unitFocusModule } = this.app.modules!;
     const room = this.getRoom()!;
     const cuby = new Cuby({
+      options: {
+        color: player.color
+      },
       position: room.description!.start!.position.clone(),
       rotation: room.description!.start!.rotation
     });
@@ -101,11 +104,9 @@ export default class RoomAppModule extends AppModule<State> {
 
     if (playerModule && room.description?.start) {
       playerModule.addPlayer$.subscribe(player => {
-        console.log('XXXXXX', 222);
         this.addPlayerUnit(player);
       });
       playerModule.getPlayers().forEach(player => {
-        console.log('XXXXXX', 111);
         this.addPlayerUnit(player);
       });
       // setTimeout(async () => {

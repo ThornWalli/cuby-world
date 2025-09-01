@@ -7,10 +7,10 @@
     }">
     <div class="messages">
       <template
-        v-for="({ playerId, message, separator }, index) in preparedMessages"
-        :key="index">
+        v-for="{ id, name, message, separator } in preparedMessages"
+        :key="id">
         <div v-if="!separator" class="message">
-          <span v-if="playerId">{{ playerId }}:</span>
+          <span v-if="name">{{ name }}:</span>
           {{ message }}
         </div>
         <div v-else class="separator"></div>
