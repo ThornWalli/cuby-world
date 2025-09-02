@@ -115,7 +115,7 @@ function onUpdateDebugOptions(newOptions: Partial<DebugState>) {
 </script>
 
 <style lang="postcss" scoped>
-.cw-panel-controls {
+.cw-debug-panel-controls {
   /* empty */
 }
 </style>

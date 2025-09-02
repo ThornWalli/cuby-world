@@ -6,6 +6,7 @@ import { selfId, type DataPayload, type Room as TrysteroRoom } from 'trystero';
 
 import type { FirebaseApp } from 'firebase/app';
 import { Subject, Subscription } from 'rxjs';
+import type { PLAYER_COLOR } from '../Player';
 import Player from '../Player';
 import { Vector3 } from 'three';
 // import {
@@ -54,6 +55,7 @@ const DEFAULT_ROOM_ID = 'lobby';
 interface PlayerInfo {
   peerId: string;
   name: string;
+  color: PLAYER_COLOR;
   position?: [number, number, number];
 }
 export default class MultiplayerAppModule extends AppModule<State> {
@@ -173,6 +175,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
             {
               peerId: currentPlayer.id,
               name: currentPlayer.name,
+              color: currentPlayer.color,
               position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
             },
             [peerId]
@@ -276,6 +279,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
       {
         peerId: this.state.playerId,
         name: currentPlayer.name || 'Unknown',
+        color: currentPlayer.color,
         position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
       },
       this.getOtherPlayers()
@@ -336,7 +340,9 @@ export default class MultiplayerAppModule extends AppModule<State> {
     getPlayerInfo((data, peerId) => {
       const player = this.players.get(peerId);
       if (player) {
+        debugger;
         player.name = data.name;
+        player.setColor(data.color);
         // übernehme position
         if (data.position) {
           player.unit?.setPosition(new Vector3().fromArray(data.position));

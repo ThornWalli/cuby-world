@@ -8,12 +8,15 @@ export interface UnitModuleSetupContext extends SetupContext {
   mesh: Object3D;
 }
 
-export default class UnitModule {
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface UnitModuleOptions {}
+
+export default class UnitModule<U extends Unit = Unit> {
   static TYPE: string;
 
   subscription = new Subscription();
 
-  constructor(private _unit: Unit) {}
+  constructor(private _unit: U) {}
 
   destroy() {
     this.subscription.unsubscribe();

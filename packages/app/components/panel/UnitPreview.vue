@@ -125,13 +125,11 @@ function registerUnit(unit: Unit) {
   unitSubscriptions = new Subscription();
   unitSubscriptions.add(
     unit.materialReady$.subscribe(() => {
-      console.log('Unit ready', unit);
       refresh(unit);
     })
   );
   unitSubscriptions.add(
-    unit.rotate$.subscribe(rotation => {
-      console.log('Unit rotation', rotation);
+    unit.rotate$.subscribe(() => {
       refreshDebugInfo(unit);
     })
   );

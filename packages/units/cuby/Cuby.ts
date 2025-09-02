@@ -33,6 +33,7 @@ import image_cuby_face_speak_1 from './assets/face/speak_1.png';
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 import { defaultMaterial } from '../utils/material';
+import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 
 const NAME_MESH = 'Mesh';
 
@@ -54,10 +55,19 @@ export const CUBY_NAME = {
   [CUBY_COLOR.DARKBROWN]: 'Dark Brown '
 };
 
+export const CUBY_COLOR_VALUE = {
+  [CUBY_COLOR.BLUE]: 0x0066ff,
+  [CUBY_COLOR.GREEN]: 0x447821,
+  [CUBY_COLOR.BROWN]: 0x800000,
+  [CUBY_COLOR.ORANGE]: 0xff7f2a,
+  [CUBY_COLOR.LIGHTORANGE]: 0xffb380,
+  [CUBY_COLOR.DARKBROWN]: 0x502d16
+};
+
 export const colors = [
   0x0066ff, 0x447821, 0x800000, 0xff7f2a, 0xffb380, 0x502d16
 ];
-export interface CubyOptions extends UnitOptions {
+export interface CubyOptions extends UnitOptions<MovementModuleOptions> {
   size: number;
   state: CUBY_STATE;
   color: CUBY_COLOR;
@@ -85,6 +95,10 @@ export default class Cuby extends Unit<
         selectable: true,
         placeable: true,
         options: {
+          movement: {
+            stepDuration: 325,
+            rotationDuration: 125
+          },
           size: 0.5,
           color: CUBY_COLOR.BLUE,
           state: CUBY_STATE.DEFAULT,
@@ -123,6 +137,17 @@ export default class Cuby extends Unit<
     }
     const mesh = this.mesh;
     mesh.material = this.assetsByCubyState[state];
+  }
+
+  setColor(color: CUBY_COLOR) {
+    this.options.color = color;
+    const backgroundMesh = this.mesh.getObjectByName('cuby_background') as Mesh;
+    if (backgroundMesh) {
+      debugger;
+      (backgroundMesh.material as MeshPhongMaterial).color.set(
+        CUBY_COLOR_VALUE[color]
+      );
+    }
   }
 }
 
@@ -180,7 +205,7 @@ async function setupMaterials(unit: Cuby, mesh: Mesh, textures: AssetLoader) {
   if (!mesh.getObjectByName('cuby_background')) {
     const backgroundMesh = new Mesh(
       mesh.geometry.clone(),
-      new MeshPhongMaterial({ color: unit.options.color })
+      new MeshPhongMaterial({ color: CUBY_COLOR_VALUE[unit.options.color] })
     );
     backgroundMesh.name = 'cuby_background';
     mesh.add(backgroundMesh);

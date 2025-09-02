@@ -231,34 +231,53 @@ export default class Renderer<
       1000
     );
 
-    camera.position.copy(Renderer.ISOMETRIC_OFFSET);
-    camera.lookAt(0, 0, 0);
     this.camera = camera;
+    this.updateCamera();
   }
 
   resetCamera() {
-    this.camera.position.copy(Renderer.ISOMETRIC_OFFSET);
-    this.camera.lookAt(0, 0, 0);
-    this.controls?.update();
+    this.updateCamera();
   }
 
   static ISOMETRIC_OFFSET = new Vector3(20, 20, 20);
+  static ISOMETRIC_DIRECTION = new Vector3(1, 1, 1).normalize();
+  static ISOMETRIC_DISTANCE = 35; // Abstand Kamera vom Target
 
-  updateCamera(position: Vector3) {
+  updateCamera(position?: Vector3) {
     if (position) {
-      this.controls.target.copy(position);
-
+      // Kamera bleibt im gleichen Winkel, nur verschoben
       const newCameraPosition = new Vector3()
-        .copy(position)
-        .add(Renderer.ISOMETRIC_OFFSET);
+        .copy(Renderer.ISOMETRIC_DIRECTION)
+        .multiplyScalar(Renderer.ISOMETRIC_DISTANCE)
+        .add(position);
 
       this.camera.position.copy(newCameraPosition);
-      this.controls.update();
+      this.camera.lookAt(position);
     } else {
-      this.camera.position.copy(Renderer.ISOMETRIC_OFFSET);
+      const defaultPosition = new Vector3()
+        .copy(Renderer.ISOMETRIC_DIRECTION)
+        .multiplyScalar(Renderer.ISOMETRIC_DISTANCE);
+
+      this.camera.position.copy(defaultPosition);
       this.camera.lookAt(0, 0, 0);
     }
   }
+
+  // updateCamera(position: Vector3) {
+  //   if (position) {
+  //     this.controls.target.copy(position);
+
+  //     const newCameraPosition = new Vector3()
+  //       .copy(position)
+  //       .add(Renderer.ISOMETRIC_OFFSET);
+
+  //     this.camera.position.copy(newCameraPosition);
+  //     this.controls.update();
+  //   } else {
+  //     this.camera.position.copy(Renderer.ISOMETRIC_OFFSET);
+  //     this.camera.lookAt(0, 0, 0);
+  //   }
+  // }
   updateLight(position: Vector3) {
     const { dirLight } = this.lights;
     // Position relativ zum Spieler

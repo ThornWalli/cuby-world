@@ -14,6 +14,7 @@ export default class RoomGrid {
     const data = grid.flat();
     return new RoomGrid(data, width, height);
   }
+
   clone() {
     return new RoomGrid([...this.data], this.width, this.height);
   }

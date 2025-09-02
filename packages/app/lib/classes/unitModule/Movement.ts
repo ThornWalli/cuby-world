@@ -1,3 +1,4 @@
+import type { UnitModuleOptions } from './../UnitModule';
 import { Vector3, Euler } from 'three';
 
 import PathFinder from 'pathfinding';
@@ -5,7 +6,12 @@ import UnitModule from '../UnitModule';
 import type Unit from '../Unit';
 import { Subject } from 'rxjs';
 import { getYPositionByPosition } from '../../utils/room';
-import { getRadByRotation, UNIT_ROTATION } from '../Unit';
+import { getRadByRotation, UNIT_ROTATION, type UnitOptions } from '../Unit';
+import {
+  easeOutExpo,
+  easeOutQuad,
+  easeOutSine
+} from '@cuby-world/app/utils/easings';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -18,6 +24,13 @@ interface RotateOptions {
   nextRotation: Euler | null; // Nächste Rotation, zu der sich die Einheit bewegen soll
   startRotation: Euler | null; // Startrotation der Bewegung
   lastRotation?: Euler | null; // Letzte Rotation der Bewegung
+}
+
+export interface MovementModuleOptions extends UnitModuleOptions {
+  movement: {
+    stepDuration: number;
+    rotationDuration: number;
+  };
 }
 
 export default class MovementUnitModule extends UnitModule {
@@ -38,8 +51,6 @@ export default class MovementUnitModule extends UnitModule {
     startRotation: null,
     lastRotation: null
   };
-  private stepDuration: number = 300;
-  private rotationDuration: number = 125;
 
   currentPath: Vector3[] = [];
 
@@ -58,11 +69,8 @@ export default class MovementUnitModule extends UnitModule {
       isBlocked = data[i] === 1;
       data[i] = 0;
     }
-    console.log(grid.toMatrix());
 
     const gridData = new PathFinder.Grid(grid.toMatrix());
-
-    // Convert positions to matrix positions
     const startPosition = this.unit.getPosition().clone().round();
 
     this.setCurrentPath(
@@ -140,7 +148,6 @@ export default class MovementUnitModule extends UnitModule {
         moveOptions.nextPosition = this.currentPath.shift()!;
 
         if (!this.room?.isPositionFree(moveOptions.nextPosition, [unit])) {
-          debugger;
           moveOptions.nextPosition = null;
           return;
         }
@@ -159,17 +166,27 @@ export default class MovementUnitModule extends UnitModule {
         rotateOptions.nextRotation = nextRotation;
       }
 
+      const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
+        .options.movement;
+
       if (!this.rotateOptions.nextRotation && nextPosition) {
         const elapsedTime = time - startDuration;
 
-        const progress = elapsedTime / this.stepDuration;
+        const progress = easeOutSine(
+          Math.min(elapsedTime / movementOptions.stepDuration, 1)
+        );
+
         let preparedNextPosition = nextPosition!.clone();
         const y = getYPositionByPosition(unit.room!, preparedNextPosition, [
           unit
         ]);
+
         preparedNextPosition = new Vector3(
           preparedNextPosition.x,
-          y,
+          y +
+            (y - unit.getPosition().y !== 0
+              ? easeOutExpo(Math.pow(-2 + 2 * progress, 2))
+              : 0),
           preparedNextPosition.z
         );
 
@@ -198,7 +215,9 @@ export default class MovementUnitModule extends UnitModule {
       if (rotateOptions.nextRotation) {
         const { nextRotation, startRotation, startDuration } = rotateOptions;
         const elapsedTime = time - startDuration;
-        const progress = Math.min(elapsedTime / this.rotationDuration, 1);
+        const progress = easeOutQuad(
+          Math.min(elapsedTime / movementOptions.rotationDuration, 1)
+        );
 
         const rotationDifference = getShortestRotationDifference(
           startRotation!,
@@ -344,6 +363,6 @@ function prepareRoomGridGrid(unit: Unit, heightMultiplicator = 4) {
       }
     });
   grid.data = grid.data.map(value => (value ? 0 : 1));
-  console.log('Grid data for pathfinding:', grid.toMatrix());
+  // console.log('Grid data for pathfinding:', grid.toMatrix());
   return grid;
 }

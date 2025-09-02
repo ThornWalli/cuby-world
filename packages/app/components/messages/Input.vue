@@ -37,6 +37,8 @@ defineExpose({
 
 <style lang="postcss" scoped>
 .cw-messages-input {
+  --border-size: 3px;
+
   position: relative;
   display: flex;
   align-items: stretch;
@@ -44,12 +46,13 @@ defineExpose({
   overflow: hidden;
   pointer-events: auto;
   background: #fff;
-  border: solid 2px #000;
+  border: solid var(--border-size) #000;
   border-radius: 9px;
 
   & input {
     flex: 1;
     padding: 10px;
+    font-family: var(--font-base);
     font-size: 14px;
     appearance: none;
     outline: none;
@@ -66,7 +69,7 @@ defineExpose({
     appearance: none;
     cursor: pointer;
     background-color: var(--color-red-6);
-    border-left: solid 2px #000;
+    border-left: solid var(--border-size) #000;
 
     &:active {
       background-color: var(--color-red-7);

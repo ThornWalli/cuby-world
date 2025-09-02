@@ -7,24 +7,26 @@ import { UNIT_ROTATION } from '../classes/Unit';
 import Block from '@cuby-world/units/Block';
 import RoomGrid from '../classes/RoomGrid';
 import Door from '@cuby-world/units/Door';
-
-// const count = [6, 6];
-// const test = Array(count[0])
-//   .fill(0)
-//   .map(() => Array(count[1]).fill(1));
+import Geometry, { GEOMETRY_TYPE } from '@cuby-world/units/Geometry';
 
 export default class DefaultRoom extends RoomDescription {
   constructor() {
+    console.log(Array(50).fill(Array(5).fill(1)));
     super({
       id: 'default',
       name: 'Default Room',
       description: 'This is the default room in Cuby World.',
+      // grid: RoomGrid.fromGrid(Array(50).fill(Array(5).fill(1))),
       grid: RoomGrid.fromGrid([
         [0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0],
         [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
         [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         [0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
         [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
         [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
         [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
@@ -94,10 +96,21 @@ function getUnits() {
     }),
     new Lamp({
       position: new Vector3(1, 0, 4)
-    })
+    }),
+
     // new Debug({
     //   position: new Vector3(2, 0, 0)
     // })
+    ...Object.values(GEOMETRY_TYPE).map((type, i) => {
+      return new Geometry({
+        position: new Vector3(5, 0, i + 2),
+        options: {
+          type,
+          color: ['#FFCCCC', '#ADD8E6', '#CCFFCC', '#FFFFCC', '#CCCCFF'][i % 4]
+        }
+      });
+    })
+    //
   ];
 
   // #region blocks

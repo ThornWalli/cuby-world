@@ -18,16 +18,17 @@ export function createGroundChunks(
   const chunks: InstancedMesh[] = [];
 
   const matrix = roomGrid.toMatrix();
+  debugger;
   // Grundgeometrie für alle Tiles
   // const baseGeometry = new PlaneGeometry(1, 1);
   // baseGeometry.rotateX(-Math.PI / 2);
 
   // In Chunks durchlaufen
-  for (let y = 0; y < rows; y += chunkSize) {
-    for (let x = 0; x < cols; x += chunkSize) {
+  for (let y = 0; y < cols; y += chunkSize) {
+    for (let x = 0; x < rows; x += chunkSize) {
       const tilesInChunk: GroundTile[] = [];
-      for (let r = y; r < y + chunkSize && r < rows; r++) {
-        for (let c = x; c < x + chunkSize && c < cols; c++) {
+      for (let r = y; r < y + chunkSize && r < cols; r++) {
+        for (let c = x; c < x + chunkSize && c < rows; c++) {
           if (matrix[r]?.[c] === 1) {
             tilesInChunk.push(new GroundTile(new Vector3(c, 0, r)));
           }

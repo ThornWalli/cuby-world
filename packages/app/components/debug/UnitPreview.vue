@@ -190,7 +190,7 @@ async function onFile(file: File | undefined) {
   }
 
   & .cw-renderer {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     width: 100%;

@@ -2,7 +2,7 @@ import type { Vector3 } from 'three';
 import type Unit from './Unit';
 import PlayerUnitModule from './unitModule/Player';
 import { ReplaySubject } from 'rxjs';
-import { CUBY_COLOR as PLAYER_COLOR } from '@cuby-world/units/cuby/Cuby';
+import Cuby, { CUBY_COLOR as PLAYER_COLOR } from '@cuby-world/units/cuby/Cuby';
 
 export interface PlayerConstructorOptions {
   client?: boolean;
@@ -35,6 +35,13 @@ export default class Player {
   destroy() {
     this.unit?.destroy();
     this.unit$.unsubscribe();
+  }
+
+  setColor(color: PLAYER_COLOR) {
+    this.color = color;
+    if (this.unit instanceof Cuby) {
+      this.unit.setColor(color);
+    }
   }
 
   setUnit(unit: Unit) {

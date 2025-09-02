@@ -22,10 +22,13 @@ export type UnitModuleList =
   | typeof AnimationUnitModule
   | typeof PlacementUnitModule;
 
-export type UnitOptions = {
-  canPlaced?: boolean;
-  canRotate?: boolean;
-};
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+type UnitOptionsPlaceholder = {};
+export type UnitOptions<OtherOptions = UnitOptionsPlaceholder> =
+  OtherOptions & {
+    canPlaced?: boolean;
+    canRotate?: boolean;
+  };
 
 export interface AnimatedUnit {
   // animation: UnitModule;

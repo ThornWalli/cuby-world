@@ -23,8 +23,8 @@ import CwMessagesGroup, { type MessageGroup } from './messages/Group.vue';
 import CwMessagesInput from './messages/Input.vue';
 import type { Message } from '../lib/classes/appModule/Multiplayer';
 
-const removeTimeout = 15000;
-const spacerTimeout = 5000;
+const removeTimeout = 12000;
+const spacerTimeout = 3000;
 const $props = defineProps<{
   app: App;
 }>();
