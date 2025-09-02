@@ -1,5 +1,12 @@
 # Project Changelog
 
+# [1.0.0-beta.7](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2025-09-02)
+
+
+### Bug Fixes
+
+* **app:** fix missing multiplayer id ([72aeff3](https://github.com/ThornWalli/cuby-world/commit/72aeff3d538ae29baf96f37091a0024cc5aa6c72))
+
 # [1.0.0-beta.6](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2025-09-02)
 
 
