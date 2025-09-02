@@ -246,6 +246,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
     // }
 
     const player = new CurrentPlayer({
+      id: selfId,
       name: playerSettings.name || 'Unknown',
       color: playerSettings.color || CUBY_COLOR.BLUE
       // firebase: {

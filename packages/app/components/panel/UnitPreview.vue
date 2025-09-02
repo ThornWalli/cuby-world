@@ -38,9 +38,9 @@ const $props = defineProps<{
 }>();
 
 const debugInfo = ref();
-
+const player = computed(() => $props.unit.modules.player.player);
 const panelTitle = computed(
-  () => $props.unit.modules.player.player?.name || $props.unit.name || 'n/a'
+  () => player.value?.name || $props.unit.name || 'n/a'
 );
 
 function refresh(unit: Unit) {
