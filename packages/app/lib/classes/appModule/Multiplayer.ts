@@ -56,7 +56,7 @@ interface PlayerInfo {
   peerId: string;
   name: string;
   color: PLAYER_COLOR;
-  position?: [number, number, number];
+  position: [number, number, number];
 }
 export default class MultiplayerAppModule extends AppModule<State> {
   static override TYPE = 'multiplayer';
@@ -253,7 +253,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
       //   userId: userCredential.user.uid
       // }
     });
-    console.log(player);
+
     return player;
   }
 
@@ -307,6 +307,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
     const room = this.state.room;
 
     // #region player moveTo action
+
     const [setMoveTo, getMoveTo] =
       room.makeAction<MoveToPayload>('playerMoveTo');
 
@@ -321,7 +322,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
     // #region send message action
 
     const [sendMessage, getMessage] = room.makeAction<Message & DataPayload>(
-      'plyMessage'
+      'messaging'
     );
 
     getMessage((data, peerId) =>
@@ -341,19 +342,21 @@ export default class MultiplayerAppModule extends AppModule<State> {
     getPlayerInfo((data, peerId) => {
       const player = this.players.get(peerId);
       if (player) {
-        debugger;
-        player.name = data.name;
-        player.setColor(data.color);
-        // übernehme position
-        if (data.position) {
-          player.unit?.setPosition(new Vector3().fromArray(data.position));
-        }
+        this.setPlayerInfo(player, data);
       }
     });
 
     this.actions.sendPlayerInfo = sendPlayerInfo;
 
     // #endregion
+  }
+
+  setPlayerInfo(player: Player, info: PlayerInfo) {
+    player.name = info.name;
+    player.setColor(info.color);
+    // set position if available
+    const position = new Vector3().fromArray(info.position);
+    player.unit?.setPosition(position);
   }
 
   sendMessage(message: Omit<Message, 'timestamp' | 'playerId'>) {

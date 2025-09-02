@@ -54,22 +54,6 @@ export default class Player {
     console.log('Player unit set:', this.unit.name);
   }
 
-  get position() {
-    if (this.unit) {
-      return this.unit.root.position;
-    } else {
-      throw new Error('Player unit is not set, cannot get position');
-    }
-  }
-
-  set position(position: Vector3) {
-    if (this.unit) {
-      this.unit.setPosition(position);
-    } else {
-      throw new Error('Player unit is not set, cannot update position');
-    }
-  }
-
   moveTo(position: Vector3) {
     if (this.unit) {
       this.unit.modules.movement.moveTo(position);
