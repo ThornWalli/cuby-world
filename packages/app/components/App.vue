@@ -5,8 +5,13 @@
       debug
       :options="rendererOptions"
       :modules="[IntersectionRendererModule]" />
-    <cw-app-playground v-if="app" :app="app" />
-    <cw-dialog-user-settings ref="dialogUserSettings" />
+    <transition name="fade">
+      <cw-app-playground v-if="ready && hasPlayer" :app="app!" />
+    </transition>
+    <!-- Dialogs -->
+    <teleport to="#teleports">
+      <cw-dialog-create-user ref="dialogCreateUser" />
+    </teleport>
   </div>
 </template>
 
@@ -15,9 +20,7 @@ import { ref, markRaw, nextTick, onMounted, onUnmounted } from 'vue';
 import App, { type AppConfig } from '../lib/classes/App';
 import CwRenderer from './Renderer.vue';
 import CwAppPlayground from './app/Playground.vue';
-import CwDialogUserSettings, {
-  type PlayerSettings
-} from './dialogs/UserSettings.vue';
+import CwDialogCreateUser from './dialogs/CreateUser.vue';
 
 import setupFonts from './../utils/fonts';
 import type { RendererOptions } from '../types';
@@ -26,9 +29,10 @@ import UnitFocusAppModule from '../lib/classes/appModule/UnitFocus';
 import { fromEvent, Subscription } from 'rxjs';
 import { Vector2 } from 'three';
 import type Renderer from '../lib/classes/Renderer';
-import Player from '../lib/classes/Player';
+import Player, { type PlayerSettings } from '../lib/classes/Player';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
 import DefaultRoom from '../lib/rooms/Default';
+import { DEFAULT_ROOM_ID } from '../lib/classes/appModule/Multiplayer';
 
 setupFonts();
 const $props = defineProps<{
@@ -42,9 +46,9 @@ const subscription = new Subscription();
 const app = ref<App>();
 const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 const ready = ref(false);
-const dialogUserSettings = ref<InstanceType<
-  typeof CwDialogUserSettings
-> | null>(null);
+const dialogCreateUser = ref<InstanceType<typeof CwDialogCreateUser> | null>(
+  null
+);
 
 onMounted(async () => {
   nextTick(() => {
@@ -68,6 +72,7 @@ async function setup() {
 
   const app = await setupApp(renderer);
   await setupPlayer(app);
+  await app.modules.multiplayer?.joinRoom(DEFAULT_ROOM_ID);
 
   // ####
   // TODO: Raum muss noch aus der db kommen.
@@ -90,10 +95,8 @@ async function getPlayerSettings() {
       console.warn('Failed to parse player settings from localStorage', e);
     }
   }
-  if (!playerSettings && dialogUserSettings.value) {
-    playerSettings = await dialogUserSettings.value
-      .getDialog()
-      ?.open<PlayerSettings>();
+  if (!playerSettings && dialogCreateUser.value) {
+    playerSettings = await dialogCreateUser.value?.open();
     window.sessionStorage.setItem(
       STORAGE_PLAYER_KEY,
       JSON.stringify(playerSettings)
@@ -118,6 +121,7 @@ async function setupApp(renderer: Renderer) {
   return app.value;
 }
 
+const hasPlayer = ref(false);
 async function setupPlayer(app: App) {
   const playerSettings = await getPlayerSettings();
 
@@ -138,6 +142,7 @@ async function setupPlayer(app: App) {
     });
   }
   app.modules.player.addPlayer(player);
+  hasPlayer.value = true;
 }
 
 function onResize() {
@@ -162,5 +167,15 @@ function onResize() {
     height: 100%;
     transform: translate(-50%, -50%);
   }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

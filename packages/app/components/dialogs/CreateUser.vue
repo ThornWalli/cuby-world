@@ -1,5 +1,9 @@
 <template>
-  <cw-dialog ref="dialog" v-bind="$attrs" class="cw-dialog-user-settings">
+  <cw-dialog
+    ref="dialog"
+    hide-close
+    v-bind="$attrs"
+    class="cw-dialog-create-user">
     <template #header>Dein Cuby</template>
     <template #default="ctx">
       <form
@@ -26,7 +30,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import CwDialog from '../Dialog.vue';
 import CwFormFieldTextfield from '../formField/Textfield.vue';
 import CwFormFieldSelect from '../formField/Select.vue';
@@ -44,7 +48,10 @@ const colorOptions = computed(() => {
   }));
 });
 
-const model = ref();
+const model = reactive<PlayerSettings>({
+  name: '',
+  color: CUBY_COLOR.BLUE
+});
 
 defineOptions({
   inheritAttrs: false
@@ -59,13 +66,12 @@ function onSubmit(
   { close }: { close: <Result = unknown>(value?: Result | undefined) => void }
 ) {
   e.preventDefault();
-  close<PlayerSettings>(model.value);
+  close<PlayerSettings>(model);
 }
 
 const dialog = ref<InstanceType<typeof CwDialog> | null>(null);
 
-function open(data: PlayerSettings) {
-  model.value = { ...data };
+function open() {
   return dialog.value!.dialog!.open<PlayerSettings>();
 }
 

@@ -110,6 +110,37 @@ export default class Cuby extends Unit<
     this.clock = new Clock();
   }
 
+  sleepTimer?: number;
+  override async setup(context: SetupContext) {
+    await super.setup(context);
+
+    this.subscription.add(
+      this.modules.movement.moveStart$.subscribe(() => {
+        this.wakeUp();
+      })
+    );
+    this.subscription.add(
+      this.modules.movement.moveEnd$.subscribe(() => {
+        this.sleep();
+      })
+    );
+  }
+
+  wakeUp() {
+    window.clearTimeout(this.sleepTimer);
+    this.setCubyState(CUBY_STATE.DEFAULT);
+  }
+
+  sleep() {
+    window.clearTimeout(this.sleepTimer);
+    this.sleepTimer = window.setTimeout(() => {
+      this.setCubyState(CUBY_STATE.SLEEP_1);
+      this.sleepTimer = window.setTimeout(() => {
+        this.setCubyState(CUBY_STATE.SLEEP_2);
+      }, 5000);
+    }, 5000);
+  }
+
   assetsByCubyState?: { [key in CUBY_STATE]: MeshPhongMaterial[] };
   override createMesh({ assetLoader }: SetupContext) {
     const size = this.options.size;
@@ -143,7 +174,6 @@ export default class Cuby extends Unit<
     this.options.color = color;
     const backgroundMesh = this.mesh.getObjectByName('cuby_background') as Mesh;
     if (backgroundMesh) {
-      debugger;
       (backgroundMesh.material as MeshPhongMaterial).color.set(
         CUBY_COLOR_VALUE[color]
       );

@@ -18,7 +18,6 @@ export function createGroundChunks(
   const chunks: InstancedMesh[] = [];
 
   const matrix = roomGrid.toMatrix();
-  debugger;
   // Grundgeometrie für alle Tiles
   // const baseGeometry = new PlaneGeometry(1, 1);
   // baseGeometry.rotateX(-Math.PI / 2);

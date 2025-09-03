@@ -6,7 +6,7 @@ import { selfId, type DataPayload, type Room as TrysteroRoom } from 'trystero';
 
 import type { FirebaseApp } from 'firebase/app';
 import { Subject, Subscription } from 'rxjs';
-import type { PLAYER_COLOR } from '../Player';
+import type { PLAYER_COLOR, PlayerSettings } from '../Player';
 import Player from '../Player';
 import { Vector3 } from 'three';
 // import {
@@ -16,7 +16,6 @@ import { Vector3 } from 'three';
 //   type User
 // } from './multiplayer/database';
 import CurrentPlayer from '../player/Current';
-import type { PlayerSettings } from '@cuby-world/app/components/dialogs/UserSettings.vue';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
 
 export interface Message {
@@ -28,7 +27,7 @@ export interface Message {
 }
 
 interface State extends AppModuleState {
-  roomId: string;
+  roomId?: string | null;
   // Trystero
   room?: TrysteroRoom;
   playerId: string;
@@ -48,12 +47,12 @@ type MoveToPayload = DataPayload & {
   position: [number, number, number];
 };
 type MessagePayload = DataPayload & Message;
-type PlayerInfoPayload = DataPayload & PlayerInfo;
+type PlayerInfoPayload = DataPayload & Partial<PlayerInfo>;
 
-const DEFAULT_ROOM_ID = 'lobby';
+export const DEFAULT_ROOM_ID = 'lobby';
 
 interface PlayerInfo {
-  peerId: string;
+  // peerId: string;
   name: string;
   color: PLAYER_COLOR;
   position: [number, number, number];
@@ -64,7 +63,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
   players = new Map<string, Player>();
 
   state: State = {
-    roomId: DEFAULT_ROOM_ID,
+    roomId: null,
     playerId: selfId
   };
 
@@ -121,13 +120,10 @@ export default class MultiplayerAppModule extends AppModule<State> {
       throw new Error('No multiplayer config found');
     }
 
-    await this.joinRoom(this.state.roomId);
-
-    this.setupActions();
-
     let playerSubscription = new Subscription();
     this.subscription.add(
       this.app.modules.player.currentPlayer$.subscribe(player => {
+        debugger;
         playerSubscription?.unsubscribe();
         playerSubscription = new Subscription();
         playerSubscription.add(
@@ -146,6 +142,11 @@ export default class MultiplayerAppModule extends AppModule<State> {
                 );
               })
             );
+          })
+        );
+        playerSubscription.add(
+          player.playerSettings$.subscribe(playerSettings => {
+            this.sendPlayerInfo(playerSettings);
           })
         );
       })
@@ -171,11 +172,11 @@ export default class MultiplayerAppModule extends AppModule<State> {
         const player = new Player({ id: peerId, name: peerId });
         const currentPlayer = this.app.modules.player.getCurrentPlayer();
         if (currentPlayer && this.actions.sendPlayerInfo) {
+          debugger;
           this.actions.sendPlayerInfo(
             {
-              peerId: currentPlayer.id,
-              name: currentPlayer.name,
-              color: currentPlayer.color,
+              name: currentPlayer.state.name,
+              color: currentPlayer.state.color,
               position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
             },
             [peerId]
@@ -186,6 +187,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
         console.log('Peer joined:', peerId);
       })
     );
+
     this.subscription.add(
       this.observables?.peerLeave$?.subscribe(peerId => {
         const player = this.players.get(peerId);
@@ -268,20 +270,33 @@ export default class MultiplayerAppModule extends AppModule<State> {
     if (!this.firebaseApp || !this.firebaseAppId) {
       throw new Error('Firebase not initialized');
     }
-    this.state.room = joinRoom(
+    const room = joinRoom(
       { firebaseApp: this.firebaseApp, appId: this.firebaseAppId },
       roomId
     );
 
-    this.setupRoomEvents(this.state.room);
+    this.setupRoomEvents(room);
 
     const currentPlayer = this.app.modules.player.getCurrentPlayer()!;
     this.actions.sendPlayerInfo?.(
       {
         peerId: this.state.playerId,
-        name: currentPlayer.name || 'Unknown',
-        color: currentPlayer.color,
+        name: currentPlayer.state.name || 'Unknown',
+        color: currentPlayer.state.color,
         position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
+      },
+      this.getOtherPlayers()
+    );
+
+    this.setupRoomActions(room);
+    this.state.room = room;
+  }
+
+  sendPlayerInfo(playerSettings: PlayerSettings) {
+    console.log(this.getOtherPlayers());
+    this.actions.sendPlayerInfo?.(
+      {
+        ...playerSettings
       },
       this.getOtherPlayers()
     );
@@ -296,15 +311,10 @@ export default class MultiplayerAppModule extends AppModule<State> {
     room.onPeerLeave(peerId => this.observables.peerLeave$.next(peerId));
   }
 
-  setupActions() {
-    if (!this.state.room) {
-      throw new Error('Not in a room');
-    }
+  setupRoomActions(room: TrysteroRoom) {
     if (!this.observables) {
       throw new Error('Observables not registered');
     }
-
-    const room = this.state.room;
 
     // #region player moveTo action
 
@@ -335,14 +345,13 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
     // #region send player info action
 
-    const [sendPlayerInfo, getPlayerInfo] = room.makeAction<
-      PlayerInfo & DataPayload
-    >('playerInfo');
+    const [sendPlayerInfo, getPlayerInfo] =
+      room.makeAction<PlayerInfoPayload>('playerInfo');
 
     getPlayerInfo((data, peerId) => {
       const player = this.players.get(peerId);
       if (player) {
-        this.setPlayerInfo(player, data);
+        this.setPlayerInfo(player, data as PlayerInfo);
       }
     });
 
@@ -352,11 +361,15 @@ export default class MultiplayerAppModule extends AppModule<State> {
   }
 
   setPlayerInfo(player: Player, info: PlayerInfo) {
-    player.name = info.name;
-    player.setColor(info.color);
+    player.setSettings({
+      name: info.name,
+      color: info.color
+    });
     // set position if available
-    const position = new Vector3().fromArray(info.position);
-    player.unit?.setPosition(position);
+    if (info.position) {
+      const position = new Vector3().fromArray(info.position);
+      player.unit?.setPosition(position);
+    }
   }
 
   sendMessage(message: Omit<Message, 'timestamp' | 'playerId'>) {

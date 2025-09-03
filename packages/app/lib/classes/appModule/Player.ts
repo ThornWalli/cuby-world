@@ -29,6 +29,9 @@ export default class PlayerAppModule extends AppModule<State> {
   }
 
   getCurrentPlayer() {
+    if (!this.state.currentPlayer) {
+      throw new Error('Current player is not set');
+    }
     return this.state.currentPlayer;
   }
 

@@ -1,6 +1,6 @@
 <template>
-  <div class="cw-panel" :class="{ 'has-title': hasTitle }">
-    <div v-if="hasTitle" class="title">
+  <div class="cw-panel" :class="{ 'has-title': !hideTitle && hasTitle }">
+    <div v-if="!hideTitle && hasTitle" class="title">
       <slot name="title">{{ title }}</slot>
     </div>
     <div class="content">
@@ -16,6 +16,7 @@ const $slots = useSlots();
 
 const $props = defineProps<{
   title?: string;
+  hideTitle?: boolean;
 }>();
 
 const hasTitle = computed(() => $props.title || $slots.title);
@@ -26,12 +27,13 @@ const hasTitle = computed(() => $props.title || $slots.title);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 1em;
+  padding: 10px;
   color: white;
   background: rgb(0 0 0 / 80%);
-  border: solid 1px rgb(255 255 255 / 80%);
-  border-radius: 9px;
-  box-shadow: 0 0 4px 0 rgb(0 0 0 / 40%);
+  border: solid 2px rgb(255 255 255 / 80%);
+  border-radius: 6px;
+  box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
+  backdrop-filter: blur(5px);
 
   &.has-title {
     padding-top: 0.5em;

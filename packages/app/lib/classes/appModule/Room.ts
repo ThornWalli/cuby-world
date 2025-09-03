@@ -58,7 +58,7 @@ export default class RoomAppModule extends AppModule<State> {
     const room = this.getRoom()!;
     const cuby = new Cuby({
       options: {
-        color: player.color
+        color: player.state.color
       },
       position: room.description!.start!.position.clone(),
       rotation: room.description!.start!.rotation

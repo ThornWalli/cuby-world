@@ -20,7 +20,7 @@ import CwRenderer from '../Renderer.vue';
 import CwPanelControls from './panel/Controls.vue';
 import CwPanelUnitManager from './panel/UnitManager.vue';
 import { DoubleSide, Mesh, Object3D, Vector2, Vector3 } from 'three';
-import { Subscription } from 'rxjs';
+import { fromEvent, Subscription } from 'rxjs';
 import type Renderer from '@cuby-world/app/lib/classes/Renderer';
 
 import GroundTile from '@cuby-world/app/lib/classes/GroundTile';
@@ -35,7 +35,6 @@ import Custom from '@cuby-world/units/Custom';
 import { UNIT_ROTATION } from '@cuby-world/app/lib/classes/Unit';
 
 let unitWrapper: Object3D;
-let resizeObserver: ResizeObserver;
 const subscription = new Subscription();
 const dimension = ref<Vector2>();
 const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
@@ -72,7 +71,6 @@ onMounted(() => {
   });
 });
 onUnmounted(() => {
-  resizeObserver.disconnect();
   subscription.unsubscribe();
 });
 
@@ -90,9 +88,9 @@ function setup() {
     dimension.value = new Vector2($el.offsetWidth, $el.offsetHeight);
     renderer!.resize(dimension.value);
   };
-  resizeObserver = new ResizeObserver(onResize);
 
-  resizeObserver.observe($el);
+  subscription.add(fromEvent(window, 'resize').subscribe(onResize));
+  onResize();
 }
 
 function setupScene(renderer: Renderer) {

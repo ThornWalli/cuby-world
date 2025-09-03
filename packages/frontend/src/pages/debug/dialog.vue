@@ -2,22 +2,20 @@
   <div>
     <fieldset>
       <legend>Dialogs</legend>
-      <cw-button @click="dialogUserSettings?.getDialog()?.open()"
-        >User Settings</cw-button
-      >
+      <cw-button @click="dialogUserSettings?.open()">User Settings</cw-button>
     </fieldset>
-    <cw-dialog-user-settings ref="dialogUserSettings" />
+    <cw-dialog-create-user ref="dialogUserSettings" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import CwDialogUserSettings from '@cuby-world/app/components/dialogs/UserSettings.vue';
+import CwDialogCreateUser from '@cuby-world/app/components/dialogs/CreateUser.vue';
 import CwButton from '@cuby-world/app/components/Button.vue';
 
 import { ref } from 'vue';
-const dialogUserSettings = ref<InstanceType<
-  typeof CwDialogUserSettings
-> | null>(null);
+const dialogUserSettings = ref<InstanceType<typeof CwDialogCreateUser> | null>(
+  null
+);
 </script>
 
 <style lang="postcss" scoped>

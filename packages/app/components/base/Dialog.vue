@@ -77,7 +77,7 @@ defineExpose({
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s;
+  transition: opacity 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .fade-enter-from,

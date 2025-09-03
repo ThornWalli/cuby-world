@@ -65,7 +65,7 @@ function onMessage(message: Message) {
     id: crypto.randomUUID(),
     timestamp: Date.now(),
     playerId: message.playerId,
-    name: player.name,
+    name: player.state.name,
     message: message.message
   };
   group?.messages.push(data);

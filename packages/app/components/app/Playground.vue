@@ -14,6 +14,7 @@
     </cw-panel-unit-preview>
     <cw-panel-camera-control :app="app" />
     <cw-debug-panel-unit-settings v-if="selectedUnit" :unit="selectedUnit" />
+    <cw-panel-general :app="app" />
   </div>
 </template>
 
@@ -34,6 +35,7 @@ import type Unit from '../../lib/classes/Unit';
 import CwMessages from '../Messages.vue';
 import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelUnitPreview from '../panel/UnitPreview.vue';
+import CwPanelGeneral from '../panel/General.vue';
 import CwDebugPanelUnitSettings from '../debug/panel/UnitSettings.vue';
 import CwButton from '../Button.vue';
 
@@ -126,6 +128,12 @@ function onClickPlacement() {
     @media (width <= 767px) {
       bottom: calc(var(--panel-offset) + 60px);
     }
+  }
+
+  & .cw-panel-general {
+    position: absolute;
+    top: var(--panel-offset);
+    right: var(--panel-offset);
   }
 
   & .cw-debug-panel-unit-settings {

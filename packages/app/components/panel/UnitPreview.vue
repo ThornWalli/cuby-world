@@ -40,7 +40,7 @@ const $props = defineProps<{
 const debugInfo = ref();
 const player = computed(() => $props.unit.modules.player.player);
 const panelTitle = computed(
-  () => player.value?.name || $props.unit.name || 'n/a'
+  () => player.value?.state.name || $props.unit.name || 'n/a'
 );
 
 function refresh(unit: Unit) {
@@ -55,7 +55,6 @@ function refreshDebugInfo(unit: Unit) {
   const size = unit.size;
 
   const info = {
-    Ply: unit.modules.player.player?.name || 'n/a',
     Pos: `${position.x}x${position.y}x${position.z}`,
     Rot: `${rotation}`,
     Size: `${size.x}x${size.y}`
