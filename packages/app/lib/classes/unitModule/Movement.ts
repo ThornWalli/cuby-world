@@ -139,7 +139,11 @@ export default class MovementUnitModule extends UnitModule {
     const unit = this.unit;
 
     if (this.currentPath.length || moveOptions.nextPosition) {
-      if (!moveOptions.nextPosition) {
+      const { startDuration } = moveOptions;
+      const nextPosition = moveOptions.nextPosition;
+      const startPosition = moveOptions.startPosition;
+
+      if (!nextPosition) {
         moveOptions.startPosition = unit.getPosition().clone();
         moveOptions.nextPosition = this.currentPath.shift()!;
 
@@ -153,95 +157,66 @@ export default class MovementUnitModule extends UnitModule {
 
         const rotation = getRotateByDirection(
           getDirection(
-            moveOptions.nextPosition.clone().sub(moveOptions.startPosition)
+            this.moveOptions
+              .nextPosition!.clone()
+              .sub(this.moveOptions.startPosition!)
           )
         );
-        rotateOptions.nextRotation = new Euler(
-          0,
-          getRadByRotation(rotation),
-          0
-        );
-
-        moveOptions.startDuration = time;
+        const nextRotation = new Euler(0, getRadByRotation(rotation), 0);
+        rotateOptions.nextRotation = nextRotation;
       }
 
       const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
         .options.movement;
 
-      if (moveOptions.nextPosition && moveOptions.startPosition) {
-        const startPos = moveOptions.startPosition;
-        const nextPos = moveOptions.nextPosition;
+      if (!this.rotateOptions.nextRotation && nextPosition) {
+        const elapsedTime = time - startDuration;
 
-        const distanceTotal = startPos.distanceTo(nextPos);
-        const stepDuration = Math.max(
-          movementOptions.stepDuration * (distanceTotal || 1),
-          Number.EPSILON
+        const progress = easeOutSine(
+          Math.min(elapsedTime / movementOptions.stepDuration, 1)
         );
 
-        const elapsed = time - moveOptions.startDuration;
-        const progress = Math.min(elapsed / stepDuration, 1);
+        let preparedNextPosition = nextPosition!.clone();
+        const y = getYPositionByPosition(unit.room!, preparedNextPosition, [
+          unit
+        ]);
+
+        preparedNextPosition = new Vector3(
+          preparedNextPosition.x,
+          y +
+            (y - unit.getPosition().y !== 0
+              ? easeOutExpo(Math.pow(-2 + 2 * progress, 2))
+              : 0),
+          preparedNextPosition.z
+        );
+
+        const distance = preparedNextPosition.sub(startPosition!);
+        const position = startPosition!
+          .clone()
+          .add(distance!.multiplyScalar(Math.min(progress, 1)));
+        this.unit.setPosition(new Vector3(position.x, position.y, position.z));
 
         if (progress >= 1) {
-          // Ziel exakt setzen
-          unit.setPosition(nextPos.clone());
-          this.moveStep$.next(unit.getPosition());
-
-          moveOptions.startPosition = nextPos.clone();
-          moveOptions.nextPosition = this.currentPath.shift() || null;
-          moveOptions.startDuration = time;
-
-          if (moveOptions.nextPosition) {
-            rotateOptions.startDuration = time;
-            rotateOptions.startRotation = unit.root.rotation.clone();
-
-            const rotation = getRotateByDirection(
-              getDirection(
-                moveOptions.nextPosition.clone().sub(moveOptions.startPosition)
-              )
-            );
-            const nextRotation = new Euler(0, getRadByRotation(rotation), 0);
-
-            if (
-              rotateOptions.lastRotation &&
-              nextRotation.equals(rotateOptions.lastRotation)
-            ) {
-              rotateOptions.nextRotation = null;
-            } else {
-              rotateOptions.nextRotation = nextRotation;
-            }
-          } else {
+          this.moveOptions.nextPosition = null;
+          if (!this.currentPath.length) {
             this.moveEnd$.next();
           }
-        } else {
-          const eased = easeOutSine(progress);
-
-          let preparedNextPosition = nextPos.clone();
-          const y = getYPositionByPosition(unit.room!, preparedNextPosition, [
-            unit
-          ]);
-
-          preparedNextPosition = new Vector3(
-            preparedNextPosition.x,
-            y +
-              (y - unit.getPosition().y !== 0
-                ? easeOutExpo(Math.pow(-2 + 2 * eased, 2))
-                : 0),
-            preparedNextPosition.z
-          );
-
-          const newPos = startPos
-            .clone()
-            .add(preparedNextPosition.sub(startPos).multiplyScalar(eased));
-
-          unit.setPosition(newPos);
         }
+      }
+      if (
+        rotateOptions.lastRotation &&
+        rotateOptions.nextRotation?.equals(rotateOptions.lastRotation)
+      ) {
+        rotateOptions.nextRotation = null;
+        moveOptions.startDuration = time;
+        return;
       }
 
       if (rotateOptions.nextRotation) {
         const { nextRotation, startRotation, startDuration } = rotateOptions;
-        const elapsedRot = time - startDuration;
-        const rotProgress = easeOutQuad(
-          Math.min(elapsedRot / movementOptions.rotationDuration, 1)
+        const elapsedTime = time - startDuration;
+        const progress = easeOutQuad(
+          Math.min(elapsedTime / movementOptions.rotationDuration, 1)
         );
 
         const rotationDifference = getShortestRotationDifference(
@@ -250,16 +225,18 @@ export default class MovementUnitModule extends UnitModule {
         );
 
         const interpolatedRotation = new Euler(
-          startRotation!.x + rotationDifference.x * rotProgress,
-          startRotation!.y + rotationDifference.y * rotProgress,
-          startRotation!.z + rotationDifference.z * rotProgress
+          startRotation!.x + rotationDifference.x * progress,
+          startRotation!.y + rotationDifference.y * progress,
+          startRotation!.z + rotationDifference.z * progress
         );
 
         unit.setRootRotation(interpolatedRotation);
 
-        if (rotProgress >= 1) {
-          rotateOptions.lastRotation = rotateOptions.nextRotation!.clone();
+        if (progress >= 1) {
+          rotateOptions.lastRotation =
+            rotateOptions.nextRotation?.clone() || null;
           rotateOptions.nextRotation = null;
+          moveOptions.startDuration = time;
           this.moveStep$.next(unit.getPosition());
         }
       }

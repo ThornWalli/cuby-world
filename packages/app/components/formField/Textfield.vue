@@ -17,6 +17,7 @@
         :type="type || 'text'"
         :readonly="readonly"
         :required="required"
+        :autocomplete="autocomplete || 'off'"
         :placeholder="placeholder"
         @input="onInput" />
     </div>
@@ -39,6 +40,7 @@ defineProps<{
   required?: boolean;
   type?: string;
   styleType?: 'dark' | 'light';
+  autocomplete?: AutoFill;
 }>();
 
 const $emit = defineEmits<{
