@@ -253,7 +253,7 @@ export default class RoomAppModule extends AppModule<State> {
       throw new Error('No player available');
     }
     if (data) {
-      const { unit, object, worldPosition } = data;
+      const { unit, worldPosition } = data;
       if (app.modules.placement.hasPlace()) {
         // placing mode
         app.modules.placement.stopPlace();
@@ -263,14 +263,11 @@ export default class RoomAppModule extends AppModule<State> {
         app.modules.selection.getSelectedUnit()?.id === unit?.id
       ) {
         console.log('Move player to selected unit');
-        // move selected unit
         player.moveTo(unit.getPosition());
       } else if (unit) {
-        // select unit
         app.modules.selection.setSelectedUnit(unit);
       } else {
-        // move player
-        console.log('Current intersected object:', unit, object, worldPosition);
+        app.modules.selection.setSelectedUnit(null);
         player.moveTo(worldPosition!);
       }
     } else {

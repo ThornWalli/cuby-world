@@ -123,7 +123,6 @@ export default class MultiplayerAppModule extends AppModule<State> {
     let playerSubscription = new Subscription();
     this.subscription.add(
       this.app.modules.player.currentPlayer$.subscribe(player => {
-        debugger;
         playerSubscription?.unsubscribe();
         playerSubscription = new Subscription();
         playerSubscription.add(

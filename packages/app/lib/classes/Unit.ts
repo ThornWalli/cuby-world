@@ -35,11 +35,6 @@ export interface AnimatedUnit {
   animate: (deltaTime: number) => void;
 }
 
-export interface SelectableUnit {
-  selectable?: boolean;
-  select: () => void;
-  unselect: () => void;
-}
 export interface UnitConstructorOptions<
   Options extends UnitOptions = UnitOptions
 > {
@@ -380,6 +375,12 @@ export default class Unit<
     });
   }
 
+  getRotationByPosition(target: Vector3) {
+    const direction = target.clone().sub(this._position);
+    direction.y = 0;
+    return getRotationFromVector(direction);
+  }
+
   // #region visible
   getVisible() {
     return this.root.visible;
@@ -406,4 +407,17 @@ export default class Unit<
 export enum OBJECT_NAME {
   MESH = 'Mesh',
   MESH_OUTLINE = 'MeshOutline'
+}
+
+function getRotationFromVector(direction: Vector3) {
+  const absX = Math.abs(direction.x);
+  const absZ = Math.abs(direction.z);
+
+  if (absX > absZ) {
+    // Bewegung ist hauptsächlich horizontal (X-Achse)
+    return direction.x > 0 ? UNIT_ROTATION.RIGHT : UNIT_ROTATION.LEFT;
+  } else {
+    // Bewegung ist hauptsächlich vertikal (Z-Achse)
+    return direction.z < 0 ? UNIT_ROTATION.UP : UNIT_ROTATION.DOWN;
+  }
 }

@@ -7,11 +7,7 @@ import type Unit from '../Unit';
 import { Subject } from 'rxjs';
 import { getYPositionByPosition } from '../../utils/room';
 import { getRadByRotation, UNIT_ROTATION, type UnitOptions } from '../Unit';
-import {
-  easeOutExpo,
-  easeOutQuad,
-  easeOutSine
-} from '@cuby-world/app/utils/easings';
+import { easeOutExpo, easeOutQuad } from '@cuby-world/app/utils/easings';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -59,7 +55,7 @@ export default class MovementUnitModule extends UnitModule {
       throw new Error('Unit is not in a room, cannot move to position');
     }
 
-    const grid = prepareRoomGridGrid(this.unit, 1 / (1 / 4));
+    const grid = createRoomGrid(this.unit, 1 / (1 / 4));
     const data = grid.data;
 
     let isBlocked = false;
@@ -172,8 +168,9 @@ export default class MovementUnitModule extends UnitModule {
       if (!this.rotateOptions.nextRotation && nextPosition) {
         const elapsedTime = time - startDuration;
 
-        const progress = easeOutSine(
-          Math.min(elapsedTime / movementOptions.stepDuration, 1)
+        const progress = Math.min(
+          elapsedTime / movementOptions.stepDuration,
+          1
         );
 
         let preparedNextPosition = nextPosition!.clone();
@@ -203,6 +200,7 @@ export default class MovementUnitModule extends UnitModule {
           }
         }
       }
+
       if (
         rotateOptions.lastRotation &&
         rotateOptions.nextRotation?.equals(rotateOptions.lastRotation)
@@ -303,7 +301,7 @@ function getRotateByDirection(direction: DIRECTION) {
   }
 }
 
-function prepareRoomGridGrid(unit: Unit, heightMultiplicator = 4) {
+function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
   const room = unit.room;
 
   if (!room) {
@@ -316,10 +314,10 @@ function prepareRoomGridGrid(unit: Unit, heightMultiplicator = 4) {
   grid.data = grid.data.map(v => {
     if (
       unitY > 0 &&
-      unitY * heightMultiplicator >= 1 && // Optimierter Vergleich für 1/3
+      unitY * heightMultiplicator >= 1 &&
       unitY * heightMultiplicator >= -1
     ) {
-      return unitY * 3 > 1 ? 0 : 1;
+      return unitY * heightMultiplicator > 1 ? 0 : 1;
     }
     return v;
   });
@@ -335,14 +333,14 @@ function prepareRoomGridGrid(unit: Unit, heightMultiplicator = 4) {
           result.push({ unit: unit_, value: 0 });
         } else if (
           unit_.accessible &&
-          y_diff * heightMultiplicator > 1 && // Optimierter Vergleich für 1/3
-          y_diff * heightMultiplicator > -1 // Optimierter Vergleich für -2/3
+          y_diff * heightMultiplicator > 1 &&
+          y_diff * heightMultiplicator > -1
         ) {
           result.push({ unit: unit_, value: 0 });
         } else if (
           unit_.accessible &&
-          y_diff * heightMultiplicator <= 1 && // Optimierter Vergleich für 1/3
-          y_diff * heightMultiplicator >= -1 // Optimierter Vergleich für -2/3
+          y_diff * heightMultiplicator <= 1 &&
+          y_diff * heightMultiplicator >= -1
         ) {
           result.push({ unit: unit_, value: 1 });
         }
