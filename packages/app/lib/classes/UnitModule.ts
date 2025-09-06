@@ -4,6 +4,9 @@ import type Unit from './Unit';
 import type { SetupContext } from './Unit';
 import { Subscription } from 'rxjs';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface UnitModuleState {}
+
 export interface UnitModuleSetupContext extends SetupContext {
   mesh: Object3D;
 }
@@ -11,8 +14,13 @@ export interface UnitModuleSetupContext extends SetupContext {
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UnitModuleOptions {}
 
-export default class UnitModule<U extends Unit = Unit> {
+export default abstract class UnitModule<
+  U extends Unit = Unit,
+  State extends UnitModuleState = UnitModuleState
+> {
   static TYPE: string;
+
+  abstract state: State;
 
   subscription = new Subscription();
 

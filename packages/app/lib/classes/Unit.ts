@@ -26,6 +26,7 @@ export type UnitModuleList =
 type UnitOptionsPlaceholder = {};
 export type UnitOptions<OtherOptions = UnitOptionsPlaceholder> =
   OtherOptions & {
+    rotationType?: ROTATION_TYPE;
     canPlaced?: boolean;
     canRotate?: boolean;
   };
@@ -50,22 +51,44 @@ export interface UnitConstructorOptions<
 
 export enum UNIT_ROTATION {
   LEFT = 'left',
+  LEFT_UP = 'left-up',
+  LEFT_DOWN = 'left-down',
   UP = 'up',
   RIGHT = 'right',
+  RIGHT_UP = 'right-up',
+  RIGHT_DOWN = 'right-down',
   DOWN = 'down'
 }
 
-export const rotationDirections: UNIT_ROTATION[] = [
-  UNIT_ROTATION.LEFT,
-  UNIT_ROTATION.UP,
-  UNIT_ROTATION.RIGHT,
-  UNIT_ROTATION.DOWN
-];
+export enum ROTATION_TYPE {
+  BASIC = 'basic',
+  EXTENDED = 'extended'
+}
+
+export const rotationDirections = {
+  [ROTATION_TYPE.BASIC]: [
+    UNIT_ROTATION.LEFT,
+    UNIT_ROTATION.UP,
+    UNIT_ROTATION.RIGHT,
+    UNIT_ROTATION.DOWN
+  ],
+  [ROTATION_TYPE.EXTENDED]: [
+    UNIT_ROTATION.LEFT,
+    UNIT_ROTATION.LEFT_UP,
+    UNIT_ROTATION.LEFT_DOWN,
+    UNIT_ROTATION.UP,
+    UNIT_ROTATION.RIGHT,
+    UNIT_ROTATION.RIGHT_UP,
+    UNIT_ROTATION.RIGHT_DOWN,
+    UNIT_ROTATION.DOWN
+  ]
+};
 
 export function getRotationByEuler(euler: Euler): UNIT_ROTATION | null {
   if (euler.x === 0 && euler.y === 0 && euler.z === 0) {
     return null;
   }
+
   if (euler.x === Math.PI / 2) {
     return UNIT_ROTATION.UP;
   } else if (euler.x === -Math.PI / 2) {
@@ -82,8 +105,16 @@ export function getRadByRotation(rotation: UNIT_ROTATION): number {
   switch (rotation) {
     case UNIT_ROTATION.LEFT:
       return Math.PI;
+    case UNIT_ROTATION.LEFT_UP:
+      return (3 * Math.PI) / 4;
+    case UNIT_ROTATION.LEFT_DOWN:
+      return -(3 * Math.PI) / 4;
     case UNIT_ROTATION.RIGHT:
       return 0;
+    case UNIT_ROTATION.RIGHT_UP:
+      return Math.PI / 4;
+    case UNIT_ROTATION.RIGHT_DOWN:
+      return -Math.PI / 4;
     case UNIT_ROTATION.UP:
       return Math.PI / 2;
     case UNIT_ROTATION.DOWN:
@@ -258,6 +289,18 @@ export default class Unit<
       case UNIT_ROTATION.RIGHT:
         this.setRootRotation(new Euler(0, 0, 0));
         break;
+      case UNIT_ROTATION.LEFT_UP:
+        this.setRootRotation(new Euler(0, (3 * Math.PI) / 4, 0));
+        break;
+      case UNIT_ROTATION.LEFT_DOWN:
+        this.setRootRotation(new Euler(0, -(3 * Math.PI) / 4, 0));
+        break;
+      case UNIT_ROTATION.RIGHT_UP:
+        this.setRootRotation(new Euler(0, Math.PI / 4, 0));
+        break;
+      case UNIT_ROTATION.RIGHT_DOWN:
+        this.setRootRotation(new Euler(0, -Math.PI / 4, 0));
+        break;
       case UNIT_ROTATION.UP:
         this.setRootRotation(new Euler(0, Math.PI / 2, 0));
         break;
@@ -274,16 +317,22 @@ export default class Unit<
   }
 
   rotateLeft() {
-    const directions = rotationDirections;
+    const directions =
+      rotationDirections[this.options.rotationType || ROTATION_TYPE.BASIC];
     const length = directions.length;
     const index = (directions.indexOf(this.rotation) - 1 + length) % length;
     this.setRotation(directions[index]!);
   }
   rotateRight() {
-    const directions = rotationDirections;
+    const directions =
+      rotationDirections[this.options.rotationType || ROTATION_TYPE.BASIC];
     const length = directions.length;
     const index = (directions.indexOf(this.rotation) + 1) % length;
-    this.setRotation(rotationDirections[index]!);
+    this.setRotation(
+      rotationDirections[this.options.rotationType || ROTATION_TYPE.BASIC][
+        index
+      ]!
+    );
   }
   // #endregion
 
@@ -375,10 +424,10 @@ export default class Unit<
     });
   }
 
-  getRotationByPosition(target: Vector3) {
+  getRotationByPosition(target: Vector3, diagonal = true) {
     const direction = target.clone().sub(this._position);
     direction.y = 0;
-    return getRotationFromVector(direction);
+    return getRotationFromVector(direction, diagonal);
   }
 
   // #region visible
@@ -409,15 +458,26 @@ export enum OBJECT_NAME {
   MESH_OUTLINE = 'MeshOutline'
 }
 
-function getRotationFromVector(direction: Vector3) {
-  const absX = Math.abs(direction.x);
-  const absZ = Math.abs(direction.z);
+function getRotationFromVector(direction: Vector3, diagonal = true) {
+  const isHorizontal = Math.abs(direction.x) > Math.abs(direction.z);
 
-  if (absX > absZ) {
-    // Bewegung ist hauptsächlich horizontal (X-Achse)
+  // Check for diagonal movement
+  if (diagonal && direction.x !== 0 && direction.z !== 0) {
+    if (direction.x > 0) {
+      // Right
+      return direction.z > 0
+        ? UNIT_ROTATION.RIGHT_DOWN
+        : UNIT_ROTATION.RIGHT_UP;
+    } else {
+      // Left
+      return direction.z > 0 ? UNIT_ROTATION.LEFT_DOWN : UNIT_ROTATION.LEFT_UP;
+    }
+  }
+
+  // Fallback to cardinal directions
+  if (isHorizontal) {
     return direction.x > 0 ? UNIT_ROTATION.RIGHT : UNIT_ROTATION.LEFT;
   } else {
-    // Bewegung ist hauptsächlich vertikal (Z-Achse)
-    return direction.z < 0 ? UNIT_ROTATION.UP : UNIT_ROTATION.DOWN;
+    return direction.z > 0 ? UNIT_ROTATION.DOWN : UNIT_ROTATION.UP;
   }
 }

@@ -1,5 +1,5 @@
 import { ReplaySubject } from 'rxjs';
-import UnitModule from '../UnitModule';
+import UnitModule, { type UnitModuleState } from '../UnitModule';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
 import { normalizeMaterialList } from '../../utils/material';
 
@@ -8,8 +8,12 @@ interface TransparentDescription {
   opacity: number;
 }
 
+type State = UnitModuleState;
+
 export class PlacementUnitModule extends UnitModule {
   static override TYPE = 'placement';
+
+  state: State = {};
 
   startPlace$ = new ReplaySubject<void>(1);
   stopPlace$ = new ReplaySubject<void>(1);

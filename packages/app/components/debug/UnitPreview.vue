@@ -2,25 +2,45 @@
   <div class="cw-debug-unit-preview">
     <cw-renderer
       ref="rendererEl"
-      :debug="debugState"
+      :debug="{
+        axes: options.axes,
+        gui: false
+      }"
       :modules="[DebugRendererModule]" />
     <cw-panel-controls
-      :debug-options="debugState"
+      :model-value="options"
       :units="preparedUnits"
       @select-unit="onSelectUnit"
       @rotate-unit="onRotateUnit"
-      @update:debug-options="onUpdateDebugOptions" />
+      @update:model-value="onUpdateModelValueControls" />
     <cw-panel-unit-manager v-if="isUpload" @file="onFile" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, markRaw, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import {
+  computed,
+  markRaw,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch
+} from 'vue';
 import CwRenderer from '../Renderer.vue';
 import CwPanelControls from './panel/Controls.vue';
 import CwPanelUnitManager from './panel/UnitManager.vue';
-import { DoubleSide, Mesh, Object3D, Vector2, Vector3 } from 'three';
+import {
+  BoxGeometry,
+  DoubleSide,
+  Mesh,
+  MeshBasicMaterial,
+  Object3D,
+  Vector2,
+  Vector3
+} from 'three';
 import { fromEvent, Subscription } from 'rxjs';
+import { useRouter } from '#imports';
 import type Renderer from '@cuby-world/app/lib/classes/Renderer';
 
 import GroundTile from '@cuby-world/app/lib/classes/GroundTile';
@@ -28,7 +48,7 @@ import type Unit from '@cuby-world/app/lib/classes/Unit';
 
 import AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import units from './units';
-import type { DebugState } from '@cuby-world/app/lib/classes/rendererModule/Debug';
+
 import DebugRendererModule from '@cuby-world/app/lib/classes/rendererModule/Debug';
 import { getGltfObjectFromFile } from '@cuby-world/app/utils/file';
 import Custom from '@cuby-world/units/Custom';
@@ -42,17 +62,61 @@ const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 const assetLoader = new AssetLoader();
 const currentUnit = ref<Unit>();
 const currentRotation = ref<UNIT_ROTATION>(UNIT_ROTATION.DOWN);
-const debugState = ref<DebugState>({
-  axes: false,
-  gui: false
+const $router = useRouter();
+
+const options = ref<Options>({
+  unit: String($router.currentRoute.value.query.unit || ''),
+  rotation: String(
+    $router.currentRoute.value.query.rotation || UNIT_ROTATION.DOWN
+  ) as UNIT_ROTATION,
+  axes: $router.currentRoute.value.query.axes === 'true',
+  ghost: $router.currentRoute.value.query.ghost === 'true'
 });
 
-function onUpdateDebugOptions(options: DebugState) {
-  debugState.value = options;
+watch(
+  () => options.value,
+  options => {
+    $router.replace({
+      query: {
+        unit: options.unit || undefined,
+        rotation: options.rotation || undefined,
+        axes: String(options.axes || ''),
+        ghost: String(options.ghost || '')
+      }
+    });
+  },
+  {
+    deep: true
+  }
+);
+watch(
+  () => options.value.ghost,
+  ghost => {
+    if (ghostWrapper) {
+      ghostWrapper.visible = ghost ?? false;
+    }
+  }
+);
+watch(
+  () => options.value.rotation,
+  rotation => {
+    onRotateUnit(rotation);
+  }
+);
+watch(
+  () => options.value.unit,
+  unit => {
+    onSelectUnit(unit);
+  }
+);
+
+function onUpdateModelValueControls(opts: Options) {
+  options.value = opts;
   const renderer = getRenderer();
   if (renderer && renderer.modules.debug) {
-    console.log('update debug options', options);
-    renderer.modules.debug.setOptions(options);
+    renderer.modules.debug.setOptions({
+      axes: options.value.axes
+    });
   }
 }
 
@@ -67,6 +131,9 @@ const preparedUnits = ref(
 onMounted(() => {
   nextTick(async () => {
     setup();
+    if (options.value.unit) {
+      onSelectUnit(options.value.unit);
+    }
     // await setUnit(new Cuby());
   });
 });
@@ -93,7 +160,8 @@ function setup() {
   onResize();
 }
 
-function setupScene(renderer: Renderer) {
+let ghostWrapper: Object3D;
+async function setupScene(renderer: Renderer) {
   const scene = renderer.scene;
 
   // #region ground
@@ -108,6 +176,28 @@ function setupScene(renderer: Renderer) {
   unitWrapper = new Object3D();
   unitWrapper.position.set(0, 0, 0);
   scene.add(unitWrapper);
+
+  // #region ghost
+
+  ghostWrapper = new Object3D();
+  ghostWrapper.visible = options.value.ghost ?? false;
+  ghostWrapper.position.set(0, 0, 0);
+  scene.add(ghostWrapper);
+
+  const ratio = 19 / 20;
+  const size = 0.6;
+  const ghostGeometry = new BoxGeometry(size * 1, size * ratio, size * 1);
+  const ghostMaterial = new MeshBasicMaterial({
+    color: 0x00ff00,
+    transparent: true,
+    opacity: 0.5,
+    depthWrite: false
+  });
+  const ghostMesh = new Mesh(ghostGeometry, ghostMaterial);
+  ghostMesh.position.set(0, (size * ratio) / 2 + 0.2, 0);
+
+  ghostWrapper.add(ghostMesh);
+  // #endregion
 
   subscription.add(
     renderer.animationLoop$.subscribe(time => {
@@ -172,6 +262,16 @@ async function onFile(file: File | undefined) {
       currentUnit.value.root.add(customObject);
     }
   }
+}
+</script>
+
+<script lang="ts">
+export interface Options {
+  unit: string;
+  rotation: UNIT_ROTATION;
+  axes?: boolean;
+  ghost?: boolean;
+  ground?: boolean;
 }
 </script>
 

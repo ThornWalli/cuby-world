@@ -61,6 +61,7 @@ defineExpose({
   }
 
   & .header {
+    position: relative;
     box-sizing: border-box;
     display: flex;
     align-items: center;

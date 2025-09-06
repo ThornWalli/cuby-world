@@ -1,4 +1,4 @@
-import type { UnitModuleOptions } from './../UnitModule';
+import type { UnitModuleOptions, UnitModuleState } from './../UnitModule';
 import { Vector3, Euler } from 'three';
 
 import PathFinder from 'pathfinding';
@@ -6,7 +6,7 @@ import UnitModule from '../UnitModule';
 import type Unit from '../Unit';
 import { Subject } from 'rxjs';
 import { getYPositionByPosition } from '../../utils/room';
-import { getRadByRotation, UNIT_ROTATION, type UnitOptions } from '../Unit';
+import { getRadByRotation, type UnitOptions } from '../Unit';
 import { easeOutExpo, easeOutQuad } from '@cuby-world/app/utils/easings';
 
 interface MoveOptions {
@@ -24,13 +24,18 @@ interface RotateOptions {
 
 export interface MovementModuleOptions extends UnitModuleOptions {
   movement: {
+    diagonalMovement: boolean;
     stepDuration: number;
     rotationDuration: number;
   };
 }
 
+type State = UnitModuleState;
+
 export default class MovementUnitModule extends UnitModule {
   static override TYPE = 'movement';
+
+  state: State = {};
 
   moveStart$ = new Subject<Vector3>();
   moveStep$ = new Subject<Vector3>();
@@ -100,11 +105,16 @@ export default class MovementUnitModule extends UnitModule {
     isBlocked: boolean,
     force?: boolean
   ) {
+    const movementOptions = (
+      this.unit as Unit<UnitOptions<MovementModuleOptions>>
+    ).options.movement;
     this.endPosition = endPosition;
     // Use PathFinder to find the path
     const finder = new PathFinder.AStarFinder({
-      diagonalMovement: PathFinder.DiagonalMovement.Never,
-      allowDiagonal: false
+      diagonalMovement: movementOptions.diagonalMovement
+        ? PathFinder.DiagonalMovement.Always
+        : PathFinder.DiagonalMovement.Never,
+      allowDiagonal: movementOptions.diagonalMovement
     });
     let path = finder.findPath(
       startPosition.x,
@@ -128,11 +138,16 @@ export default class MovementUnitModule extends UnitModule {
       .slice(1, path.length - (isBlocked ? 1 : 0));
   }
 
+  lastRotation: Euler | null = null;
+
   // eslint-disable-next-line complexity
   movementUpdate(time: number) {
     const rotateOptions = this.rotateOptions;
     const moveOptions = this.moveOptions;
     const unit = this.unit;
+
+    const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
+      .options.movement;
 
     if (this.currentPath.length || moveOptions.nextPosition) {
       const { startDuration } = moveOptions;
@@ -151,19 +166,21 @@ export default class MovementUnitModule extends UnitModule {
         rotateOptions.startDuration = time;
         rotateOptions.startRotation = unit.root.rotation.clone();
 
-        const rotation = getRotateByDirection(
-          getDirection(
-            this.moveOptions
-              .nextPosition!.clone()
-              .sub(this.moveOptions.startPosition!)
-          )
+        const rotation = unit.getRotationByPosition(
+          this.moveOptions.nextPosition!,
+          movementOptions.diagonalMovement
         );
-        const nextRotation = new Euler(0, getRadByRotation(rotation), 0);
-        rotateOptions.nextRotation = nextRotation;
-      }
 
-      const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
-        .options.movement;
+        const nextRotation = new Euler(0, getRadByRotation(rotation), 0);
+        if (!this.lastRotation?.equals(nextRotation)) {
+          rotateOptions.nextRotation = nextRotation;
+        } else {
+          this.moveOptions.startDuration = time;
+          rotateOptions.nextRotation = null;
+        }
+
+        this.lastRotation = nextRotation;
+      }
 
       if (!this.rotateOptions.nextRotation && nextPosition) {
         const elapsedTime = time - startDuration;
@@ -195,6 +212,7 @@ export default class MovementUnitModule extends UnitModule {
 
         if (progress >= 1) {
           this.moveOptions.nextPosition = null;
+          this.moveOptions.startDuration = time;
           if (!this.currentPath.length) {
             this.moveEnd$.next();
           }
@@ -265,41 +283,41 @@ function normalizeAngle(angle: number) {
   return normalized;
 }
 
-enum DIRECTION {
-  UP = 'up',
-  DOWN = 'down',
-  LEFT = 'left',
-  RIGHT = 'right',
-  NONE = 'none'
-}
+// enum DIRECTION {
+//   UP = 'up',
+//   DOWN = 'down',
+//   LEFT = 'left',
+//   RIGHT = 'right',
+//   NONE = 'none'
+// }
 
-function getDirection(position: Vector3): DIRECTION {
-  if (position.x < 0) {
-    return DIRECTION.LEFT;
-  } else if (position.x > 0) {
-    return DIRECTION.RIGHT;
-  } else if (position.z < 0) {
-    return DIRECTION.UP;
-  } else if (position.z > 0) {
-    return DIRECTION.DOWN;
-  }
-  return DIRECTION.NONE;
-}
+// function getDirection(position: Vector3): DIRECTION {
+//   if (position.x < 0) {
+//     return DIRECTION.LEFT;
+//   } else if (position.x > 0) {
+//     return DIRECTION.RIGHT;
+//   } else if (position.z < 0) {
+//     return DIRECTION.UP;
+//   } else if (position.z > 0) {
+//     return DIRECTION.DOWN;
+//   }
+//   return DIRECTION.NONE;
+// }
 
-function getRotateByDirection(direction: DIRECTION) {
-  switch (direction) {
-    case DIRECTION.LEFT:
-      return UNIT_ROTATION.LEFT;
-    case DIRECTION.RIGHT:
-      return UNIT_ROTATION.RIGHT;
-    case DIRECTION.UP:
-      return UNIT_ROTATION.UP;
-    case DIRECTION.DOWN:
-      return UNIT_ROTATION.DOWN;
-    default:
-      return UNIT_ROTATION.DOWN;
-  }
-}
+// function getRotateByDirection(direction: DIRECTION) {
+//   switch (direction) {
+//     case DIRECTION.LEFT:
+//       return UNIT_ROTATION.LEFT;
+//     case DIRECTION.RIGHT:
+//       return UNIT_ROTATION.RIGHT;
+//     case DIRECTION.UP:
+//       return UNIT_ROTATION.UP;
+//     case DIRECTION.DOWN:
+//       return UNIT_ROTATION.DOWN;
+//     default:
+//       return UNIT_ROTATION.DOWN;
+//   }
+// }
 
 function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
   const room = unit.room;

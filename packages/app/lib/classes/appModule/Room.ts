@@ -246,6 +246,8 @@ export default class RoomAppModule extends AppModule<State> {
     this._selectionPosition$.next(worldPosition!);
   }
 
+  _position: Vector3 = new Vector3();
+
   onSelect(data: PreparedPosition) {
     const app = this.app;
     const player = app.modules.player.getCurrentPlayer();
@@ -270,6 +272,17 @@ export default class RoomAppModule extends AppModule<State> {
         app.modules.selection.setSelectedUnit(null);
         player.moveTo(worldPosition!);
       }
+      // } else if (worldPosition?.equals(this._position)) {
+      //   app.modules.selection.setSelectedUnit(null);
+      //   console.log(worldPosition);
+      //   player.moveTo(worldPosition!);
+      // } else {
+      //   this._position.copy(worldPosition!);
+      //   player.unit?.setRotation(
+      //     player.unit?.getRotationByPosition(worldPosition!)
+      //   );
+      //   console.log('Set position', worldPosition);
+      // }
     } else {
       console.log('No intersected object');
     }

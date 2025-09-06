@@ -11,8 +11,9 @@ export function getDefaultOptions(): DebugState {
 }
 
 export interface DebugState extends RendererModuleState {
-  gui: boolean;
-  axes: boolean;
+  gui?: boolean;
+  axes?: boolean;
+  ghost?: boolean;
 }
 
 export default class DebugRendererModule extends RendererModule<DebugState> {

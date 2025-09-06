@@ -96,10 +96,11 @@ export default class Cuby extends Unit<
         placeable: true,
         options: {
           movement: {
+            diagonalMovement: true,
             stepDuration: 325,
             rotationDuration: 125
           },
-          size: 0.5,
+          size: 0.6,
           color: CUBY_COLOR.BLUE,
           state: CUBY_STATE.DEFAULT,
           ...options.options
@@ -107,6 +108,7 @@ export default class Cuby extends Unit<
       },
       [UnitAnimation]
     );
+
     this.clock = new Clock();
   }
 
@@ -198,7 +200,9 @@ async function setupMaterials(unit: Cuby, mesh: Mesh, textures: AssetLoader) {
     [CUBY_STATE.SPEAK_1]: image_cuby_face_speak_1
   };
 
-  const texturesByFace = Object.fromEntries(
+  const texturesByFace: {
+    [key in CUBY_STATE]: MeshPhongMaterial[];
+  } = Object.fromEntries(
     await Promise.all(
       Object.entries(faceAssets).map(async ([face, url]) => {
         return [

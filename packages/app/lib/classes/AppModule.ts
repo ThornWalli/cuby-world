@@ -1,5 +1,6 @@
 import type App from './App';
 import { Subscription } from 'rxjs';
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AppModuleState {}
 

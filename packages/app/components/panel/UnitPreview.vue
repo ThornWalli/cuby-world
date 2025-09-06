@@ -4,13 +4,6 @@
       <canvas ref="canvasEl" />
     </div>
 
-    <ul v-if="debugInfo?.length">
-      <li v-for="[key, value] in debugInfo" :key="key">
-        <span>{{ key }}:</span>
-        <span>{{ value }}</span>
-      </li>
-    </ul>
-
     <div v-if="$slots.actions" class="actions">
       <slot name="actions"></slot>
     </div>
@@ -37,29 +30,14 @@ const $props = defineProps<{
   unit: Unit;
 }>();
 
-const debugInfo = ref();
 const player = computed(() => $props.unit.modules.player.player);
 const panelTitle = computed(
   () => player.value?.state.name || $props.unit.name || 'n/a'
 );
 
 function refresh(unit: Unit) {
-  refreshDebugInfo(unit);
   updatePreview(unit.mesh);
   renderer.render(previewScene, previewCamera);
-}
-
-function refreshDebugInfo(unit: Unit) {
-  const position = unit.getPosition();
-  const rotation = unit.rotation;
-  const size = unit.size;
-
-  const info = {
-    Pos: `${position.x}x${position.y}x${position.z}`,
-    Rot: `${rotation}`,
-    Size: `${size.x}x${size.y}`
-  };
-  debugInfo.value = Object.entries(info);
 }
 
 let previewScene: Scene;
@@ -127,11 +105,6 @@ function registerUnit(unit: Unit) {
       refresh(unit);
     })
   );
-  unitSubscriptions.add(
-    unit.rotate$.subscribe(() => {
-      refreshDebugInfo(unit);
-    })
-  );
 }
 
 let unitSubscriptions: Subscription;
@@ -145,13 +118,6 @@ watch(
 
 <style lang="postcss" scoped>
 .cw-panel-unit-preview {
-  & li {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
   & canvas {
     width: 128px;
     height: 128px;

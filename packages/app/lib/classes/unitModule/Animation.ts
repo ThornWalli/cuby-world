@@ -1,8 +1,16 @@
 import { AnimationMixer, Clock, Object3D } from 'three';
-import UnitModule, { type UnitModuleSetupContext } from '../UnitModule';
+import UnitModule, {
+  type UnitModuleSetupContext,
+  type UnitModuleState
+} from '../UnitModule';
+
+type State = UnitModuleState;
 
 export class AnimationUnitModule extends UnitModule {
   static override TYPE = 'animation';
+
+  state: State = {};
+
   clock: Clock = new Clock();
   mixer!: AnimationMixer;
 

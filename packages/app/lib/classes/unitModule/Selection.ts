@@ -1,8 +1,11 @@
 import { Subject } from 'rxjs';
-import UnitModule from '../UnitModule';
+import UnitModule, { type UnitModuleState } from '../UnitModule';
 
+type State = UnitModuleState;
 export default class SelectionUnitModule extends UnitModule {
   static override TYPE = 'selection';
+
+  state: State = {};
 
   select$ = new Subject<boolean>();
 

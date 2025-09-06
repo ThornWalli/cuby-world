@@ -218,7 +218,8 @@ export default class Renderer<
   }
 
   get cameraZoom() {
-    return 5 * (5 / 6);
+    // return 1 * 48 * (512 / window.innerWidth);
+    return 8 * (5 / 6);
   }
 
   setOrthographicCamera() {
