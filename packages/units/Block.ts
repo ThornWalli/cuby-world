@@ -5,7 +5,7 @@ import Unit, {
   OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 
 export interface BlockOptions extends UnitOptions {
   color: string | number | Color;

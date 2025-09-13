@@ -1,0 +1,92 @@
+{
+  "id": "default",
+  "info": {
+    "name": "Default Room",
+    "description": "This is the default room. You can edit it to create your own room."
+  },
+  "grid": [
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  ],
+  "start": {
+    "position": {
+      "type": "Vector3",
+      "value": [
+        2,
+        0,
+        2
+      ]
+    },
+    "rotation": "east"
+  },
+  "units": [],
+  "walls": [
+    {
+      "type": "default",
+      "startPosition": {
+        "type": "Vector2",
+        "value": [
+          4,
+          1
+        ]
+      },
+      "endPosition": {
+        "type": "Vector2",
+        "value": [
+          4,
+          2
+        ]
+      }
+    },
+    {
+      "type": "default",
+      "startPosition": {
+        "type": "Vector2",
+        "value": [
+          3,
+          1
+        ]
+      },
+      "endPosition": {
+        "type": "Vector2",
+        "value": [
+          4,
+          1
+        ]
+      }
+    }
+  ]
+}

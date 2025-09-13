@@ -19,7 +19,7 @@ import Unit, {
   OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 import { defaultMaterial } from './utils/material';
 
 export enum GEOMETRY_TYPE {

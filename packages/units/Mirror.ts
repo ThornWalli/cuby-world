@@ -12,7 +12,7 @@ import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 
 export type MirrorOptions = UnitOptions;
 export default class Mirror extends Unit<MirrorOptions> {

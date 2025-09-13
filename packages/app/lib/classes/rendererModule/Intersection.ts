@@ -54,11 +54,14 @@ export default class IntersectionRendererModule extends RendererModule<State> {
           const y = -((event.clientY - offset.y) / dimension.y) * 2 + 1;
           this.raycaster.setFromCamera(new Vector2(x, y), this.renderer.camera);
           this.listeners.forEach(listener => {
-            const intersects = this.raycaster.intersectObject(
+            let intersects = this.raycaster.intersectObject(
               listener.mesh,
               true
             );
 
+            intersects = intersects.filter(
+              i => !i.object.userData?.ignoreSelect
+            );
             if (intersects.length > 0 && intersects[0]) {
               listener.clickIntersect$.next(intersects[0]);
               listener.clickIntersects$.next(intersects);

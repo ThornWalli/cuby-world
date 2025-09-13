@@ -1,14 +1,18 @@
 <template>
   <div>
-    <app :config="config" />
+    <client-only>
+      <app :config="config" />
+    </client-only>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useRuntimeConfig } from '#imports';
-import App from '@cuby-world/app/components/App.vue';
 import type { AppConfig } from '@cuby-world/app/lib/classes/App';
-import { ref } from 'vue';
+import { defineAsyncComponent, ref } from 'vue';
+const App = defineAsyncComponent(
+  () => import('@cuby-world/app/components/App.vue')
+);
 
 const runtimeConfig = useRuntimeConfig();
 

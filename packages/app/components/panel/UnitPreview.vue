@@ -4,6 +4,8 @@
       <canvas ref="canvasEl" />
     </div>
 
+    {{ unit.getPosition().x }} / {{ unit.getPosition().z }}
+
     <div v-if="$slots.actions" class="actions">
       <slot name="actions"></slot>
     </div>
@@ -22,7 +24,7 @@ import CwPanel from '../Panel.vue';
 import {
   createPreviewCamera,
   createPreviewScene
-} from '@cuby-world/app/utils/unitPreview';
+} from '../../utils/unitPreview';
 
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 

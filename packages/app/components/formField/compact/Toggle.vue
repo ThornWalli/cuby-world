@@ -1,5 +1,5 @@
 <template>
-  <cw-form-field mode="compact" hide-colon class="cw-form-field-toggle">
+  <cw-form-field mode="compact" hide-colon class="cw-form-field-compact-toggle">
     <template #label="{ label }">
       <slot>{{ label }}</slot>
     </template>
@@ -36,7 +36,8 @@ function onChange(e: Event) {
 </script>
 
 <style lang="postcss" scoped>
-.cw-form-field-toggle {
+.cw-form-field-compact-toggle {
+  --color-foreground: var(--color-white);
   --indicator-width: 30px;
   --indicator-background-unchecked: var(--color-red-7);
   --indicator-background-checked: var(--color-green-7);
@@ -46,6 +47,7 @@ function onChange(e: Event) {
   width: 100%;
   height: 23px;
   overflow: hidden;
+  color: var(--color-foreground);
   cursor: pointer;
   background: rgb(var(--rgb-white) / 20%);
   border: solid 1px var(--color-white);

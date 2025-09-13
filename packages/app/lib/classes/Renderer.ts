@@ -7,6 +7,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 
 import { ReplaySubject } from 'rxjs';
 import { Vector3, type Object3D } from 'three';
+
 import {
   Vector2,
   AmbientLight,

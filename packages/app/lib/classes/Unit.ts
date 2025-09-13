@@ -14,9 +14,12 @@ import {
 import type { AnimationUnitModule } from './unitModule/Animation';
 import { PlacementUnitModule } from './unitModule/Placement';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
+import RoomUnitModule from './unitModule/Room';
+import type { UnitChunking } from './UnitChunkManager';
 
 export type UnitModuleList =
   | typeof PlayerUnitModule
+  | typeof RoomUnitModule
   | typeof MovementUnitModule
   | typeof SelectionUnitModule
   | typeof AnimationUnitModule
@@ -50,14 +53,14 @@ export interface UnitConstructorOptions<
 }
 
 export enum UNIT_ROTATION {
-  LEFT = 'left',
-  LEFT_UP = 'left-up',
-  LEFT_DOWN = 'left-down',
-  UP = 'up',
-  RIGHT = 'right',
-  RIGHT_UP = 'right-up',
-  RIGHT_DOWN = 'right-down',
-  DOWN = 'down'
+  WEST = 'west',
+  WEST_UP = 'west-north',
+  WEST_DOWN = 'west-south',
+  NORTH = 'north',
+  EAST = 'east',
+  EAST_UP = 'east-north',
+  EAST_DOWN = 'east-south',
+  SOUTH = 'south'
 }
 
 export enum ROTATION_TYPE {
@@ -67,20 +70,20 @@ export enum ROTATION_TYPE {
 
 export const rotationDirections = {
   [ROTATION_TYPE.BASIC]: [
-    UNIT_ROTATION.LEFT,
-    UNIT_ROTATION.UP,
-    UNIT_ROTATION.RIGHT,
-    UNIT_ROTATION.DOWN
+    UNIT_ROTATION.WEST,
+    UNIT_ROTATION.NORTH,
+    UNIT_ROTATION.EAST,
+    UNIT_ROTATION.SOUTH
   ],
   [ROTATION_TYPE.EXTENDED]: [
-    UNIT_ROTATION.LEFT,
-    UNIT_ROTATION.LEFT_UP,
-    UNIT_ROTATION.LEFT_DOWN,
-    UNIT_ROTATION.UP,
-    UNIT_ROTATION.RIGHT,
-    UNIT_ROTATION.RIGHT_UP,
-    UNIT_ROTATION.RIGHT_DOWN,
-    UNIT_ROTATION.DOWN
+    UNIT_ROTATION.WEST,
+    UNIT_ROTATION.WEST_UP,
+    UNIT_ROTATION.WEST_DOWN,
+    UNIT_ROTATION.NORTH,
+    UNIT_ROTATION.EAST,
+    UNIT_ROTATION.EAST_UP,
+    UNIT_ROTATION.EAST_DOWN,
+    UNIT_ROTATION.SOUTH
   ]
 };
 
@@ -90,34 +93,34 @@ export function getRotationByEuler(euler: Euler): UNIT_ROTATION | null {
   }
 
   if (euler.x === Math.PI / 2) {
-    return UNIT_ROTATION.UP;
+    return UNIT_ROTATION.NORTH;
   } else if (euler.x === -Math.PI / 2) {
-    return UNIT_ROTATION.DOWN;
+    return UNIT_ROTATION.SOUTH;
   } else if (euler.y === Math.PI / 2) {
-    return UNIT_ROTATION.RIGHT;
+    return UNIT_ROTATION.EAST;
   } else if (euler.y === -Math.PI / 2) {
-    return UNIT_ROTATION.LEFT;
+    return UNIT_ROTATION.WEST;
   }
   return null;
 }
 
 export function getRadByRotation(rotation: UNIT_ROTATION): number {
   switch (rotation) {
-    case UNIT_ROTATION.LEFT:
+    case UNIT_ROTATION.WEST:
       return Math.PI;
-    case UNIT_ROTATION.LEFT_UP:
+    case UNIT_ROTATION.WEST_UP:
       return (3 * Math.PI) / 4;
-    case UNIT_ROTATION.LEFT_DOWN:
+    case UNIT_ROTATION.WEST_DOWN:
       return -(3 * Math.PI) / 4;
-    case UNIT_ROTATION.RIGHT:
+    case UNIT_ROTATION.EAST:
       return 0;
-    case UNIT_ROTATION.RIGHT_UP:
+    case UNIT_ROTATION.EAST_UP:
       return Math.PI / 4;
-    case UNIT_ROTATION.RIGHT_DOWN:
+    case UNIT_ROTATION.EAST_DOWN:
       return -Math.PI / 4;
-    case UNIT_ROTATION.UP:
+    case UNIT_ROTATION.NORTH:
       return Math.PI / 2;
-    case UNIT_ROTATION.DOWN:
+    case UNIT_ROTATION.SOUTH:
       return -Math.PI / 2;
     default:
       return 0;
@@ -126,6 +129,7 @@ export function getRadByRotation(rotation: UNIT_ROTATION): number {
 
 export interface UnitModules {
   player: PlayerUnitModule;
+  room?: RoomUnitModule;
   movement: MovementUnitModule;
   selection?: SelectionUnitModule;
   placement?: PlacementUnitModule;
@@ -137,23 +141,35 @@ export interface SetupContext {
   room?: Room;
 }
 
+export enum ACCESSIBLE_TYPE {
+  UP = 'up',
+  LEFT = 'left',
+  RIGHT = 'right',
+  DOWN = 'down'
+}
+
 export default class Unit<
   Options extends UnitOptions = UnitOptions,
   Modules extends UnitModules = UnitModules
-> {
+> implements UnitChunking
+{
+  debug = false;
+
   currentChunkKeys: string[] = [];
+
   static KEY = 'unit';
   static NAME = 'Unit';
+
   // #region subscriptions
-  ready$ = new ReplaySubject<void>(1);
+  ready$ = new ReplaySubject<Unit>(1);
   materialReady$ = new ReplaySubject<void>(1);
   rotate$ = new ReplaySubject<UNIT_ROTATION>(0);
   // #endregion
 
   moduleDefinitions = [PlayerUnitModule];
   modules: Modules;
+  assetLoader?: AssetLoader;
 
-  room?: Room;
   subscription = new Subscription();
   options: Options = {
     canPlaced: true,
@@ -161,16 +177,17 @@ export default class Unit<
   } as Options;
   root: Object3D;
 
-  accessible: boolean;
+  accessible: boolean | ACCESSIBLE_TYPE[];
 
   position$: ReplaySubject<Vector3> = new ReplaySubject(0);
   private _position: Vector3 = new Vector3(0, 0, 0);
-  rotation: UNIT_ROTATION = UNIT_ROTATION.DOWN;
+  rotation: UNIT_ROTATION = UNIT_ROTATION.SOUTH;
 
   size: Vector3 = new Vector3(1, 1, 1);
 
   constructor(
     {
+      debug,
       name,
       selectable,
       placeable,
@@ -179,11 +196,12 @@ export default class Unit<
       size,
       rotation,
       options
-    }: UnitConstructorOptions<Options> = {
+    }: UnitConstructorOptions<Options> & { debug?: boolean } = {
       name: 'Unit'
     },
     modules: UnitModuleList[] = []
   ) {
+    this.debug = debug ?? false;
     this.options = {
       ...this.options,
       ...(options || {})
@@ -192,7 +210,9 @@ export default class Unit<
     this.size = size || this.size;
     this.accessible = accessible ?? false;
 
+    // #region modules
     modules.push(PlayerUnitModule);
+    modules.push(RoomUnitModule);
     modules.push(MovementUnitModule);
 
     if (selectable) {
@@ -204,20 +224,27 @@ export default class Unit<
     }
 
     const preparedModules = modules.map(ModuleClass => {
-      const moduleInstance = new ModuleClass(this);
+      const moduleInstance = new ModuleClass(this, this.debug);
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
+    // #endregion
 
-    this.root = new Object3D();
+    this.root = this.createRoot(name);
+
     this.setPosition(position ?? this._position);
     this.setRotation(
-      rotation || getRotationByEuler(this.root.rotation) || UNIT_ROTATION.DOWN
+      rotation || getRotationByEuler(this.root.rotation) || UNIT_ROTATION.SOUTH
     );
-    this.root.name = name;
-    this.root.userData = {
+  }
+
+  createRoot(name: string) {
+    const root = new Object3D();
+    root.name = name;
+    root.userData = {
       unit: this
     };
+    return root;
   }
 
   destroy() {
@@ -283,28 +310,28 @@ export default class Unit<
   setRotation(rotation: UNIT_ROTATION) {
     this.rotation = rotation;
     switch (rotation) {
-      case UNIT_ROTATION.LEFT:
+      case UNIT_ROTATION.WEST:
         this.setRootRotation(new Euler(0, Math.PI, 0));
         break;
-      case UNIT_ROTATION.RIGHT:
+      case UNIT_ROTATION.EAST:
         this.setRootRotation(new Euler(0, 0, 0));
         break;
-      case UNIT_ROTATION.LEFT_UP:
+      case UNIT_ROTATION.WEST_UP:
         this.setRootRotation(new Euler(0, (3 * Math.PI) / 4, 0));
         break;
-      case UNIT_ROTATION.LEFT_DOWN:
+      case UNIT_ROTATION.WEST_DOWN:
         this.setRootRotation(new Euler(0, -(3 * Math.PI) / 4, 0));
         break;
-      case UNIT_ROTATION.RIGHT_UP:
+      case UNIT_ROTATION.EAST_UP:
         this.setRootRotation(new Euler(0, Math.PI / 4, 0));
         break;
-      case UNIT_ROTATION.RIGHT_DOWN:
+      case UNIT_ROTATION.EAST_DOWN:
         this.setRootRotation(new Euler(0, -Math.PI / 4, 0));
         break;
-      case UNIT_ROTATION.UP:
+      case UNIT_ROTATION.NORTH:
         this.setRootRotation(new Euler(0, Math.PI / 2, 0));
         break;
-      case UNIT_ROTATION.DOWN:
+      case UNIT_ROTATION.SOUTH:
         this.setRootRotation(new Euler(0, -Math.PI / 2, 0));
         break;
       default:
@@ -339,16 +366,16 @@ export default class Unit<
   centerInTile(position: Vector3) {
     let offset: Vector3 = new Vector3(0, 0, 0);
     switch (this.rotation) {
-      case UNIT_ROTATION.LEFT:
+      case UNIT_ROTATION.WEST:
         offset = new Vector3(-(this.size.z - 1) / 2, 0, (this.size.x - 1) / 2);
         break;
-      case UNIT_ROTATION.RIGHT:
+      case UNIT_ROTATION.EAST:
         offset = new Vector3((this.size.z - 1) / 2, 0, (this.size.x - 1) / 2);
         break;
-      case UNIT_ROTATION.UP:
+      case UNIT_ROTATION.NORTH:
         offset = new Vector3((this.size.x - 1) / 2, 0, -(this.size.z - 1) / 2);
         break;
-      case UNIT_ROTATION.DOWN:
+      case UNIT_ROTATION.SOUTH:
         offset = new Vector3((this.size.x - 1) / 2, 0, (this.size.z - 1) / 2);
         break;
       default:
@@ -366,16 +393,16 @@ export default class Unit<
     for (let x = 0; x < size.x; x++) {
       for (let z = 0; z < size.z; z++) {
         let x_ = pos.x;
-        if (UNIT_ROTATION.UP === this.rotation) {
+        if (UNIT_ROTATION.NORTH === this.rotation) {
           x_ = x_ + x;
-        } else if (UNIT_ROTATION.LEFT === this.rotation) {
+        } else if (UNIT_ROTATION.WEST === this.rotation) {
           x_ = x_ - x;
         } else {
           x_ = x_ + x;
         }
 
         let z_ = pos.z;
-        if (UNIT_ROTATION.UP === this.rotation) {
+        if (UNIT_ROTATION.NORTH === this.rotation) {
           z_ = z_ - z;
         } else {
           z_ = z_ + z;
@@ -388,7 +415,7 @@ export default class Unit<
   }
 
   async setup(context: SetupContext) {
-    this.room = context.room;
+    this.assetLoader = context.assetLoader;
     let mesh = this.createMesh(context);
 
     const modules: UnitModule[] = Object.values(this.modules);
@@ -413,7 +440,7 @@ export default class Unit<
     );
     this._updateModules = updateModules;
 
-    this.ready$.next();
+    this.ready$.next(this);
   }
 
   _updateModules: UnitModule[] = [];
@@ -455,7 +482,9 @@ export default class Unit<
 }
 export enum OBJECT_NAME {
   MESH = 'Mesh',
-  MESH_OUTLINE = 'MeshOutline'
+  MESH_OUTLINE = 'MeshOutline',
+  MESH_ANIMATION = 'MeshAnimation',
+  RAYCASTER = 'Raycaster'
 }
 
 function getRotationFromVector(direction: Vector3, diagonal = true) {
@@ -465,19 +494,17 @@ function getRotationFromVector(direction: Vector3, diagonal = true) {
   if (diagonal && direction.x !== 0 && direction.z !== 0) {
     if (direction.x > 0) {
       // Right
-      return direction.z > 0
-        ? UNIT_ROTATION.RIGHT_DOWN
-        : UNIT_ROTATION.RIGHT_UP;
+      return direction.z > 0 ? UNIT_ROTATION.EAST_DOWN : UNIT_ROTATION.EAST_UP;
     } else {
       // Left
-      return direction.z > 0 ? UNIT_ROTATION.LEFT_DOWN : UNIT_ROTATION.LEFT_UP;
+      return direction.z > 0 ? UNIT_ROTATION.WEST_DOWN : UNIT_ROTATION.WEST_UP;
     }
   }
 
   // Fallback to cardinal directions
   if (isHorizontal) {
-    return direction.x > 0 ? UNIT_ROTATION.RIGHT : UNIT_ROTATION.LEFT;
+    return direction.x > 0 ? UNIT_ROTATION.EAST : UNIT_ROTATION.WEST;
   } else {
-    return direction.z > 0 ? UNIT_ROTATION.DOWN : UNIT_ROTATION.UP;
+    return direction.z > 0 ? UNIT_ROTATION.SOUTH : UNIT_ROTATION.NORTH;
   }
 }

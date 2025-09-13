@@ -1,20 +1,28 @@
 <template>
   <div ref="rootEl" class="cw-app-playground">
     <cw-messages v-if="isMessagingActive" :app="app" />
-    <cw-panel-unit-preview v-if="selectedUnit" :unit="selectedUnit">
-      <template #actions>
-        <cw-button @click="onClickRotate">Rotate</cw-button>
-        <cw-button
-          v-if="canPlaced"
-          :selected="!!placedUnit"
-          @click="onClickPlacement">
-          Move
-        </cw-button>
-      </template>
-    </cw-panel-unit-preview>
-    <cw-panel-camera-control :app="app" />
-    <cw-debug-panel-unit-settings v-if="selectedUnit" :unit="selectedUnit" />
-    <cw-panel-general :app="app" />
+    <cw-panel-group position="top-left">
+      <cw-panel-camera-control :app="app" />
+    </cw-panel-group>
+    <cw-panel-group position="top-right">
+      <cw-panel-general :app="app" />
+    </cw-panel-group>
+    <cw-panel-group position="bottom-left">
+      <cw-debug-panel-unit-settings v-if="selectedUnit" :unit="selectedUnit" />
+    </cw-panel-group>
+    <cw-panel-group position="bottom-right">
+      <cw-panel-unit-preview v-if="selectedUnit" :unit="selectedUnit">
+        <template #actions>
+          <cw-button @click="onClickRotate">Rotate</cw-button>
+          <cw-button
+            v-if="canPlaced"
+            :selected="!!placedUnit"
+            @click="onClickPlacement">
+            Move
+          </cw-button>
+        </template>
+      </cw-panel-unit-preview>
+    </cw-panel-group>
   </div>
 </template>
 
@@ -36,6 +44,7 @@ import CwMessages from '../Messages.vue';
 import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelUnitPreview from '../panel/UnitPreview.vue';
 import CwPanelGeneral from '../panel/General.vue';
+import CwPanelGroup from '../PanelGroup.vue';
 import CwDebugPanelUnitSettings from '../debug/panel/UnitSettings.vue';
 import CwButton from '../Button.vue';
 
@@ -112,38 +121,6 @@ function onClickPlacement() {
 
   & :deep(.cw-panel) {
     pointer-events: auto;
-  }
-
-  & .cw-panel-camera-control {
-    position: absolute;
-    top: var(--panel-offset);
-    left: var(--panel-offset);
-  }
-
-  & .cw-panel-unit-preview {
-    position: absolute;
-    right: var(--panel-offset);
-    bottom: var(--panel-offset);
-
-    @media (width <= 767px) {
-      bottom: calc(var(--panel-offset) + 60px);
-    }
-  }
-
-  & .cw-panel-general {
-    position: absolute;
-    top: var(--panel-offset);
-    right: var(--panel-offset);
-  }
-
-  & .cw-debug-panel-unit-settings {
-    position: absolute;
-    bottom: var(--panel-offset);
-    left: var(--panel-offset);
-
-    @media (width <= 767px) {
-      bottom: calc(var(--panel-offset) + 60px);
-    }
   }
 
   & .cw-renderer {

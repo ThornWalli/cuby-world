@@ -32,7 +32,14 @@ import type Renderer from '../lib/classes/Renderer';
 import Player, { type PlayerSettings } from '../lib/classes/Player';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
 import DefaultRoom from '../lib/rooms/Default';
+// import ImportRoom from '../lib/rooms/Import';
+// import wallTest from '../lib/rooms/wall-test.json';
+// import wallTest from '../lib/rooms/wall-test.json';
+import test2000 from '../lib/rooms/test-2000.json';
 import { DEFAULT_ROOM_ID } from '../lib/classes/appModule/Multiplayer';
+import ImportRoom from '../lib/rooms/Import';
+import { jsonParse, parseRoomDescription } from '@cuby-world/room-editor/utils';
+// import { jsonParse, parseRoomDescription } from '@cuby-world/room-editor/utils';
 
 setupFonts();
 const $props = defineProps<{
@@ -57,8 +64,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  app.value?.destroy();
-  subscription.unsubscribe();
+  // app.value?.destroy();
+  // subscription.unsubscribe();
 });
 
 async function setup() {
@@ -74,9 +81,24 @@ async function setup() {
   await setupPlayer(app);
   await app.modules.multiplayer?.joinRoom(DEFAULT_ROOM_ID);
 
-  // ####
+  const map = 'wall';
+
   // TODO: Raum muss noch aus der db kommen.
-  app.modules.room.fromDescription(new DefaultRoom());
+  switch (map) {
+    case 'wall':
+      app.modules.room.fromDescription(
+        new ImportRoom(
+          parseRoomDescription(jsonParse(JSON.stringify(test2000)))
+        )
+      );
+      break;
+    default:
+      app.modules.room.fromDescription(new DefaultRoom());
+  }
+
+  // app.modules.room.fromDescription(
+  //   new ImportRoom(parseRoomDescription(jsonParse(JSON.stringify(wallTest))))
+  // );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).cubyWorld = app;

@@ -7,7 +7,11 @@
       </li>
     </ul>
     <cw-toggle
-      :model-value="unit.accessible"
+      :model-value="
+        typeof unit.accessible === 'boolean'
+          ? unit.accessible
+          : unit.accessible.length > 0
+      "
       @update:model-value="onToggleAccessible">
       Accessible
     </cw-toggle>
@@ -16,10 +20,10 @@
 
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
-import CwToggle from '../../formField/small/Toggle.vue';
+import CwToggle from '../../formField/compact/Toggle.vue';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { Subscription } from 'rxjs';
-import type Unit from '@cuby-world/app/lib/classes/Unit';
+import type Unit from '../../../lib/classes/Unit';
 
 const $props = defineProps<{
   unit: Unit;

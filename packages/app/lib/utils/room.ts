@@ -9,7 +9,7 @@ export function getYPositionByPosition(
   ignoreUnits: Unit[] = []
 ) {
   const ignoreIds = ignoreUnits.map(u => u.id);
-  const intersectedUnits = room.units.values().filter(u => {
+  const intersectedUnits = room.modules.units.getUnits().filter(u => {
     return (
       !ignoreIds.includes(u.id) &&
       u

@@ -5,7 +5,11 @@
 </template>
 
 <script lang="ts" setup>
-import DebugUnitPreview from '@cuby-world/app/components/debug/UnitPreview.vue';
+import { defineAsyncComponent } from 'vue';
+
+const DebugUnitPreview = defineAsyncComponent(
+  () => import('@cuby-world/app/components/debug/UnitPreview.vue')
+);
 </script>
 
 <style lang="postcss" scoped>

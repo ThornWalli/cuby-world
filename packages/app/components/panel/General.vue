@@ -13,7 +13,7 @@ import CwButton from '../Button.vue';
 import { onUnmounted, ref } from 'vue';
 import { Subscription } from 'rxjs';
 import CwDialogUserSettings from '../dialogs/UserSettings.vue';
-import type App from '@cuby-world/app/lib/classes/App';
+import type App from '../../lib/classes/App';
 
 const $props = defineProps<{
   app: App;

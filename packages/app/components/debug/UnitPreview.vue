@@ -7,13 +7,17 @@
         gui: false
       }"
       :modules="[DebugRendererModule]" />
-    <cw-panel-controls
-      :model-value="options"
-      :units="preparedUnits"
-      @select-unit="onSelectUnit"
-      @rotate-unit="onRotateUnit"
-      @update:model-value="onUpdateModelValueControls" />
-    <cw-panel-unit-manager v-if="isUpload" @file="onFile" />
+    <cw-panel-group position="top-left">
+      <cw-panel-controls
+        :model-value="options"
+        :units="preparedUnits"
+        @select-unit="onSelectUnit"
+        @rotate-unit="onRotateUnit"
+        @update:model-value="onUpdateModelValueControls" />
+    </cw-panel-group>
+    <cw-panel-group position="bottom-left">
+      <cw-panel-unit-manager v-if="isUpload" @file="onFile" />
+    </cw-panel-group>
   </div>
 </template>
 
@@ -30,6 +34,7 @@ import {
 import CwRenderer from '../Renderer.vue';
 import CwPanelControls from './panel/Controls.vue';
 import CwPanelUnitManager from './panel/UnitManager.vue';
+import CwPanelGroup from '../PanelGroup.vue';
 import {
   BoxGeometry,
   DoubleSide,
@@ -41,18 +46,18 @@ import {
 } from 'three';
 import { fromEvent, Subscription } from 'rxjs';
 import { useRouter } from '#imports';
-import type Renderer from '@cuby-world/app/lib/classes/Renderer';
+import type Renderer from '../../lib/classes/Renderer';
 
-import GroundTile from '@cuby-world/app/lib/classes/GroundTile';
-import type Unit from '@cuby-world/app/lib/classes/Unit';
+import GroundTile from '../../lib/classes/GroundTile';
+import type Unit from '../../lib/classes/Unit';
 
-import AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
+import AssetLoader from '../../lib/classes/AssetLoader';
 import units from './units';
 
-import DebugRendererModule from '@cuby-world/app/lib/classes/rendererModule/Debug';
-import { getGltfObjectFromFile } from '@cuby-world/app/utils/file';
+import DebugRendererModule from '../../lib/classes/rendererModule/Debug';
+import { getGltfObjectFromFile } from '../../utils/file';
+import { UNIT_ROTATION } from '../../lib/classes/Unit';
 import Custom from '@cuby-world/units/Custom';
-import { UNIT_ROTATION } from '@cuby-world/app/lib/classes/Unit';
 
 let unitWrapper: Object3D;
 const subscription = new Subscription();
@@ -61,13 +66,13 @@ const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 
 const assetLoader = new AssetLoader();
 const currentUnit = ref<Unit>();
-const currentRotation = ref<UNIT_ROTATION>(UNIT_ROTATION.DOWN);
+const currentRotation = ref<UNIT_ROTATION>(UNIT_ROTATION.SOUTH);
 const $router = useRouter();
 
 const options = ref<Options>({
   unit: String($router.currentRoute.value.query.unit || ''),
   rotation: String(
-    $router.currentRoute.value.query.rotation || UNIT_ROTATION.DOWN
+    $router.currentRoute.value.query.rotation || UNIT_ROTATION.SOUTH
   ) as UNIT_ROTATION,
   axes: $router.currentRoute.value.query.axes === 'true',
   ghost: $router.currentRoute.value.query.ghost === 'true'
@@ -230,6 +235,9 @@ function onRotateUnit(rotation: UNIT_ROTATION) {
 
 async function setUnit(unit?: Unit) {
   const existingUnit = currentUnit.value;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).unit = unit;
+
   if (existingUnit) {
     unitWrapper.remove(existingUnit.root);
     existingUnit.destroy();
@@ -294,18 +302,6 @@ export interface Options {
     width: 100%;
     height: 100%;
     transform: translate(-50%, -50%);
-  }
-
-  & .cw-debug-panel-controls {
-    position: absolute;
-    top: 1em;
-    left: 1em;
-  }
-
-  & .cw-debug-panel-unit-manager {
-    position: absolute;
-    bottom: 1em;
-    left: 1em;
   }
 }
 </style>

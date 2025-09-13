@@ -1,13 +1,16 @@
+/* eslint-disable complexity */
 import type { UnitModuleOptions, UnitModuleState } from './../UnitModule';
 import { Vector3, Euler } from 'three';
-
-import PathFinder from 'pathfinding';
+import EasyStar from 'easystarjs';
 import UnitModule from '../UnitModule';
 import type Unit from '../Unit';
 import { Subject } from 'rxjs';
 import { getYPositionByPosition } from '../../utils/room';
 import { getRadByRotation, type UnitOptions } from '../Unit';
 import { easeOutExpo, easeOutQuad } from '@cuby-world/app/utils/easings';
+import type RoomGrid from '../RoomGrid';
+import type { WallDescription } from '../RoomDescription';
+import { setWallConditions } from '../../utils/wall';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -56,28 +59,29 @@ export default class MovementUnitModule extends UnitModule {
   currentPath: Vector3[] = [];
 
   moveTo(position: Vector3, options: { force?: boolean } = {}) {
-    if (!this.unit.room?.description) {
+    const room = this.currentRoom;
+    if (!room?.description) {
       throw new Error('Unit is not in a room, cannot move to position');
     }
 
     const grid = createRoomGrid(this.unit, 1 / (1 / 4));
+
     const data = grid.data;
 
     let isBlocked = false;
     if (Array.isArray(data[position.z])) {
-      const i = position.z * this.unit.room.description.grid.width + position.x;
-
+      const i = position.z * room.description.grid.width + position.x;
       isBlocked = data[i] === 1;
       data[i] = 0;
     }
 
-    const gridData = new PathFinder.Grid(grid.toMatrix());
     const startPosition = this.unit.getPosition().clone().round();
 
     this.setCurrentPath(
       startPosition,
       position.clone().round(),
-      gridData,
+      grid,
+      room.description.walls,
       isBlocked,
       options.force
     );
@@ -98,10 +102,11 @@ export default class MovementUnitModule extends UnitModule {
   }
 
   endPosition: Vector3 | null = null;
-  setCurrentPath(
+  async setCurrentPath(
     startPosition: Vector3,
     endPosition: Vector3,
-    gridData: PathFinder.Grid,
+    roomGrid: RoomGrid,
+    walls: WallDescription[],
     isBlocked: boolean,
     force?: boolean
   ) {
@@ -109,20 +114,32 @@ export default class MovementUnitModule extends UnitModule {
       this.unit as Unit<UnitOptions<MovementModuleOptions>>
     ).options.movement;
     this.endPosition = endPosition;
-    // Use PathFinder to find the path
-    const finder = new PathFinder.AStarFinder({
-      diagonalMovement: movementOptions.diagonalMovement
-        ? PathFinder.DiagonalMovement.Always
-        : PathFinder.DiagonalMovement.Never,
-      allowDiagonal: movementOptions.diagonalMovement
+
+    const easystar = new EasyStar.js();
+
+    easystar.setGrid(roomGrid.toMatrix());
+
+    if (movementOptions.diagonalMovement) {
+      easystar.enableDiagonals();
+    }
+    easystar.setAcceptableTiles([0]);
+
+    setWallConditions(walls, easystar);
+
+    let path = await new Promise<number[][]>(resolve => {
+      easystar.findPath(
+        startPosition.x,
+        startPosition.z,
+        endPosition.x,
+        endPosition.z,
+        path =>
+          resolve(
+            (path ?? []).map(({ x, y }: { x: number; y: number }) => [x, y])
+          )
+      );
+      easystar.calculate();
     });
-    let path = finder.findPath(
-      startPosition.x,
-      startPosition.z,
-      endPosition.x,
-      endPosition.z,
-      gridData
-    );
+    // console.log('Found path:', path);
 
     // Wenn kein Pfad gefunden wurde und force true ist, direkten Pfad setzen. (Treppe)
     if (path.length === 0 && force) {
@@ -139,9 +156,8 @@ export default class MovementUnitModule extends UnitModule {
   }
 
   lastRotation: Euler | null = null;
-
-  // eslint-disable-next-line complexity
   movementUpdate(time: number) {
+    const room = this.currentRoom!;
     const rotateOptions = this.rotateOptions;
     const moveOptions = this.moveOptions;
     const unit = this.unit;
@@ -158,7 +174,9 @@ export default class MovementUnitModule extends UnitModule {
         moveOptions.startPosition = unit.getPosition().clone();
         moveOptions.nextPosition = this.currentPath.shift()!;
 
-        if (!this.room?.isPositionFree(moveOptions.nextPosition, [unit])) {
+        if (
+          !room?.modules.units?.isPositionFree(moveOptions.nextPosition, [unit])
+        ) {
           moveOptions.nextPosition = null;
           return;
         }
@@ -191,9 +209,7 @@ export default class MovementUnitModule extends UnitModule {
         );
 
         let preparedNextPosition = nextPosition!.clone();
-        const y = getYPositionByPosition(unit.room!, preparedNextPosition, [
-          unit
-        ]);
+        const y = getYPositionByPosition(room, preparedNextPosition, [unit]);
 
         preparedNextPosition = new Vector3(
           preparedNextPosition.x,
@@ -283,44 +299,8 @@ function normalizeAngle(angle: number) {
   return normalized;
 }
 
-// enum DIRECTION {
-//   UP = 'up',
-//   DOWN = 'down',
-//   LEFT = 'left',
-//   RIGHT = 'right',
-//   NONE = 'none'
-// }
-
-// function getDirection(position: Vector3): DIRECTION {
-//   if (position.x < 0) {
-//     return DIRECTION.LEFT;
-//   } else if (position.x > 0) {
-//     return DIRECTION.RIGHT;
-//   } else if (position.z < 0) {
-//     return DIRECTION.UP;
-//   } else if (position.z > 0) {
-//     return DIRECTION.DOWN;
-//   }
-//   return DIRECTION.NONE;
-// }
-
-// function getRotateByDirection(direction: DIRECTION) {
-//   switch (direction) {
-//     case DIRECTION.LEFT:
-//       return UNIT_ROTATION.LEFT;
-//     case DIRECTION.RIGHT:
-//       return UNIT_ROTATION.RIGHT;
-//     case DIRECTION.UP:
-//       return UNIT_ROTATION.UP;
-//     case DIRECTION.DOWN:
-//       return UNIT_ROTATION.DOWN;
-//     default:
-//       return UNIT_ROTATION.DOWN;
-//   }
-// }
-
 function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
-  const room = unit.room;
+  const room = unit.modules.room?.getRoom();
 
   if (!room) {
     throw new Error('Unit is not in a room, cannot create grid data');
@@ -340,8 +320,8 @@ function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
     return v;
   });
 
-  room.units
-    .values()
+  room.modules.units
+    .getUnits()
     .reduce(
       (result, unit_) => {
         const unitPosition = unit_.getPosition();

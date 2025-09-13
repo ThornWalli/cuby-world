@@ -3,7 +3,7 @@ import { Color, MeshPhongMaterial, ShaderMaterial } from 'three';
 
 export function defaultMaterial() {
   const texture = checkerboardTexture(16, 8, '#ffffff', '#000000', 2, 2);
-  return new MeshPhongMaterial({ map: texture });
+  return new MeshPhongMaterial({ map: texture, side: 2 });
 }
 
 export function getRainbowMaterial() {

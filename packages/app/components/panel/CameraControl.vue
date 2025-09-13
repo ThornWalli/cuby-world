@@ -1,6 +1,9 @@
 <template>
   <cw-panel class="cw-panel-camera-control" title="Camera">
-    <cw-toggle :model-value="focusedUnit" @update:model-value="onToggleFocused">
+    <cw-toggle
+      style-type="dark"
+      :model-value="focusedUnit"
+      @update:model-value="onToggleFocused">
       Focused Cuby
     </cw-toggle>
     <cw-button :disabled="focusedUnit" @click="app.resetCamera()">
@@ -11,9 +14,9 @@
 
 <script lang="ts" setup>
 import CwPanel from '../Panel.vue';
-import CwToggle from '../formField/small/Toggle.vue';
+import CwToggle from '../formField/compact/Toggle.vue';
 import CwButton from '../Button.vue';
-import type App from '@cuby-world/app/lib/classes/App';
+import type App from '../../lib/classes/App';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Subscription } from 'rxjs';
 

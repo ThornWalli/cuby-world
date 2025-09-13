@@ -9,10 +9,14 @@
 </template>
 
 <script lang="ts" setup>
-import CwDialogCreateUser from '@cuby-world/app/components/dialogs/CreateUser.vue';
-import CwButton from '@cuby-world/app/components/Button.vue';
+import { defineAsyncComponent, ref } from 'vue';
 
-import { ref } from 'vue';
+const CwDialogCreateUser = defineAsyncComponent(
+  () => import('@cuby-world/app/components/dialogs/CreateUser.vue')
+);
+const CwButton = defineAsyncComponent(
+  () => import('@cuby-world/app/components/Button.vue')
+);
 const dialogUserSettings = ref<InstanceType<typeof CwDialogCreateUser> | null>(
   null
 );

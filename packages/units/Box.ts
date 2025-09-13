@@ -5,7 +5,7 @@ import Unit, {
   OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 
 export type BoxOptions = UnitOptions;
 export default class Box extends Unit<BoxOptions> {

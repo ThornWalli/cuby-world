@@ -43,9 +43,15 @@ export default class RoomAppModule extends AppModule<State> {
   ): Promise<Room> {
     const room = new Room(app, roomDescription.grid);
     room.description = roomDescription;
-    room.setupGround(roomDescription.grid);
-    await room.setupUnits(roomDescription.units || []);
-    room.mesh.name = roomDescription.name;
+
+    await Promise.all(
+      Object.values(room.modules).map(async module => {
+        await module.setup();
+      })
+    );
+
+    await room.modules.units.setupUnits(roomDescription.units || []);
+    room.mesh.name = roomDescription.info.name;
     return room;
   }
 
@@ -66,7 +72,7 @@ export default class RoomAppModule extends AppModule<State> {
 
     player.setUnit(cuby);
 
-    await room.add(cuby);
+    await room.modules.units.add(cuby);
 
     if (player.client) {
       this.app.modules.selection.setSelectedUnit(cuby);
@@ -143,7 +149,7 @@ export default class RoomAppModule extends AppModule<State> {
       })
     );
 
-    console.log('Set room:', roomDescription.name, room);
+    console.log('Set room:', roomDescription.info.name, room);
   }
 
   setRoom(room: Room | undefined) {
@@ -242,7 +248,7 @@ export default class RoomAppModule extends AppModule<State> {
 
   onHover({ worldPosition }: PreparedPosition) {
     const room = this.app.modules.room.getRoom()!;
-    room.setSelectionPosition(worldPosition!);
+    room.modules.selection.setSelectionPosition(worldPosition!);
     this._selectionPosition$.next(worldPosition!);
   }
 

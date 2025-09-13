@@ -1,12 +1,14 @@
 <template>
   <cw-panel class="cw-debug-panel-unit-manager">
-    <cw-form-field-upload @file="$emit('file', $event)"></cw-form-field-upload>
+    <cw-form-field-upload
+      label="Upload"
+      @file="$emit('file', $event)"></cw-form-field-upload>
   </cw-panel>
 </template>
 
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
-import CwFormFieldUpload from '../../formField/small/Upload.vue';
+import CwFormFieldUpload from '../../formField/compact/Upload.vue';
 
 const $emit = defineEmits<{
   (e: 'file', value: File | undefined): void;

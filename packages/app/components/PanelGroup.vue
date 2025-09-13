@@ -1,0 +1,91 @@
+<template>
+  <div
+    class="cw-panel-group"
+    :class="{
+      [`position-${position}`]: position
+    }">
+    <slot></slot>
+  </div>
+</template>
+
+<script lang="ts" setup>
+defineProps<{
+  position?: PANEL_GROUP_POSITION | `${PANEL_GROUP_POSITION}`;
+}>();
+</script>
+
+<script lang="ts">
+export enum PANEL_GROUP_POSITION {
+  LEFT = 'left',
+  RIGHT = 'right',
+  TOP = 'top',
+  BOTTOM = 'bottom',
+  TOP_LEFT = 'top-left',
+  TOP_RIGHT = 'top-right',
+  BOTTOM_LEFT = 'bottom-left',
+  BOTTOM_RIGHT = 'bottom-right'
+}
+</script>
+
+<style lang="postcss" scoped>
+.cw-panel-group {
+  --panel-offset: 1em;
+
+  &[class*='position-'] {
+    position: absolute;
+  }
+
+  &.position-left {
+    position: absolute;
+    top: 50%;
+    left: var(--panel-offset);
+    transform: translateY(-50%);
+  }
+
+  &.position-right {
+    top: 50%;
+    right: var(--panel-offset);
+    transform: translateY(-50%);
+  }
+
+  &.position-top {
+    top: var(--panel-offset);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  &.position-bottom {
+    bottom: var(--panel-offset);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  &.position-top-left {
+    top: var(--panel-offset);
+    left: var(--panel-offset);
+  }
+
+  &.position-top-right {
+    top: var(--panel-offset);
+    right: var(--panel-offset);
+  }
+
+  &.position-bottom-left {
+    bottom: var(--panel-offset);
+    left: var(--panel-offset);
+
+    @media (width <= 767px) {
+      bottom: calc(var(--panel-offset) + 60px);
+    }
+  }
+
+  &.position-bottom-right {
+    right: var(--panel-offset);
+    bottom: var(--panel-offset);
+
+    @media (width <= 767px) {
+      bottom: calc(var(--panel-offset) + 60px);
+    }
+  }
+}
+</style>

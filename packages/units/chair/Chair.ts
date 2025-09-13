@@ -7,7 +7,7 @@ import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 

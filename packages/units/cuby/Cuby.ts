@@ -4,18 +4,20 @@ import {
   Mesh,
   MeshPhongMaterial,
   Clock,
-  LoopPingPong
+  LoopPingPong,
+  PlaneGeometry
 } from 'three';
 
 import Unit, {
+  OBJECT_NAME,
   type SetupContext,
   type UnitConstructorOptions,
   type UnitModules,
   type UnitOptions
-} from '../../app/lib/classes/Unit';
-import { getHoverClip } from '../../app/lib/utils/animation';
-import type { UnitModuleSetupContext } from '../../app/lib/classes/UnitModule';
-import { AnimationUnitModule } from '../../app/lib/classes/unitModule/Animation';
+} from '@cuby-world/app/lib/classes/Unit';
+import { getHoverClip } from '@cuby-world/app/lib/utils/animation';
+import type { UnitModuleSetupContext } from '@cuby-world/app/lib/classes/UnitModule';
+import { AnimationUnitModule } from '@cuby-world/app/lib/classes/unitModule/Animation';
 
 import image_cuby_top from './assets/top.png';
 import image_cuby_bottom from './assets/bottom.png';
@@ -30,12 +32,15 @@ import image_cuby_face_sleep_1 from './assets/face/sleep_1.png';
 import image_cuby_face_sleep_2 from './assets/face/sleep_2.png';
 import image_cuby_face_speak_1 from './assets/face/speak_1.png';
 
+import image_sleep_1 from './assets/sleep/sleep_1.png';
+import image_sleep_2 from './assets/sleep/sleep_2.png';
+import image_sleep_3 from './assets/sleep/sleep_3.png';
+import image_sleep_4 from './assets/sleep/sleep_4.png';
+
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
-
-const NAME_MESH = 'Mesh';
 
 export enum CUBY_COLOR {
   BLUE = 'blue',
@@ -112,10 +117,21 @@ export default class Cuby extends Unit<
     this.clock = new Clock();
   }
 
+  override destroy(): void {
+    super.destroy();
+    clearInterval(this._sleepPlain?.userData.interval);
+  }
+
   sleepTimer?: number;
   override async setup(context: SetupContext) {
     await super.setup(context);
-
+    if (this.root.getObjectByName(OBJECT_NAME.MESH_ANIMATION)) {
+      const sleepPlain = createSleepPlain();
+      sleepPlain.rotateY(Math.PI / 2);
+      sleepPlain.position.set(0, 1, 0.45);
+      this.root.getObjectByName(OBJECT_NAME.MESH_ANIMATION)!.add(sleepPlain);
+      this._sleepPlain = sleepPlain;
+    }
     this.subscription.add(
       this.modules.movement.moveStart$.subscribe(() => {
         this.wakeUp();
@@ -130,20 +146,25 @@ export default class Cuby extends Unit<
 
   wakeUp() {
     window.clearTimeout(this.sleepTimer);
+    this.stopSleepIndicator();
     this.setCubyState(CUBY_STATE.DEFAULT);
   }
 
   sleep() {
+    const durationFactor = 1;
     window.clearTimeout(this.sleepTimer);
     this.sleepTimer = window.setTimeout(() => {
       this.setCubyState(CUBY_STATE.SLEEP_1);
       this.sleepTimer = window.setTimeout(() => {
         this.setCubyState(CUBY_STATE.SLEEP_2);
-      }, 5000);
-    }, 5000);
+
+        this.startSleepIndicator();
+      }, 5000 * durationFactor);
+    }, 5000 * durationFactor);
   }
 
   assetsByCubyState?: { [key in CUBY_STATE]: MeshPhongMaterial[] };
+  private _sleepPlain?: Mesh;
   override createMesh({ assetLoader }: SetupContext) {
     const size = this.options.size;
     const ratio = 19 / 20;
@@ -151,13 +172,13 @@ export default class Cuby extends Unit<
 
     const mesh: Mesh = new Mesh(geometry, defaultMaterial());
 
-    setupMaterials(this, mesh, assetLoader).then(assets => {
+    setupBodyMaterials(this, mesh, assetLoader).then(assets => {
       this.assetsByCubyState = assets;
       this.setCubyState(this.options.state);
       this.materialReady$.next();
     });
 
-    mesh.name = NAME_MESH;
+    mesh.name = OBJECT_NAME.MESH;
     mesh.castShadow = true;
     mesh.position.set(0, (size * ratio) / 2 + 0.2, 0);
 
@@ -181,6 +202,33 @@ export default class Cuby extends Unit<
       );
     }
   }
+
+  private _sleepFrameDuration = 1600;
+  private _sleepTimeout?: ReturnType<typeof setTimeout>;
+  startSleepIndicator() {
+    let index = 0;
+    const sleepPlain = this.root.getObjectByName('sleep_plain') as Mesh;
+    if (!sleepPlain) return;
+
+    const mesh = sleepPlain;
+    setupSleepMaterials(this.assetLoader!).then(assets => {
+      mesh.material = assets[index]!;
+      mesh.visible = true;
+      mesh.userData.interval = setInterval(() => {
+        index = (index + 1) % assets.length;
+        mesh.material = assets[index]!;
+      }, this._sleepFrameDuration);
+    });
+  }
+
+  stopSleepIndicator() {
+    const sleepPlain = this.root.getObjectByName('sleep_plain') as Mesh;
+    if (sleepPlain) {
+      clearInterval(sleepPlain.userData.interval);
+      sleepPlain.visible = false;
+    }
+    clearTimeout(this._sleepTimeout);
+  }
 }
 
 enum CUBY_STATE {
@@ -191,7 +239,45 @@ enum CUBY_STATE {
   SPEAK_1
 }
 
-async function setupMaterials(unit: Cuby, mesh: Mesh, textures: AssetLoader) {
+function createSleepPlain() {
+  const size = 0.3;
+  const ratio = 48 / 34;
+  const geometry = new PlaneGeometry(size, ratio * size);
+
+  const mesh = new Mesh(geometry, defaultMaterial());
+  mesh.name = 'sleep_plain';
+  mesh.visible = false;
+
+  return mesh;
+}
+
+async function setupSleepMaterials(textures: AssetLoader) {
+  const assets = [image_sleep_1, image_sleep_2, image_sleep_3, image_sleep_4];
+
+  const materials = (
+    await Promise.all(
+      assets.map(url => textures.add<Texture>({ loader: LOADER.TEXTURE, url }))
+    )
+  ).map(
+    texture =>
+      new MeshPhongMaterial({
+        transparent: true,
+        side: 2,
+        map: texture,
+        color: 0xffffff,
+        shininess: 100,
+        specular: 0xffffff
+      })
+  );
+
+  return materials;
+}
+
+async function setupBodyMaterials(
+  unit: Cuby,
+  mesh: Mesh,
+  textures: AssetLoader
+) {
   const faceAssets = {
     [CUBY_STATE.DEFAULT]: image_cuby_face_default,
     [CUBY_STATE.DEAD]: image_cuby_face_dead,

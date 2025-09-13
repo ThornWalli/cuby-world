@@ -11,7 +11,7 @@ import Unit, {
   OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 
 export type DoorOptions = UnitOptions;
 export default class Door extends Unit<DoorOptions> {

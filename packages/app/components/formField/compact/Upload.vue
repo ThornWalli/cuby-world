@@ -3,7 +3,7 @@
     mode="compact"
     :label="preparedLabel"
     hide-colon
-    class="cw-form-field-upload">
+    class="cw-form-field-compact-upload">
     <template #default="ctx">
       <input :id="ctx.id" :accept="accept" type="file" @change="onChange" />
       <div class="indicator">
@@ -19,13 +19,13 @@ import SvgIndicatorUpload from '../../../assets/icons/indicator/upload.svg';
 import { computed, ref } from 'vue';
 
 const file = ref<File | undefined>(undefined);
-defineProps<{
+const $props = defineProps<{
   accept?: string;
   label?: string;
 }>();
 
 const preparedLabel = computed(() => {
-  return file.value?.name || 'Upload';
+  return file.value?.name || $props.label;
 });
 
 const $emit = defineEmits<{
@@ -40,9 +40,13 @@ function onChange(e: Event) {
 </script>
 
 <style lang="postcss" scoped>
-.cw-form-field-upload {
+.cw-form-field-compact-upload {
   --indicator-width: 30px;
   --indicator-background: var(--color-blue-7);
+
+  &:not([disabled]):hover {
+    --indicator-background: var(--color-blue-8);
+  }
 
   position: relative;
   box-sizing: border-box;

@@ -13,7 +13,6 @@
   "private": true,
   "main": "index.js",
   "dependencies": {
-    "@js-basics/vector": "catalog:",
     "pathfinding": "catalog:",
     "rxjs": "catalog:",
     "three": "catalog:"

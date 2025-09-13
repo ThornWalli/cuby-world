@@ -6,7 +6,10 @@
       [`mode-${mode}`]: mode,
       [`style-${styleType ?? 'light'}`]: true
     }">
-    <label :for="preparedId" :class="{ colon: !hideColon }">
+    <label
+      v-if="!hideLabel || $slots.label"
+      :for="preparedId"
+      :class="{ colon: !hideColon }">
       <slot name="label" :label="label">{{ label }}</slot>
     </label>
     <slot :id="preparedId"></slot>
@@ -22,6 +25,7 @@ const $props = defineProps<{
   id?: string;
   label?: string;
   labelTop?: boolean;
+  hideLabel?: boolean;
   hideColon?: boolean;
   mode?: 'compact';
   styleType?: 'dark' | 'light';

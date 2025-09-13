@@ -1,5 +1,5 @@
 import type { Subscription } from 'rxjs';
-import { ReplaySubject } from 'rxjs';
+import { Subject } from 'rxjs';
 import AppModule, { type AppModuleState } from '../AppModule';
 import type Unit from '../Unit';
 import type { Vector3 } from 'three';
@@ -15,9 +15,9 @@ export default class PlacementAppModule extends AppModule<State> {
 
   unitSubscription?: Subscription;
 
-  abortPlace$ = new ReplaySubject<Unit>(1);
-  startPlace$ = new ReplaySubject<Unit>(1);
-  stopPlace$ = new ReplaySubject<Vector3>(1);
+  abortPlace$ = new Subject<Unit>();
+  startPlace$ = new Subject<Unit>();
+  stopPlace$ = new Subject<Vector3>();
 
   getPlaceUnit() {
     return this.state.placedUnit;

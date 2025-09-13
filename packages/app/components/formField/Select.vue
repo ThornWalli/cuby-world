@@ -6,10 +6,17 @@
     :hide-label="hideLabel"
     class="cw-select"
     :class="{
+      disabled,
+      [`style-${styleType ?? 'light'}`]: true,
       [`mode-${mode}`]: mode
     }">
     <div class="input">
-      <select :id="ctx.id" :value="modelValue" @change="onChange">
+      <select
+        :id="ctx.id"
+        ref="inputEl"
+        :disabled="disabled"
+        :value="modelValue"
+        @change="onChange">
         <slot>
           <option value="option1">Option 1</option>
           <option value="option2">Option 2</option>
@@ -21,41 +28,61 @@
   </cw-form-field>
 </template>
 
-<script lang="ts" setup>
-import { provide } from 'vue';
+<script lang="ts" generic="T extends string" setup>
+import { provide, ref } from 'vue';
 import CwFormField from '../base/FormField.vue';
 import SvgIndicatorSelect from '../../assets/icons/indicator/select.svg';
 
+const inputEl = ref<HTMLSelectElement | null>(null);
 const $props = defineProps<{
-  modelValue: string | number;
+  modelValue: T;
+  resetValue?: T | undefined;
   id?: string;
-  label: string;
+  label?: string;
   mode?: 'compact';
+  styleType?: 'dark' | 'light';
   hideLabel?: boolean;
+  disabled?: boolean;
 }>();
 
 const $emit = defineEmits<{
-  (e: 'update:model-value', value: string): void;
+  (e: 'update:model-value', value: T): void;
 }>();
 
 function onChange(event: Event) {
   const select = event.target as HTMLSelectElement;
-  const value = select.value;
+  const value = select.value as T;
   $emit('update:model-value', value);
 }
 
 provide('parentSelectValue', $props.modelValue);
+provide('setValue', (value: T) => (inputEl.value!.value = value));
+
+defineExpose<{ reset: () => void }>({
+  reset: () => {
+    const resetValue = ($props.resetValue ?? '') as T;
+    inputEl.value!.value = resetValue;
+    $emit('update:model-value', resetValue);
+  }
+});
 </script>
 
 <style lang="postcss" scoped>
 .cw-select {
   --color-border: var(--color-black);
   --color-background: var(--color-white);
+  --color-foreground: var(--color-black);
 
   /* indicator */
   --indicator-width: 30px;
   --indicator-foreground: var(--color-white);
   --indicator-background: var(--color-blue-7);
+
+  &.style-dark {
+    --color-border: var(--color-white);
+    --color-background: var(--color-black);
+    --color-foreground: var(--color-white);
+  }
 
   & .input {
     position: relative;
@@ -74,6 +101,7 @@ provide('parentSelectValue', $props.modelValue);
     padding-right: calc(var(--indicator-width) + 6px);
     font-family: var(--font-base);
     color: currentColor;
+    color: var(--color-foreground);
     appearance: none;
     outline: none;
     background: transparent;
@@ -83,6 +111,11 @@ provide('parentSelectValue', $props.modelValue);
     & option {
       font-weight: normal;
     }
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   &:not(.mode-compact) {
@@ -95,6 +128,11 @@ provide('parentSelectValue', $props.modelValue);
   &.mode-compact {
     --color-border: var(--color-white);
     --color-background: rgb(var(--rgb-white) / 20%);
+    --color-foreground: var(--color-white);
+
+    &:not([disabled]):hover {
+      --indicator-background: var(--color-blue-8);
+    }
 
     & .input {
       height: 23px;

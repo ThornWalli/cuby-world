@@ -2,6 +2,10 @@ import type { Camera } from 'three';
 import { Box3, Frustum, Matrix4, Vector3 } from 'three';
 import type Unit from './Unit';
 
+export interface UnitChunking {
+  currentChunkKeys: string[];
+}
+
 class Chunk {
   visible = false;
   constructor(
@@ -45,7 +49,11 @@ export default class UnitChunkManager {
       }
       this.chunks.get(key)!.units.add(unit);
     });
-    unit.currentChunkKeys = keys;
+    if ('currentChunkKeys' in unit) {
+      unit.currentChunkKeys = keys;
+    } else {
+      throw new Error('Unit does not implement UnitChunking interface');
+    }
   }
 
   removeFromChunk(unit: Unit) {
@@ -84,7 +92,7 @@ export default class UnitChunkManager {
       }
     });
     this.visibleUnitsCount = visibleUnits.size;
-    return Array.from(visibleUnits);
+    return visibleUnits;
   }
   worldChunks: Map<string, Vector3> = new Map(); // Beispielhafte Chunk-Datenstruktur
   getChunkPositions() {

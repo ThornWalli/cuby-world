@@ -24,7 +24,6 @@ interface AppModules {
   unitFocus: UnitFocusAppModule;
   selection: SelectionAppModule;
   placement: PlacementAppModule;
-  multiplayer?: MultiplayerAppModule;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -33,8 +32,8 @@ interface AppState {}
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AppConfig {}
 
-export default class App {
-  texturePreloader = new AssetLoader();
+export class BaseApp<Modules extends AppModules = AppModules> {
+  assetLoader = new AssetLoader();
 
   state: AppState = {};
 
@@ -42,7 +41,7 @@ export default class App {
   roomSubscription?: Subscription;
   // #endregion
 
-  modules: AppModules;
+  modules: Modules;
 
   ready = false;
 
@@ -90,3 +89,10 @@ export default class App {
     this.renderer.resetCamera();
   }
 }
+
+interface AppPlaygroundModules extends AppModules {
+  player: PlayerAppModule;
+  multiplayer?: MultiplayerAppModule;
+}
+
+export default class App extends BaseApp<AppPlaygroundModules> {}

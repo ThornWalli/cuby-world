@@ -14,8 +14,10 @@ export default class DefaultRoom extends RoomDescription {
     console.log(Array(50).fill(Array(5).fill(1)));
     super({
       id: 'default',
-      name: 'Default Room',
-      description: 'This is the default room in Cuby World.',
+      info: {
+        name: 'Default',
+        description: 'This is the default room'
+      },
       // grid: RoomGrid.fromGrid(Array(50).fill(Array(5).fill(1))),
       grid: RoomGrid.fromGrid([
         [0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0],
@@ -36,7 +38,7 @@ export default class DefaultRoom extends RoomDescription {
       ]),
       start: {
         position: new Vector3(0, 0, 2),
-        rotation: UNIT_ROTATION.RIGHT
+        rotation: UNIT_ROTATION.EAST
       },
       units: getUnits()
     });
@@ -47,7 +49,7 @@ function getUnits() {
   const units: Unit[] = [
     new Door({
       position: new Vector3(0, 0, 2),
-      rotation: UNIT_ROTATION.LEFT
+      rotation: UNIT_ROTATION.WEST
     }),
     // new Block({
     //   position: new Vector3(1, 0, 0),
@@ -86,7 +88,7 @@ function getUnits() {
     }),
     new Mirror({
       position: new Vector3(3, 0, 0),
-      rotation: UNIT_ROTATION.DOWN
+      rotation: UNIT_ROTATION.SOUTH
     }),
     new Lamp({
       position: new Vector3(6, 0, 0)

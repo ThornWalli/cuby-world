@@ -24,7 +24,10 @@ export default abstract class UnitModule<
 
   subscription = new Subscription();
 
-  constructor(private _unit: U) {}
+  constructor(
+    private _unit: U,
+    public readonly debug: boolean
+  ) {}
 
   destroy() {
     this.subscription.unsubscribe();
@@ -34,8 +37,8 @@ export default abstract class UnitModule<
     return this._unit;
   }
 
-  get room() {
-    return this.unit.room;
+  get currentRoom() {
+    return this.unit.modules.room?.getRoom();
   }
 
   async setup(context: UnitModuleSetupContext): Promise<Object3D> {

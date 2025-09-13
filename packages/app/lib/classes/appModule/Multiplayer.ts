@@ -171,7 +171,6 @@ export default class MultiplayerAppModule extends AppModule<State> {
         const player = new Player({ id: peerId, name: peerId });
         const currentPlayer = this.app.modules.player.getCurrentPlayer();
         if (currentPlayer && this.actions.sendPlayerInfo) {
-          debugger;
           this.actions.sendPlayerInfo(
             {
               name: currentPlayer.state.name,

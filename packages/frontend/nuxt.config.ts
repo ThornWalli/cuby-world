@@ -17,8 +17,8 @@ function getAliases() {
   return Object.fromEntries(
     Object.entries({
       ['@cuby-world/app']: 'app',
-      ['@cuby-world/frontend']: 'frontend',
-      ['@cuby-world/units']: 'units'
+      ['@cuby-world/units']: 'units',
+      ['@cuby-world/room-editor']: 'room-editor'
     })
       .map(([name, packageName]) => {
         return [
@@ -38,7 +38,7 @@ export default defineNuxtConfig({
 
   srcDir: './src',
 
-  css: ['@/assets/css/base.pcss', '@/assets/css/vars.pcss'],
+  css: ['@/assets/css/base.pcss', '@cuby-world/app/assets/css/vars.pcss'],
 
   imports: {
     autoImport: false
@@ -86,14 +86,6 @@ export default defineNuxtConfig({
   },
 
   vite: {
-    server: {
-      headers: !hasCOIWorker()
-        ? {
-            'Cross-Origin-Opener-Policy': 'same-origin',
-            'Cross-Origin-Embedder-Policy': 'require-corp'
-          }
-        : {}
-    },
     assetsInclude: ['**/*.md'],
     plugins: [
       // viteMkcert({
@@ -283,10 +275,4 @@ function getHttps() {
     };
   }
   return false;
-}
-
-function hasCOIWorker() {
-  return (
-    !!process.env.npm_config_coi_worker || process.env.COI_WORKER === 'true'
-  );
 }

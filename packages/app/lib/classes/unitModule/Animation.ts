@@ -3,6 +3,7 @@ import UnitModule, {
   type UnitModuleSetupContext,
   type UnitModuleState
 } from '../UnitModule';
+import { OBJECT_NAME } from '../Unit';
 
 type State = UnitModuleState;
 
@@ -16,6 +17,7 @@ export class AnimationUnitModule extends UnitModule {
 
   override async setup(context: UnitModuleSetupContext): Promise<Object3D> {
     const animationWrapper = new Object3D();
+    animationWrapper.name = OBJECT_NAME.MESH_ANIMATION;
     this.mixer = new AnimationMixer(animationWrapper);
     animationWrapper.add(context.mesh);
     return animationWrapper;

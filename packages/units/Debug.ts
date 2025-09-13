@@ -5,8 +5,8 @@ import Unit, {
   OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
-import { checkerboardTexture } from '../app/lib/utils/texture';
+} from '@cuby-world/app/lib/classes/Unit';
+import { checkerboardTexture } from '@cuby-world/app/lib/utils/texture';
 
 export type DebugOptions = UnitOptions;
 export default class Debug extends Unit<DebugOptions> {

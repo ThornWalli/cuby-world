@@ -14,10 +14,10 @@ import Unit, {
   type UnitConstructorOptions,
   type UnitModules,
   type UnitOptions
-} from '../../app/lib/classes/Unit';
-import { getHoverClip } from '../../app/lib/utils/animation';
-import type { UnitModuleSetupContext } from '../../app/lib/classes/UnitModule';
-import { AnimationUnitModule } from '../../app/lib/classes/unitModule/Animation';
+} from '@cuby-world/app/lib/classes/Unit';
+import { getHoverClip } from '@cuby-world/app/lib/utils/animation';
+import type { UnitModuleSetupContext } from '@cuby-world/app/lib/classes/UnitModule';
+import { AnimationUnitModule } from '@cuby-world/app/lib/classes/unitModule/Animation';
 
 import image_sky_box_1_nx from './assets/sky_box_1/nx.png';
 import image_sky_box_1_ny from './assets/sky_box_1/ny.png';

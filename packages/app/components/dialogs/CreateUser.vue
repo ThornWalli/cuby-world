@@ -19,12 +19,12 @@
           <cw-form-field-select-option
             v-for="option in colorOptions"
             v-bind="option"
-            :key="option.value"></cw-form-field-select-option>
+            :key="option.value" />
         </cw-form-field-select>
       </form>
     </template>
     <template #actions>
-      <cw-button style-type="light" @click="onClickSave()"> Save </cw-button>
+      <cw-button @click="onClickSave()"> Save </cw-button>
     </template>
   </cw-dialog>
 </template>
