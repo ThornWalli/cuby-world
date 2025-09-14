@@ -224,6 +224,7 @@
     ],
     "rotation": "east"
   },
+  "walls":[],
   "units": [
     {
       "unit": "door",

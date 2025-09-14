@@ -3,6 +3,7 @@
     class="cw-panel"
     :class="{
       [`position-${position}`]: position,
+      [`style-type-${styleType ?? 'default'}`]: true,
       'has-title': !hideTitle && hasTitle
     }">
     <div v-if="!hideTitle && hasTitle" class="title">
@@ -23,6 +24,7 @@ const $props = defineProps<{
   title?: string;
   hideTitle?: boolean;
   position?: PANEL_POSITION | `${PANEL_POSITION}`;
+  styleType?: 'default' | 'outlined' | 'transparent';
 }>();
 
 const hasTitle = computed(() => $props.title || $slots.title);
@@ -49,12 +51,26 @@ export enum PANEL_POSITION {
   flex-direction: column;
   gap: 8px;
   padding: 8px;
-  color: white;
-  background: rgb(0 0 0 / 80%);
-  border: solid 2px rgb(255 255 255 / 80%);
-  border-radius: 6px;
-  box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
-  backdrop-filter: blur(5px);
+
+  &.style-type-default {
+    align-items: center;
+    color: white;
+    background: rgb(0 0 0 / 40%);
+    border-radius: 8px;
+    box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
+
+    /* backdrop-filter: blur(5px); */
+  }
+
+  &.style-type-outlined {
+    color: white;
+    background: rgb(0 0 0 / 80%);
+    border: solid 2px rgb(255 255 255 / 80%);
+    border-radius: 6px;
+    box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
+
+    /* backdrop-filter: blur(5px); */
+  }
 
   &.has-title {
     padding-top: 8px;

@@ -1,11 +1,12 @@
 import { Object3D, Vector2 } from 'three';
-import type RoomDescription from './RoomDescription';
 import type App from './App';
 import RoomGrid from './RoomGrid';
 import WallModule from './roomModule/Wall';
 import GroundModule from './roomModule/Ground';
 import SelectionMode from './roomModule/Selection';
 import UnitsModule from './roomModule/Units';
+import type { EditorRoomDescription } from '@cuby-world/room-editor/types';
+import type { RoomDescription } from './RoomDescription';
 
 type RoomModuleList = (
   | typeof WallModule
@@ -28,37 +29,46 @@ export default class Room<Modules extends RoomModules = RoomModules> {
   debug = false;
 
   state: RoomState = {};
-  modules: Modules;
+  modules: Modules = {} as Modules;
   mesh = new Object3D();
-  description?: RoomDescription;
-
-  private _grid: RoomGrid;
-
-  get grid() {
-    return this._grid;
-  }
+  description: RoomDescription;
+  grid: RoomGrid;
 
   constructor(
     public app: App,
-    grid: RoomGrid = new RoomGrid([], 0, 0),
-    modules: RoomModuleList = []
+    description: RoomDescription,
+    protected moduleList: RoomModuleList = []
   ) {
-    modules.push(SelectionMode);
-    modules.push(WallModule);
-    modules.push(GroundModule);
-    modules.push(UnitsModule);
+    this.description = description;
+    this.grid = new RoomGrid(description.grid);
+    this.mesh = new Object3D();
+    this.mesh.name = 'room';
+  }
+
+  async setupModules() {
+    const moduleList = this.moduleList;
+    moduleList.push(SelectionMode);
+    moduleList.push(WallModule);
+    moduleList.push(GroundModule);
+    moduleList.push(UnitsModule);
+
+    // #region editor
+
+    // await Promise.all(
+    //   [import('./roomModule/editor/Wall').then(m => m.default)].map(module => {
+    //     moduleList.push(module);
+    //   })
+    // );
+
+    // #endregion
 
     // #region Modules
-    const preparedModules = modules.map(ModuleClass => {
+    const preparedModules = moduleList.map(ModuleClass => {
       const moduleInstance = new ModuleClass(this, this.debug);
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
     // #endregion
-
-    this._grid = grid;
-    this.mesh = new Object3D();
-    this.mesh.name = 'room';
   }
 
   destroy() {
@@ -82,5 +92,33 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     Object.values(this.modules).forEach(module => {
       module.updateThrottle(time, { camera: this.app.renderer.camera });
     });
+  }
+
+  updateThrottle500ms(time: number) {
+    Object.values(this.modules).forEach(module => {
+      module.updateThrottle500ms(time, { camera: this.app.renderer.camera });
+    });
+  }
+
+  updateThrottle1Sec(time: number) {
+    Object.values(this.modules).forEach(module => {
+      module.updateThrottle1Sec(time, { camera: this.app.renderer.camera });
+    });
+  }
+
+  toRoomEditorDescription(): EditorRoomDescription {
+    const description = this.description!;
+    const start = description.start!;
+    return {
+      id: description.id,
+      info: {
+        name: this.description?.info.name ?? '',
+        description: this.description?.info.description ?? ''
+      },
+      grid: this.grid.toJSON(),
+      start,
+      walls: this.modules.wall.getWalls().map(wall => wall.toJSON()),
+      units: this.modules.units.getUnits().map(unit => unit.toJSON())
+    };
   }
 }

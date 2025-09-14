@@ -54,9 +54,11 @@ const $props = defineProps<{
   app: App;
 }>();
 
+const rootEl = ref<HTMLElement>();
 const selectedUnit = ref<Raw<Unit> | null>(null);
 const placedUnit = ref<Raw<Unit> | null>(null);
 const canPlaced = computed(() => selectedUnit.value?.options.canPlaced);
+const isMessagingActive = computed(() => !!$props.app.modules.multiplayer);
 
 // let sceneUnsubscribe;
 onMounted(async () => {
@@ -85,15 +87,9 @@ async function setup() {
   );
 }
 
-// const user = ref();
-
 onUnmounted(() => {
   subscription.unsubscribe();
 });
-
-const isMessagingActive = computed(() => !!$props.app.modules.multiplayer);
-
-const rootEl = ref<HTMLElement>();
 
 function onClickRotate() {
   if (selectedUnit.value) {

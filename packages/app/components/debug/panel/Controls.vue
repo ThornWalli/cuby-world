@@ -47,8 +47,8 @@ import CwSelect from '../../formField/Select.vue';
 import CwButton from '../../Button.vue';
 import CwToggle from '../../formField/compact/Toggle.vue';
 import { computed } from 'vue';
-import { UNIT_ROTATION } from '../../../lib/classes/Unit';
 import type { Options } from '../UnitPreview.vue';
+import { UNIT_ROTATION } from '../../../lib/types/unit';
 
 const $emit = defineEmits<{
   (e: 'select-unit', value: string): void;

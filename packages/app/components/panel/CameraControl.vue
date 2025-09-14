@@ -19,24 +19,23 @@ import CwButton from '../Button.vue';
 import type App from '../../lib/classes/App';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Subscription } from 'rxjs';
+import { WALL_VIEW_MODE } from '@cuby-world/app/lib/classes/roomModule/Wall';
+
+const subscription = new Subscription();
 
 const $props = defineProps<{
   app: App;
 }>();
 
-const subscription = new Subscription();
+const viewMode = ref<WALL_VIEW_MODE>(WALL_VIEW_MODE.DYNAMIC);
+
+const room = computed(() => {
+  return $props.app.modules.room.getRoom();
+});
 
 const unitFocus = computed(() => {
   return $props.app.modules.unitFocus!;
 });
-
-function onToggleFocused(value: boolean) {
-  if (value) {
-    unitFocus.value.setPlayerAsFocusedUnit();
-  } else {
-    unitFocus.value.unfocusUnit();
-  }
-}
 
 const focusedUnit = ref(false);
 onMounted(() => {
@@ -49,9 +48,22 @@ onMounted(() => {
       }
     })
   );
+  subscription.add(
+    room.value!.modules.wall.viewMode$.subscribe(mode => {
+      viewMode.value = mode;
+    })
+  );
 });
 
 onUnmounted(() => {
   subscription.unsubscribe();
 });
+
+function onToggleFocused(value: boolean) {
+  if (value) {
+    unitFocus.value.setPlayerAsFocusedUnit();
+  } else {
+    unitFocus.value.unfocusUnit();
+  }
+}
 </script>

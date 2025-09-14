@@ -95,11 +95,11 @@ import CwFormFieldSelect from '@cuby-world/app/components/formField/Select.vue';
 import CwFormFieldSelectOption from '@cuby-world/app/components/formField/select/Option.vue';
 import CwFormFieldTextfield from '@cuby-world/app/components/formField/Textfield.vue';
 import CwButton from '@cuby-world/app/components/Button.vue';
-import { UNIT_ROTATION } from '@cuby-world/app/lib/classes/Unit';
-import type { UnitDescription } from '../../types';
 
 import { ref } from 'vue';
 import { Vector3 } from 'three';
+import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
+import { UNIT_ROTATION } from '@cuby-world/app/lib/types/unit';
 
 const $props = defineProps<{
   modelValue: UnitDescription;

@@ -1,59 +1,43 @@
 import type { Vector2, Vector3 } from 'three';
-import type { UNIT_ROTATION } from './Unit';
-import type Unit from './Unit';
-import type RoomGrid from './RoomGrid';
+import type { WallDescription } from './Wall';
+import type { UNIT_ROTATION } from '../types/unit';
+import type { UnitDescription } from './Unit';
 
 export enum WALL_TYPE {
   DEFAULT = 'default',
   DOOR = 'door'
 }
 
-export interface WallDescription<Position = Vector2> {
-  startPosition: Position;
-  endPosition: Position;
-  type: WALL_TYPE;
+export interface RoomStartPosition<
+  Position = Vector3,
+  Rotation = UNIT_ROTATION
+> {
+  position: Position;
+  rotation: Rotation;
 }
-export default class RoomDescription {
+export interface RoomDescription<
+  Rotation = UNIT_ROTATION,
+  WallPosition = Vector2,
+  UnitPosition = Vector3
+> {
   id: string;
   info: {
     name: string;
     description?: string;
   };
-  grid: RoomGrid;
-  units: Unit[];
-  walls: WallDescription[];
+  grid: number[][];
+  units: UnitDescription<Rotation, UnitPosition>[];
+  walls: WallDescription<WallPosition>[];
 
-  start?: {
-    position: Vector3;
-    rotation: UNIT_ROTATION;
+  start: {
+    position: UnitPosition;
+    rotation: Rotation;
   };
-
-  constructor({
-    id,
-    info,
-    grid,
-    units,
-    walls,
-    start
-  }: {
-    id: string;
-    info: {
-      name: string;
-      description?: string;
-    };
-    grid: RoomGrid;
-    units?: Unit[];
-    walls?: WallDescription[];
-    start?: {
-      position: Vector3;
-      rotation: UNIT_ROTATION;
-    };
-  }) {
-    this.id = id;
-    this.info = info;
-    this.grid = grid;
-    this.units = units || [];
-    this.walls = walls || [];
-    this.start = start;
-  }
 }
+
+export type ImportRoomDescription = RoomDescription<
+  UNIT_ROTATION,
+  Vector2,
+  Vector3
+>;
+export type JsonRoomDescription = RoomDescription<string, number[], number[]>;

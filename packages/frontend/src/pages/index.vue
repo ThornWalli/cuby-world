@@ -1,27 +1,48 @@
 <template>
   <div>
     <client-only>
-      <app :config="config" />
+      <app :config="config" :room-description="roomDescription" />
     </client-only>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { useRuntimeConfig } from '#imports';
-import type { AppConfig } from '@cuby-world/app/lib/classes/App';
+import { useRoute, useRuntimeConfig } from '#imports';
+import { APP_MODE, type AppConfig } from '@cuby-world/app/lib/classes/App';
+
 import { defineAsyncComponent, ref } from 'vue';
+import roomTest2000 from '@cuby-world/app/lib/rooms/test-2000.json';
+import {
+  jsonParse,
+  parseRoomDescription
+} from '@cuby-world/room-editor/utils/parse';
+
 const App = defineAsyncComponent(
   () => import('@cuby-world/app/components/App.vue')
 );
 
+const $route = useRoute();
+
 const runtimeConfig = useRuntimeConfig();
 
+const roomDescription = parseRoomDescription(
+  jsonParse(JSON.stringify(roomTest2000))
+);
+
 const config = ref<AppConfig>({
+  mode: getMode(),
   firebase: runtimeConfig.public.firebase,
   multiplayer: {
     enabled: runtimeConfig.public.cubyWorld.multiplayerEnabled
   }
 });
+
+function getMode() {
+  if ($route.query.mode === APP_MODE.EDITOR) {
+    return APP_MODE.EDITOR;
+  }
+  return APP_MODE.PLAYGROUND;
+}
 </script>
 
 <style lang="postcss" scoped>

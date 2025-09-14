@@ -30,7 +30,10 @@ const $props = defineProps<{
   modules?: RendererModuleList;
 }>();
 
-const $emit = defineEmits(['ready', 'click']);
+const $emit = defineEmits<{
+  (e: 'ready'): void;
+  (e: 'pointerdown' | 'pointerup', event: PointerEvent): void;
+}>();
 
 const rootEl = ref();
 const canvasEl = ref();
@@ -68,7 +71,12 @@ onMounted(async () => {
 
   subscription.add(
     fromEvent<PointerEvent>(canvasEl.value, 'pointerdown').subscribe(event => {
-      $emit('click', event);
+      $emit('pointerdown', event);
+    })
+  );
+  subscription.add(
+    fromEvent<PointerEvent>(canvasEl.value, 'pointerup').subscribe(event => {
+      $emit('pointerup', event);
     })
   );
 

@@ -44,18 +44,12 @@ import { computed, ref, watch } from 'vue';
 import { Vector2, Vector3 } from 'three';
 import CwRoomEditorGridCell from './grid/Cell.vue';
 import CwRoomEditorGridWall, { type WallData } from './grid/Wall.vue';
-import {
-  ACTION_TYPE,
-  type GridCell,
-  type GridModel,
-  type UnitDescription
-} from '../types';
-import {
-  WALL_TYPE,
-  type WallDescription
-} from '@cuby-world/app/lib/classes/RoomDescription';
+import { ACTION_TYPE, type GridCell, type GridModel } from '../types';
+import { WALL_TYPE } from '@cuby-world/app/lib/classes/RoomDescription';
 
 import CwRoomEditorPanelWallSettings from './panel/WallSettings.vue';
+import type { WallDescription } from '@cuby-world/app/lib/classes/Wall';
+import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
 
 function onUpdateSelectedWall(wall: WallDescription) {
   model.value.walls = model.value.walls?.map(w =>
@@ -78,7 +72,8 @@ function getWall({
 }) {
   return model.value.walls?.find(
     w =>
-      w.startPosition.equals(startPosition) && w.endPosition.equals(endPosition)
+      w.startPosition!.equals(startPosition) &&
+      w.endPosition!.equals(endPosition)
   );
 }
 const selectedWall = ref<WallDescription | null>(null);
@@ -86,8 +81,8 @@ function onClickWall(wall: WallData) {
   if ($props.actionType === ACTION_TYPE.EDIT_WALL) {
     if (
       selectedWall.value &&
-      wall.startPosition.equals(selectedWall.value.startPosition) &&
-      wall.endPosition.equals(selectedWall.value.endPosition)
+      wall.startPosition.equals(selectedWall.value.startPosition!) &&
+      wall.endPosition.equals(selectedWall.value.endPosition!)
     ) {
       selectedWall.value = null;
     } else {
@@ -234,8 +229,8 @@ function setWall(wallData: WallData) {
   const walls = model.value.walls ?? [];
   let wall = walls.find(
     w =>
-      w.startPosition.equals(wallData.startPosition) &&
-      w.endPosition.equals(wallData.endPosition)
+      w.startPosition!.equals(wallData.startPosition) &&
+      w.endPosition!.equals(wallData.endPosition)
   )!;
   if (!wall) {
     wall = {

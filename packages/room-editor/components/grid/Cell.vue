@@ -19,10 +19,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { ACTION_TYPE, UnitDescription } from '../../types';
+import type { ACTION_TYPE } from '../../types';
 import { fromEvent } from 'rxjs';
 import BaseButton from '@cuby-world/app/components/base/Button.vue';
-import type { WallDescription } from '@cuby-world/app/lib/classes/RoomDescription';
+import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
+import type { WallDescription } from '@cuby-world/app/lib/classes/Wall';
 
 defineProps<{
   type: 'floor' | 'empty';

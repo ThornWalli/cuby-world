@@ -6,7 +6,7 @@
       :options="rendererOptions"
       :modules="[IntersectionRendererModule]" />
     <transition name="fade">
-      <cw-app-playground v-if="ready && hasPlayer" :app="app!" />
+      <component :is="currentComponent" v-if="ready && hasPlayer" :app="app!" />
     </transition>
     <!-- Dialogs -->
     <teleport to="#teleports">
@@ -16,50 +16,60 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, markRaw, nextTick, onMounted, onUnmounted } from 'vue';
-import App, { type AppConfig } from '../lib/classes/App';
+import {
+  ref,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  computed,
+  defineAsyncComponent,
+  markRaw
+} from 'vue';
+import App, { APP_MODE, EditorApp, type AppConfig } from '../lib/classes/App';
 import CwRenderer from './Renderer.vue';
-import CwAppPlayground from './app/Playground.vue';
 import CwDialogCreateUser from './dialogs/CreateUser.vue';
 
 import setupFonts from './../utils/fonts';
 import type { RendererOptions } from '../types';
 import IntersectionRendererModule from '../lib/classes/rendererModule/Intersection';
-import UnitFocusAppModule from '../lib/classes/appModule/UnitFocus';
 import { fromEvent, Subscription } from 'rxjs';
 import { Vector2 } from 'three';
 import type Renderer from '../lib/classes/Renderer';
 import Player, { type PlayerSettings } from '../lib/classes/Player';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
-import DefaultRoom from '../lib/rooms/Default';
-// import ImportRoom from '../lib/rooms/Import';
-// import wallTest from '../lib/rooms/wall-test.json';
-// import wallTest from '../lib/rooms/wall-test.json';
-import test2000 from '../lib/rooms/test-2000.json';
 import { DEFAULT_ROOM_ID } from '../lib/classes/appModule/Multiplayer';
-import ImportRoom from '../lib/rooms/Import';
-import { jsonParse, parseRoomDescription } from '@cuby-world/room-editor/utils';
-// import { jsonParse, parseRoomDescription } from '@cuby-world/room-editor/utils';
+import type { RoomDescription } from '../lib/classes/RoomDescription';
 
 setupFonts();
 const $props = defineProps<{
+  roomDescription: RoomDescription;
   config: AppConfig;
   rendererOptions?: RendererOptions;
 }>();
+
+const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
+const dialogCreateUser = ref<InstanceType<typeof CwDialogCreateUser> | null>(
+  null
+);
 
 const rootEl = ref<HTMLElement>();
 const dimension = ref<Vector2>();
 const subscription = new Subscription();
 const app = ref<App>();
-const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 const ready = ref(false);
-const dialogCreateUser = ref<InstanceType<typeof CwDialogCreateUser> | null>(
-  null
-);
+const hasPlayer = ref(false);
+
+const currentComponent = computed(() => {
+  if ($props.config.mode === APP_MODE.EDITOR) {
+    return defineAsyncComponent(() => import('./app/Editor.vue'));
+  }
+  return defineAsyncComponent(() => import('./app/Playground.vue'));
+});
 
 onMounted(async () => {
   nextTick(() => {
     setup();
+    app.value!.loadRoom($props.roomDescription);
   });
 });
 
@@ -77,34 +87,36 @@ async function setup() {
 
   onResize();
 
-  const app = await setupApp(renderer);
+  const app = markRaw(await setupApp(renderer));
   await setupPlayer(app);
   await app.modules.multiplayer?.joinRoom(DEFAULT_ROOM_ID);
-
-  const map = 'wall';
-
-  // TODO: Raum muss noch aus der db kommen.
-  switch (map) {
-    case 'wall':
-      app.modules.room.fromDescription(
-        new ImportRoom(
-          parseRoomDescription(jsonParse(JSON.stringify(test2000)))
-        )
-      );
-      break;
-    default:
-      app.modules.room.fromDescription(new DefaultRoom());
-  }
-
-  // app.modules.room.fromDescription(
-  //   new ImportRoom(parseRoomDescription(jsonParse(JSON.stringify(wallTest))))
-  // );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).cubyWorld = app;
 }
 
 const STORAGE_PLAYER_KEY = 'cuby-world:player';
+
+async function setupApp(renderer: Renderer) {
+  app.value = getAppByMode(
+    $props.config.mode ?? APP_MODE.PLAYGROUND,
+    $props.config,
+    renderer
+  );
+
+  await app.value.setup();
+  ready.value = true;
+
+  subscription.add(
+    fromEvent(window, 'resize', {
+      passive: true
+    }).subscribe(() => {
+      onResize();
+    })
+  );
+
+  return app.value;
+}
 
 async function getPlayerSettings() {
   let playerSettings: PlayerSettings | undefined = undefined;
@@ -127,23 +139,6 @@ async function getPlayerSettings() {
   return playerSettings;
 }
 
-async function setupApp(renderer: Renderer) {
-  app.value = markRaw(new App($props.config, renderer, [UnitFocusAppModule]));
-  await app.value.setup();
-  ready.value = true;
-
-  subscription.add(
-    fromEvent(window, 'resize', {
-      passive: true
-    }).subscribe(() => {
-      onResize();
-    })
-  );
-
-  return app.value;
-}
-
-const hasPlayer = ref(false);
 async function setupPlayer(app: App) {
   const playerSettings = await getPlayerSettings();
 
@@ -165,6 +160,14 @@ async function setupPlayer(app: App) {
   }
   app.modules.player.addPlayer(player);
   hasPlayer.value = true;
+}
+
+function getAppByMode(mode: APP_MODE, config: AppConfig, renderer: Renderer) {
+  if (mode === APP_MODE.EDITOR) {
+    return new EditorApp(config, renderer);
+  } else {
+    return new App(config, renderer);
+  }
 }
 
 function onResize() {

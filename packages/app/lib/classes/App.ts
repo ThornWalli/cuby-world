@@ -9,6 +9,8 @@ import PlayerAppModule from './appModule/Player';
 import SelectionAppModule from './appModule/Selection';
 import PlacementAppModule from './appModule/Placement';
 import MultiplayerAppModule from './appModule/Multiplayer';
+import EditorWallAppModule from './appModule/editor/Wall';
+import type { ImportRoomDescription } from './RoomDescription';
 
 type AppModuleList = (
   | typeof UnitFocusAppModule
@@ -29,10 +31,19 @@ interface AppModules {
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface AppState {}
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface AppConfig {}
+export enum APP_MODE {
+  PLAYGROUND = 'playground',
+  EDITOR = 'editor'
+}
 
-export class BaseApp<Modules extends AppModules = AppModules> {
+export interface AppConfig {
+  mode?: APP_MODE;
+}
+
+export class BaseApp<
+  Modules extends AppModules = AppModules,
+  ModuleList extends AppModuleList = AppModuleList
+> {
   assetLoader = new AssetLoader();
 
   state: AppState = {};
@@ -41,38 +52,36 @@ export class BaseApp<Modules extends AppModules = AppModules> {
   roomSubscription?: Subscription;
   // #endregion
 
-  modules: Modules;
+  modules: Modules = {} as Modules;
+  moduleList: ModuleList;
 
   ready = false;
 
   constructor(
     public config: AppConfig,
     public renderer: Renderer,
-    modules: AppModuleList = []
+    moduleList: ModuleList = [] as unknown as ModuleList
   ) {
-    modules.push(
+    moduleList.push(
       RoomAppModule,
       PlayerAppModule,
       UnitFocusAppModule,
       SelectionAppModule,
       PlacementAppModule
     );
+    this.moduleList = moduleList;
+  }
 
-    if (config.multiplayer?.enabled) {
-      modules.push(MultiplayerAppModule);
-    }
+  async setup() {
+    if (this.ready) return;
 
     // #region Modules
-    const preparedModules = modules.map(ModuleClass => {
+    const preparedModules = this.moduleList.map(ModuleClass => {
       const moduleInstance = new ModuleClass(this);
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
     // #endregion
-  }
-
-  async setup() {
-    if (this.ready) return;
 
     await Promise.all(
       Object.values(this.modules).map(module => module.setup())
@@ -83,10 +92,18 @@ export class BaseApp<Modules extends AppModules = AppModules> {
 
   destroy() {
     this.roomSubscription?.unsubscribe();
+    Object.values(this.modules).forEach(module => {
+      module.destroy();
+    });
+    this.renderer.destroy();
   }
 
   resetCamera() {
     this.renderer.resetCamera();
+  }
+
+  loadRoom(roomDescription: ImportRoomDescription) {
+    return this.modules.room.fromDescription(roomDescription);
   }
 }
 
@@ -95,4 +112,36 @@ interface AppPlaygroundModules extends AppModules {
   multiplayer?: MultiplayerAppModule;
 }
 
-export default class App extends BaseApp<AppPlaygroundModules> {}
+export default class App extends BaseApp<AppPlaygroundModules> {
+  constructor(
+    config: AppConfig,
+    renderer: Renderer,
+    modules: AppModuleList = []
+  ) {
+    if (config.multiplayer?.enabled) {
+      modules.push(MultiplayerAppModule);
+    }
+
+    super(config, renderer, modules);
+  }
+}
+
+interface AppEditorModules extends AppModules {
+  player: PlayerAppModule;
+  editorWall: EditorWallAppModule;
+}
+
+export class EditorApp extends BaseApp<
+  AppEditorModules,
+  (typeof EditorWallAppModule)[] & AppModuleList
+> {
+  constructor(
+    config: AppConfig,
+    renderer: Renderer,
+    moduleList: (typeof EditorWallAppModule)[] & AppModuleList = []
+  ) {
+    moduleList.push(EditorWallAppModule);
+
+    super(config, renderer, moduleList);
+  }
+}

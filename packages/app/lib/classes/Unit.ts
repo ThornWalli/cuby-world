@@ -16,6 +16,21 @@ import { PlacementUnitModule } from './unitModule/Placement';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
 import RoomUnitModule from './unitModule/Room';
 import type { UnitChunking } from './UnitChunkManager';
+import { ROTATION_TYPE, UNIT_ROTATION } from '../types/unit';
+
+export interface RawUnitDescription<Rotation = string, Position = number[]> {
+  unit: string;
+  options: {
+    accessible?: boolean;
+    position: Position;
+    rotation: Rotation;
+    [key: string]: unknown;
+  };
+}
+export type UnitDescription<
+  Rotation = UNIT_ROTATION,
+  Position = Vector3
+> = RawUnitDescription<Rotation, Position>;
 
 export type UnitModuleList =
   | typeof PlayerUnitModule
@@ -50,22 +65,6 @@ export interface UnitConstructorOptions<
   size?: Vector3;
   rotation?: UNIT_ROTATION;
   options?: Options;
-}
-
-export enum UNIT_ROTATION {
-  WEST = 'west',
-  WEST_UP = 'west-north',
-  WEST_DOWN = 'west-south',
-  NORTH = 'north',
-  EAST = 'east',
-  EAST_UP = 'east-north',
-  EAST_DOWN = 'east-south',
-  SOUTH = 'south'
-}
-
-export enum ROTATION_TYPE {
-  BASIC = 'basic',
-  EXTENDED = 'extended'
 }
 
 export const rotationDirections = {
@@ -185,6 +184,20 @@ export default class Unit<
 
   size: Vector3 = new Vector3(1, 1, 1);
 
+  toDescription(): UnitDescription {
+    return {
+      unit: (this.constructor as typeof Unit).NAME,
+      options: {
+        position: this._position.clone(),
+        rotation: this.rotation
+      }
+    };
+  }
+
+  toJSON(): UnitDescription {
+    return this.toDescription();
+  }
+
   constructor(
     {
       debug,
@@ -289,7 +302,7 @@ export default class Unit<
   }
 
   getPosition() {
-    return this._position;
+    return this._position.clone();
   }
   setPosition(position: Vector3) {
     this._position.copy(position);

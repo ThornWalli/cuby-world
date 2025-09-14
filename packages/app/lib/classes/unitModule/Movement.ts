@@ -8,9 +8,9 @@ import { Subject } from 'rxjs';
 import { getYPositionByPosition } from '../../utils/room';
 import { getRadByRotation, type UnitOptions } from '../Unit';
 import { easeOutExpo, easeOutQuad } from '@cuby-world/app/utils/easings';
-import type RoomGrid from '../RoomGrid';
-import type { WallDescription } from '../RoomDescription';
+import RoomGrid from '../RoomGrid';
 import { setWallConditions } from '../../utils/wall';
+import type { WallDescription } from '../Wall';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -70,7 +70,7 @@ export default class MovementUnitModule extends UnitModule {
 
     let isBlocked = false;
     if (Array.isArray(data[position.z])) {
-      const i = position.z * room.description.grid.width + position.x;
+      const i = position.z * room.gridSize.x + position.x;
       isBlocked = data[i] === 1;
       data[i] = 0;
     }
@@ -309,7 +309,7 @@ function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
   const grid = room.grid.clone();
   const unitY = unit.getPosition().y;
 
-  grid.data = grid.data.map(v => {
+  const data = grid.data.map(v => {
     if (
       unitY > 0 &&
       unitY * heightMultiplicator >= 1 &&
@@ -354,11 +354,13 @@ function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
             p => p.x >= 0 && p.x < grid.width && p.z >= 0 && p.z < grid.height
           )
           .forEach(p => {
-            grid.data[p.z * grid.width + p.x] = value;
+            data[p.z * grid.width + p.x] = value;
           });
       }
     });
-  grid.data = grid.data.map(value => (value ? 0 : 1));
   // console.log('Grid data for pathfinding:', grid.toMatrix());
-  return grid;
+  return RoomGrid.fromData(
+    data.map(value => (value ? 0 : 1)),
+    grid.width
+  );
 }

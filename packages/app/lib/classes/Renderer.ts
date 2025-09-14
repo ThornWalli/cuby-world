@@ -5,7 +5,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 
-import { ReplaySubject } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { fromEvent, ReplaySubject } from 'rxjs';
 import { Vector3, type Object3D } from 'three';
 
 import {
@@ -42,6 +43,9 @@ export default class Renderer<
   Modules extends RendererModules = RendererModules
 > {
   animationLoop$ = new ReplaySubject<number>(0);
+  pointerDown$: Observable<PointerEvent>;
+  pointerMove$: Observable<PointerEvent>;
+  pointerUp$: Observable<PointerEvent>;
 
   renderer: WebGLRenderer;
   scene!: Scene;
@@ -83,6 +87,10 @@ export default class Renderer<
     if (this.debug) {
       modules.push(DebugRendererModule);
     }
+
+    this.pointerDown$ = fromEvent<PointerEvent>(canvas, 'pointerdown');
+    this.pointerMove$ = fromEvent<PointerEvent>(canvas, 'pointermove');
+    this.pointerUp$ = fromEvent<PointerEvent>(canvas, 'pointerup');
 
     this.dimension = dimension;
     this._debug = options.debug ?? false;

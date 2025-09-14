@@ -1,4 +1,4 @@
-import type { BufferGeometry } from 'three';
+import { Box3, Vector2, type BufferGeometry } from 'three';
 import { Vector3, BoxGeometry, MeshPhongMaterial, Mesh, Object3D } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
@@ -14,13 +14,45 @@ export enum WALL_SIZE {
   SMALL = 'standard',
   LARGE = 'large'
 }
+
+export interface WallDescription<Position = Vector2> {
+  type: WALL_TYPE;
+  direction: WALL_DIRECTION;
+  position: Position;
+  color: string | number;
+
+  /**
+   * @deprecated
+   */
+  startPosition?: Position;
+  /**
+   * @deprecated
+   */
+  endPosition?: Position;
+}
+
 export default class Wall {
-  public visible = false;
+  public visible = true;
   public type: WALL_TYPE;
   private color: string | number = 0xff0000;
   public position: Vector3;
   public root?: Object3D;
   private direction: WALL_DIRECTION;
+
+  tmpBox = new Box3();
+
+  toDescription(): WallDescription {
+    return {
+      type: this.type,
+      direction: this.direction,
+      position: new Vector2(this.position.x, this.position.z),
+      color: this.color
+    };
+  }
+
+  toJSON(): WallDescription {
+    return this.toDescription();
+  }
 
   constructor(options: {
     type: WALL_TYPE;
@@ -36,8 +68,14 @@ export default class Wall {
     this.direction = options.direction;
   }
 
+  destroy() {
+    this.root?.removeFromParent();
+    this.root = undefined;
+  }
+
   setup() {
     this.root = this.createRoot();
+    this.tmpBox.setFromObject(this.root);
     prepareForRaycast(this.root);
   }
 
@@ -64,7 +102,9 @@ export default class Wall {
 
   createRoot() {
     const size = new Vector3(0.15, 2, 1.15);
-    const material = new MeshPhongMaterial({ color: this.color });
+    const material = new MeshPhongMaterial({
+      color: this.color
+    });
 
     const largeWall = createWallMesh(size, this.direction, material, this.type);
     largeWall.name = MESH_WALL_NAME.LARGE_WALL;
@@ -88,6 +128,7 @@ export default class Wall {
     const group = new Object3D();
     group.add(smallWall);
     group.add(largeWall);
+
     group.userData = { wall: this };
     group.position.copy(this.position);
     return group;

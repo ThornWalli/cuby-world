@@ -56,8 +56,8 @@ import units from './units';
 
 import DebugRendererModule from '../../lib/classes/rendererModule/Debug';
 import { getGltfObjectFromFile } from '../../utils/file';
-import { UNIT_ROTATION } from '../../lib/classes/Unit';
 import Custom from '@cuby-world/units/Custom';
+import { UNIT_ROTATION } from '@cuby-world/app/lib/types/unit';
 
 let unitWrapper: Object3D;
 const subscription = new Subscription();

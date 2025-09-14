@@ -47,7 +47,7 @@ export default class GroundModule extends RoomModule<State> {
     const groundMesh = new Object3D();
     groundMesh.name = 'ground';
 
-    this.state.groundChunks = createGroundChunks(description.grid, 16);
+    this.state.groundChunks = createGroundChunks(this.room.grid, 16);
     this.state.groundChunks.forEach(chunk => groundMesh.add(chunk));
 
     this.state.groundMesh = groundMesh;

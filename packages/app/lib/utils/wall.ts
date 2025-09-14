@@ -1,9 +1,9 @@
 /* eslint-disable complexity */
 import { Vector2, Vector3 } from 'three';
-import { WALL_TYPE, type WallDescription } from '../classes/RoomDescription';
+import { WALL_TYPE } from '../classes/RoomDescription';
 
 import type AssetLoader from '../classes/AssetLoader';
-import Wall, { WALL_DIRECTION } from '../classes/Wall';
+import Wall, { WALL_DIRECTION, type WallDescription } from '../classes/Wall';
 import EasyStar from 'easystarjs';
 
 export interface WallRoomDescription {
@@ -189,9 +189,9 @@ export function setWallConditions(
 }
 
 function getDirection({ startPosition, endPosition }: WallDescription) {
-  if (startPosition.x === endPosition.x) {
+  if (startPosition!.x === endPosition!.x) {
     return WALL_DIRECTION.VERTICAL;
-  } else if (startPosition.y === endPosition.y) {
+  } else if (startPosition!.y === endPosition!.y) {
     return WALL_DIRECTION.HORIZONTAL;
   }
   throw new Error('Invalid wall positions');
@@ -203,7 +203,7 @@ function getKey(x: number, y: number, direction?: WALL_DIRECTION) {
 
 function prepareWalls(walls: WallDescription[]) {
   const wallMap = walls.reduce((result, wall) => {
-    const key = getKey(wall.startPosition.x, wall.startPosition.y);
+    const key = getKey(wall.startPosition!.x, wall.startPosition!.y);
 
     const test = result.get(key) ?? [];
     test.push(wall);
@@ -222,27 +222,30 @@ function prepareWalls(walls: WallDescription[]) {
         directions: Set<WALL_ACCESIBLE_DIRECTIONS>;
         position: Vector2;
       } = result.get(
-        getKey(wall.startPosition.x, wall.startPosition.y, getDirection(wall))
+        getKey(wall.startPosition!.x, wall.startPosition!.y, getDirection(wall))
       ) ?? {
         type: wall.type,
         originDirection: getDirection(wall),
         directions: new Set(),
-        position: wall.startPosition
+        position: wall.startPosition!
       };
 
       if (getDirection(wall) === WALL_DIRECTION.VERTICAL) {
         data.directions.add(WALL_ACCESIBLE_DIRECTIONS.WEST);
         const westWall = result.get(
           getKey(
-            wall.startPosition.x - 1,
-            wall.startPosition.y,
+            wall.startPosition!.x - 1,
+            wall.startPosition!.y,
             getDirection(wall)
           )
         ) ?? {
           type: wall.type,
           originDirection: getDirection(wall),
           directions: new Set(),
-          position: new Vector2(wall.startPosition.x - 1, wall.startPosition.y)
+          position: new Vector2(
+            wall.startPosition!.x - 1,
+            wall.startPosition!.y
+          )
         };
         westWall.directions.add(WALL_ACCESIBLE_DIRECTIONS.EAST);
         result.set(
@@ -253,15 +256,18 @@ function prepareWalls(walls: WallDescription[]) {
         data.directions.add(WALL_ACCESIBLE_DIRECTIONS.NORTH);
         const northWall = result.get(
           getKey(
-            wall.startPosition.x,
-            wall.startPosition.y - 1,
+            wall.startPosition!.x,
+            wall.startPosition!.y - 1,
             getDirection(wall)
           )
         ) ?? {
           type: wall.type,
           originDirection: getDirection(wall),
           directions: new Set(),
-          position: new Vector2(wall.startPosition.x, wall.startPosition.y - 1)
+          position: new Vector2(
+            wall.startPosition!.x,
+            wall.startPosition!.y - 1
+          )
         };
         northWall.directions.add(WALL_ACCESIBLE_DIRECTIONS.SOUTH);
         result.set(
@@ -275,7 +281,11 @@ function prepareWalls(walls: WallDescription[]) {
       }
 
       result.set(
-        getKey(wall.startPosition.x, wall.startPosition.y, getDirection(wall)),
+        getKey(
+          wall.startPosition!.x,
+          wall.startPosition!.y,
+          getDirection(wall)
+        ),
         data
       );
     });
@@ -317,9 +327,9 @@ export default function createWalls(
         type: description.type,
         direction: getDirection(description),
         position: new Vector3(
-          description.startPosition.x,
+          description.startPosition!.x,
           0,
-          description.startPosition.y
+          description.startPosition!.y
         )
       })
   );
@@ -342,8 +352,8 @@ function buildWallSet(walls: WallDescription[]) {
   const key = (a: Vector2, b: Vector2) => `${a.x},${a.y}-${b.x},${b.y}`;
 
   walls.forEach(w => {
-    const a = w.startPosition;
-    const b = w.endPosition;
+    const a = w.startPosition!;
+    const b = w.endPosition!;
 
     set.add(key(a, b));
     set.add(key(b, a));
@@ -393,9 +403,99 @@ function canMoveBetweenTiles(
   return false;
 }
 
+// function getEndPositionFromStartPosition(
+//   start: Vector2,
+//   direction: WALL_DIRECTION
+// ) {
+//   if (direction === WALL_DIRECTION.HORIZONTAL) {
+//     return new Vector2(start.x + 1, start.y);
+//   } else {
+//     return new Vector2(start.x, start.y + 1);
+//   }
+// }
+
 /**
  * Wird genutzt um Räume zu erkennen, die durch Wände begrenzt sind.
  */
+// export function getWallRoomDescriptions(walls: WallDescription[]) {
+//   const wallSet = buildWallSet(walls);
+
+//   let minX = Infinity,
+//     minY = Infinity,
+//     maxX = -Infinity,
+//     maxY = -Infinity;
+//   walls.forEach(w => {
+//     const endPosition = getEndPositionFromStartPosition(
+//       w.position,
+//       w.direction
+//     );
+//     minX = Math.min(minX, w.position!.x, endPosition!.x);
+//     minY = Math.min(minY, w.position!.y, endPosition!.y);
+//     maxX = Math.max(maxX, w.position!.x, endPosition!.x);
+//     maxY = Math.max(maxY, w.position!.y, endPosition!.y);
+//   });
+
+//   const tileMinX = Math.floor(minX - 1);
+//   const tileMinY = Math.floor(minY - 1);
+//   const tileMaxX = Math.ceil(maxX);
+//   const tileMaxY = Math.ceil(maxY);
+
+//   const visited = new Set();
+//   const rooms: WallRoomDescription[] = [];
+
+//   const inBounds = (x: number, y: number) =>
+//     x >= tileMinX && y >= tileMinY && x < tileMaxX && y < tileMaxY;
+
+//   for (let tx = tileMinX; tx < tileMaxX; tx++) {
+//     for (let ty = tileMinY; ty < tileMaxY; ty++) {
+//       const key = `${tx},${ty}`;
+//       if (visited.has(key)) continue;
+
+//       // Starte BFS
+//       const queue = [new Vector2(tx, ty)];
+//       const roomTiles = [];
+//       visited.add(key);
+
+//       while (queue.length > 0) {
+//         const cur = queue.shift()!;
+//         roomTiles.push(new Vector2(cur.x, cur.y));
+
+//         const neighs = [
+//           new Vector2(cur.x + 1, cur.y),
+//           new Vector2(cur.x - 1, cur.y),
+//           new Vector2(cur.x, cur.y + 1),
+//           new Vector2(cur.x, cur.y - 1)
+//         ];
+
+//         neighs.forEach(n => {
+//           const nKey = n.toArray().toString();
+//           if (!inBounds(n.x, n.y)) return;
+//           if (visited.has(nKey)) return;
+//           if (!canMoveBetweenTiles(cur.x, cur.y, n.x, n.y, wallSet)) return;
+//           visited.add(nKey);
+//           queue.push(n);
+//         });
+//       }
+
+//       if (roomTiles.length > 0) {
+//         const cx =
+//           roomTiles.reduce((s, p) => s + (p.x + 0.5), 0) / roomTiles.length;
+//         const cy =
+//           roomTiles.reduce((s, p) => s + (p.y + 0.5), 0) / roomTiles.length;
+
+//         rooms.push({
+//           id: crypto.randomUUID(),
+//           tiles: roomTiles,
+//           centroid: new Vector2(cx, cy),
+//           size: roomTiles.length
+//         });
+//       }
+//     }
+//   }
+
+//   const maxSize = Math.max(...rooms.map(r => r.size));
+//   return rooms.filter(r => r.size < maxSize);
+// }
 export function getWallRoomDescriptions(walls: WallDescription[]) {
   const wallSet = buildWallSet(walls);
 
@@ -404,10 +504,10 @@ export function getWallRoomDescriptions(walls: WallDescription[]) {
     maxX = -Infinity,
     maxY = -Infinity;
   walls.forEach(w => {
-    minX = Math.min(minX, w.startPosition.x, w.endPosition.x);
-    minY = Math.min(minY, w.startPosition.y, w.endPosition.y);
-    maxX = Math.max(maxX, w.startPosition.x, w.endPosition.x);
-    maxY = Math.max(maxY, w.startPosition.y, w.endPosition.y);
+    minX = Math.min(minX, w.startPosition!.x, w.endPosition!.x);
+    minY = Math.min(minY, w.startPosition!.y, w.endPosition!.y);
+    maxX = Math.max(maxX, w.startPosition!.x, w.endPosition!.x);
+    maxY = Math.max(maxY, w.startPosition!.y, w.endPosition!.y);
   });
 
   const tileMinX = Math.floor(minX - 1);

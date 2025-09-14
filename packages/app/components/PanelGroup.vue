@@ -11,6 +11,7 @@
 <script lang="ts" setup>
 defineProps<{
   position?: PANEL_GROUP_POSITION | `${PANEL_GROUP_POSITION}`;
+  direction?: PANEL_GROUP_DIRECTION | `${PANEL_GROUP_DIRECTION}`;
 }>();
 </script>
 
@@ -25,11 +26,25 @@ export enum PANEL_GROUP_POSITION {
   BOTTOM_LEFT = 'bottom-left',
   BOTTOM_RIGHT = 'bottom-right'
 }
+
+export enum PANEL_GROUP_DIRECTION {
+  ROW = 'row',
+  COLUMN = 'column'
+}
 </script>
 
 <style lang="postcss" scoped>
 .cw-panel-group {
   --panel-offset: 1em;
+  --panel-gap: 8px;
+
+  display: flex;
+  gap: var(--panel-gap);
+  align-items: flex-start;
+
+  .direction-column {
+    flex-direction: column;
+  }
 
   &[class*='position-'] {
     position: absolute;

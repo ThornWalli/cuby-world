@@ -9,13 +9,12 @@
 import defaultRoom from '@cuby-world/app/lib/rooms/default.json';
 
 import { defineAsyncComponent, ref } from 'vue';
-import type { RawEditorRoomDescription } from '@cuby-world/room-editor/types';
 
 const CwRoomEditorEditor = defineAsyncComponent(
   () => import('@cuby-world/room-editor/components/Editor.vue')
 );
 
-const roomDescription = ref(defaultRoom as RawEditorRoomDescription);
+const roomDescription = ref(defaultRoom);
 </script>
 <style lang="postcss" scoped>
 .cw-room-editor-editor {

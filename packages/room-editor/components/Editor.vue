@@ -54,14 +54,10 @@ import CwRoomEditorPanelImportExport from './panel/ImportExport.vue';
 import CwRoomEditorPanelUnits from './panel/Units.vue';
 import CwRoomEditorPanelUnitSettings from './panel/UnitSettings.vue';
 
-import {
-  ACTION_TYPE,
-  type UnitDescription,
-  type GridModel,
-  type RawEditorRoomDescription,
-  type RoomEditorModel
-} from '../types';
-import { parseRoomDescription } from '../utils';
+import { ACTION_TYPE, type GridModel, type RoomEditorModel } from '../types';
+import { parseRoomDescription } from '../utils/parse';
+import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
+import type { JsonRoomDescription } from '@cuby-world/app/lib/classes/RoomDescription';
 
 const selectedUnit = ref<UnitDescription | undefined>();
 const selectedGridPosition = ref<Vector3 | undefined>();
@@ -81,7 +77,7 @@ function onRemoveUnit(unit: UnitDescription) {
 }
 
 const $props = defineProps<{
-  room: RawEditorRoomDescription;
+  room: JsonRoomDescription;
 }>();
 
 const model = ref<RoomEditorModel>({

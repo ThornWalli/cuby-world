@@ -9,7 +9,6 @@ import {
 import type App from '../App';
 import AppModule, { type AppModuleState } from '../AppModule';
 import Room from '../Room';
-import type RoomDescription from '../RoomDescription';
 import Cuby from '@cuby-world/units/cuby/Cuby';
 import {
   matrixPositionToPosition,
@@ -20,16 +19,19 @@ import { Vector3 } from 'three';
 import { getYPositionByPosition } from '../../utils/room';
 import type Player from '../Player';
 
+import allUnits from '@cuby-world/units';
+import type { RoomDescription } from '../RoomDescription';
+
 interface State extends AppModuleState {
   room?: Room;
 }
 export default class RoomAppModule extends AppModule<State> {
   static override TYPE = 'room';
 
-  private _selectionPosition$ = new ReplaySubject<Vector3>(0);
-  selectionPosition$ = this._selectionPosition$.pipe(
-    distinctUntilChanged((prev, curr) => prev.equals(curr))
-  );
+  private pointerPosition$ = new ReplaySubject<Vector3>(0);
+  // private pointerPosition$ = this.pointerPositionSubject.pipe(
+  //   distinctUntilChanged((prev, curr) => prev.equals(curr))
+  // );
 
   roomSubscription: Subscription | undefined;
 
@@ -37,12 +39,15 @@ export default class RoomAppModule extends AppModule<State> {
     room: undefined
   };
 
+  private roomSubject = new ReplaySubject<Room | undefined>(0);
+  room$ = this.roomSubject.pipe();
+
   static async roomFromDescription(
     app: App,
     roomDescription: RoomDescription
   ): Promise<Room> {
-    const room = new Room(app, roomDescription.grid);
-    room.description = roomDescription;
+    const room = new Room(app, roomDescription);
+    await room.setupModules();
 
     await Promise.all(
       Object.values(room.modules).map(async module => {
@@ -50,7 +55,27 @@ export default class RoomAppModule extends AppModule<State> {
       })
     );
 
-    await room.modules.units.setupUnits(roomDescription.units || []);
+    // #region units
+    const unitClasses = allUnits.reduce(
+      (result, unitClass) => {
+        result[unitClass.KEY] = unitClass as (typeof allUnits)[0];
+        return result;
+      },
+      {} as Record<string, (typeof allUnits)[0]>
+    );
+
+    const units = roomDescription.units.map(
+      ({ unit: key, options: { position, rotation } }) => {
+        const unit = new unitClasses[key]!({
+          position: position,
+          rotation: rotation
+        });
+        return unit;
+      }
+    );
+    // #endregion
+
+    await room.modules.units.setupUnits(units);
     room.mesh.name = roomDescription.info.name;
     return room;
   }
@@ -115,26 +140,21 @@ export default class RoomAppModule extends AppModule<State> {
       playerModule.getPlayers().forEach(player => {
         this.addPlayerUnit(player);
       });
-      // setTimeout(async () => {
-      // await
-      // this.addPlayerUnit(playerModule.getCurrentPlayer()!);
-      // const cuby = new Cuby({
-      //   position: room.description.start.position.clone(),
-      //   rotation: room.description.start.rotation
-      // });
-
-      // const player = playerModule.getCurrentPlayer()!;
-      // player.setUnit(cuby);
-
-      // await room.add(cuby);
-      // app.modules.selection.setSelectedUnit(cuby);
-
-      // unitFocusModule?.setFocusedUnit(cuby);
     }
 
     this.subscription.add(
       renderer.animationLoop$.pipe(throttleTime(250)).subscribe(tim => {
         room.updateThrottle(tim);
+      })
+    );
+    this.subscription.add(
+      renderer.animationLoop$.pipe(throttleTime(500)).subscribe(tim => {
+        room.updateThrottle500ms(tim);
+      })
+    );
+    this.subscription.add(
+      renderer.animationLoop$.pipe(throttleTime(1000)).subscribe(tim => {
+        room.updateThrottle1Sec(tim);
       })
     );
 
@@ -154,6 +174,7 @@ export default class RoomAppModule extends AppModule<State> {
 
   setRoom(room: Room | undefined) {
     this.state.room = room;
+    this.roomSubject.next(room);
   }
 
   subscribeGroundSelection() {
@@ -173,7 +194,13 @@ export default class RoomAppModule extends AppModule<State> {
         concatAll(),
         filter(intersection => intersection.object?.parent?.name === 'ground'),
         preparePosition(),
-        filter(({ worldPosition }) => !!worldPosition)
+        filter(({ worldPosition }) => !!worldPosition),
+        distinctUntilChanged(
+          (prev, curr) =>
+            !curr.worldPosition ||
+            !prev.worldPosition ||
+            prev.worldPosition.equals(curr.worldPosition)
+        )
       )
       .subscribe(this.onHover.bind(this));
   }
@@ -192,7 +219,7 @@ export default class RoomAppModule extends AppModule<State> {
     subscription.add(
       app.modules.placement.startPlace$.subscribe(unit => {
         lastPosition = unit.getPosition().clone();
-        placeSubscription = this.selectionPosition$.subscribe(position => {
+        placeSubscription = this.pointerPosition$.subscribe(position => {
           unit.setPosition(
             matrixPositionToPosition(
               new Vector3(
@@ -249,19 +276,28 @@ export default class RoomAppModule extends AppModule<State> {
   onHover({ worldPosition }: PreparedPosition) {
     const room = this.app.modules.room.getRoom()!;
     room.modules.selection.setSelectionPosition(worldPosition!);
-    this._selectionPosition$.next(worldPosition!);
+    this.pointerPosition$.next(worldPosition!);
   }
 
   _position: Vector3 = new Vector3();
 
-  onSelect(data: PreparedPosition) {
+  onSelect(preparedPosition: PreparedPosition) {
     const app = this.app;
     const player = app.modules.player.getCurrentPlayer();
     if (!player) {
       throw new Error('No player available');
     }
-    if (data) {
-      const { unit, worldPosition } = data;
+    if (preparedPosition) {
+      const { unit, worldPosition } = preparedPosition;
+
+      const abort = Object.values(app.modules).some((module: AppModule) => {
+        return module.onSceneSelect({ preparedPosition, player });
+      });
+
+      if (abort) {
+        return;
+      }
+
       if (app.modules.placement.hasPlace()) {
         // placing mode
         app.modules.placement.stopPlace();

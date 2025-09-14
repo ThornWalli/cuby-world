@@ -55,15 +55,15 @@
 import { computed, ref } from 'vue';
 import CwPanel from '@cuby-world/app/components/Panel.vue';
 import BaseButton from '@cuby-world/app/components/Button.vue';
-import type { UnitDescription } from '../../types';
 import { Vector3 } from 'three';
 
 import CwFormFieldSelect from '@cuby-world/app/components/formField/Select.vue';
 import CwFormFieldSelectGroup from '@cuby-world/app/components/formField/select/Group.vue';
 import CwFormFieldSelectOption from '@cuby-world/app/components/formField/select/Option.vue';
 import unitList from '../../units';
-import { UNIT_ROTATION } from '@cuby-world/app/lib/classes/Unit';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
+import { UNIT_ROTATION } from '@cuby-world/app/lib/types/unit';
 const createUnitSelect = ref<ComponentExposed<typeof CwFormFieldSelect> | null>(
   null
 );

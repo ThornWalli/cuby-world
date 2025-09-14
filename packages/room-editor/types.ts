@@ -1,5 +1,7 @@
-import type { WallDescription } from '@cuby-world/app/lib/classes/RoomDescription';
-import type { UNIT_ROTATION } from '@cuby-world/app/lib/classes/Unit';
+import type { RoomDescription } from '@cuby-world/app/lib/classes/RoomDescription';
+import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
+import type { WallDescription } from '@cuby-world/app/lib/classes/Wall';
+
 import type { Vector3 } from 'three';
 
 export enum ACTION_TYPE {
@@ -25,7 +27,7 @@ export interface GridModel {
 
 export interface RoomEditorModel {
   actionType: ACTION_TYPE;
-  roomModel: EditorRoomDescription;
+  roomModel: RoomDescription;
 }
 
 export enum ORIGIN {
@@ -35,15 +37,6 @@ export enum ORIGIN {
   BOTTOM_RIGHT = 'bottom_right'
 }
 
-export interface RawUnitDescription<Position = number[], Rotation = string> {
-  unit: string;
-  options: {
-    position: Position;
-    rotation: Rotation;
-  };
-}
-export type UnitDescription = RawUnitDescription<Vector3, UNIT_ROTATION>;
-
 export type RawWallDescription = WallDescription<number[]>;
 
 export interface RawCellDescription<WallDescription = RawWallDescription> {
@@ -52,27 +45,30 @@ export interface RawCellDescription<WallDescription = RawWallDescription> {
 }
 export type CellDescription = RawCellDescription<WallDescription>;
 
-export interface RawEditorRoomDescription<
-  Position = number[],
-  Rotation = string,
-  Unit = RawUnitDescription
-> {
-  id: string;
-  info: {
-    name: string;
-    description?: string;
-  };
-  grid: number[][];
-  start: {
-    position: Position;
-    rotation: Rotation;
-  };
-  walls: WallDescription[];
-  units: Unit[];
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface EditorRoomDescription extends RoomDescription {}
 
-export type EditorRoomDescription = RawEditorRoomDescription<
-  Vector3,
-  UNIT_ROTATION,
-  UnitDescription
->;
+// export interface RawEditorRoomDescription<
+//   Position = number[],
+//   Rotation = string,
+//   Unit = RawUnitDescription
+// > {
+//   id: string;
+//   info: {
+//     name: string;
+//     description?: string;
+//   };
+//   grid: number[][];
+//   walls: WallDescription[];
+//   units: Unit[];
+//   start: {
+//     position: Position;
+//     rotation: Rotation;
+//   };
+// }
+
+// export type EditorRoomDescription = RawEditorRoomDescription<
+//   Vector3,
+//   UNIT_ROTATION,
+//   UnitDescription
+// >;

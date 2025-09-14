@@ -1,39 +1,69 @@
 import {
-  type Vector3,
   Shape,
   ShapeGeometry,
   MeshBasicMaterial,
   Mesh,
   Path,
-  BoxGeometry
+  BoxGeometry,
+  Vector3
 } from 'three';
 import RoomModule, { type RoomModuleState } from '../RoomModule';
 import { OBJECT_NAME } from '../Unit';
+import { ReplaySubject } from 'rxjs';
 
 interface State extends RoomModuleState {
+  position: Vector3;
   selectionMesh?: Mesh;
+  visible: boolean;
 }
 
 export default class SelectionModule extends RoomModule<State> {
   static override TYPE = 'selection';
 
   state: State = {
-    selectionMesh: undefined
+    position: new Vector3(),
+    selectionMesh: undefined,
+    visible: true
   };
 
+  selectionVisible$ = new ReplaySubject<boolean>(0);
+  private positionSubject = new ReplaySubject<Vector3>(0);
+  position$ = this.positionSubject.pipe();
+
   override setup(): void {
-    this.state.selectionMesh = createMesh();
-    if (this.state.selectionMesh) {
-      this.room.mesh.add(this.state.selectionMesh);
-    }
+    this.state.selectionMesh = createSelectionMesh();
   }
 
   setSelectionPosition(position: Vector3) {
-    this.state.selectionMesh!.position.copy(position);
+    this.state.position = position;
+    this.positionSubject.next(position);
+    if (this.state.visible) {
+      this.state.selectionMesh!.position.copy(position);
+    }
+  }
+
+  showSelection() {
+    if (this.state.selectionMesh) {
+      this.room.mesh.add(this.state.selectionMesh);
+      this.state.selectionMesh.visible = true;
+      this.selectionVisible$.next(true);
+    }
+  }
+
+  hideSelection() {
+    if (this.state.selectionMesh) {
+      this.state.selectionMesh.removeFromParent();
+      this.state.selectionMesh.visible = false;
+      this.selectionVisible$.next(false);
+    }
+  }
+
+  isSelectionVisible() {
+    return this.state.selectionMesh?.visible;
   }
 }
 
-function createMesh() {
+function createSelectionMesh() {
   const size = 0.9;
   const outerShape = new Shape();
   const outerSize = size;

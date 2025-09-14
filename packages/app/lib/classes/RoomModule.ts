@@ -32,4 +32,12 @@ export default abstract class RoomModule<
   updateThrottle(_time: number, _options?: { camera: Camera }) {
     // This method can be overridden by subclasses to handle throttled updates
   }
+
+  updateThrottle500ms(_time: number, _options?: { camera: Camera }) {
+    // This method can be overridden by subclasses to handle 500ms throttled updates
+  }
+
+  updateThrottle1Sec(_time: number, _options?: { camera: Camera }) {
+    // This method can be overridden by subclasses to handle 1 second throttled updates
+  }
 }

@@ -11,7 +11,7 @@
 
 <script lang="ts" setup>
 import CwPanel from '@cuby-world/app/components/Panel.vue';
-import type { EditorRoomDescription } from '../../types';
+import type { EditorRoomDescription } from '@cuby-world/room-editor/types';
 
 defineProps<{
   modelValue: EditorRoomDescription;
