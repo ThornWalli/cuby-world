@@ -38,10 +38,15 @@ export default class AssetLoader {
     description: LoadDescription;
   }>(0);
 
-  private textures: Map<string, Texture | CubeTexture> = new Map();
+  private textures: Map<string, Promise<Texture | CubeTexture | GLTF>> =
+    new Map();
 
-  getTexture(id: string) {
-    return this.textures.get(id);
+  has(id: LOADER | string) {
+    return this.textures.has(id);
+  }
+
+  get<T = Texture | CubeTexture | GLTF>(id: string) {
+    return this.textures.get(id) as Promise<T>;
   }
 
   constructor() {
@@ -52,18 +57,23 @@ export default class AssetLoader {
     };
 
     this.subscription.add(
-      this.addDescription$
-        .pipe(loadTexture(this.loaders))
-        .subscribe(([id, texture]) => {
-          this.textures.set(id, texture);
-        })
+      this.addDescription$.pipe(loadTexture(this.loaders)).subscribe(([id]) => {
+        console.log('Texture loaded', id);
+      })
     );
   }
 
   add<T = Texture | CubeTexture | GLTF>(description: LoadDescription) {
-    return new Promise<T>((resolve, reject) => {
-      this.addDescription$.next({ resolve, reject, description });
-    });
+    const id = description.id || description.url.toString();
+    if (this.has(id)) {
+      return this.get<T>(description.id || description.url.toString());
+    }
+    const { promise, resolve, reject } = Promise.withResolvers<T>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.textures.set(id, promise as any);
+    this.addDescription$.next({ resolve, reject, description });
+
+    return promise;
   }
 }
 

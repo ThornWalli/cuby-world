@@ -27,8 +27,8 @@ export function matrixPositionToPosition(
 export interface PreparedPosition {
   unit?: Unit;
   object: Object3D | null;
-  matrixPosition: THREE.Vector3 | null;
-  worldPosition: THREE.Vector3 | null;
+  matrixPosition: THREE.Vector3;
+  worldPosition: THREE.Vector3;
 }
 
 export function preparePosition(onlyTopFace = false) {
@@ -58,6 +58,7 @@ export function preparePosition(onlyTopFace = false) {
           }
           object = object.parent;
         }
+        object = object ?? intersection.object;
 
         return {
           unit,

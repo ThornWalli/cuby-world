@@ -78,9 +78,15 @@ defineExpose<{ reset: () => void }>({
   --indicator-foreground: var(--color-white);
   --indicator-background: var(--color-blue-7);
 
-  &.style-dark {
+  /* &.style-dark {
     --color-border: var(--color-white);
     --color-background: var(--color-black);
+    --color-foreground: var(--color-white);
+  } */
+
+  &.style-dark {
+    --color-border: var(--color-white);
+    --color-background: rgb(var(--rgb-white) / 20%);
     --color-foreground: var(--color-white);
   }
 
@@ -88,18 +94,26 @@ defineExpose<{ reset: () => void }>({
     position: relative;
     display: flex;
     flex: 1;
+    height: 23px;
     overflow: hidden;
     font-family: var(--font-base);
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--color-white);
     cursor: pointer;
     background-color: var(--color-background);
+    border: solid 1px var(--color-border);
     border-radius: 3px;
   }
 
   & select {
     box-sizing: border-box;
     width: 100%;
+    padding: 3px 6px;
     padding-right: calc(var(--indicator-width) + 6px);
     font-family: var(--font-base);
+    font-size: 12px;
+    font-weight: bold;
     color: currentColor;
     color: var(--color-foreground);
     appearance: none;
@@ -125,29 +139,8 @@ defineExpose<{ reset: () => void }>({
     }
   }
 
-  &.mode-compact {
-    --color-border: var(--color-white);
-    --color-background: rgb(var(--rgb-white) / 20%);
-    --color-foreground: var(--color-white);
-
-    &:not([disabled]):hover {
-      --indicator-background: var(--color-blue-8);
-    }
-
-    & .input {
-      height: 23px;
-      font-size: 12px;
-      font-weight: bold;
-      color: var(--color-white);
-      border: solid 1px var(--color-border);
-
-      & select {
-        padding: 3px 6px;
-        padding-right: calc(var(--indicator-width) + 6px);
-        font-size: 12px;
-        font-weight: bold;
-      }
-    }
+  &:not([disabled]):hover {
+    --indicator-background: var(--color-blue-8);
   }
 
   & .indicator {
@@ -163,6 +156,13 @@ defineExpose<{ reset: () => void }>({
     color: var(--indicator-foreground);
     pointer-events: none;
     background-color: var(--indicator-background);
+
+    & svg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
   }
 }
 </style>

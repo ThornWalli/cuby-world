@@ -9,8 +9,9 @@ export default class GroundTile {
   position: Vector3;
   type: string = 'GroundTile';
 
-  constructor(position: Vector3) {
+  constructor({ position, type }: { position: Vector3; type?: string }) {
     this.position = position;
+    this.type = type ?? this.type;
   }
 
   get plane() {

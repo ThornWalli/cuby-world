@@ -14,13 +14,24 @@
       <cw-panel-editor-actions
         v-model="currentAction"
         :actions="actions"
-        :app="app" />
+        :app="app">
+        <template #before>
+          <cw-button-icon icon="settings" @click="onClickSettings" />
+        </template>
+      </cw-panel-editor-actions>
     </cw-panel-group>
     <cw-panel-group id="teleports-panel-bottom" position="bottom">
     </cw-panel-group>
-    <cw-panel-group position="bottom-left"> </cw-panel-group>
-    <cw-panel-group position="bottom-right"> </cw-panel-group>
+    <cw-panel-group id="teleports-panel-bottom-left" position="bottom-left">
+    </cw-panel-group>
+    <cw-panel-group id="teleports-panel-bottom-right" position="bottom-right">
+    </cw-panel-group>
     <component :is="controlComponent" v-if="controlComponent" :app="app" />
+    <teleport to="#teleports">
+      <cw-room-editor-dialog-room-settings
+        ref="dialogRoomSettings"
+        :app="app" />
+    </teleport>
   </div>
 </template>
 
@@ -40,13 +51,20 @@ import type Unit from '../../lib/classes/Unit';
 
 import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelWallControl from '../panel/WallControl.vue';
-import CwPanelGeneral from '../panel/editor/General.vue';
+import CwPanelGeneral from '../editor/panel/General.vue';
 import CwPanelGroup from '../PanelGroup.vue';
-import CwPanelEditorActions from '../panel/editor/Actions.vue';
+import CwPanelEditorActions from '../editor/panel/Actions.vue';
+import CwRoomEditorDialogRoomSettings from '../editor/dialog/RoomSettings.vue';
 
 import { EDITOR_ACTION } from '@cuby-world/app/lib/types/editor';
 import icons from '@cuby-world/app/utils/icons';
 import type { EditorApp } from '../../lib/classes/App';
+
+import CwButtonIcon from '../button/IconButton.vue';
+
+const dialogRoomSettings = ref<InstanceType<
+  typeof CwRoomEditorDialogRoomSettings
+> | null>(null);
 
 const controlComponent = computed(() => {
   if (currentAction.value === EDITOR_ACTION.WALL) {
@@ -57,14 +75,25 @@ const controlComponent = computed(() => {
   return null;
 });
 
+function onClickSettings() {
+  dialogRoomSettings.value?.open(
+    $props.app.modules.room.getRoom()!.description
+  );
+}
+
 const subscription = new Subscription();
 
 const actions = ref([
   {
-    icon: icons.wall,
+    icon: icons.wall_mode,
     label: 'Wall',
     value: EDITOR_ACTION.WALL
   }
+  // {
+  //   icon: icons.ground_mode,
+  //   label: 'Ground',
+  //   value: EDITOR_ACTION.GROUND
+  // }
 ]);
 const currentAction = ref<EDITOR_ACTION>(EDITOR_ACTION.NONE);
 
@@ -81,7 +110,8 @@ onMounted(async () => {
   nextTick(() => {
     setup();
 
-    currentAction.value = EDITOR_ACTION.WALL;
+    // currentAction.value = EDITOR_ACTION.WALL;
+    // onClickSettings();
   });
 });
 

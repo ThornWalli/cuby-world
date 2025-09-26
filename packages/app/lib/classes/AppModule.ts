@@ -28,6 +28,13 @@ export default abstract class AppModule<
   }
 
   /**
+   * Wird aufgerufen, wenn über die Szene gehovert wird.
+   * @returns boolean ob der Hover verarbeitet wurde (true) oder nicht (false), lässt alles andere ignorieren.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-empty-function
+  onSceneHover(context: SceneSelectContext): void {}
+
+  /**
    * Wird wenn in der Szene geklickt wird.
    * @returns boolean ob der Klick verarbeitet wurde (true) oder nicht (false), lässt alles andere ignorieren.
    */
@@ -38,6 +45,6 @@ export default abstract class AppModule<
 }
 
 export interface SceneSelectContext {
-  preparedPosition: PreparedPosition;
+  preparedPositions: PreparedPosition[];
   player: Player;
 }

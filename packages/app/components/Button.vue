@@ -88,6 +88,14 @@ defineProps<{
       color: var(--indicator-foreground);
       pointer-events: none;
       background-color: var(--indicator-background);
+
+      & svg,
+      & :deep(svg) {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
     }
   }
 

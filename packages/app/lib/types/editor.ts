@@ -1,9 +1,13 @@
 export enum EDITOR_ACTION {
   NONE = 'none',
-  WALL = 'wall'
+  WALL = 'wall',
+  GROUND = 'ground'
 }
 
 export enum WALL_ACTION {
   NONE = 'none',
-  ADD_REMOVE = 'add_remove'
+  ADD = 'add',
+  REMOVE = 'remove',
+  DOOR = 'door',
+  STYLE = 'style'
 }

@@ -170,7 +170,7 @@ async function setupScene(renderer: Renderer) {
   const scene = renderer.scene;
 
   // #region ground
-  const groundTile = new GroundTile(new Vector3(0, 0, 0)).box;
+  const groundTile = new GroundTile({ position: new Vector3(0, 0, 0) }).box;
   const groundMesh = new Mesh(groundTile.geometry, groundTile.material);
   groundMesh.material.side = DoubleSide;
   groundMesh.receiveShadow = true;

@@ -11,7 +11,8 @@ import { useRoute, useRuntimeConfig } from '#imports';
 import { APP_MODE, type AppConfig } from '@cuby-world/app/lib/classes/App';
 
 import { defineAsyncComponent, ref } from 'vue';
-import roomTest2000 from '@cuby-world/app/lib/rooms/test-2000.json';
+import roomTest2001 from '@cuby-world/app/lib/rooms/wall-test.json';
+// import roomTest2001 from '@cuby-world/app/lib/rooms/test-2004.json';
 import {
   jsonParse,
   parseRoomDescription
@@ -26,7 +27,7 @@ const $route = useRoute();
 const runtimeConfig = useRuntimeConfig();
 
 const roomDescription = parseRoomDescription(
-  jsonParse(JSON.stringify(roomTest2000))
+  jsonParse(JSON.stringify(roomTest2001))
 );
 
 const config = ref<AppConfig>({

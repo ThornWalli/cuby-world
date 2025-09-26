@@ -1,9 +1,21 @@
-import { Box3, Vector2, type BufferGeometry } from 'three';
-import { Vector3, BoxGeometry, MeshPhongMaterial, Mesh, Object3D } from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import type { Texture, Material, BufferGeometry, Vector3, Mesh } from 'three';
+import { Box3, Vector2, MeshPhongMaterial, Object3D } from 'three';
+
+import image_wall_default from '../../assets/wall/default.png?url';
 
 import { WALL_TYPE } from './RoomDescription';
 import { prepareForRaycast } from '../utils/raycast';
+
+import type AssetLoader from './AssetLoader';
+import { LOADER } from './AssetLoader';
+import {
+  type WALL_GEOMETRY_TYPE,
+  type WALL_GEOMETRY,
+  type WallConnection,
+  findNeighborWallEdges,
+  createWallMesh
+} from '../utils/wall';
 
 enum MESH_WALL_NAME {
   SMALL_WALL = 'small_wall',
@@ -19,7 +31,7 @@ export interface WallDescription<Position = Vector2> {
   type: WALL_TYPE;
   direction: WALL_DIRECTION;
   position: Position;
-  color: string | number;
+  color: (string | number)[];
 
   /**
    * @deprecated
@@ -31,22 +43,136 @@ export interface WallDescription<Position = Vector2> {
   endPosition?: Position;
 }
 
+export enum WALL_EDGE_TYPE {
+  LEFT = 'left',
+  RIGHT = 'right',
+  TOP = 'top',
+  BOTTOM = 'bottom',
+  TOP_LEFT = 'top_left',
+  TOP_RIGHT = 'top_right',
+  BOTTOM_LEFT = 'bottom_left',
+  BOTTOM_RIGHT = 'bottom_right',
+  TEST = 'test',
+  CROSS = 'cross',
+  T_CROSS_LEFT = 't_cross_left',
+  T_CROSS_I_LEFT = 't_cross_left_i', // Nur für innere ecken
+  T_CROSS_RIGHT = 't_cross_right',
+  T_CROSS_I_RIGHT = 't_cross_right_i', // Nur für innere ecken
+  T_CROSS_TOP = 't_cross_top',
+  T_CROSS_I_TOP = 't_cross_top_i', // Nur für innere ecken
+  T_CROSS_BOTTOM = 't_cross_bottom',
+  T_CROSS_I_BOTTOM = 't_cross_i_bottom' // Nur für innere ecken
+}
+export interface WallEdge {
+  wall: WallDescription;
+  // position: Vector2;
+  // direction: WALL_DIRECTION;
+  type: WALL_TYPE;
+  offset: Vector2;
+  edgeType: WALL_EDGE_TYPE;
+}
+
+export interface WallOptions {
+  type: WALL_TYPE;
+  direction: WALL_DIRECTION;
+  small?: boolean;
+  left: WALL_GEOMETRY_TYPE;
+  right: WALL_GEOMETRY_TYPE;
+}
+
+export enum WALL_DIRECTION {
+  HORIZONTAL = 'horizontal',
+  VERTICAL = 'vertical'
+}
+
+interface WallState {
+  type: WALL_TYPE;
+  color: (string | number)[];
+}
+
 export default class Wall {
+  state: WallState = {
+    type: WALL_TYPE.DEFAULT,
+    color: [0x000000, 0xffffff]
+  };
+
+  readonly direction: WALL_DIRECTION;
+
+  private edges: WallEdge[] = [];
+  private editMode = false;
   public visible = true;
-  public type: WALL_TYPE;
-  private color: string | number = 0xff0000;
   public position: Vector3;
   public root?: Object3D;
-  private direction: WALL_DIRECTION;
+
+  wallGeometries?: Map<WALL_GEOMETRY, BufferGeometry | null>;
 
   tmpBox = new Box3();
 
+  setEditMode(editMode: boolean) {
+    if (this.editMode !== editMode) {
+      this.editMode = editMode;
+      const mesh = this.getMesh();
+      if (mesh) {
+        this.refreshObjects({
+          root: this.root!,
+          wallGeometries: this.wallGeometries!,
+          type: this.state.type,
+          editMode
+        });
+        this.tmpBox.setFromObject(this.root!);
+      }
+    }
+  }
+
+  // /**
+  //  * TODO: Wenn auch Texturen verwendet werden, kann diese ggf. wieder entfernt werden.
+  //  */
+  // setColor(color: string | number) {
+  //   if (this.color !== color) {
+  //     this.color = color;
+  //     const mesh = this.getMesh();
+  //     if (mesh) {
+  //       this.refreshObjects();
+  //       this.tmpBox.setFromObject(this.root!);
+  //     }
+  //   }
+  // }
+
+  setType(type: WALL_TYPE) {
+    if (this.state.type !== type) {
+      this.state.type = type;
+      const mesh = this.getMesh();
+      if (mesh) {
+        this.refreshObjects({
+          root: this.root!,
+          wallGeometries: this.wallGeometries!,
+          type,
+          editMode: this.editMode
+        });
+        this.tmpBox.setFromObject(this.root!);
+      }
+    }
+  }
+
+  setTmpType(type: WALL_TYPE = this.state.type) {
+    const mesh = this.getMesh();
+    if (mesh) {
+      this.refreshObjects({
+        root: this.root!,
+        wallGeometries: this.wallGeometries!,
+        type,
+        editMode: this.editMode
+      });
+      this.tmpBox.setFromObject(this.root!);
+    }
+  }
+
   toDescription(): WallDescription {
     return {
-      type: this.type,
+      type: this.state.type,
       direction: this.direction,
       position: new Vector2(this.position.x, this.position.z),
-      color: this.color
+      color: this.state.color
     };
   }
 
@@ -54,16 +180,24 @@ export default class Wall {
     return this.toDescription();
   }
 
+  description: WallDescription;
+
   constructor(options: {
+    description: WallDescription;
     type: WALL_TYPE;
     direction: WALL_DIRECTION;
     position: Vector3;
-    color?: string | number;
+    connection?: WallConnection;
+    color?: (string | number)[];
+    editMode?: boolean;
   }) {
-    this.type = options.type;
+    this.description = options.description;
+
+    this.editMode = options.editMode ?? false;
+    this.state.type = options.type;
     this.position = options.position;
     if (options.color) {
-      this.color = options.color;
+      this.state.color = options.color;
     }
     this.direction = options.direction;
   }
@@ -73,8 +207,21 @@ export default class Wall {
     this.root = undefined;
   }
 
-  setup() {
-    this.root = this.createRoot();
+  update(wallDescriptions: WallDescription[]) {
+    const edges = findNeighborWallEdges(this.description, wallDescriptions);
+
+    this.edges = edges ?? [];
+  }
+
+  setup({
+    assetLoader,
+    wallGeometries
+  }: {
+    assetLoader: AssetLoader;
+    wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+  }) {
+    this.wallGeometries = wallGeometries;
+    this.root = this.createRoot({ assetLoader, wallGeometries });
     this.tmpBox.setFromObject(this.root);
     prepareForRaycast(this.root);
   }
@@ -96,38 +243,123 @@ export default class Wall {
   }
 
   objects: {
-    [WALL_SIZE.SMALL]?: Object3D;
-    [WALL_SIZE.LARGE]?: Object3D;
+    [WALL_SIZE.SMALL]?: Mesh;
+    [WALL_SIZE.LARGE]?: Mesh;
   } = {};
 
-  createRoot() {
-    const size = new Vector3(0.15, 2, 1.15);
-    const material = new MeshPhongMaterial({
-      color: this.color
+  refreshObjects(
+    {
+      root,
+      type,
+      editMode,
+      wallGeometries
+    }: {
+      root: Object3D;
+      type: WALL_TYPE;
+      editMode: boolean;
+      wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+    } = {
+      root: this.root!,
+      type: this.state.type,
+      editMode: this.editMode,
+      wallGeometries: this.wallGeometries!
+    }
+  ) {
+    Object.values(this.objects).forEach(obj => {
+      obj?.removeFromParent();
+      obj?.geometry.dispose();
+      if (Array.isArray(obj)) {
+        obj.forEach(o => {
+          (o.material as Material).dispose?.();
+        });
+      } else {
+        (obj.material as Material).dispose?.();
+      }
     });
 
-    const largeWall = createWallMesh(size, this.direction, material, this.type);
+    const materials = [
+      new MeshPhongMaterial({ color: this.state.color[0] }),
+      new MeshPhongMaterial({ color: this.state.color[1] }),
+      new MeshPhongMaterial({ color: 0x333333 }),
+      new MeshPhongMaterial({ color: 0x333333 }),
+      new MeshPhongMaterial({ color: 0x333333 }),
+      new MeshPhongMaterial({ color: 0x333333 }),
+      new MeshPhongMaterial({ color: 0x333333 })
+    ];
+
+    const largeWall = createWallMesh(
+      {
+        type,
+        small: false,
+        direction: this.direction,
+        materials
+      },
+      {
+        edges: this.edges,
+        editMode,
+        wallGeometries
+      }
+    );
     largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-    largeWall.userData = { ignoreSelect: true };
+    largeWall.userData = { wall: this, ignoreSelect: true };
 
     const smallWall = createWallMesh(
-      new Vector3(size.x, size.y * 0.2, size.z),
-      this.direction,
-      material,
-      this.type
+      {
+        type,
+        small: true,
+        direction: this.direction,
+        materials
+      },
+      {
+        edges: this.edges,
+        editMode,
+        wallGeometries
+      }
     );
     smallWall.name = MESH_WALL_NAME.SMALL_WALL;
     smallWall.visible = false;
-    smallWall.userData = { ignoreSelect: true };
+    smallWall.userData = { wall: this, ignoreSelect: true };
+
+    root?.add(smallWall);
+    root?.add(largeWall);
+
+    // this.assetLoader
+    //   .add<Texture>({ loader: LOADER.TEXTURE, url: wallUV })
+    //   .then(texture => {
+    //     texture.flipY = false;
+    //     texture.wrapS = ClampToEdgeWrapping; // RepeatWrapping;
+    //     texture.wrapT = ClampToEdgeWrapping; // ClampToEdgeWrapping
+    //     texture.repeat.set(1, 1);
+    //     texture.offset.set(0, 0);
+
+    //     largeWall.material.map = texture;
+    //     (largeWall.material as MeshPhongMaterial).needsUpdate = true;
+
+    //     smallWall.material.map = texture;
+    //     (smallWall.material as MeshPhongMaterial).needsUpdate = true;
+    //   });
 
     this.objects = {
       [WALL_SIZE.SMALL]: smallWall,
       [WALL_SIZE.LARGE]: largeWall
     };
+  }
 
+  createRoot({
+    assetLoader,
+    wallGeometries
+  }: {
+    assetLoader: AssetLoader;
+    wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+  }) {
     const group = new Object3D();
-    group.add(smallWall);
-    group.add(largeWall);
+
+    this.refreshObjects({
+      root: group,
+      type: this.state.type,
+      editMode: this.editMode,
+      wallGeometries
+    });
 
     group.userData = { wall: this };
     group.position.copy(this.position);
@@ -141,66 +373,28 @@ export default class Wall {
   }
 }
 
-export enum WALL_DIRECTION {
-  HORIZONTAL = 'horizontal',
-  VERTICAL = 'vertical'
-}
+const materials = new Map<string, Promise<Material>>();
 
-function createWallGeometry(size: Vector3, direction: WALL_DIRECTION) {
-  const geometry = new BoxGeometry(size.x, size.y, size.z);
-  if (direction === WALL_DIRECTION.VERTICAL) {
-    geometry.translate(-0.5, size.y / 2, 0);
+async function setupMaterial<T = MeshPhongMaterial>(assetLoader: AssetLoader) {
+  if (materials.has(image_wall_default)) {
+    return materials.get(image_wall_default) as Promise<T>;
   } else {
-    geometry.translate(0, size.y / 2, -1);
-    geometry.rotateY(Math.PI / 2);
-    geometry.translate(1, 0, -0.5);
+    const { resolve, promise } = Promise.withResolvers<Material>();
+    materials.set(image_wall_default, promise);
+    const texture = await assetLoader.add<Texture>({
+      loader: LOADER.TEXTURE,
+      url: image_wall_default
+    });
+
+    const material = new MeshPhongMaterial({
+      transparent: true,
+      map: texture,
+      color: 0xffffff,
+      shininess: 100,
+      specular: 0xffffff
+    });
+    resolve(material);
+
+    return material as T;
   }
-  return geometry;
-}
-
-function createDoorGeometry(size: Vector3, direction: WALL_DIRECTION) {
-  const geometries: BufferGeometry[] = [];
-  const a = new BoxGeometry(size.x, size.y, size.z * 0.1);
-  a.translate(0, 0, -0.45);
-  geometries.push(a);
-  const b = new BoxGeometry(size.x, size.y, size.z * 0.1);
-  b.translate(0, 0, 0.45);
-  geometries.push(b);
-  if (size.y >= 1) {
-    const c = new BoxGeometry(size.x, size.y * 0.1, size.z);
-    c.translate(0, 0.9, 0);
-    geometries.push(c);
-  }
-  const geometry = mergeGeometries(geometries);
-  geometry.translate(0, 0, 0.5 - size.x + size.x);
-
-  if (direction === WALL_DIRECTION.VERTICAL) {
-    geometry.translate(-0.5, size.y / 2, -0.5);
-  } else {
-    geometry.translate(0, size.y / 2, -1);
-    geometry.rotateY(Math.PI / 2);
-    geometry.translate(0.5, 0, -0.5);
-  }
-  return geometry;
-}
-
-function createWallMesh(
-  size: Vector3,
-  direction: WALL_DIRECTION,
-  material: MeshPhongMaterial,
-  type: WALL_TYPE
-) {
-  let mergedGeometry: BufferGeometry;
-
-  if (type === WALL_TYPE.DOOR) {
-    mergedGeometry = createDoorGeometry(size, direction);
-  } else {
-    mergedGeometry = createWallGeometry(size, direction);
-  }
-  // material.opacity = 0.4;
-  // material.transparent = true;
-  const mesh = new Mesh(mergedGeometry, material);
-  mesh.castShadow = true;
-
-  return mesh;
 }

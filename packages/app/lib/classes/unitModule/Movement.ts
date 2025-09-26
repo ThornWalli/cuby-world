@@ -10,7 +10,7 @@ import { getRadByRotation, type UnitOptions } from '../Unit';
 import { easeOutExpo, easeOutQuad } from '@cuby-world/app/utils/easings';
 import RoomGrid from '../RoomGrid';
 import { setWallConditions } from '../../utils/wall';
-import type { WallDescription } from '../Wall';
+import type Wall from '../Wall';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -81,7 +81,7 @@ export default class MovementUnitModule extends UnitModule {
       startPosition,
       position.clone().round(),
       grid,
-      room.description.walls,
+      room.modules.wall.getWalls(),
       isBlocked,
       options.force
     );
@@ -106,7 +106,7 @@ export default class MovementUnitModule extends UnitModule {
     startPosition: Vector3,
     endPosition: Vector3,
     roomGrid: RoomGrid,
-    walls: WallDescription[],
+    walls: Wall[],
     isBlocked: boolean,
     force?: boolean
   ) {
@@ -116,7 +116,7 @@ export default class MovementUnitModule extends UnitModule {
     this.endPosition = endPosition;
 
     const easystar = new EasyStar.js();
-
+    console.log('roomGrid', roomGrid.toMatrix());
     easystar.setGrid(roomGrid.toMatrix());
 
     if (movementOptions.diagonalMovement) {

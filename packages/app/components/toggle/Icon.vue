@@ -1,7 +1,7 @@
 <template>
   <base-button
     class="cw-toggle-icon"
-    :class="{ selected: modelValue }"
+    :class="{ selected: modelValue, [`color-${color ?? 'default'}`]: true }"
     :aria-label="label"
     @click="$emit('update:model-value', !modelValue)">
     <span v-if="!hideLabel">{{ label }}</span>
@@ -25,6 +25,7 @@ const $props = defineProps<{
   label?: string;
   icon: keyof typeof icons | FunctionalComponent;
   modelValue: boolean;
+  color?: 'default' | 'red';
 }>();
 
 const currentIcon = computed(() => {
@@ -45,6 +46,12 @@ const currentIcon = computed(() => {
   font-family: var(--font-base);
   font-size: 12px;
   color: white;
+
+  --hover-color-background: var(--color-blue-7);
+
+  &.color-red {
+    --hover-color-background: var(--color-red-7);
+  }
 
   & .icon {
     display: block;
@@ -81,7 +88,7 @@ const currentIcon = computed(() => {
   &.selected,
   &:hover {
     & > div {
-      background-color: var(--color-blue-7);
+      background-color: var(--hover-color-background);
     }
   }
 

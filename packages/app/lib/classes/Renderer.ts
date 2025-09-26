@@ -169,6 +169,13 @@ export default class Renderer<
     this.controls?.update();
   }
 
+  enableControls() {
+    this.controls.enabled = true;
+  }
+  disableControls() {
+    this.controls.enabled = false;
+  }
+
   get aspectRatio() {
     return this.dimension.x / this.dimension.y;
   }

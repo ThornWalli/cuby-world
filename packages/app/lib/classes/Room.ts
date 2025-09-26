@@ -26,7 +26,7 @@ interface RoomModules {
 interface RoomState {}
 
 export default class Room<Modules extends RoomModules = RoomModules> {
-  debug = false;
+  debug = true;
 
   state: RoomState = {};
   modules: Modules = {} as Modules;
@@ -118,7 +118,10 @@ export default class Room<Modules extends RoomModules = RoomModules> {
       grid: this.grid.toJSON(),
       start,
       walls: this.modules.wall.getWalls().map(wall => wall.toJSON()),
-      units: this.modules.units.getUnits().map(unit => unit.toJSON())
+      units: this.modules.units
+        .getUnits()
+        .filter(unit => !unit.modules.player.player)
+        .map(unit => unit.toJSON())
     };
   }
 }

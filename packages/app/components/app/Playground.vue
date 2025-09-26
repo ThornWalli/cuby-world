@@ -77,7 +77,7 @@ async function setup() {
   );
   subscription.add(
     app.modules.placement.startPlace$.subscribe(unit => {
-      placedUnit.value = unit;
+      placedUnit.value = markRaw(unit);
     })
   );
   subscription.add(

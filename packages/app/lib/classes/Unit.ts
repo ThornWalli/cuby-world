@@ -24,6 +24,7 @@ export interface RawUnitDescription<Rotation = string, Position = number[]> {
     accessible?: boolean;
     position: Position;
     rotation: Rotation;
+    options?: { [key: string]: unknown };
     [key: string]: unknown;
   };
 }
@@ -186,10 +187,11 @@ export default class Unit<
 
   toDescription(): UnitDescription {
     return {
-      unit: (this.constructor as typeof Unit).NAME,
+      unit: (this.constructor as typeof Unit).KEY,
       options: {
         position: this._position.clone(),
-        rotation: this.rotation
+        rotation: this.rotation,
+        options: { ...this.options }
       }
     };
   }

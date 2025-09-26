@@ -8,6 +8,13 @@ export enum WALL_TYPE {
   DOOR = 'door'
 }
 
+export type Grid = number[][];
+
+export interface StartPosition {
+  position: Vector3;
+  rotation: UNIT_ROTATION;
+}
+
 export interface RoomStartPosition<
   Position = Vector3,
   Rotation = UNIT_ROTATION
@@ -25,14 +32,11 @@ export interface RoomDescription<
     name: string;
     description?: string;
   };
-  grid: number[][];
+  grid: Grid;
   units: UnitDescription<Rotation, UnitPosition>[];
   walls: WallDescription<WallPosition>[];
 
-  start: {
-    position: UnitPosition;
-    rotation: Rotation;
-  };
+  start: StartPosition;
 }
 
 export type ImportRoomDescription = RoomDescription<

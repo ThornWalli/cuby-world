@@ -32,6 +32,9 @@ export default class SelectionModule extends RoomModule<State> {
 
   override setup(): void {
     this.state.selectionMesh = createSelectionMesh();
+    if (this.state.visible) {
+      this.showSelection();
+    }
   }
 
   setSelectionPosition(position: Vector3) {

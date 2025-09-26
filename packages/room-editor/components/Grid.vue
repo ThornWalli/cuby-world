@@ -193,6 +193,7 @@ function onPointerDownCell(index: number) {
   }
   modifyCell(index);
 }
+
 function onPointerUpCell() {
   clicked.value = false;
 }

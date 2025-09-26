@@ -71,12 +71,19 @@ onMounted(async () => {
 
   subscription.add(
     fromEvent<PointerEvent>(canvasEl.value, 'pointerdown').subscribe(event => {
+      const sub = fromEvent<PointerEvent>(document, 'pointerup').subscribe(
+        event => {
+          sub.unsubscribe();
+          $emit('pointerup', event);
+        }
+      );
       $emit('pointerdown', event);
     })
   );
+
   subscription.add(
-    fromEvent<PointerEvent>(canvasEl.value, 'pointerup').subscribe(event => {
-      $emit('pointerup', event);
+    fromEvent<PointerEvent>(canvasEl.value, 'pointermove').subscribe(() => {
+      renderer.value?.modules.intersection?.onMove();
     })
   );
 

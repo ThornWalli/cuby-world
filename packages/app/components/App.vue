@@ -87,7 +87,7 @@ async function setup() {
 
   onResize();
 
-  const app = markRaw(await setupApp(renderer));
+  const app = await setupApp(renderer);
   await setupPlayer(app);
   await app.modules.multiplayer?.joinRoom(DEFAULT_ROOM_ID);
 
@@ -98,10 +98,12 @@ async function setup() {
 const STORAGE_PLAYER_KEY = 'cuby-world:player';
 
 async function setupApp(renderer: Renderer) {
-  app.value = getAppByMode(
-    $props.config.mode ?? APP_MODE.PLAYGROUND,
-    $props.config,
-    renderer
+  app.value = markRaw(
+    getAppByMode(
+      $props.config.mode ?? APP_MODE.PLAYGROUND,
+      $props.config,
+      renderer
+    )
   );
 
   await app.value.setup();

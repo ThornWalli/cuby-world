@@ -29,7 +29,9 @@ export function createGroundChunks(
       for (let r = y; r < y + chunkSize && r < cols; r++) {
         for (let c = x; c < x + chunkSize && c < rows; c++) {
           if (matrix[r]?.[c] === 1) {
-            tilesInChunk.push(new GroundTile(new Vector3(c, 0, r)));
+            tilesInChunk.push(
+              new GroundTile({ position: new Vector3(c, 0, r) })
+            );
           }
         }
       }

@@ -58,7 +58,7 @@ export default class IntersectionRendererModule extends RendererModule<State> {
               listener.mesh,
               true
             );
-
+            console.log('intersects', [...intersects]);
             intersects = intersects.filter(
               i => !i.object.userData?.ignoreSelect
             );
@@ -105,16 +105,24 @@ export default class IntersectionRendererModule extends RendererModule<State> {
     return listener;
   }
 
-  override update() {
-    const mouse = this.mouse;
-    this.mouse.copy(mouse);
-    this.raycaster.setFromCamera(mouse, this.renderer.camera);
-
+  onMove() {
     this.listeners.forEach(listener => {
       const intersects = this.raycaster.intersectObject(listener.mesh, true);
 
       listener.hoverIntersect$.next(intersects);
     });
+  }
+
+  override update() {
+    const mouse = this.mouse;
+    this.mouse.copy(mouse);
+    this.raycaster.setFromCamera(mouse, this.renderer.camera);
+
+    // this.listeners.forEach(listener => {
+    //   const intersects = this.raycaster.intersectObject(listener.mesh, true);
+
+    //   listener.hoverIntersect$.next(intersects);
+    // });
   }
 }
 

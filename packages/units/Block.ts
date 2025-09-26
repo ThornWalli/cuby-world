@@ -9,10 +9,11 @@ import Unit, {
 
 export interface BlockOptions extends UnitOptions {
   color: string | number | Color;
+  size: Vector3;
 }
 export default class Block extends Unit<BlockOptions> {
-  static override KEY = 'box';
-  static override NAME = 'Box';
+  static override KEY = 'block';
+  static override NAME = 'Block';
 
   constructor(
     options: Omit<
@@ -20,15 +21,17 @@ export default class Block extends Unit<BlockOptions> {
       'name' | 'selectable'
     > = {}
   ) {
+    const size = options.options?.size ?? new Vector3(1, 1 / 3, 1);
     super({
-      size: new Vector3(1, 1 / 3, 1),
+      size,
       ...options,
       name: 'Block',
       selectable: true,
       placeable: true,
       options: {
         color: 0xd70000,
-        ...options.options
+        size,
+        ...(options.options ?? {})
       }
     });
   }

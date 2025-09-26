@@ -4,8 +4,10 @@ import { joinURL, withHttps } from 'ufo';
 import { readPackage } from 'read-pkg';
 import { config } from 'dotenv-mono';
 import svgLoader from 'vite-svg-loader';
+
 // import viteMkcert from 'vite-plugin-mkcert';
 import { existsSync } from 'fs';
+import svgoConfig from './svgo.config';
 
 config();
 
@@ -93,7 +95,9 @@ export default defineNuxtConfig({
       //   force: !getHttps()
       // }),
       svgLoader({
-        defaultImport: 'component'
+        defaultImport: 'component',
+        svgo: true,
+        svgoConfig: svgoConfig
       })
     ]
   },

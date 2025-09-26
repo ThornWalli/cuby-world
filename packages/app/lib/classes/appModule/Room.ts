@@ -1,10 +1,13 @@
 import {
   concatAll,
+  concatMap,
   distinctUntilChanged,
   filter,
+  from,
   ReplaySubject,
   Subscription,
-  throttleTime
+  throttleTime,
+  toArray
 } from 'rxjs';
 import type App from '../App';
 import AppModule, { type AppModuleState } from '../AppModule';
@@ -65,10 +68,11 @@ export default class RoomAppModule extends AppModule<State> {
     );
 
     const units = roomDescription.units.map(
-      ({ unit: key, options: { position, rotation } }) => {
+      ({ unit: key, options: { position, rotation, options } }) => {
         const unit = new unitClasses[key]!({
-          position: position,
-          rotation: rotation
+          position,
+          rotation,
+          options
         });
         return unit;
       }
@@ -85,7 +89,7 @@ export default class RoomAppModule extends AppModule<State> {
   }
 
   async addPlayerUnit(player: Player) {
-    const { unitFocus: unitFocusModule } = this.app.modules!;
+    // const { unitFocus: unitFocusModule } = this.app.modules!;
     const room = this.getRoom()!;
     const cuby = new Cuby({
       options: {
@@ -101,7 +105,7 @@ export default class RoomAppModule extends AppModule<State> {
 
     if (player.client) {
       this.app.modules.selection.setSelectedUnit(cuby);
-      unitFocusModule?.setFocusedUnit(cuby);
+      // unitFocusModule?.setFocusedUnit(cuby);
     }
   }
 
@@ -125,6 +129,7 @@ export default class RoomAppModule extends AppModule<State> {
       if (lastRoom) {
         renderer.scene.remove(lastRoom.mesh);
       }
+      lastRoom?.destroy();
       roomModule.setRoom(undefined);
     }
 
@@ -202,7 +207,7 @@ export default class RoomAppModule extends AppModule<State> {
             prev.worldPosition.equals(curr.worldPosition)
         )
       )
-      .subscribe(this.onHover.bind(this));
+      .subscribe(this.onHoverGround.bind(this));
   }
 
   subscribePlacement() {
@@ -261,10 +266,28 @@ export default class RoomAppModule extends AppModule<State> {
     if (renderer.modules.intersection) {
       subscription.add(this.subscribeGroundSelection());
 
+      const { hoverIntersect$, clickIntersects$ } =
+        renderer.modules.intersection.register(room.mesh);
       subscription.add(
-        renderer.modules.intersection
-          .register(room.mesh)
-          .clickIntersect$.pipe(preparePosition())
+        hoverIntersect$
+          .pipe(
+            concatMap(interactions => {
+              return from(interactions).pipe(
+                filter(Boolean),
+                preparePosition(),
+                toArray()
+              );
+            })
+          )
+          .subscribe(this.onHover.bind(this))
+      );
+      subscription.add(
+        clickIntersects$
+          .pipe(
+            concatMap(interactions => {
+              return from(interactions).pipe(preparePosition(), toArray());
+            })
+          )
           .subscribe(this.onSelect.bind(this))
       );
     }
@@ -273,7 +296,7 @@ export default class RoomAppModule extends AppModule<State> {
     return subscription;
   }
 
-  onHover({ worldPosition }: PreparedPosition) {
+  onHoverGround({ worldPosition }: PreparedPosition) {
     const room = this.app.modules.room.getRoom()!;
     room.modules.selection.setSelectionPosition(worldPosition!);
     this.pointerPosition$.next(worldPosition!);
@@ -281,17 +304,25 @@ export default class RoomAppModule extends AppModule<State> {
 
   _position: Vector3 = new Vector3();
 
-  onSelect(preparedPosition: PreparedPosition) {
+  onHover(preparedPositions: PreparedPosition[]) {
+    const app = this.app;
+    const player = app.modules.player.getCurrentPlayer();
+    Object.values(app.modules).some((module: AppModule) => {
+      return module.onSceneHover({ preparedPositions, player });
+    });
+  }
+
+  onSelect(preparedPositions: PreparedPosition[]) {
     const app = this.app;
     const player = app.modules.player.getCurrentPlayer();
     if (!player) {
       throw new Error('No player available');
     }
-    if (preparedPosition) {
-      const { unit, worldPosition } = preparedPosition;
+    if (preparedPositions.length > 0) {
+      const { unit, worldPosition } = preparedPositions[0]!;
 
       const abort = Object.values(app.modules).some((module: AppModule) => {
-        return module.onSceneSelect({ preparedPosition, player });
+        return module.onSceneSelect({ preparedPositions, player });
       });
 
       if (abort) {
@@ -314,17 +345,6 @@ export default class RoomAppModule extends AppModule<State> {
         app.modules.selection.setSelectedUnit(null);
         player.moveTo(worldPosition!);
       }
-      // } else if (worldPosition?.equals(this._position)) {
-      //   app.modules.selection.setSelectedUnit(null);
-      //   console.log(worldPosition);
-      //   player.moveTo(worldPosition!);
-      // } else {
-      //   this._position.copy(worldPosition!);
-      //   player.unit?.setRotation(
-      //     player.unit?.getRotationByPosition(worldPosition!)
-      //   );
-      //   console.log('Set position', worldPosition);
-      // }
     } else {
       console.log('No intersected object');
     }

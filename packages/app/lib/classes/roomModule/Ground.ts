@@ -31,12 +31,31 @@ export default class GroundModule extends RoomModule<State> {
     this.projScreenMatrix = new Matrix4();
   }
 
+  override destroy(): void {
+    this.state.groundChunks.forEach(chunk => {
+      chunk.geometry.dispose();
+      if (Array.isArray(chunk.material)) {
+        chunk.material.forEach(mat => mat.dispose());
+      } else {
+        chunk.material.dispose();
+      }
+    });
+    if (this.state.groundMesh) {
+      this.room.mesh.remove(this.state.groundMesh);
+      this.state.groundMesh = null;
+    }
+    super.destroy();
+  }
+
   override setup(): void {
     this.setupGround();
   }
 
-  override updateThrottle(_time: number, _options?: { camera: Camera }): void {
-    this.updateVisibility();
+  override updateThrottle500ms(
+    _time: number,
+    options: { camera: Camera }
+  ): void {
+    this.updateVisibility(options.camera);
   }
 
   setupGround() {
@@ -54,7 +73,11 @@ export default class GroundModule extends RoomModule<State> {
     this.room.mesh.add(groundMesh);
   }
 
-  updateVisibility() {
+  updateVisibility(camera: Camera) {
+    this.projScreenMatrix.multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse
+    );
     this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
     this.state.groundChunks.forEach(chunk => {
       const box = new Box3().setFromObject(chunk);

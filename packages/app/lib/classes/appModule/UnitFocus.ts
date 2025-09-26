@@ -29,14 +29,14 @@ export default class UnitFocusAppModule extends AppModule<State> {
     this.state.focusedUnit = unit;
     const controls = this.app.renderer.controls;
     if (!unit) {
-      controls.enabled = true;
+      this.app.renderer.enableControls();
       if (lastFocusedUnit) {
         controls.object.position.copy(this.app.renderer.camera.position);
         controls.target.copy(lastFocusedUnit.root.position);
         controls.update();
       }
     } else {
-      controls.enabled = false;
+      this.app.renderer.disableControls();
       controls.update();
     }
     this.focusedUnit$.next(unit);
