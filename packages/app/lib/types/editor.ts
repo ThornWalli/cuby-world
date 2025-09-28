@@ -8,6 +8,13 @@ export enum WALL_ACTION {
   NONE = 'none',
   ADD = 'add',
   REMOVE = 'remove',
-  DOOR = 'door',
-  STYLE = 'style'
+  MODE_DOOR = 'mode_door',
+  MODE_WINDOW = 'mode_window',
+  MODE_STYLE = 'style'
 }
+
+// export interface WallStyleSelect {
+//   id: string;
+//   color: string;
+//   name: string;
+// }

@@ -1,35 +1,54 @@
-import type { WallDescription } from '../../Wall';
+/* eslint-disable complexity */
+import type { WALL_WINDOW_TYPE, WallDescription } from '../../Wall';
 import type { Object3D, Vector3 } from 'three';
 import { BoxGeometry, Mesh, MeshBasicMaterial, Vector2 } from 'three';
 import type { AppModuleState, SceneSelectContext } from '../../AppModule';
 import AppModule from '../../AppModule';
 import type App from '../../App';
-import { debounceTime, filter, map, Subject, switchMap } from 'rxjs';
+import { concatMap, debounceTime, filter, map, Subject, switchMap } from 'rxjs';
 import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
 import type Wall from '../../Wall';
 import { WALL_DIRECTION } from '../../Wall';
 import { WALL_TYPE } from '../../RoomDescription';
 import { prepareForRaycast } from '@cuby-world/app/lib/utils/raycast';
 
+import { getFaceGroupIndex } from '@cuby-world/app/lib/utils/wall';
+import type {
+  WallStyle,
+  WallStyleTemplate
+} from '@cuby-world/app/lib/utils/wall/style';
+
 interface State extends AppModuleState {
-  action: WALL_ACTION;
+  action: {
+    primary: WALL_ACTION;
+    secondary?: WALL_WINDOW_TYPE;
+  };
+  style: WallStyle;
 }
 export default class EditorWallModule extends AppModule<State> {
   static override TYPE = 'editorWall';
 
   state: State = {
-    action: WALL_ACTION.NONE
+    action: {
+      primary: WALL_ACTION.NONE
+    },
+    style: {
+      id: 'color_blue',
+      color: '#0066ff'
+    }
   };
 
   creatorMesh: Mesh;
 
   hoverObject$ = new Subject<{
-    current: Object3D | null;
-    last: Object3D | null;
+    current: Wall;
+    last: Wall | null;
+    faceIndex: number;
   }>();
   selectObject$ = new Subject<{
     current: Object3D | null;
     last: Object3D | null;
+    faceIndex: number;
   }>();
 
   constructor(app: App) {
@@ -50,12 +69,10 @@ export default class EditorWallModule extends AppModule<State> {
           filter(Boolean),
           switchMap(room => room!.modules.selection.position$),
           map(position => position.clone().ceil()),
-          debounceTime(50)
+          debounceTime(50),
+          concatMap(this.onDrag.bind(this))
         )
-        .subscribe(position => {
-          this.onDrag(position);
-          this.creatorMesh.position.copy(position);
-        })
+        .subscribe(void 0)
     );
 
     this.subscription.add(
@@ -66,51 +83,149 @@ export default class EditorWallModule extends AppModule<State> {
     );
 
     this.subscription.add(
-      this.selectObject$.subscribe(({ current }) => {
-        const wall = this.getWallFromObject(current!)!;
-        if (this.state.action === WALL_ACTION.DOOR && wall) {
-          wall.setType(
-            wall.state.type === WALL_TYPE.DEFAULT
-              ? WALL_TYPE.DOOR
-              : WALL_TYPE.DEFAULT
-          );
-        } else if (current && current.parent!.name === MESH_WALL_CREATOR) {
-          this.startDrag();
-        }
+      this.selectObject$.pipe(concatMap(this.onSelect.bind(this))).subscribe({
+        next: () => void 0
       })
     );
 
     this.subscription.add(
-      this.hoverObject$.subscribe(({ current }) => {
-        if (this.lastWall !== current?.parent?.userData.wall) {
-          this.lastWall?.setTmpType();
-          if (current?.parent?.userData.wall) {
-            const wall = current?.parent?.userData.wall as Wall;
-            this.lastWall = wall;
-            wall.setTmpType(
-              wall.state.type === WALL_TYPE.DEFAULT
-                ? WALL_TYPE.DOOR
-                : WALL_TYPE.DEFAULT
-            );
-          }
-        }
-      })
+      this.hoverObject$
+        .pipe(concatMap(this.onHover.bind(this)))
+        .subscribe(void 0)
     );
   }
+
+  private async onSelect({
+    current,
+    faceIndex
+  }: {
+    current: Object3D | null;
+    faceIndex: number;
+  }) {
+    const wall = this.getWallFromObject(current!)!;
+    if (this.state.action.primary === WALL_ACTION.MODE_STYLE && wall) {
+      this.lastWall?.resetTmpState();
+      this.lastWall = null;
+      wall.setStyle(this.state.style, faceIndex);
+    } else if (this.state.action.primary === WALL_ACTION.MODE_DOOR && wall) {
+      this.lastWall?.resetTmpState();
+      this.lastWall = wall;
+
+      const type =
+        wall.state.type === WALL_TYPE.DEFAULT
+          ? WALL_TYPE.DOOR
+          : WALL_TYPE.DEFAULT;
+
+      await wall.saveTmpState({
+        type
+      });
+    } else if (this.state.action.primary === WALL_ACTION.MODE_WINDOW && wall) {
+      this.lastWall?.resetTmpState();
+      this.lastWall = wall;
+
+      const type =
+        wall.state.type === WALL_TYPE.DEFAULT
+          ? WALL_TYPE.WINDOW
+          : WALL_TYPE.DEFAULT;
+
+      await wall.saveTmpState({
+        type
+      });
+    } else if (current && current.parent!.name === MESH_WALL_CREATOR) {
+      this.startDrag();
+    }
+  }
+
+  private async onHover({
+    current,
+    faceIndex
+  }: {
+    current: Wall;
+    faceIndex: number;
+  }) {
+    if (current) {
+      if (this.state.action.primary === WALL_ACTION.MODE_STYLE) {
+        if (faceIndex > -1 && [0, 1].includes(faceIndex)) {
+          const style: [WallStyle | null, WallStyle | null] = [
+            current.state.style?.[0] || null,
+            current.state.style?.[1] || null
+          ];
+
+          if (!style[faceIndex]) {
+            throw new Error('Face index out of range');
+          }
+
+          if (this.state.style.id !== style[faceIndex].id) {
+            style[faceIndex] = { ...this.state.style };
+
+            this.lastWall?.restoreTmpState();
+            this.lastWall = current;
+
+            await current.saveTmpState({
+              style: style
+            });
+          }
+          return;
+        }
+      } else if (this.state.action.primary === WALL_ACTION.MODE_DOOR) {
+        if (
+          !current.equal(this.lastWall) ||
+          current.state.type !== this.lastWall?.state.type
+        ) {
+          const type =
+            current.state.type === WALL_TYPE.DEFAULT
+              ? WALL_TYPE.DOOR
+              : WALL_TYPE.DEFAULT;
+          console.log('set tmp state', type);
+          this.lastWall?.restoreTmpState();
+          this.lastWall = current;
+
+          await current.saveTmpState({
+            type
+          });
+        }
+        return;
+      } else if (this.state.action.primary === WALL_ACTION.MODE_WINDOW) {
+        if (
+          !current.equal(this.lastWall) ||
+          current.state.type !== this.lastWall?.state.type
+        ) {
+          const type =
+            current.state.type === WALL_TYPE.DEFAULT
+              ? WALL_TYPE.WINDOW
+              : WALL_TYPE.DEFAULT;
+
+          this.lastWall?.restoreTmpState();
+          this.lastWall = current;
+
+          await current.saveTmpState({
+            type,
+            windowType: this.state.action.secondary
+          });
+        }
+        return;
+      }
+    }
+    this.lastWall?.restoreTmpState();
+    this.lastWall = null;
+  }
+
   changeColor() {
-    const action = this.state.action;
+    const { primary } = this.state.action;
     if (this.dragOptions.moving) {
       (this.creatorMesh.material as MeshBasicMaterial).color.set(0xffa500);
-    } else if (action === WALL_ACTION.ADD) {
+    } else if (primary === WALL_ACTION.ADD) {
       (this.creatorMesh.material as MeshBasicMaterial).color.set(0x00ff00);
-    } else if (action === WALL_ACTION.REMOVE) {
+    } else if (primary === WALL_ACTION.REMOVE) {
       (this.creatorMesh.material as MeshBasicMaterial).color.set(0xff0000);
     }
   }
 
-  setAction(action: WALL_ACTION) {
+  setAction(action: { primary: WALL_ACTION }) {
+    const { primary } = action;
     const lastAction = this.state.action;
-    if (lastAction === action) {
+
+    if (lastAction.primary === primary) {
       return;
     }
 
@@ -118,17 +233,23 @@ export default class EditorWallModule extends AppModule<State> {
 
     this.changeColor();
 
-    if (lastAction === WALL_ACTION.ADD || lastAction === WALL_ACTION.REMOVE) {
+    if (
+      lastAction.primary === WALL_ACTION.ADD ||
+      lastAction.primary === WALL_ACTION.REMOVE
+    ) {
       this.stopEditing();
     }
 
-    if (action === WALL_ACTION.ADD || action === WALL_ACTION.REMOVE) {
+    if (primary === WALL_ACTION.ADD || primary === WALL_ACTION.REMOVE) {
       this.startEditing();
     }
   }
 
-  setColor(_color: string) {
-    alert('Not implemented yet');
+  setStyle(style: WallStyle | WallStyleTemplate) {
+    if ('id' in style || 'texture' in style) {
+      this.state.style = style as WallStyle;
+    }
+    this.state.style = style;
   }
 
   private startEditing() {
@@ -147,23 +268,21 @@ export default class EditorWallModule extends AppModule<State> {
 
   lastObject: Object3D | null = null;
   lastWall: Wall | null = null;
-  lastType: WALL_TYPE | null = null;
 
   override onSceneHover({ preparedPositions }: SceneSelectContext) {
-    if (this.state.action === WALL_ACTION.DOOR) {
-      const object = preparedPositions[0]?.object;
-      if (object !== this.lastObject) {
-        this.hoverObject$.next({
-          current: object ?? null,
-          last: this.lastObject
-        });
-        this.lastObject = object ?? null;
-      }
-    }
+    const object = preparedPositions?.[0]?.object;
+    const wall = object?.parent?.userData.wall;
 
-    // if (object && object.parent!.name === MESH_WALL_CREATOR) {
-    //   this.startDrag();
-    // }
+    const faceIndex = preparedPositions[0]
+      ? getFaceGroupIndex(preparedPositions[0])
+      : -1;
+
+    this.hoverObject$.next({
+      current: wall ?? null,
+      last: this.lastWall,
+      faceIndex
+    });
+    this.lastWall = wall;
   }
 
   getWallFromObject(object: Object3D): Wall | null {
@@ -176,14 +295,16 @@ export default class EditorWallModule extends AppModule<State> {
   private _lastObject: Object3D | null = null;
   override onSceneSelect({ preparedPositions }: SceneSelectContext) {
     const object = preparedPositions[0]?.object;
+    const faceIndex = getFaceGroupIndex(preparedPositions[0]!);
 
     this.selectObject$.next({
       current: object ?? null,
-      last: this._lastObject
+      last: this._lastObject,
+      faceIndex
     });
     this._lastObject = object ?? null;
 
-    return this.state.action !== WALL_ACTION.NONE;
+    return this.state.action.primary !== WALL_ACTION.NONE;
   }
 
   wallDescriptions: WallDescription[] = [];
@@ -208,11 +329,11 @@ export default class EditorWallModule extends AppModule<State> {
   }
 
   stopDrag() {
-    if (this.state.action === WALL_ACTION.ADD) {
+    if (this.state.action.primary === WALL_ACTION.ADD) {
       this.app.modules.room
         .getRoom()!
         .modules.wall.addedWalls(this.wallDescriptions);
-    } else if (this.state.action === WALL_ACTION.REMOVE) {
+    } else if (this.state.action.primary === WALL_ACTION.REMOVE) {
       this.app.modules.room
         .getRoom()!
         .modules.wall.removeWallsByDescriptions(this.wallDescriptions);
@@ -223,11 +344,11 @@ export default class EditorWallModule extends AppModule<State> {
   }
 
   lastPosition?: Vector3;
-  onDrag(position: Vector3) {
+  async onDrag(position: Vector3) {
     if (this.dragOptions.moving) {
       if (
-        this.state.action === WALL_ACTION.ADD ||
-        this.state.action === WALL_ACTION.REMOVE
+        this.state.action.primary === WALL_ACTION.ADD ||
+        this.state.action.primary === WALL_ACTION.REMOVE
       ) {
         this.wallDescriptions = [];
 
@@ -238,7 +359,7 @@ export default class EditorWallModule extends AppModule<State> {
           vector3ToVector2(this.dragOptions.endPosition!)
         );
 
-        if (this.state.action === WALL_ACTION.ADD) {
+        if (this.state.action.primary === WALL_ACTION.ADD) {
           this.app.modules.room
             .getRoom()!
             .modules.wall.addedWalls(wallDescriptions);
@@ -252,6 +373,8 @@ export default class EditorWallModule extends AppModule<State> {
     }
 
     this.lastPosition = position;
+
+    this.creatorMesh.position.copy(position);
   }
 }
 
@@ -289,7 +412,16 @@ function getWallsFromPositions(
       type: WALL_TYPE.DEFAULT,
       direction,
       position: startPosition,
-      color: [0x00ffff, 0x00ffff]
+      style: [
+        {
+          id: 'color_cyan',
+          color: 0x00ffff
+        },
+        {
+          id: 'color_cyan',
+          color: 0x00ffff
+        }
+      ]
     });
 
     if (isWest) {
@@ -311,7 +443,16 @@ function getWallsFromPositions(
         type: WALL_TYPE.DEFAULT,
         direction,
         position: newVector,
-        color: [0x00ffff, 0x00ffff]
+        style: [
+          {
+            id: 'color_cyan',
+            color: 0x00ffff
+          },
+          {
+            id: 'color_cyan',
+            color: 0x00ffff
+          }
+        ]
       });
     }
   }

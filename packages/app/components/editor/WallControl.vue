@@ -5,31 +5,42 @@
     </teleport>
     <teleport to="#teleports-panel-bottom-right">
       <cw-panel-editor-wall-style
-        v-if="currentAction === WALL_ACTION.STYLE"
-        v-model="color"
+        v-if="currentAction.primary === WALL_ACTION.MODE_STYLE"
+        v-model="style"
         :action="currentAction" />
     </teleport>
   </div>
 </template>
 
 <script lang="ts" setup>
-import CwPanelEditorWallActions from './panel/WallActions.vue';
+import CwPanelEditorWallActions, {
+  type WallAction
+} from './panel/WallActions.vue';
 import CwPanelEditorWallStyle from './panel/WallStyle.vue';
 
 import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import type { EditorApp } from '@cuby-world/app/lib/classes/App';
+import type { WallStyleTemplate } from '@cuby-world/app/lib/utils/wall/style';
 
-const color = ref<string>('#ffffff');
+const style = ref<WallStyleTemplate>({
+  id: 'color_blue',
+  color: '#0066ff',
+  name: 'Blue'
+});
 
 const $props = defineProps<{
   app: EditorApp;
 }>();
 
-const currentAction = ref<WALL_ACTION>(WALL_ACTION.NONE);
+const currentAction = ref<WallAction>({
+  primary: WALL_ACTION.NONE
+});
 
 onMounted(() => {
-  currentAction.value = WALL_ACTION.ADD;
+  currentAction.value = {
+    primary: WALL_ACTION.MODE_STYLE
+  };
 });
 
 onUnmounted(() => {
@@ -37,22 +48,22 @@ onUnmounted(() => {
 });
 
 watch(() => currentAction.value, onChangeAction);
-watch(() => color.value, onChangeColor);
+watch(() => style.value, onChangeStyle);
 
-function onChangeAction(action: WALL_ACTION) {
+function onChangeAction(action: WallAction) {
   const app = $props.app;
   resetAction();
   app.modules.editorWall.setAction(action);
 }
 
-function onChangeColor(color: string) {
-  $props.app.modules.editorWall.setColor(color);
+function onChangeStyle(style: WallStyleTemplate) {
+  $props.app.modules.editorWall.setStyle(style);
 }
 
 // #region Actions
 
 function resetAction() {
-  $props.app.modules.editorWall.setAction(WALL_ACTION.NONE);
+  $props.app.modules.editorWall.setAction({ primary: WALL_ACTION.NONE });
 }
 
 // #endregion

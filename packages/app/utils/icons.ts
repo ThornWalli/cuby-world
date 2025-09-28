@@ -36,9 +36,14 @@ export default {
       () => import('../assets/icons/editor/actions/wall_mode.svg?component')
     )
   ),
-  door: markRaw(
+  door_mode: markRaw(
     defineAsyncComponent(
-      () => import('../assets/icons/editor/actions/door.svg?component')
+      () => import('../assets/icons/editor/actions/door_mode.svg?component')
+    )
+  ),
+  window_mode: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/window_mode.svg?component')
     )
   ),
   color: markRaw(
@@ -49,6 +54,21 @@ export default {
   settings: markRaw(
     defineAsyncComponent(
       () => import('../assets/icons/editor/actions/settings.svg?component')
+    )
+  ),
+  window_small: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/window_small.svg?component')
+    )
+  ),
+  window_medium: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/window_medium.svg?component')
+    )
+  ),
+  window_large: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/window_large.svg?component')
     )
   )
 };

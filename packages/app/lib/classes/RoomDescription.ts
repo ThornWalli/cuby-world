@@ -5,7 +5,8 @@ import type { UnitDescription } from './Unit';
 
 export enum WALL_TYPE {
   DEFAULT = 'default',
-  DOOR = 'door'
+  DOOR = 'door',
+  WINDOW = 'window'
 }
 
 export type Grid = number[][];

@@ -1,19 +1,22 @@
 import type { Observable } from 'rxjs';
 import { concatMap, ReplaySubject, Subscription } from 'rxjs';
+import type { Vector2 } from 'three';
 import {
   CubeTexture,
   Texture,
   CubeTextureLoader,
   NearestFilter,
   SRGBColorSpace,
-  TextureLoader
+  TextureLoader,
+  CanvasTexture
 } from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 
 export enum LOADER {
   CUBE_TEXTURE = 'CubeTextureLoader',
   TEXTURE = 'TextureLoader',
-  GLTF = 'GLTFLoader'
+  GLTF = 'GLTFLoader',
+  SPRITE = 'loadSpriteFromAtlas'
 }
 
 interface Loaders {
@@ -26,6 +29,14 @@ export interface LoadDescription {
   loader: LOADER;
   url: string | string[];
   id?: string;
+  options?: Record<string, unknown>;
+}
+export interface SpriteLoadDescription extends LoadDescription {
+  options: {
+    density?: number;
+    position: Vector2;
+    dimension: Vector2;
+  };
 }
 
 export default class AssetLoader {
@@ -41,13 +52,13 @@ export default class AssetLoader {
   private textures: Map<string, Promise<Texture | CubeTexture | GLTF>> =
     new Map();
 
-  has(id: LOADER | string) {
-    return this.textures.has(id);
-  }
+  // has(id: LOADER | string) {
+  //   return this.textures.has(id);
+  // }
 
-  get<T = Texture | CubeTexture | GLTF>(id: string) {
-    return this.textures.get(id) as Promise<T>;
-  }
+  // get<T = Texture | CubeTexture | GLTF>(id: string) {
+  //   return this.textures.get(id) as Promise<T>;
+  // }
 
   constructor() {
     this.loaders = {
@@ -57,16 +68,20 @@ export default class AssetLoader {
     };
 
     this.subscription.add(
-      this.addDescription$.pipe(loadTexture(this.loaders)).subscribe(([id]) => {
-        console.log('Texture loaded', id);
-      })
+      this.addDescription$.pipe(loadTexture(this.loaders)).subscribe(void 0)
     );
   }
 
-  add<T = Texture | CubeTexture | GLTF>(description: LoadDescription) {
+  add<
+    T = Texture | CubeTexture | GLTF,
+    L extends LoadDescription = LoadDescription
+  >(description: L) {
+    const key = JSON.stringify(description);
     const id = description.id || description.url.toString();
-    if (this.has(id)) {
-      return this.get<T>(description.id || description.url.toString());
+    if (this.textures.has(key)) {
+      return this.textures.get(
+        description.id || description.url.toString()
+      ) as Promise<T>;
     }
     const { promise, resolve, reject } = Promise.withResolvers<T>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,6 +90,28 @@ export default class AssetLoader {
 
     return promise;
   }
+}
+async function loadSpriteFromAtlas(
+  url: string,
+  sx: number,
+  sy: number,
+  sw: number,
+  sh: number
+) {
+  const img = await new Promise<HTMLImageElement>(resolve => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.src = url;
+  });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = sw;
+  canvas.height = sh;
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+  const texture = new CanvasTexture(canvas);
+  return texture;
 }
 
 function loadTexture(loaders: Loaders) {
@@ -89,14 +126,32 @@ function loadTexture(loaders: Loaders) {
       concatMap(
         async ({
           resolve,
-          description: { id, url, loader }
+          description
         }: {
           resolve: CallableFunction;
           reject: CallableFunction;
           description: LoadDescription;
         }) => {
+          const { loader, url, id } = description;
           let result: Texture | CubeTexture | GLTF;
           switch (loader) {
+            case LOADER.SPRITE:
+              {
+                const loadDescription: SpriteLoadDescription =
+                  description as SpriteLoadDescription;
+                result = await loadSpriteFromAtlas(
+                  description.url as string,
+                  ...loadDescription.options.position
+                    .clone()
+                    .multiplyScalar(loadDescription.options.density ?? 1)
+                    .toArray(),
+                  ...loadDescription.options.dimension
+                    .clone()
+                    .multiplyScalar(loadDescription.options.density ?? 1)
+                    .toArray()
+                );
+              }
+              break;
             case LOADER.GLTF:
               {
                 result = await loaders[LOADER.GLTF].loadAsync(url as string);

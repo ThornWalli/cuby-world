@@ -1,21 +1,30 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import type { Texture, Material, BufferGeometry, Vector3, Mesh } from 'three';
-import { Box3, Vector2, MeshPhongMaterial, Object3D } from 'three';
+import type { Vector3, Texture, Material, BufferGeometry, Mesh } from 'three';
+import {
+  Box3,
+  Vector2,
+  MeshPhongMaterial,
+  Object3D,
+  ClampToEdgeWrapping,
+  BufferAttribute
+} from 'three';
 
-import image_wall_default from '../../assets/wall/default.png?url';
+import image_wall_texture_1 from '../../assets/wall/texture_1.png?url';
 
 import { WALL_TYPE } from './RoomDescription';
 import { prepareForRaycast } from '../utils/raycast';
 
 import type AssetLoader from './AssetLoader';
-import { LOADER } from './AssetLoader';
+import { LOADER, type SpriteLoadDescription } from './AssetLoader';
 import {
   type WALL_GEOMETRY_TYPE,
   type WALL_GEOMETRY,
   type WallConnection,
   findNeighborWallEdges,
-  createWallMesh
+  createWallMesh,
+  getGroupBounds,
+  type WallEdge
 } from '../utils/wall';
+import type { WallStyle } from '../utils/wall/style';
 
 enum MESH_WALL_NAME {
   SMALL_WALL = 'small_wall',
@@ -23,7 +32,12 @@ enum MESH_WALL_NAME {
 }
 
 export enum WALL_SIZE {
-  SMALL = 'standard',
+  SMALL = 'small',
+  LARGE = 'large'
+}
+export enum WALL_WINDOW_TYPE {
+  SMALL = 'small',
+  MEDIUM = 'medium',
   LARGE = 'large'
 }
 
@@ -31,7 +45,7 @@ export interface WallDescription<Position = Vector2> {
   type: WALL_TYPE;
   direction: WALL_DIRECTION;
   position: Position;
-  color: (string | number)[];
+  style: [WallStyle | null, WallStyle | null];
 
   /**
    * @deprecated
@@ -43,39 +57,30 @@ export interface WallDescription<Position = Vector2> {
   endPosition?: Position;
 }
 
-export enum WALL_EDGE_TYPE {
-  LEFT = 'left',
-  RIGHT = 'right',
-  TOP = 'top',
-  BOTTOM = 'bottom',
-  TOP_LEFT = 'top_left',
-  TOP_RIGHT = 'top_right',
-  BOTTOM_LEFT = 'bottom_left',
-  BOTTOM_RIGHT = 'bottom_right',
-  TEST = 'test',
-  CROSS = 'cross',
-  T_CROSS_LEFT = 't_cross_left',
-  T_CROSS_I_LEFT = 't_cross_left_i', // Nur für innere ecken
-  T_CROSS_RIGHT = 't_cross_right',
-  T_CROSS_I_RIGHT = 't_cross_right_i', // Nur für innere ecken
-  T_CROSS_TOP = 't_cross_top',
-  T_CROSS_I_TOP = 't_cross_top_i', // Nur für innere ecken
-  T_CROSS_BOTTOM = 't_cross_bottom',
-  T_CROSS_I_BOTTOM = 't_cross_i_bottom' // Nur für innere ecken
-}
-export interface WallEdge {
-  wall: WallDescription;
-  // position: Vector2;
-  // direction: WALL_DIRECTION;
-  type: WALL_TYPE;
-  offset: Vector2;
-  edgeType: WALL_EDGE_TYPE;
+function getDefaultStyle(): [WallStyle, WallStyle] {
+  return [
+    {
+      id: 'texture_1',
+      texture: {
+        url: image_wall_texture_1
+      },
+      color: 0x888888
+    },
+    {
+      id: 'texture_1',
+      texture: {
+        url: image_wall_texture_1
+      },
+      color: 0x888888
+    }
+  ];
 }
 
 export interface WallOptions {
   type: WALL_TYPE;
   direction: WALL_DIRECTION;
-  small?: boolean;
+  size: WALL_SIZE;
+  windowType?: WALL_WINDOW_TYPE;
   left: WALL_GEOMETRY_TYPE;
   right: WALL_GEOMETRY_TYPE;
 }
@@ -87,17 +92,24 @@ export enum WALL_DIRECTION {
 
 interface WallState {
   type: WALL_TYPE;
-  color: (string | number)[];
+  style: [WallStyle | null, WallStyle | null];
+  windowType?: WALL_WINDOW_TYPE;
 }
 
 export default class Wall {
+  equal(lastWall: Wall | null) {
+    return this.id === lastWall?.id;
+  }
   state: WallState = {
     type: WALL_TYPE.DEFAULT,
-    color: [0x000000, 0xffffff]
+    style: getDefaultStyle(),
+
+    windowType: WALL_WINDOW_TYPE.MEDIUM
   };
 
   readonly direction: WALL_DIRECTION;
 
+  private id = crypto.randomUUID();
   private edges: WallEdge[] = [];
   private editMode = false;
   public visible = true;
@@ -108,78 +120,6 @@ export default class Wall {
 
   tmpBox = new Box3();
 
-  setEditMode(editMode: boolean) {
-    if (this.editMode !== editMode) {
-      this.editMode = editMode;
-      const mesh = this.getMesh();
-      if (mesh) {
-        this.refreshObjects({
-          root: this.root!,
-          wallGeometries: this.wallGeometries!,
-          type: this.state.type,
-          editMode
-        });
-        this.tmpBox.setFromObject(this.root!);
-      }
-    }
-  }
-
-  // /**
-  //  * TODO: Wenn auch Texturen verwendet werden, kann diese ggf. wieder entfernt werden.
-  //  */
-  // setColor(color: string | number) {
-  //   if (this.color !== color) {
-  //     this.color = color;
-  //     const mesh = this.getMesh();
-  //     if (mesh) {
-  //       this.refreshObjects();
-  //       this.tmpBox.setFromObject(this.root!);
-  //     }
-  //   }
-  // }
-
-  setType(type: WALL_TYPE) {
-    if (this.state.type !== type) {
-      this.state.type = type;
-      const mesh = this.getMesh();
-      if (mesh) {
-        this.refreshObjects({
-          root: this.root!,
-          wallGeometries: this.wallGeometries!,
-          type,
-          editMode: this.editMode
-        });
-        this.tmpBox.setFromObject(this.root!);
-      }
-    }
-  }
-
-  setTmpType(type: WALL_TYPE = this.state.type) {
-    const mesh = this.getMesh();
-    if (mesh) {
-      this.refreshObjects({
-        root: this.root!,
-        wallGeometries: this.wallGeometries!,
-        type,
-        editMode: this.editMode
-      });
-      this.tmpBox.setFromObject(this.root!);
-    }
-  }
-
-  toDescription(): WallDescription {
-    return {
-      type: this.state.type,
-      direction: this.direction,
-      position: new Vector2(this.position.x, this.position.z),
-      color: this.state.color
-    };
-  }
-
-  toJSON(): WallDescription {
-    return this.toDescription();
-  }
-
   description: WallDescription;
 
   constructor(options: {
@@ -188,7 +128,7 @@ export default class Wall {
     direction: WALL_DIRECTION;
     position: Vector3;
     connection?: WallConnection;
-    color?: (string | number)[];
+    style?: [WallStyle | null, WallStyle | null];
     editMode?: boolean;
   }) {
     this.description = options.description;
@@ -196,10 +136,106 @@ export default class Wall {
     this.editMode = options.editMode ?? false;
     this.state.type = options.type;
     this.position = options.position;
-    if (options.color) {
-      this.state.color = options.color;
+    if (options.style) {
+      this.state.style = options.style;
     }
     this.direction = options.direction;
+  }
+
+  setEditMode(editMode: boolean) {
+    if (this.editMode !== editMode) {
+      this.editMode = editMode;
+      const mesh = this.getMesh();
+      if (mesh) {
+        this.refreshObjects({
+          root: this.root!,
+          wallGeometries: this.wallGeometries!,
+          editMode
+        });
+        this.tmpBox.setFromObject(this.root!);
+      }
+    }
+  }
+
+  setStyle(style: WallStyle, index: number) {
+    if (this.state.style[index] && this.state.style[index].id !== style.id) {
+      this.tmpState = null;
+      this.state.style[index] = style;
+      const mesh = this.getMesh();
+      if (mesh) {
+        this.refreshObjects();
+        this.tmpBox.setFromObject(this.root!);
+      }
+    }
+  }
+
+  setType(type: WALL_TYPE) {
+    if (this.state.type !== type) {
+      this.tmpState = null;
+      this.state.type = type;
+      const mesh = this.getMesh();
+      if (mesh) {
+        this.refreshObjects({
+          root: this.root!,
+          wallGeometries: this.wallGeometries!,
+          editMode: this.editMode
+        });
+        this.tmpBox.setFromObject(this.root!);
+      }
+    }
+  }
+
+  private tmpState: WallState | null = null;
+  async saveTmpState({ type, style, windowType }: Partial<WallState>) {
+    this.tmpState = this.state;
+    this.state = {
+      ...this.state,
+      type: type ?? this.state.type,
+      style: style ?? this.state.style,
+      windowType: windowType ?? this.state.windowType
+    };
+    const mesh = this.getMesh();
+    if (mesh) {
+      await this.refreshObjects({
+        root: this.root!,
+        wallGeometries: this.wallGeometries!,
+        editMode: this.editMode
+      });
+      this.tmpBox.setFromObject(this.root!);
+    }
+  }
+
+  restoreTmpState() {
+    if (this.tmpState) {
+      this.state = this.tmpState;
+      this.resetTmpState();
+      const mesh = this.getMesh();
+      if (mesh) {
+        this.refreshObjects({
+          root: this.root!,
+          wallGeometries: this.wallGeometries!,
+          editMode: this.editMode
+        });
+        this.tmpBox.setFromObject(this.root!);
+      }
+    }
+  }
+
+  resetTmpState() {
+    this.tmpState = null;
+  }
+
+  toDescription(): WallDescription {
+    return {
+      type: this.state.type,
+      direction: this.direction,
+      position: new Vector2(this.position.x, this.position.z),
+      style: this.state.style
+    };
+  }
+
+  toJSON(): WallDescription {
+    return this.toDescription();
   }
 
   destroy() {
@@ -247,23 +283,21 @@ export default class Wall {
     [WALL_SIZE.LARGE]?: Mesh;
   } = {};
 
-  refreshObjects(
+  async refreshObjects(
     {
       root,
-      type,
       editMode,
       wallGeometries
     }: {
       root: Object3D;
-      type: WALL_TYPE;
       editMode: boolean;
       wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
     } = {
       root: this.root!,
-      type: this.state.type,
       editMode: this.editMode,
       wallGeometries: this.wallGeometries!
-    }
+    },
+    async = false
   ) {
     Object.values(this.objects).forEach(obj => {
       obj?.removeFromParent();
@@ -278,18 +312,25 @@ export default class Wall {
     });
 
     const materials = [
-      new MeshPhongMaterial({ color: this.state.color[0] }),
-      new MeshPhongMaterial({ color: this.state.color[1] }),
-      new MeshPhongMaterial({ color: 0x333333 }),
-      new MeshPhongMaterial({ color: 0x333333 }),
-      new MeshPhongMaterial({ color: 0x333333 }),
-      new MeshPhongMaterial({ color: 0x333333 }),
+      new MeshPhongMaterial({ color: this.state.style[0]?.color || 0x333333 }), // Front
+      new MeshPhongMaterial({ color: this.state.style[1]?.color || 0x333333 }), // Back
+      new MeshPhongMaterial({ color: 0x333333 }), // Top
+      new MeshPhongMaterial({ color: 0x333333 }), // Right
+      new MeshPhongMaterial({ color: 0x333333 }), // Right
+      new MeshPhongMaterial({ color: 0x333333 }), // Left
+      new MeshPhongMaterial({ color: 0x333333 }), // ??
+      new MeshPhongMaterial({ color: 0x333333 }), // ??
+      new MeshPhongMaterial({ color: 0x333333 }), // ??
+      new MeshPhongMaterial({ color: 0x333333 }), // ??
+      new MeshPhongMaterial({ color: 0x333333 }), // ??
+      new MeshPhongMaterial({ color: 0x333333 }), // ??
       new MeshPhongMaterial({ color: 0x333333 })
     ];
 
     const largeWall = createWallMesh(
       {
-        type,
+        type: this.state.type,
+        windowType: this.state.windowType,
         small: false,
         direction: this.direction,
         materials
@@ -301,11 +342,13 @@ export default class Wall {
       }
     );
     largeWall.name = MESH_WALL_NAME.LARGE_WALL;
+    largeWall.visible = this.visible;
     largeWall.userData = { wall: this, ignoreSelect: true };
 
     const smallWall = createWallMesh(
       {
-        type,
+        type: this.state.type,
+        windowType: this.state.windowType,
         small: true,
         direction: this.direction,
         materials
@@ -317,27 +360,64 @@ export default class Wall {
       }
     );
     smallWall.name = MESH_WALL_NAME.SMALL_WALL;
-    smallWall.visible = false;
+    smallWall.visible = !this.visible;
     smallWall.userData = { wall: this, ignoreSelect: true };
+
+    if (this.assetLoader && this.state.style.length) {
+      const promise = Promise.all(
+        this.state.style.map(async (style, index: number) => {
+          if (style?.texture && 'url' in style.texture) {
+            return [
+              await setupMaterial(
+                {
+                  index: 0,
+                  direction: this.direction,
+                  url: style.texture.url,
+                  options: {
+                    position: new Vector2(0, 0),
+                    dimension: new Vector2(100, 200)
+                  }
+                },
+                largeWall.geometry,
+                this.assetLoader!
+              ),
+              await setupMaterial(
+                {
+                  index: 0,
+                  direction: this.direction,
+                  url: style.texture.url,
+                  options: {
+                    position: new Vector2(100, 0),
+                    dimension: new Vector2(100, 40)
+                  }
+                },
+                smallWall.geometry,
+                this.assetLoader!
+              )
+            ];
+          }
+          return [materials[index], materials[index]];
+        })
+      ).then(([styleA, styleB]) => {
+        const [largeMaterial, smallMaterial, ..._] = materials;
+
+        const largeMaterials = [...largeWall.material];
+        largeMaterials[0] = styleA?.[0] || largeMaterial!;
+        largeMaterials[1] = styleB?.[0] || largeMaterial!;
+        largeWall.material = largeMaterials;
+
+        const smallMaterials = [...largeWall.material];
+        smallMaterials[0] = styleA?.[1] || smallMaterial!;
+        smallMaterials[1] = styleB?.[1] || smallMaterial!;
+        smallWall.material = smallMaterials;
+      });
+      if (async) {
+        await promise;
+      }
+    }
 
     root?.add(smallWall);
     root?.add(largeWall);
-
-    // this.assetLoader
-    //   .add<Texture>({ loader: LOADER.TEXTURE, url: wallUV })
-    //   .then(texture => {
-    //     texture.flipY = false;
-    //     texture.wrapS = ClampToEdgeWrapping; // RepeatWrapping;
-    //     texture.wrapT = ClampToEdgeWrapping; // ClampToEdgeWrapping
-    //     texture.repeat.set(1, 1);
-    //     texture.offset.set(0, 0);
-
-    //     largeWall.material.map = texture;
-    //     (largeWall.material as MeshPhongMaterial).needsUpdate = true;
-
-    //     smallWall.material.map = texture;
-    //     (smallWall.material as MeshPhongMaterial).needsUpdate = true;
-    //   });
 
     this.objects = {
       [WALL_SIZE.SMALL]: smallWall,
@@ -345,6 +425,7 @@ export default class Wall {
     };
   }
 
+  private assetLoader: AssetLoader | null = null;
   createRoot({
     assetLoader,
     wallGeometries
@@ -353,10 +434,10 @@ export default class Wall {
     wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
   }) {
     const group = new Object3D();
+    this.assetLoader = assetLoader;
 
     this.refreshObjects({
       root: group,
-      type: this.state.type,
       editMode: this.editMode,
       wallGeometries
     });
@@ -373,28 +454,71 @@ export default class Wall {
   }
 }
 
-const materials = new Map<string, Promise<Material>>();
+const materialsMap = new Map<string, MeshPhongMaterial>();
+async function setupMaterial(
+  {
+    index = 0,
+    direction = WALL_DIRECTION.HORIZONTAL,
+    url,
+    options
+  }: {
+    index: number;
+    direction: WALL_DIRECTION;
+    url: string;
+    options: {
+      density?: number;
+      position: Vector2;
+      dimension: Vector2;
+    };
+  },
+  geometry: BufferGeometry | null = null,
+  assetLoader: AssetLoader
+) {
+  const key = JSON.stringify({
+    geometry: geometry?.id,
+    index,
+    direction,
+    url,
+    options
+  });
 
-async function setupMaterial<T = MeshPhongMaterial>(assetLoader: AssetLoader) {
-  if (materials.has(image_wall_default)) {
-    return materials.get(image_wall_default) as Promise<T>;
-  } else {
-    const { resolve, promise } = Promise.withResolvers<Material>();
-    materials.set(image_wall_default, promise);
-    const texture = await assetLoader.add<Texture>({
-      loader: LOADER.TEXTURE,
-      url: image_wall_default
+  if (!materialsMap.has(key)) {
+    const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
+      loader: LOADER.SPRITE,
+      url,
+      options: { density: 2, ...options }
     });
+
+    const { min, size } = getGroupBounds(geometry!, index)!;
+    const pos = geometry!.attributes.position!;
+    const uv = new Float32Array(pos.count * 2);
+
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+
+      if (direction === WALL_DIRECTION.HORIZONTAL) {
+        uv[i * 2] = (x - min.x) / size.x;
+        uv[i * 2 + 1] = (y - min.y) / size.y;
+      } else {
+        uv[i * 2] = (pos.getZ(i) - min.z) / size.z;
+        uv[i * 2 + 1] = (y - min.y) / size.y;
+      }
+    }
+
+    geometry!.setAttribute('uv', new BufferAttribute(uv, 2));
+
+    texture.wrapS = ClampToEdgeWrapping;
+    texture.wrapT = ClampToEdgeWrapping;
+
+    texture.needsUpdate = true;
 
     const material = new MeshPhongMaterial({
-      transparent: true,
-      map: texture,
-      color: 0xffffff,
-      shininess: 100,
-      specular: 0xffffff
+      map: texture
+      // side: DoubleSide
     });
-    resolve(material);
-
-    return material as T;
+    materialsMap.set(key, material);
   }
+
+  return materialsMap.get(key);
 }

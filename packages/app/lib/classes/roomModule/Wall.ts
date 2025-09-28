@@ -38,7 +38,7 @@ import { OBJECT_NAME } from '../Unit';
 import type { WALL_DIRECTION, WallDescription } from '../Wall';
 import { APP_MODE } from '../App';
 
-import MeshWall from '../../../assets/wall.glb?url';
+import MeshWall from '../../../assets/wall/wall.glb?url';
 
 interface WallRoomTile {
   mesh: Mesh;
@@ -460,18 +460,18 @@ export default class WallModule extends RoomModule<State> {
   private lastViewMode?: WALL_VIEW_MODE;
 
   updateVisibility(camera: Camera) {
-    if (
-      this.state.viewMode === WALL_VIEW_MODE.DYNAMIC &&
-      this.lastViewMode !== WALL_VIEW_MODE.DYNAMIC
-    ) {
+    if (this.lastViewMode !== this.state.viewMode) {
       this.state.walls.forEach(wall => wall.show());
     }
+
     if (this.state.viewMode === WALL_VIEW_MODE.SMALL) {
       this.state.walls.forEach(wall => wall.hide());
       return;
     } else if (this.state.viewMode === WALL_VIEW_MODE.LARGE) {
       this.state.walls.forEach(wall => wall.show());
       return;
+    } else if (this.state.viewMode === WALL_VIEW_MODE.DYNAMIC) {
+      this.state.walls.forEach(wall => wall.show());
     }
 
     const objectsToKeepVisible = Array<Mesh>().concat(

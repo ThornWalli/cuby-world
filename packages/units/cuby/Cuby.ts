@@ -5,7 +5,8 @@ import {
   MeshPhongMaterial,
   Clock,
   LoopPingPong,
-  PlaneGeometry
+  PlaneGeometry,
+  Vector2
 } from 'three';
 
 import Unit, {
@@ -19,26 +20,14 @@ import { getHoverClip } from '@cuby-world/app/lib/utils/animation';
 import type { UnitModuleSetupContext } from '@cuby-world/app/lib/classes/UnitModule';
 import { AnimationUnitModule } from '@cuby-world/app/lib/classes/unitModule/Animation';
 
-import image_cuby_top from './assets/top.png';
-import image_cuby_bottom from './assets/bottom.png';
-import image_cuby_left from './assets/left.png';
-import image_cuby_right from './assets/right.png';
-import image_cuby_back from './assets/back.png';
-// import image_cuby_front from './assets/front.png';
-
-import image_cuby_face_default from './assets/face/default.png';
-import image_cuby_face_dead from './assets/face/dead.png';
-import image_cuby_face_sleep_1 from './assets/face/sleep_1.png';
-import image_cuby_face_sleep_2 from './assets/face/sleep_2.png';
-import image_cuby_face_speak_1 from './assets/face/speak_1.png';
-
-import image_sleep_1 from './assets/sleep/sleep_1.png';
-import image_sleep_2 from './assets/sleep/sleep_2.png';
-import image_sleep_3 from './assets/sleep/sleep_3.png';
-import image_sleep_4 from './assets/sleep/sleep_4.png';
+import image_spritesheet_cuby from './assets/spritesheet/cuby.png';
+import image_spritesheet_sleep from './assets/spritesheet/sleep.png';
 
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
-import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
+import {
+  LOADER,
+  type SpriteLoadDescription
+} from '@cuby-world/app/lib/classes/AssetLoader';
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 
@@ -250,76 +239,201 @@ function createSleepPlain() {
 
   return mesh;
 }
+async function setupSleepMaterials(assetLoader: AssetLoader) {
+  const frames = [
+    {
+      position: new Vector2(0, 0),
+      dimension: new Vector2(34, 48)
+    },
+    {
+      position: new Vector2(34, 0),
+      dimension: new Vector2(34, 48)
+    },
+    {
+      position: new Vector2(64, 0),
+      dimension: new Vector2(34, 48)
+    },
+    {
+      position: new Vector2(98, 0),
+      dimension: new Vector2(34, 48)
+    }
+  ];
+  return Promise.all(
+    frames.map(async options => {
+      const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
+        loader: LOADER.SPRITE,
+        url: image_spritesheet_sleep,
+        options: { density: 2, ...options }
+      });
 
-async function setupSleepMaterials(textures: AssetLoader) {
-  const assets = [image_sleep_1, image_sleep_2, image_sleep_3, image_sleep_4];
-
-  const materials = (
-    await Promise.all(
-      assets.map(url => textures.add<Texture>({ loader: LOADER.TEXTURE, url }))
-    )
-  ).map(
-    texture =>
-      new MeshPhongMaterial({
+      return new MeshPhongMaterial({
         transparent: true,
         side: 2,
         map: texture,
         color: 0xffffff,
         shininess: 100,
         specular: 0xffffff
-      })
+      });
+    })
   );
-
-  return materials;
 }
 
 async function setupBodyMaterials(
   unit: Cuby,
   mesh: Mesh,
-  textures: AssetLoader
+  assetLoader: AssetLoader
 ) {
-  const faceAssets = {
-    [CUBY_STATE.DEFAULT]: image_cuby_face_default,
-    [CUBY_STATE.DEAD]: image_cuby_face_dead,
-    [CUBY_STATE.SLEEP_1]: image_cuby_face_sleep_1,
-    [CUBY_STATE.SLEEP_2]: image_cuby_face_sleep_2,
-    [CUBY_STATE.SPEAK_1]: image_cuby_face_speak_1
-  };
+  const faces = [
+    CUBY_STATE.DEFAULT,
+    CUBY_STATE.SLEEP_1,
+    CUBY_STATE.SLEEP_2,
+    CUBY_STATE.SPEAK_1,
+    CUBY_STATE.DEAD
+  ];
 
-  const texturesByFace: {
-    [key in CUBY_STATE]: MeshPhongMaterial[];
-  } = Object.fromEntries(
+  const frames = [
+    // back
+    {
+      position: new Vector2(0, 19),
+      dimension: new Vector2(20, 19)
+    },
+    // left
+    {
+      position: new Vector2(20, 19),
+      dimension: new Vector2(20, 19)
+    },
+    // right
+    {
+      position: new Vector2(40, 19),
+      dimension: new Vector2(20, 19)
+    },
+    // top
+    {
+      position: new Vector2(0, 38),
+      dimension: new Vector2(20, 20)
+    },
+    // bottom
+    {
+      position: new Vector2(20, 38),
+      dimension: new Vector2(20, 20)
+    }
+  ];
+
+  const sideFrames = await Promise.all(
+    frames.map(async options => {
+      const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
+        loader: LOADER.SPRITE,
+        url: image_spritesheet_cuby,
+        options: { density: 10, ...options }
+      });
+
+      return new MeshPhongMaterial({
+        transparent: true,
+        side: 2,
+        map: texture,
+        color: 0xffffff,
+        shininess: 100,
+        specular: 0xffffff
+      });
+    })
+  );
+
+  const texturesByFace = Object.fromEntries(
     await Promise.all(
-      Object.entries(faceAssets).map(async ([face, url]) => {
-        return [
-          face,
-          (
-            await Promise.all(
-              [
-                url, // image_cuby_front,
-                image_cuby_back,
-                image_cuby_left,
-                image_cuby_right,
-                image_cuby_top,
-                image_cuby_bottom
-              ].map(url =>
-                textures.add<Texture>({ loader: LOADER.TEXTURE, url })
-              )
-            )
-          ).map(
-            texture =>
-              new MeshPhongMaterial({
-                transparent: true,
-                map: texture,
-                color: 0xffffff,
-                shininess: 100,
-                specular: 0xffffff
-              })
-          )
-        ];
+      faces.map(async (key, index) => {
+        const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
+          loader: LOADER.SPRITE,
+          url: image_spritesheet_cuby,
+          options: {
+            density: 10,
+            position: new Vector2(index * 20, 0),
+            dimension: new Vector2(20, 19)
+          }
+        });
+
+        const faceMaterial = new MeshPhongMaterial({
+          transparent: true,
+          side: 2,
+          map: texture,
+          color: 0xffffff,
+          shininess: 100,
+          specular: 0xffffff
+        });
+
+        return [key, [faceMaterial, ...sideFrames]];
       })
     )
   );
+  //   )
+  // );
+
+  // // directions: front, back, left, right, top, bottom
+  // return Array(5).fill(0).map((_, i) => {
+  //   const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
+  //     loader: LOADER.SPRITE,
+  //     url: image_cuby,
+  //     options: { density: 5, {
+  //       position: new Vector2(i * 20, i * 19),
+  //     } }
+  //   });
+
+  // })
+
+  // })
+
+  // const texturesByFace: {
+  //   [key in CUBY_STATE]: MeshPhongMaterial[];
+  // } = Object.fromEntries(
+  //   await Promise.all(
+  //     frames.map(async ({ key, options }) => {
+  //       const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
+  //         loader: LOADER.SPRITE,
+  //         url: image_cuby,
+  //         options: { density: 5, ...options }
+  //       });
+
+  //       return [
+  //         key,
+  //         new MeshPhongMaterial({
+  //           transparent: true,
+  //           side: 2,
+  //           map: texture,
+  //           color: 0xffffff,
+  //           shininess: 100,
+  //           specular: 0xffffff
+  //         })
+  //       ];
+  //     })
+  //   )
+  // Object.entries(faceAssets).map(async ([face, url]) => {
+  //   return [
+  //     face,
+  //     (
+  //       await Promise.all(
+  //         [
+  //           url, // image_cuby_front,
+  //           image_cuby_back,
+  //           image_cuby_left,
+  //           image_cuby_right,
+  //           image_cuby_top,
+  //           image_cuby_bottom
+  //         ].map(url =>
+  //           assetLoader.add<Texture>({ loader: LOADER.TEXTURE, url })
+  //         )
+  //       )
+  //     ).map(
+  //       texture =>
+  //         new MeshPhongMaterial({
+  //           transparent: true,
+  //           map: texture,
+  //           color: 0xffffff,
+  //           shininess: 100,
+  //           specular: 0xffffff
+  //         })
+  //     )
+  //   ];
+  // })
+  // );
 
   // background mesh
   if (!mesh.getObjectByName('cuby_background')) {

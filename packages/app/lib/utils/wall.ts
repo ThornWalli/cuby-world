@@ -1,4 +1,5 @@
 /* eslint-disable complexity */
+import type { BufferAttribute, Object3D } from 'three';
 import {
   Vector2,
   Vector3,
@@ -12,33 +13,34 @@ import type AssetLoader from '../classes/AssetLoader';
 import EasyStar from 'easystarjs';
 import Wall, {
   WALL_DIRECTION,
-  WALL_EDGE_TYPE,
+  WALL_SIZE,
+  WALL_WINDOW_TYPE,
   type WallDescription,
-  type WallEdge,
   type WallOptions
 } from '../classes/Wall';
 
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LOADER } from '../classes/AssetLoader';
+import type { PreparedPosition } from './matrix';
 
 export enum WALL_GEOMETRY {
   // #region default
-  DEFAULT_N_N = 'default_n_n',
-  DEFAULT_N_L = 'default_n_l',
-  DEFAULT_N_E0 = 'default_n_e0',
-  DEFAULT_N_E1 = 'default_n_e1',
-  DEFAULT_E0_N = 'default_e0_n',
-  DEFAULT_E0_L = 'default_e0_l',
-  DEFAULT_E0_E0 = 'default_e0_e0',
-  DEFAULT_E0_E1 = 'default_e0_e1',
-  DEFAULT_E1_N = 'default_e1_n',
-  DEFAULT_E1_L = 'default_e1_l',
-  DEFAULT_E1_E0 = 'default_e1_e0',
-  DEFAULT_E1_E1 = 'default_e1_e1',
-  DEFAULT_L_L = 'default_l_l',
-  DEFAILT_L_N = 'default_l_n',
-  DEFAILT_L_E0 = 'default_l_e0',
-  DEFAULT_L_E1 = 'default_l_e1',
+  DEFAULT_LARGE_N_N = 'default_large_n_n',
+  DEFAULT_LARGE_N_L = 'default_large_n_l',
+  DEFAULT_LARGE_N_E0 = 'default_large_n_e0',
+  DEFAULT_LARGE_N_E1 = 'default_large_n_e1',
+  DEFAULT_LARGE_E0_N = 'default_large_e0_n',
+  DEFAULT_LARGE_E0_L = 'default_large_e0_l',
+  DEFAULT_LARGE_E0_E0 = 'default_large_e0_e0',
+  DEFAULT_LARGE_E0_E1 = 'default_large_e0_e1',
+  DEFAULT_LARGE_E1_N = 'default_large_e1_n',
+  DEFAULT_LARGE_E1_L = 'default_large_e1_l',
+  DEFAULT_LARGE_E1_E0 = 'default_large_e1_e0',
+  DEFAULT_LARGE_E1_E1 = 'default_large_e1_e1',
+  DEFAULT_LARGE_L_L = 'default_large_l_l',
+  DEFAILT_LARGE_L_N = 'default_large_l_n',
+  DEFAILT_LARGE_L_E0 = 'default_large_l_e0',
+  DEFAULT_LARGE_L_E1 = 'default_large_l_e1',
   // #endregion
 
   // #region default small
@@ -62,22 +64,22 @@ export enum WALL_GEOMETRY {
 
   // #region door
 
-  DOOR_N_N = 'door_n_n',
-  DOOR_N_L = 'door_n_l',
-  DOOR_N_E0 = 'door_n_e0',
-  DOOR_N_E1 = 'door_n_e1',
-  DOOR_E0_N = 'door_e0_n',
-  DOOR_E0_L = 'door_e0_l',
-  DOOR_E0_E0 = 'door_e0_e0',
-  DOOR_E0_E1 = 'door_e0_e1',
-  DOOR_E1_N = 'door_e1_n',
-  DOOR_E1_L = 'door_e1_l',
-  DOOR_E1_E0 = 'door_e1_e0',
-  DOOR_E1_E1 = 'door_e1_e1',
-  DOOR_L_L = 'door_l_l',
-  DEFAILT_DOOR_L_N = 'door_l_n',
-  DEFAILT_DOOR_L_E0 = 'door_l_e0',
-  DEFAULT_DOOR_L_E1 = 'door_l_e1',
+  DOOR_LARGE_N_N = 'door_large_n_n',
+  DOOR_LARGE_N_L = 'door_large_n_l',
+  DOOR_LARGE_N_E0 = 'door_large_n_e0',
+  DOOR_LARGE_N_E1 = 'door_large_n_e1',
+  DOOR_LARGE_E0_N = 'door_large_e0_n',
+  DOOR_LARGE_E0_L = 'door_large_e0_l',
+  DOOR_LARGE_E0_E0 = 'door_large_e0_e0',
+  DOOR_LARGE_E0_E1 = 'door_large_e0_e1',
+  DOOR_LARGE_E1_N = 'door_large_e1_n',
+  DOOR_LARGE_E1_L = 'door_large_e1_l',
+  DOOR_LARGE_E1_E0 = 'door_large_e1_e0',
+  DOOR_LARGE_E1_E1 = 'door_large_e1_e1',
+  DOOR_LARGE_L_L = 'door_large_l_l',
+  DOOR_LARGE_L_N = 'door_large_l_n',
+  DOOR_LARGE_L_E0 = 'door_large_l_e0',
+  DOOR_LARGE_L_E1 = 'door_large_l_e1',
   // #endregion
 
   // #region door small
@@ -95,11 +97,103 @@ export enum WALL_GEOMETRY {
   DOOR_SMALL_E1_E0 = 'door_small_e1_e0',
   DOOR_SMALL_E1_E1 = 'door_small_e1_e1',
   DOOR_SMALL_L_L = 'door_small_l_l',
-  DEFAILT_DOOR_SMALL_L_N = 'door_small_l_n',
-  DEFAILT_DOOR_SMALL_L_E0 = 'door_small_l_e0',
-  DEFAULT_DOOR_SMALL_L_E1 = 'door_small_l_e1'
+  DOOR_SMALL_L_N = 'door_small_l_n',
+  DOOR_SMALL_L_E0 = 'door_small_l_e0',
+  DOOR_SMALL_L_E1 = 'door_small_l_e1',
 
   // #endregion
+
+  // #region window small
+
+  WINDOW_LARGE_SMALL_N_N = 'window_large_small_n_n',
+  WINDOW_LARGE_SMALL_N_L = 'window_large_small_n_l',
+  WINDOW_LARGE_SMALL_N_E0 = 'window_large_small_n_e0',
+  WINDOW_LARGE_SMALL_N_E1 = 'window_large_small_n_e1',
+  WINDOW_LARGE_SMALL_E0_N = 'window_large_small_e0_n',
+  WINDOW_LARGE_SMALL_E0_L = 'window_large_small_e0_l',
+  WINDOW_LARGE_SMALL_E0_E0 = 'window_large_small_e0_e0',
+  WINDOW_LARGE_SMALL_E0_E1 = 'window_large_small_e0_e1',
+  WINDOW_LARGE_SMALL_E1_N = 'window_large_small_e1_n',
+  WINDOW_LARGE_SMALL_E1_L = 'window_large_small_e1_l',
+  WINDOW_LARGE_SMALL_E1_E0 = 'window_large_small_e1_e0',
+  WINDOW_LARGE_SMALL_E1_E1 = 'window_large_small_e1_e1',
+  WINDOW_LARGE_SMALL_L_L = 'window_large_small_l_l',
+  WINDOW_LARGE_SMALL_L_N = 'window_large_small_l_n',
+  WINDOW_LARGE_SMALL_L_E0 = 'window_large_small_l_e0',
+  WINDOW_LARGE_SMALL_L_E1 = 'window_large_small_l_e1',
+
+  // #endregion
+
+  // #region window medium
+
+  WINDOW_LARGE_MEDIUM_N_N = 'window_large_medium_n_n',
+  WINDOW_LARGE_MEDIUM_N_L = 'window_large_medium_n_l',
+  WINDOW_LARGE_MEDIUM_N_E0 = 'window_large_medium_n_e0',
+  WINDOW_LARGE_MEDIUM_N_E1 = 'window_large_medium_n_e1',
+  WINDOW_LARGE_MEDIUM_E0_N = 'window_large_medium_e0_n',
+  WINDOW_LARGE_MEDIUM_E0_L = 'window_large_medium_e0_l',
+  WINDOW_LARGE_MEDIUM_E0_E0 = 'window_large_medium_e0_e0',
+  WINDOW_LARGE_MEDIUM_E0_E1 = 'window_large_medium_e0_e1',
+  WINDOW_LARGE_MEDIUM_E1_N = 'window_large_medium_e1_n',
+  WINDOW_LARGE_MEDIUM_E1_L = 'window_large_medium_e1_l',
+  WINDOW_LARGE_MEDIUM_E1_E0 = 'window_large_medium_e1_e0',
+  WINDOW_LARGE_MEDIUM_E1_E1 = 'window_large_medium_e1_e1',
+  WINDOW_LARGE_MEDIUM_L_L = 'window_large_medium_l_l',
+  WINDOW_LARGE_MEDIUM_L_N = 'window_large_medium_l_n',
+  WINDOW_LARGE_MEDIUM_L_E0 = 'window_large_medium_l_e0',
+  WINDOW_LARGE_MEDIUM_L_E1 = 'window_large_medium_l_e1',
+
+  // #endregion
+
+  // #region window large
+
+  WINDOW_LARGE_LARGE_N_N = 'window_large_large_n_n',
+  WINDOW_LARGE_LARGE_N_L = 'window_large_large_n_l',
+  WINDOW_LARGE_LARGE_N_E0 = 'window_large_large_n_e0',
+  WINDOW_LARGE_LARGE_N_E1 = 'window_large_large_n_e1',
+  WINDOW_LARGE_LARGE_E0_N = 'window_large_large_e0_n',
+  WINDOW_LARGE_LARGE_E0_L = 'window_large_large_e0_l',
+  WINDOW_LARGE_LARGE_E0_E0 = 'window_large_large_e0_e0',
+  WINDOW_LARGE_LARGE_E0_E1 = 'window_large_large_e0_e1',
+  WINDOW_LARGE_LARGE_E1_N = 'window_large_large_e1_n',
+  WINDOW_LARGE_LARGE_E1_L = 'window_large_large_e1_l',
+  WINDOW_LARGE_LARGE_E1_E0 = 'window_large_large_e1_e0',
+  WINDOW_LARGE_LARGE_E1_E1 = 'window_large_large_e1_e1',
+  WINDOW_LARGE_LARGE_L_L = 'window_large_large_l_l',
+  WINDOW_LARGE_LARGE_L_N = 'window_large_large_l_n',
+  WINDOW_LARGE_LARGE_L_E0 = 'window_large_large_l_e0',
+  WINDOW_LARGE_LARGE_L_E1 = 'window_large_large_l_e1'
+
+  // #endregion
+}
+
+export enum WALL_EDGE_TYPE {
+  LEFT = 'left',
+  RIGHT = 'right',
+  TOP = 'top',
+  BOTTOM = 'bottom',
+  TOP_LEFT = 'top_left',
+  TOP_RIGHT = 'top_right',
+  BOTTOM_LEFT = 'bottom_left',
+  BOTTOM_RIGHT = 'bottom_right',
+  CROSS = 'cross',
+  T_CROSS_LEFT = 't_cross_left',
+  T_CROSS_I_LEFT = 't_cross_left_i', // Nur für innere ecken
+  T_CROSS_RIGHT = 't_cross_right',
+  T_CROSS_I_RIGHT = 't_cross_right_i', // Nur für innere ecken
+  T_CROSS_TOP = 't_cross_top',
+  T_CROSS_I_TOP = 't_cross_top_i', // Nur für innere ecken
+  T_CROSS_BOTTOM = 't_cross_bottom',
+  T_CROSS_I_BOTTOM = 't_cross_i_bottom' // Nur für innere ecken
+}
+
+export interface WallEdge {
+  wall: WallDescription;
+  // position: Vector2;
+  // direction: WALL_DIRECTION;
+  type: WALL_TYPE;
+  offset: Vector2;
+  edgeType: WALL_EDGE_TYPE;
 }
 
 export interface WallRoomDescription {
@@ -725,7 +819,7 @@ export default function createWalls(
       new Wall({
         description,
         editMode,
-        color: description.color,
+        style: description.style,
         type: description.type,
         direction: description.direction,
         position: new Vector3(
@@ -979,7 +1073,7 @@ export function cloneWallDescription(
     type: description.type,
     direction: description.direction,
     position: description.position.clone(),
-    color: description.color
+    style: description.style
   };
 }
 
@@ -1066,17 +1160,21 @@ function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
     }
   }
 
-  let type = 'default';
-  if (options.type === WALL_TYPE.DOOR) {
-    type = 'door';
+  let type = options.type ?? WALL_TYPE.DEFAULT;
+
+  let size = '';
+  if (options.size) {
+    size = '_' + options.size;
+  }
+  if (type === WALL_TYPE.WINDOW) {
+    if (options.size !== WALL_SIZE.SMALL) {
+      size += `_${options.windowType || WALL_WINDOW_TYPE.MEDIUM}`;
+    } else {
+      type = WALL_TYPE.DEFAULT;
+    }
   }
 
-  let small = '';
-  if (options.small) {
-    small = '_small';
-  }
-
-  return `${type}${small}_${options.left}_${options.right}` as WALL_GEOMETRY;
+  return `${type}${size}_${options.left}_${options.right}` as WALL_GEOMETRY;
 }
 
 const _wallGeometryCache: {
@@ -1087,25 +1185,43 @@ const _wallGeometryCache: {
 
 export function createWallGeometry(
   direction: WALL_DIRECTION,
-  edges: WallEdge[],
   type: WALL_TYPE = WALL_TYPE.DEFAULT,
-  small: boolean,
+  size: WALL_SIZE = WALL_SIZE.LARGE,
+  windowType: WALL_WINDOW_TYPE = WALL_WINDOW_TYPE.SMALL,
   {
+    edges,
     wallGeometries
   }: {
+    edges: WallEdge[];
     wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
   }
 ) {
   const wallOptions = {
     direction,
-    small,
+    size,
     type,
+    windowType,
     left: WALL_GEOMETRY_TYPE.LINE,
     right: WALL_GEOMETRY_TYPE.LINE
   };
 
   const geometryKey = getGeometryKey(wallOptions, edges);
-  const geometry = getWallGeometry(wallGeometries, geometryKey);
+
+  const geometry =
+    getWallGeometry(wallGeometries, geometryKey) ||
+    getWallGeometry(
+      wallGeometries,
+      getGeometryKey(
+        {
+          ...wallOptions,
+          left: WALL_GEOMETRY_TYPE.NONE,
+          right: WALL_GEOMETRY_TYPE.NONE,
+          size: WALL_SIZE.LARGE,
+          type: WALL_TYPE.DEFAULT
+        },
+        []
+      )
+    );
 
   if (geometry) {
     if (direction === WALL_DIRECTION.VERTICAL) {
@@ -1139,7 +1255,7 @@ export function groupByNormal(
   const index = geometry.index!.array;
   const faceNormals = [];
 
-  // Normalenberechnung (Unverändert)
+  // 1. Normalen berechnen
   for (let i = 0; i < index.length; i += 3) {
     const vA = new Vector3().fromBufferAttribute(pos, index[i]!);
     const vB = new Vector3().fromBufferAttribute(pos, index[i + 1]!);
@@ -1147,95 +1263,136 @@ export function groupByNormal(
     const cb = new Vector3().subVectors(vC, vB);
     const ab = new Vector3().subVectors(vA, vB);
     cb.cross(ab).normalize();
-    faceNormals.push({ start: i, count: 3, normal: cb.clone() });
+    faceNormals.push({ i, normal: cb.clone() });
   }
 
-  geometry.clearGroups();
-
-  // Bounding Box (BB) zur Identifizierung der Achsen
+  // 2. BoundingBox für Axis-Logik
   if (!geometry.boundingBox) {
     geometry.computeBoundingBox();
   }
   const size = new Vector3();
   geometry.boundingBox!.getSize(size);
 
-  // Die Achsen-Logik ist nun vereinfacht, da wir alle 6 Seiten brauchen:
-  // Wir identifizieren die Achse, die am kürzesten ist (Tiefe/Dicke)
   let axisDepth: 'x' | 'y' | 'z' = 'x';
-  if (size.z < size.x && size.z < size.y) {
-    axisDepth = 'z';
-  } else if (size.x < size.y) {
-    axisDepth = 'x';
-  } else {
-    // Standardmäßig X, außer Z ist kürzer als X, oder Y ist am kürzesten (unwahrscheinlich für Wand)
-    axisDepth = 'x';
+  if (size.z < size.x && size.z < size.y) axisDepth = 'z';
+  else if (size.x < size.y) axisDepth = 'x';
+  else axisDepth = 'x';
+
+  const threshold = 0.8;
+
+  // 3. Faces pro Seite einsortieren
+  const sideFaces: Record<number, number[]> = {}; // matIndex → indices
+  faceNormals.forEach(({ i, normal }) => {
+    let matIndex = 6;
+
+    if (direction === WALL_DIRECTION.VERTICAL) {
+      if (Math.abs(normal.y) > threshold) {
+        matIndex = normal.y > 0 ? 2 : 3; // Oben/Unten
+      } else if (Math.abs(normal[axisDepth]) > threshold) {
+        matIndex = normal[axisDepth] > 0 ? 0 : 1; // Vorder/Rück
+      } else {
+        const otherAxis = axisDepth === 'x' ? 'z' : 'x';
+        if (Math.abs(normal[otherAxis]) > threshold) {
+          matIndex = normal[otherAxis] > 0 ? 4 : 5; // Rechts/Links
+        }
+      }
+    } else if (direction === WALL_DIRECTION.HORIZONTAL) {
+      if (Math.abs(normal.y) > threshold) {
+        matIndex = normal.y > 0 ? 2 : 3;
+      } else if (Math.abs(normal[axisDepth]) > threshold) {
+        matIndex = normal[axisDepth] > 0 ? 0 : 1;
+      } else {
+        const otherAxis = axisDepth === 'x' ? 'z' : 'x';
+        if (Math.abs(normal[otherAxis]) > threshold) {
+          matIndex = normal[otherAxis] > 0 ? 4 : 5;
+        }
+      }
+    }
+
+    if (!sideFaces[matIndex]) sideFaces[matIndex] = [];
+    sideFaces[matIndex]!.push(index[i]!, index[i + 1]!, index[i + 2]!);
+  });
+
+  // 4. Neues Index-Array bauen
+  const newIndex: number[] = [];
+  const groups: { start: number; count: number; mat: number }[] = [];
+  for (const matIndex of Object.keys(sideFaces).map(Number)) {
+    const start = newIndex.length;
+    newIndex.push(...sideFaces[matIndex]!);
+    groups.push({ start, count: sideFaces[matIndex]!.length, mat: matIndex });
   }
 
-  // Wir gehen davon aus, dass die Tiefe (Dicke der Wand) auf der axisDepth liegt.
+  // 5. Geometry neu schreiben
+  geometry.setIndex(newIndex);
+  geometry.clearGroups();
+  groups.forEach(g => geometry.addGroup(g.start, g.count, g.mat));
+}
 
-  const threshold = 0.9;
+export function getGroupBounds(geometry: BufferGeometry, groupIndex: number) {
+  const group = geometry.groups[groupIndex];
+  if (!group) return null;
 
-  faceNormals.forEach(face => {
-    const n = face.normal;
-    let matIndex = 6; // Index 6 für Ecken/Rest (falls nötig)
+  const pos = geometry.attributes.position as BufferAttribute;
+  const indexArray = geometry.index!.array.slice(
+    group.start,
+    group.start + group.count
+  );
 
-    // Logische Zuordnung (Indices 0-5)
-    // Ihre Materialien: [0:Vorder, 1:Rück, 2:Oben, 3:Unten, 4:Rechts, 5:Links]
+  const min = new Vector3(Infinity, Infinity, Infinity);
+  const max = new Vector3(-Infinity, -Infinity, -Infinity);
 
-    // 1. VERTICALE WAND (Die Hauptseiten sind horizontal, die Kappen sind Y und die Enden sind die Achse, die nicht Tiefe/Y ist)
-    if (direction === WALL_DIRECTION.VERTICAL) {
-      // Ober-/Unterseite (Y-Achse)
-      if (Math.abs(n.y) > threshold) {
-        matIndex = n.y > 0 ? 2 : 3; // 2:Oben (+Y), 3:Unten (-Y)
-      }
-      // Hauptflächen (Vorder/Rückseite) - Entlang der kürzesten/Tiefen-Achse
-      else if (Math.abs(n[axisDepth]) > threshold) {
-        matIndex = n[axisDepth] > 0 ? 0 : 1; // 0:Vorder (+Depth), 1:Rückseite (-Depth)
-      }
-      // Seitenkappen (Rechts/Links) - Entlang der verbleibenden horizontalen Achse
-      else if (Math.abs(n.x) > threshold || Math.abs(n.z) > threshold) {
-        // Finden Sie die verbleibende Achse (die nicht Y und nicht axisDepth ist)
-        const otherAxis = axisDepth === 'x' ? 'z' : 'x';
+  for (const idx of indexArray) {
+    const x = pos.getX(idx);
+    const y = pos.getY(idx);
+    const z = pos.getZ(idx);
 
-        if (Math.abs(n[otherAxis]) > threshold) {
-          matIndex = n[otherAxis] > 0 ? 4 : 5; // 4:Rechts, 5:Links
-        }
-      }
-    }
+    min.min(new Vector3(x, y, z));
+    max.max(new Vector3(x, y, z));
+  }
 
-    // 2. HORIZONTALE WAND (Hauptseiten sind Y, die Kappen sind die horizontalen Achsen)
-    else if (direction === WALL_DIRECTION.HORIZONTAL) {
-      // Hauptflächen (Oben/Unten) - Y-Achse
-      if (Math.abs(n.y) > threshold) {
-        matIndex = n.y > 0 ? 2 : 3; // 2:Oben (+Y), 3:Unten (-Y)
-      }
-      // Seitenkanten - Tiefe/Dicke (für die Zuordnung Vorder/Rück)
-      else if (Math.abs(n[axisDepth]) > threshold) {
-        // In horizontalen Wänden sind dies Kanten, wir könnten sie als 'Vorder/Rück' der Box behandeln
-        matIndex = n[axisDepth] > 0 ? 0 : 1; // 0:Vorder, 1:Rückseite
-      }
-      // Seitenkanten - Länge (für die Zuordnung Rechts/Links)
-      else if (Math.abs(n.x) > threshold || Math.abs(n.z) > threshold) {
-        const otherAxis = axisDepth === 'x' ? 'z' : 'x';
+  return { min, max, size: new Vector3().subVectors(max, min) };
+}
 
-        if (Math.abs(n[otherAxis]) > threshold) {
-          matIndex = n[otherAxis] > 0 ? 4 : 5; // 4:Rechts, 5:Links
-        }
-      }
-    }
+export function getGroupSize(geometry: BufferGeometry, groupIndex: number) {
+  const group = geometry.groups[groupIndex];
+  if (!group) return null;
 
-    geometry.addGroup(face.start, face.count, matIndex);
-  });
+  const posAttr = geometry.attributes.position as BufferAttribute;
+  const indexAttr = geometry.index!;
+  const indices = indexAttr.array.slice(group.start, group.start + group.count);
+
+  const min = new Vector3(Infinity, Infinity, Infinity);
+  const max = new Vector3(-Infinity, -Infinity, -Infinity);
+
+  for (let i = 0; i < indices.length; i++) {
+    const idx = indices[i]!;
+    const x = posAttr.getX(idx);
+    const y = posAttr.getY(idx);
+    const z = posAttr.getZ(idx);
+
+    if (x < min.x) min.x = x;
+    if (y < min.y) min.y = y;
+    if (z < min.z) min.z = z;
+
+    if (x > max.x) max.x = x;
+    if (y > max.y) max.y = y;
+    if (z > max.z) max.z = z;
+  }
+
+  const size = new Vector3().subVectors(max, min);
+  return { min, max, size };
 }
 
 export function createWallMesh(
   {
     type,
+    windowType,
     small,
     direction,
     materials
   }: {
     type: WALL_TYPE;
+    windowType?: WALL_WINDOW_TYPE;
     small: boolean;
     direction: WALL_DIRECTION;
     materials: MeshPhongMaterial[];
@@ -1250,9 +1407,16 @@ export function createWallMesh(
     wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
   }
 ) {
-  const { geometry } = createWallGeometry(direction, edges, type, small, {
-    wallGeometries
-  });
+  const { geometry } = createWallGeometry(
+    direction,
+    type,
+    small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
+    windowType,
+    {
+      edges,
+      wallGeometries
+    }
+  );
 
   let geometry_ = geometry?.clone();
 
@@ -1264,13 +1428,24 @@ export function createWallMesh(
 
   const mesh = new Mesh(preparedGeometry, materials);
 
+  // #region click helper
   if (editMode) {
-    // #region click helper
-    const clickHelperGeometry = preparedGeometry.clone();
-    clickHelperGeometry.scale(1.1, 1, 1.1);
-    clickHelperGeometry.translate(0.05, 0, 0.05);
+    const { geometry: defaultGeometry } = createWallGeometry(
+      direction,
+      WALL_TYPE.DEFAULT,
+      small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
+      windowType,
+      {
+        edges,
+        wallGeometries
+      }
+    );
+    if (!defaultGeometry) {
+      throw new Error('Keine Standard-Wandgeometrie gefunden');
+    }
+    groupByNormal(defaultGeometry, direction);
     const clickHelper = new Mesh(
-      clickHelperGeometry,
+      defaultGeometry,
       new MeshPhongMaterial({
         color: 0x000000,
         depthWrite: false
@@ -1279,11 +1454,40 @@ export function createWallMesh(
     clickHelper.material.wireframe = true;
     clickHelper.name = 'click_helper';
     clickHelper.visible = false;
+    clickHelper.raycast = Mesh.prototype.raycast;
     mesh.add(clickHelper);
-    // #endregion
   }
+  // #endregion
 
   mesh.castShadow = true;
 
   return mesh;
+}
+
+export function getFaceGroupIndex(preparedPosition: PreparedPosition): number {
+  const object = preparedPosition.object!;
+  let groups: BufferGeometry['groups'] = [];
+
+  object.traverse((node: Object3D) => {
+    if (node instanceof Mesh && node.geometry instanceof BufferGeometry) {
+      groups = node.geometry.groups;
+    }
+  });
+
+  if (!(preparedPosition.faceIndex !== null && groups.length > 0)) {
+    return -1;
+  }
+
+  // faceIndex bezieht sich auf ein Dreieck → 3 Indizes pro Face
+  const firstIndex = preparedPosition.faceIndex! * 3;
+
+  // überprüfen, zu welchem Group-Bereich dieses Dreieck gehört
+  for (let i = 0; i < groups.length; i++) {
+    const g = groups[i]!;
+    if (firstIndex >= g.start && firstIndex < g.start + g.count) {
+      return i; // Index der passenden Gruppe
+    }
+  }
+
+  return -1;
 }
