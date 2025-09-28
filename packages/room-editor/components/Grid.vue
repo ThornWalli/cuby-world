@@ -45,11 +45,13 @@ import { Vector2, Vector3 } from 'three';
 import CwRoomEditorGridCell from './grid/Cell.vue';
 import CwRoomEditorGridWall, { type WallData } from './grid/Wall.vue';
 import { ACTION_TYPE, type GridCell, type GridModel } from '../types';
-import { WALL_TYPE } from '@cuby-world/app/lib/classes/RoomDescription';
 
 import CwRoomEditorPanelWallSettings from './panel/WallSettings.vue';
-import type { WallDescription } from '@cuby-world/app/lib/classes/Wall';
 import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
+import {
+  WALL_TYPE,
+  type WallDescription
+} from '@cuby-world/app/lib/types/wall';
 
 function onUpdateSelectedWall(wall: WallDescription) {
   model.value.walls = model.value.walls?.map(w =>

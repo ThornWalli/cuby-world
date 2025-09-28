@@ -47,7 +47,7 @@ import { Subscription } from 'rxjs';
 import CwToggleIcon from '../../toggle/Icon.vue';
 import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
 import icons from '@cuby-world/app/utils/icons';
-import { WALL_WINDOW_TYPE } from '@cuby-world/app/lib/classes/Wall';
+import { WALL_WINDOW_TYPE } from '@cuby-world/app/lib/types/wall';
 
 const $emit = defineEmits<{
   (e: 'update:model-value', value: WallAction): void;

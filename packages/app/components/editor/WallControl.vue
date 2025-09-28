@@ -21,7 +21,7 @@ import CwPanelEditorWallStyle from './panel/WallStyle.vue';
 import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import type { EditorApp } from '@cuby-world/app/lib/classes/App';
-import type { WallStyleTemplate } from '@cuby-world/app/lib/utils/wall/style';
+import type { WallStyleTemplate } from '@cuby-world/app/lib/types/editor/style';
 
 const style = ref<WallStyleTemplate>({
   id: 'color_blue',

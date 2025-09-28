@@ -23,7 +23,7 @@ import type { Vector2 } from 'three';
 import { computed } from 'vue';
 import BaseButton from '@cuby-world/app/components/base/Button.vue';
 import { ACTION_TYPE } from '@cuby-world/room-editor/types';
-import type { WALL_TYPE } from '@cuby-world/app/lib/classes/RoomDescription';
+import type { WALL_TYPE } from '@cuby-world/app/lib/types/wall';
 
 const direction = computed(() => {
   if ($props.startPosition.x === $props.endPosition?.x) {

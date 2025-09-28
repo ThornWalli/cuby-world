@@ -23,7 +23,7 @@ import type { ACTION_TYPE } from '../../types';
 import { fromEvent } from 'rxjs';
 import BaseButton from '@cuby-world/app/components/base/Button.vue';
 import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
-import type { WallDescription } from '@cuby-world/app/lib/classes/Wall';
+import type { WallDescription } from '@cuby-world/app/lib/types/wall';
 
 defineProps<{
   type: 'floor' | 'empty';

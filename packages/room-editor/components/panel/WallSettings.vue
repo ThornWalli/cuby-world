@@ -16,11 +16,12 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import CwPanel from '@cuby-world/app/components/Panel.vue';
-import { WALL_TYPE } from '@cuby-world/app/lib/classes/RoomDescription';
-
 import CwFormFieldSelect from '@cuby-world/app/components/formField/Select.vue';
 import CwFormFieldSelectOption from '@cuby-world/app/components/formField/select/Option.vue';
-import type { WallDescription } from '@cuby-world/app/lib/classes/Wall';
+import {
+  WALL_TYPE,
+  type WallDescription
+} from '@cuby-world/app/lib/types/wall';
 
 const wallTypeOptions = computed(() => {
   return Object.values(WALL_TYPE).map(value => ({

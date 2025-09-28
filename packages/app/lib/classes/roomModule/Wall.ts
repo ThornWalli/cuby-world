@@ -17,7 +17,7 @@ import {
 } from 'three';
 import RoomModule, { type RoomModuleState } from '../RoomModule';
 import type Wall from '../Wall';
-import type { WALL_GEOMETRY, WallRoomDescription } from '../../utils/wall';
+
 import createWalls, {
   getWallKey,
   getWallRoomDescriptions,
@@ -35,10 +35,15 @@ import type Unit from '../Unit';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type Room from '../Room';
 import { OBJECT_NAME } from '../Unit';
-import type { WALL_DIRECTION, WallDescription } from '../Wall';
 import { APP_MODE } from '../App';
 
 import MeshWall from '../../../assets/wall/wall.glb?url';
+import type {
+  WALL_DIRECTION,
+  WALL_GEOMETRY,
+  WallDescription,
+  WallRoomDescription
+} from '../../types/wall';
 
 interface WallRoomTile {
   mesh: Mesh;

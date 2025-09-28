@@ -1,6 +1,6 @@
 import type { RoomDescription } from '@cuby-world/app/lib/classes/RoomDescription';
 import type { UnitDescription } from '@cuby-world/app/lib/classes/Unit';
-import type { WallDescription } from '@cuby-world/app/lib/classes/Wall';
+import type { WallDescription } from '@cuby-world/app/lib/types/wall';
 
 import type { Vector3 } from 'three';
 

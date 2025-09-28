@@ -10,51 +10,30 @@ import {
 
 import image_wall_texture_1 from '../../assets/wall/texture_1.png?url';
 
-import { WALL_TYPE } from './RoomDescription';
 import { prepareForRaycast } from '../utils/raycast';
 
 import type AssetLoader from './AssetLoader';
 import { LOADER, type SpriteLoadDescription } from './AssetLoader';
 import {
-  type WALL_GEOMETRY_TYPE,
-  type WALL_GEOMETRY,
   type WallConnection,
   findNeighborWallEdges,
   createWallMesh,
-  getGroupBounds,
-  type WallEdge
+  getGroupBounds
 } from '../utils/wall';
-import type { WallStyle } from '../utils/wall/style';
+import type { WallStyle } from '../types/editor/style';
+import {
+  type WALL_GEOMETRY,
+  WALL_DIRECTION,
+  WALL_SIZE,
+  WALL_TYPE,
+  WALL_WINDOW_TYPE,
+  type WallDescription,
+  type WallEdge
+} from '../types/wall';
 
 enum MESH_WALL_NAME {
   SMALL_WALL = 'small_wall',
   LARGE_WALL = 'large_wall'
-}
-
-export enum WALL_SIZE {
-  SMALL = 'small',
-  LARGE = 'large'
-}
-export enum WALL_WINDOW_TYPE {
-  SMALL = 'small',
-  MEDIUM = 'medium',
-  LARGE = 'large'
-}
-
-export interface WallDescription<Position = Vector2> {
-  type: WALL_TYPE;
-  direction: WALL_DIRECTION;
-  position: Position;
-  style: [WallStyle | null, WallStyle | null];
-
-  /**
-   * @deprecated
-   */
-  startPosition?: Position;
-  /**
-   * @deprecated
-   */
-  endPosition?: Position;
 }
 
 function getDefaultStyle(): [WallStyle, WallStyle] {
@@ -74,20 +53,6 @@ function getDefaultStyle(): [WallStyle, WallStyle] {
       color: 0x888888
     }
   ];
-}
-
-export interface WallOptions {
-  type: WALL_TYPE;
-  direction: WALL_DIRECTION;
-  size: WALL_SIZE;
-  windowType?: WALL_WINDOW_TYPE;
-  left: WALL_GEOMETRY_TYPE;
-  right: WALL_GEOMETRY_TYPE;
-}
-
-export enum WALL_DIRECTION {
-  HORIZONTAL = 'horizontal',
-  VERTICAL = 'vertical'
 }
 
 interface WallState {

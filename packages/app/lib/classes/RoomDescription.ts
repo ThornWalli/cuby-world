@@ -1,13 +1,7 @@
 import type { Vector2, Vector3 } from 'three';
-import type { WallDescription } from './Wall';
 import type { UNIT_ROTATION } from '../types/unit';
 import type { UnitDescription } from './Unit';
-
-export enum WALL_TYPE {
-  DEFAULT = 'default',
-  DOOR = 'door',
-  WINDOW = 'window'
-}
+import type { WallDescription } from '../types/wall';
 
 export type Grid = number[][];
 

@@ -1,5 +1,4 @@
 /* eslint-disable complexity */
-import type { WALL_WINDOW_TYPE, WallDescription } from '../../Wall';
 import type { Object3D, Vector3 } from 'three';
 import { BoxGeometry, Mesh, MeshBasicMaterial, Vector2 } from 'three';
 import type { AppModuleState, SceneSelectContext } from '../../AppModule';
@@ -8,15 +7,19 @@ import type App from '../../App';
 import { concatMap, debounceTime, filter, map, Subject, switchMap } from 'rxjs';
 import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
 import type Wall from '../../Wall';
-import { WALL_DIRECTION } from '../../Wall';
-import { WALL_TYPE } from '../../RoomDescription';
 import { prepareForRaycast } from '@cuby-world/app/lib/utils/raycast';
 
 import { getFaceGroupIndex } from '@cuby-world/app/lib/utils/wall';
 import type {
   WallStyle,
   WallStyleTemplate
-} from '@cuby-world/app/lib/utils/wall/style';
+} from '@cuby-world/app/lib/types/editor/style';
+import {
+  type WALL_WINDOW_TYPE,
+  WALL_DIRECTION,
+  WALL_TYPE,
+  type WallDescription
+} from '@cuby-world/app/lib/types/wall';
 
 interface State extends AppModuleState {
   action: {

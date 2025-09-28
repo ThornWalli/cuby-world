@@ -15,7 +15,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { WallStyleTemplate } from '@cuby-world/app/lib/utils/wall/style';
+import type { WallStyleTemplate } from '@cuby-world/app/lib/types/editor/style';
 import CwPanel from '../../Panel.vue';
 import BaseButton from '../../base/Button.vue';
 
