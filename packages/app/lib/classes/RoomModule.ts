@@ -1,3 +1,4 @@
+import type { SubscriptionLike } from 'rxjs';
 import { Subscription } from 'rxjs';
 import type Room from './Room';
 import type { Camera } from 'three';
@@ -13,6 +14,8 @@ export default abstract class RoomModule<
   abstract state: State;
 
   subscription = new Subscription();
+  observables: Record<string, SubscriptionLike> = {};
+
   constructor(
     public room: Room,
     readonly debug: boolean
@@ -22,6 +25,7 @@ export default abstract class RoomModule<
   }
 
   destroy() {
+    Object.values(this.observables).forEach(o => o.unsubscribe());
     this.subscription.unsubscribe();
   }
 

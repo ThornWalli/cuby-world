@@ -42,10 +42,17 @@ interface Passes {
 export default class Renderer<
   Modules extends RendererModules = RendererModules
 > {
-  animationLoop$ = new ReplaySubject<number>(0);
-  pointerDown$: Observable<PointerEvent>;
-  pointerMove$: Observable<PointerEvent>;
-  pointerUp$: Observable<PointerEvent>;
+  observables: {
+    animationLoop$: ReplaySubject<number>;
+    pointerDown$: Observable<PointerEvent>;
+    pointerMove$: Observable<PointerEvent>;
+    pointerUp$: Observable<PointerEvent>;
+  } = {
+    animationLoop$: new ReplaySubject<number>(0),
+    pointerDown$: undefined!,
+    pointerMove$: undefined!,
+    pointerUp$: undefined!
+  };
 
   renderer: WebGLRenderer;
   scene!: Scene;
@@ -88,9 +95,15 @@ export default class Renderer<
       modules.push(DebugRendererModule);
     }
 
-    this.pointerDown$ = fromEvent<PointerEvent>(canvas, 'pointerdown');
-    this.pointerMove$ = fromEvent<PointerEvent>(canvas, 'pointermove');
-    this.pointerUp$ = fromEvent<PointerEvent>(canvas, 'pointerup');
+    this.observables.pointerDown$ = fromEvent<PointerEvent>(
+      canvas,
+      'pointerdown'
+    );
+    this.observables.pointerMove$ = fromEvent<PointerEvent>(
+      canvas,
+      'pointermove'
+    );
+    this.observables.pointerUp$ = fromEvent<PointerEvent>(canvas, 'pointerup');
 
     this.dimension = dimension;
     this._debug = options.debug ?? false;
@@ -130,7 +143,7 @@ export default class Renderer<
     this.composer.setSize(dimension.x, dimension.y);
 
     renderer.setAnimationLoop(time => {
-      this.animationLoop$.next(time);
+      this.observables.animationLoop$.next(time);
       // this.renderer.render(this.scene, this.camera);
       this.composer.render(time);
 
@@ -143,7 +156,7 @@ export default class Renderer<
   }
 
   destroy() {
-    this.animationLoop$.complete();
+    this.observables.animationLoop$.complete();
     Object.values(this.modules).forEach(handler => {
       handler.destroy();
     });

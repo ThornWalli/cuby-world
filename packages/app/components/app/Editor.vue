@@ -51,6 +51,7 @@ import type Unit from '../../lib/classes/Unit';
 
 import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelWallControl from '../panel/WallControl.vue';
+
 import CwPanelGeneral from '../editor/panel/General.vue';
 import CwPanelGroup from '../PanelGroup.vue';
 import CwPanelEditorActions from '../editor/panel/Actions.vue';
@@ -67,12 +68,20 @@ const dialogRoomSettings = ref<InstanceType<
 > | null>(null);
 
 const controlComponent = computed(() => {
-  if (currentAction.value === EDITOR_ACTION.WALL) {
-    return markRaw(
-      defineAsyncComponent(() => import('../editor/WallControl.vue'))
-    );
+  switch (currentAction.value) {
+    case EDITOR_ACTION.GROUND: {
+      return markRaw(
+        defineAsyncComponent(() => import('../editor/GroundControl.vue'))
+      );
+    }
+    case EDITOR_ACTION.WALL: {
+      return markRaw(
+        defineAsyncComponent(() => import('../editor/WallControl.vue'))
+      );
+    }
+    default:
+      return null;
   }
-  return null;
 });
 
 function onClickSettings() {
@@ -88,12 +97,12 @@ const actions = ref([
     icon: icons.wall_mode,
     label: 'Wall',
     value: EDITOR_ACTION.WALL
+  },
+  {
+    icon: icons.ground_mode,
+    label: 'Ground',
+    value: EDITOR_ACTION.GROUND
   }
-  // {
-  //   icon: icons.ground_mode,
-  //   label: 'Ground',
-  //   value: EDITOR_ACTION.GROUND
-  // }
 ]);
 const currentAction = ref<EDITOR_ACTION>(EDITOR_ACTION.NONE);
 
@@ -119,17 +128,17 @@ async function setup() {
   const app = $props.app;
 
   subscription.add(
-    app.modules.selection.selectUnit$.subscribe(unit => {
+    app.modules.selection.observables.selectUnit$.subscribe(unit => {
       selectedUnit.value = unit ? markRaw(unit) : null;
     })
   );
   subscription.add(
-    app.modules.placement.startPlace$.subscribe(unit => {
+    app.modules.placement.observables.startPlace$.subscribe(unit => {
       placedUnit.value = unit;
     })
   );
   subscription.add(
-    app.modules.placement.stopPlace$.subscribe(() => {
+    app.modules.placement.observables.stopPlace$.subscribe(() => {
       placedUnit.value = null;
     })
   );

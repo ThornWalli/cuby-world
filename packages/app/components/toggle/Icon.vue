@@ -53,6 +53,10 @@ const currentIcon = computed(() => {
     --hover-color-background: var(--color-red-7);
   }
 
+  & svg {
+    fill: currentColor;
+  }
+
   & .icon {
     display: block;
     width: 32px;
@@ -77,6 +81,8 @@ const currentIcon = computed(() => {
   & span {
     position: absolute;
     left: 100%;
+    padding-left: 8px;
+    font-weight: bold;
     white-space: nowrap;
     opacity: 0;
     transform: translateX(calc(100% / -3));

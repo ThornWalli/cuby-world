@@ -1,5 +1,14 @@
-import type { Vector2 } from 'three';
-import type { WallStyle } from './editor/style';
+import type { BufferGeometry, Vector2 } from 'three';
+import type { WallStyle } from './wall/style';
+import type { WallTexture } from '../utils/wall/textures';
+
+export type WallGeometryMap = Map<WALL_GEOMETRY, BufferGeometry | null>;
+export type WallTextureMap = Map<string, WallTexture>;
+
+export enum FACE_INDEX {
+  FRONT = 0,
+  BACK = 1
+}
 
 export enum WALL_GEOMETRY {
   // #region default

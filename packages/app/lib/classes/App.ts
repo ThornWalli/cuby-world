@@ -3,6 +3,7 @@ import type { Subscription } from 'rxjs';
 import type Renderer from './Renderer';
 
 import AssetLoader from './AssetLoader';
+import CursorAppModule from './appModule/Cursor';
 import UnitFocusAppModule from './appModule/UnitFocus';
 import RoomAppModule from './appModule/Room';
 import PlayerAppModule from './appModule/Player';
@@ -10,9 +11,11 @@ import SelectionAppModule from './appModule/Selection';
 import PlacementAppModule from './appModule/Placement';
 import MultiplayerAppModule from './appModule/Multiplayer';
 import EditorWallAppModule from './appModule/editor/Wall';
+import EditorGroundAppModule from './appModule/editor/Ground';
 import type { ImportRoomDescription } from './RoomDescription';
 
 type AppModuleList = (
+  | typeof CursorAppModule
   | typeof UnitFocusAppModule
   | typeof PlayerAppModule
   | typeof RoomAppModule
@@ -21,6 +24,7 @@ type AppModuleList = (
   | typeof MultiplayerAppModule
 )[];
 interface AppModules {
+  cursor: CursorAppModule;
   room: RoomAppModule;
   player: PlayerAppModule;
   unitFocus: UnitFocusAppModule;
@@ -63,6 +67,7 @@ export class BaseApp<
     moduleList: ModuleList = [] as unknown as ModuleList
   ) {
     moduleList.push(
+      CursorAppModule,
       RoomAppModule,
       PlayerAppModule,
       UnitFocusAppModule,
@@ -129,18 +134,21 @@ export default class App extends BaseApp<AppPlaygroundModules> {
 interface AppEditorModules extends AppModules {
   player: PlayerAppModule;
   editorWall: EditorWallAppModule;
+  editorGround: EditorGroundAppModule;
 }
 
 export class EditorApp extends BaseApp<
   AppEditorModules,
-  (typeof EditorWallAppModule)[] & AppModuleList
+  (typeof EditorWallAppModule | typeof EditorGroundAppModule)[] & AppModuleList
 > {
   constructor(
     config: AppConfig,
     renderer: Renderer,
-    moduleList: (typeof EditorWallAppModule)[] & AppModuleList = []
+    moduleList: (typeof EditorWallAppModule | typeof EditorGroundAppModule)[] &
+      AppModuleList = []
   ) {
     moduleList.push(EditorWallAppModule);
+    moduleList.push(EditorGroundAppModule);
 
     super(config, renderer, moduleList);
   }

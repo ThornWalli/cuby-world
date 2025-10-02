@@ -1,7 +1,5 @@
 import {
-  concatAll,
   concatMap,
-  distinctUntilChanged,
   filter,
   from,
   ReplaySubject,
@@ -31,11 +29,6 @@ interface State extends AppModuleState {
 export default class RoomAppModule extends AppModule<State> {
   static override TYPE = 'room';
 
-  private pointerPosition$ = new ReplaySubject<Vector3>(0);
-  // private pointerPosition$ = this.pointerPositionSubject.pipe(
-  //   distinctUntilChanged((prev, curr) => prev.equals(curr))
-  // );
-
   roomSubscription: Subscription | undefined;
 
   state: State = {
@@ -43,7 +36,14 @@ export default class RoomAppModule extends AppModule<State> {
   };
 
   private roomSubject = new ReplaySubject<Room | undefined>(0);
-  room$ = this.roomSubject.pipe();
+  observables = {
+    room$: this.roomSubject.pipe()
+  };
+
+  override destroy(): void {
+    super.destroy();
+    this.roomSubject.unsubscribe();
+  }
 
   static async roomFromDescription(
     app: App,
@@ -139,7 +139,7 @@ export default class RoomAppModule extends AppModule<State> {
     this.roomSubscription = this.registerRoomSubscriptions(app);
 
     if (playerModule && room.description?.start) {
-      playerModule.addPlayer$.subscribe(player => {
+      playerModule.observables.addPlayer$.subscribe(player => {
         this.addPlayerUnit(player);
       });
       playerModule.getPlayers().forEach(player => {
@@ -148,23 +148,29 @@ export default class RoomAppModule extends AppModule<State> {
     }
 
     this.subscription.add(
-      renderer.animationLoop$.pipe(throttleTime(250)).subscribe(tim => {
-        room.updateThrottle(tim);
-      })
+      renderer.observables.animationLoop$
+        .pipe(throttleTime(250))
+        .subscribe(tim => {
+          room.updateThrottle(tim);
+        })
     );
     this.subscription.add(
-      renderer.animationLoop$.pipe(throttleTime(500)).subscribe(tim => {
-        room.updateThrottle500ms(tim);
-      })
+      renderer.observables.animationLoop$
+        .pipe(throttleTime(500))
+        .subscribe(tim => {
+          room.updateThrottle500ms(tim);
+        })
     );
     this.subscription.add(
-      renderer.animationLoop$.pipe(throttleTime(1000)).subscribe(tim => {
-        room.updateThrottle1Sec(tim);
-      })
+      renderer.observables.animationLoop$
+        .pipe(throttleTime(1000))
+        .subscribe(tim => {
+          room.updateThrottle1Sec(tim);
+        })
     );
 
     this.subscription.add(
-      renderer.animationLoop$.subscribe(time => {
+      renderer.observables.animationLoop$.subscribe(time => {
         room.update(time);
         if (unitFocusModule?.focusedUnit) {
           const position = unitFocusModule.focusedUnit.getScenePosition();
@@ -188,26 +194,34 @@ export default class RoomAppModule extends AppModule<State> {
       throw new Error('Intersection module is not available');
     }
     // const subscription = new Subscription();
-    const room = this.getRoom()!;
+    // const room = this.getRoom()!;
 
-    const groundIntersectionListener = intersection.register(
-      room.mesh.getObjectByName('ground')!
-    );
+    // const groundIntersectionListener = intersection.register(
+    //   room.mesh.getObjectByName('ground')!
+    // );
 
-    return groundIntersectionListener.hoverIntersect$
-      .pipe(
-        concatAll(),
-        filter(intersection => intersection.object?.parent?.name === 'ground'),
-        preparePosition(),
-        filter(({ worldPosition }) => !!worldPosition),
-        distinctUntilChanged(
-          (prev, curr) =>
-            !curr.worldPosition ||
-            !prev.worldPosition ||
-            prev.worldPosition.equals(curr.worldPosition)
-        )
-      )
-      .subscribe(this.onHoverGround.bind(this));
+    // return groundIntersectionListener.hoverIntersect$
+    //   .pipe(
+    //     concatAll(),
+    //     filter(intersection => intersection.object?.parent?.name === 'ground'),
+    //     preparePosition(),
+    //     filter(({ worldPosition }) => !!worldPosition),
+    //     distinctUntilChanged(
+    //       (prev, curr) =>
+    //         !curr.worldPosition ||
+    //         !prev.worldPosition ||
+    //         prev.worldPosition.equals(curr.worldPosition)
+    //     )
+    //   )
+    //   .subscribe(this.onHoverGround.bind(this));
+  }
+
+  onHover(preparedPositions: PreparedPosition[]) {
+    const app = this.app;
+    const player = app.modules.player.getCurrentPlayer();
+    Object.values(app.modules).some((module: AppModule) => {
+      return module.onSceneHover({ preparedPositions, player });
+    });
   }
 
   subscribePlacement() {
@@ -222,29 +236,31 @@ export default class RoomAppModule extends AppModule<State> {
     let placeSubscription: Subscription;
     let lastPosition: Vector3 | null = null;
     subscription.add(
-      app.modules.placement.startPlace$.subscribe(unit => {
+      app.modules.placement.observables.startPlace$.subscribe(unit => {
         lastPosition = unit.getPosition().clone();
-        placeSubscription = this.pointerPosition$.subscribe(position => {
-          unit.setPosition(
-            matrixPositionToPosition(
-              new Vector3(
-                position.x,
-                getYPositionByPosition(room, position),
-                position.z
+        placeSubscription = room.modules.ground.observables.hover$.subscribe(
+          position => {
+            unit.setPosition(
+              matrixPositionToPosition(
+                new Vector3(
+                  position.x,
+                  getYPositionByPosition(room, position),
+                  position.z
+                )
               )
-            )
-          );
-        });
+            );
+          }
+        );
       })
     );
     subscription.add(
-      app.modules.placement.stopPlace$.subscribe(() => {
+      app.modules.placement.observables.stopPlace$.subscribe(() => {
         placeSubscription?.unsubscribe();
       })
     );
 
     subscription.add(
-      app.modules.placement.abortPlace$.subscribe(unit => {
+      app.modules.placement.observables.abortPlace$.subscribe(unit => {
         if (lastPosition) {
           unit.setPosition(lastPosition);
         }
@@ -264,7 +280,7 @@ export default class RoomAppModule extends AppModule<State> {
     // #region intersection
 
     if (renderer.modules.intersection) {
-      subscription.add(this.subscribeGroundSelection());
+      // subscription.add(this.subscribeGroundSelection());
 
       const { hoverIntersect$, clickIntersects$ } =
         renderer.modules.intersection.register(room.mesh);
@@ -296,21 +312,7 @@ export default class RoomAppModule extends AppModule<State> {
     return subscription;
   }
 
-  onHoverGround({ worldPosition }: PreparedPosition) {
-    const room = this.app.modules.room.getRoom()!;
-    room.modules.selection.setSelectionPosition(worldPosition!);
-    this.pointerPosition$.next(worldPosition!);
-  }
-
   _position: Vector3 = new Vector3();
-
-  onHover(preparedPositions: PreparedPosition[]) {
-    const app = this.app;
-    const player = app.modules.player.getCurrentPlayer();
-    Object.values(app.modules).some((module: AppModule) => {
-      return module.onSceneHover({ preparedPositions, player });
-    });
-  }
 
   onSelect(preparedPositions: PreparedPosition[]) {
     const app = this.app;

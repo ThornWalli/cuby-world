@@ -101,10 +101,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
   override destroy(): void {
     super.destroy();
-    this.observables.message$.unsubscribe();
-    this.observables.moveTo$.unsubscribe();
-    this.observables.peerJoin$.unsubscribe();
-    this.observables.peerLeave$.unsubscribe();
+    Object.values(this.observables).forEach(obs => obs.unsubscribe());
   }
 
   override async setup() {
@@ -122,7 +119,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
     let playerSubscription = new Subscription();
     this.subscription.add(
-      this.app.modules.player.currentPlayer$.subscribe(player => {
+      this.app.modules.player.observables.currentPlayer$.subscribe(player => {
         playerSubscription?.unsubscribe();
         playerSubscription = new Subscription();
         playerSubscription.add(

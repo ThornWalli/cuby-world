@@ -19,8 +19,7 @@ function getAliases() {
   return Object.fromEntries(
     Object.entries({
       ['@cuby-world/app']: 'app',
-      ['@cuby-world/units']: 'units',
-      ['@cuby-world/room-editor']: 'room-editor'
+      ['@cuby-world/units']: 'units'
     })
       .map(([name, packageName]) => {
         return [

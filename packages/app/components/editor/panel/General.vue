@@ -13,17 +13,15 @@ import SvgIndicatorDownload from '@cuby-world/app/assets/icons/indicator/downloa
 import CwPanel from '@cuby-world/app/components/Panel.vue';
 import CwButton from '@cuby-world/app/components/Button.vue';
 import CwFormFieldSmallUpload from '@cuby-world/app/components/formField/compact/Upload.vue';
-import { exportRoom, importRoom } from '@cuby-world/room-editor/utils/file';
 import type App from '@cuby-world/app/lib/classes/App';
+import { exportRoom, importRoom } from '@cuby-world/app/lib/utils/file';
 
 const $props = defineProps<{
   app: App;
 }>();
 
 async function onClickExport() {
-  await exportRoom(
-    $props.app.modules.room.getRoom()!.toRoomEditorDescription()
-  );
+  await exportRoom($props.app.modules.room.getRoom()!.toRoomDescription());
 }
 
 async function onFile(file?: File) {

@@ -12,16 +12,17 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "animejs": "4.1.3",
     "change-case": "catalog:",
     "easystarjs": "0.4.4",
-    "firebase": "12.2.1",
+    "firebase": "12.3.0",
+    "file-saver": "2.0.5",
     "rxjs": "catalog:",
     "three": "catalog:",
     "three-mesh-bvh": "^0.9.1",
-    "trystero": "0.21.7"
+    "trystero": "0.21.8"
   },
   "devDependencies": {
+    "@types/file-saver": "2.0.7",
     "@types/three": "catalog:",
     "vite": "catalog:"
   }

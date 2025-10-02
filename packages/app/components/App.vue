@@ -1,5 +1,12 @@
 <template>
-  <div ref="rootEl" class="cw-app">
+  <div
+    ref="rootEl"
+    class="cw-app"
+    :style="{
+      '--cursor': currentCursor?.src
+        ? `url(${currentCursor?.src}) 0 0, auto`
+        : currentCursor?.type
+    }">
     <cw-renderer
       ref="rendererEl"
       debug
@@ -39,6 +46,7 @@ import Player, { type PlayerSettings } from '../lib/classes/Player';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
 import { DEFAULT_ROOM_ID } from '../lib/classes/appModule/Multiplayer';
 import type { RoomDescription } from '../lib/classes/RoomDescription';
+import type { Cursor } from '../lib/classes/appModule/Cursor';
 
 setupFonts();
 const $props = defineProps<{
@@ -75,7 +83,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   // app.value?.destroy();
-  // subscription.unsubscribe();
+  subscription.unsubscribe();
 });
 
 async function setup() {
@@ -97,6 +105,8 @@ async function setup() {
 
 const STORAGE_PLAYER_KEY = 'cuby-world:player';
 
+const currentCursor = ref<Cursor>();
+
 async function setupApp(renderer: Renderer) {
   app.value = markRaw(
     getAppByMode(
@@ -108,6 +118,13 @@ async function setupApp(renderer: Renderer) {
 
   await app.value.setup();
   ready.value = true;
+
+  subscription.add(
+    app.value.modules.cursor.observables.current$.subscribe(cursor => {
+      console.log('Cursor changed', cursor);
+      currentCursor.value = cursor;
+    })
+  );
 
   subscription.add(
     fromEvent(window, 'resize', {
@@ -192,6 +209,7 @@ function onResize() {
     left: 50%;
     width: 100%;
     height: 100%;
+    cursor: var(--cursor);
     transform: translate(-50%, -50%);
   }
 }

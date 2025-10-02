@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import type { Vector3, Texture, Material, BufferGeometry, Mesh } from 'three';
 import {
   Box3,
@@ -8,27 +9,26 @@ import {
   BufferAttribute
 } from 'three';
 
-import image_wall_texture_1 from '../../assets/wall/texture_1.png?url';
-
 import { prepareForRaycast } from '../utils/raycast';
 
 import type AssetLoader from './AssetLoader';
 import { LOADER, type SpriteLoadDescription } from './AssetLoader';
 import {
-  type WallConnection,
   findNeighborWallEdges,
   createWallMesh,
-  getGroupBounds
+  getGroupBounds,
+  createWallGeometry
 } from '../utils/wall';
-import type { WallStyle } from '../types/editor/style';
+import type { WallStyle } from '../types/wall/style';
 import {
-  type WALL_GEOMETRY,
   WALL_DIRECTION,
   WALL_SIZE,
   WALL_TYPE,
   WALL_WINDOW_TYPE,
   type WallDescription,
-  type WallEdge
+  type WallEdge,
+  type WallTextureMap,
+  type WallGeometryMap
 } from '../types/wall';
 
 enum MESH_WALL_NAME {
@@ -41,14 +41,14 @@ function getDefaultStyle(): [WallStyle, WallStyle] {
     {
       id: 'texture_1',
       texture: {
-        url: image_wall_texture_1
+        id: 'default'
       },
       color: 0x888888
     },
     {
       id: 'texture_1',
       texture: {
-        url: image_wall_texture_1
+        id: 'default'
       },
       color: 0x888888
     }
@@ -81,7 +81,8 @@ export default class Wall {
   public position: Vector3;
   public root?: Object3D;
 
-  wallGeometries?: Map<WALL_GEOMETRY, BufferGeometry | null>;
+  wallGeometryMap: WallGeometryMap = new Map();
+  wallTextureMap: WallTextureMap = new Map();
 
   tmpBox = new Box3();
 
@@ -92,7 +93,6 @@ export default class Wall {
     type: WALL_TYPE;
     direction: WALL_DIRECTION;
     position: Vector3;
-    connection?: WallConnection;
     style?: [WallStyle | null, WallStyle | null];
     editMode?: boolean;
   }) {
@@ -114,7 +114,7 @@ export default class Wall {
       if (mesh) {
         this.refreshObjects({
           root: this.root!,
-          wallGeometries: this.wallGeometries!,
+          wallGeometryMap: this.wallGeometryMap!,
           editMode
         });
         this.tmpBox.setFromObject(this.root!);
@@ -142,7 +142,7 @@ export default class Wall {
       if (mesh) {
         this.refreshObjects({
           root: this.root!,
-          wallGeometries: this.wallGeometries!,
+          wallGeometryMap: this.wallGeometryMap!,
           editMode: this.editMode
         });
         this.tmpBox.setFromObject(this.root!);
@@ -163,7 +163,7 @@ export default class Wall {
     if (mesh) {
       await this.refreshObjects({
         root: this.root!,
-        wallGeometries: this.wallGeometries!,
+        wallGeometryMap: this.wallGeometryMap!,
         editMode: this.editMode
       });
       this.tmpBox.setFromObject(this.root!);
@@ -178,7 +178,7 @@ export default class Wall {
       if (mesh) {
         this.refreshObjects({
           root: this.root!,
-          wallGeometries: this.wallGeometries!,
+          wallGeometryMap: this.wallGeometryMap!,
           editMode: this.editMode
         });
         this.tmpBox.setFromObject(this.root!);
@@ -210,19 +210,21 @@ export default class Wall {
 
   update(wallDescriptions: WallDescription[]) {
     const edges = findNeighborWallEdges(this.description, wallDescriptions);
-
     this.edges = edges ?? [];
   }
 
   setup({
     assetLoader,
-    wallGeometries
+    wallGeometryMap,
+    wallTextureMap
   }: {
     assetLoader: AssetLoader;
-    wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+    wallGeometryMap: WallGeometryMap;
+    wallTextureMap: WallTextureMap;
   }) {
-    this.wallGeometries = wallGeometries;
-    this.root = this.createRoot({ assetLoader, wallGeometries });
+    this.wallGeometryMap = wallGeometryMap;
+    this.wallTextureMap = wallTextureMap;
+    this.root = this.createRoot({ assetLoader, wallGeometryMap });
     this.tmpBox.setFromObject(this.root);
     prepareForRaycast(this.root);
   }
@@ -252,21 +254,21 @@ export default class Wall {
     {
       root,
       editMode,
-      wallGeometries
+      wallGeometryMap
     }: {
       root: Object3D;
       editMode: boolean;
-      wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+      wallGeometryMap: WallGeometryMap;
     } = {
       root: this.root!,
       editMode: this.editMode,
-      wallGeometries: this.wallGeometries!
+      wallGeometryMap: this.wallGeometryMap!
     },
     async = false
   ) {
     Object.values(this.objects).forEach(obj => {
-      obj?.removeFromParent();
-      obj?.geometry.dispose();
+      // obj?.removeFromParent();
+      // obj?.geometry.dispose();
       if (Array.isArray(obj)) {
         obj.forEach(o => {
           (o.material as Material).dispose?.();
@@ -279,65 +281,93 @@ export default class Wall {
     const materials = [
       new MeshPhongMaterial({ color: this.state.style[0]?.color || 0x333333 }), // Front
       new MeshPhongMaterial({ color: this.state.style[1]?.color || 0x333333 }), // Back
-      new MeshPhongMaterial({ color: 0x333333 }), // Top
-      new MeshPhongMaterial({ color: 0x333333 }), // Right
-      new MeshPhongMaterial({ color: 0x333333 }), // Right
-      new MeshPhongMaterial({ color: 0x333333 }), // Left
-      new MeshPhongMaterial({ color: 0x333333 }), // ??
-      new MeshPhongMaterial({ color: 0x333333 }), // ??
-      new MeshPhongMaterial({ color: 0x333333 }), // ??
-      new MeshPhongMaterial({ color: 0x333333 }), // ??
-      new MeshPhongMaterial({ color: 0x333333 }), // ??
-      new MeshPhongMaterial({ color: 0x333333 }), // ??
+      new MeshPhongMaterial({ color: 0x333333 }),
+      new MeshPhongMaterial({ color: 0x333333 }),
+      new MeshPhongMaterial({ color: 0x333333 }),
+      new MeshPhongMaterial({ color: 0x333333 }),
       new MeshPhongMaterial({ color: 0x333333 })
     ];
 
-    const largeWall = createWallMesh(
-      {
-        type: this.state.type,
-        windowType: this.state.windowType,
-        small: false,
-        direction: this.direction,
-        materials
-      },
-      {
-        edges: this.edges,
-        editMode,
-        wallGeometries
-      }
-    );
-    largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-    largeWall.visible = this.visible;
-    largeWall.userData = { wall: this, ignoreSelect: true };
+    let largeWall = this.objects[WALL_SIZE.LARGE]!;
+    if (!this.objects[WALL_SIZE.LARGE]) {
+      largeWall = createWallMesh(
+        {
+          type: this.state.type,
+          windowType: this.state.windowType,
+          small: false,
+          direction: this.direction,
+          materials
+        },
+        {
+          edges: this.edges,
+          editMode,
+          wallGeometryMap
+        }
+      );
+      largeWall.name = MESH_WALL_NAME.LARGE_WALL;
+      largeWall.visible = this.visible;
+      largeWall.userData = { wall: this, ignoreSelect: true };
+      this.objects[WALL_SIZE.LARGE] = largeWall;
+      root?.add(largeWall);
+    } else {
+      const { geometry } = createWallGeometry(
+        this.direction,
+        this.state.type,
+        WALL_SIZE.LARGE,
+        this.state.windowType,
+        {
+          edges: this.edges,
+          wallGeometryMap: this.wallGeometryMap
+        }
+      );
+      largeWall.geometry.dispose();
+      largeWall.geometry = geometry!;
+    }
 
-    const smallWall = createWallMesh(
-      {
-        type: this.state.type,
-        windowType: this.state.windowType,
-        small: true,
-        direction: this.direction,
-        materials
-      },
-      {
-        edges: this.edges,
-        editMode,
-        wallGeometries
-      }
-    );
-    smallWall.name = MESH_WALL_NAME.SMALL_WALL;
-    smallWall.visible = !this.visible;
-    smallWall.userData = { wall: this, ignoreSelect: true };
+    let smallWall = this.objects[WALL_SIZE.SMALL]!;
+    if (!this.objects[WALL_SIZE.SMALL]) {
+      smallWall = createWallMesh(
+        {
+          type: this.state.type,
+          windowType: this.state.windowType,
+          small: true,
+          direction: this.direction,
+          materials
+        },
+        {
+          edges: this.edges,
+          editMode,
+          wallGeometryMap
+        }
+      );
+      smallWall.name = MESH_WALL_NAME.SMALL_WALL;
+      smallWall.visible = !this.visible;
+      smallWall.userData = { wall: this, ignoreSelect: true };
+      this.objects[WALL_SIZE.SMALL] = smallWall;
+      root?.add(smallWall);
+    }
 
     if (this.assetLoader && this.state.style.length) {
       const promise = Promise.all(
         this.state.style.map(async (style, index: number) => {
-          if (style?.texture && 'url' in style.texture) {
+          let url: string | undefined = undefined;
+          if (style?.texture && 'id' in style.texture) {
+            if (this.wallTextureMap.has(style.texture.id)) {
+              url = this.wallTextureMap.get(style.texture.id)?.url;
+            } else {
+              console.warn(`Texture id ${style.texture.id} not found`);
+            }
+          } else if (style?.texture && 'url' in style.texture) {
+            url = style.texture.url;
+          }
+
+          if (url) {
             return [
               await setupMaterial(
                 {
                   index: 0,
                   direction: this.direction,
-                  url: style.texture.url,
+                  url,
                   options: {
                     position: new Vector2(0, 0),
                     dimension: new Vector2(100, 200)
@@ -350,7 +380,7 @@ export default class Wall {
                 {
                   index: 0,
                   direction: this.direction,
-                  url: style.texture.url,
+                  url,
                   options: {
                     position: new Vector2(100, 0),
                     dimension: new Vector2(100, 40)
@@ -366,7 +396,7 @@ export default class Wall {
       ).then(([styleA, styleB]) => {
         const [largeMaterial, smallMaterial, ..._] = materials;
 
-        const largeMaterials = [...largeWall.material];
+        const largeMaterials = [...(largeWall.material as Material[])];
         largeMaterials[0] = styleA?.[0] || largeMaterial!;
         largeMaterials[1] = styleB?.[0] || largeMaterial!;
         largeWall.material = largeMaterials;
@@ -380,23 +410,15 @@ export default class Wall {
         await promise;
       }
     }
-
-    root?.add(smallWall);
-    root?.add(largeWall);
-
-    this.objects = {
-      [WALL_SIZE.SMALL]: smallWall,
-      [WALL_SIZE.LARGE]: largeWall
-    };
   }
 
   private assetLoader: AssetLoader | null = null;
   createRoot({
     assetLoader,
-    wallGeometries
+    wallGeometryMap
   }: {
     assetLoader: AssetLoader;
-    wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+    wallGeometryMap: WallGeometryMap;
   }) {
     const group = new Object3D();
     this.assetLoader = assetLoader;
@@ -404,7 +426,7 @@ export default class Wall {
     this.refreshObjects({
       root: group,
       editMode: this.editMode,
-      wallGeometries
+      wallGeometryMap
     });
 
     group.userData = { wall: this };

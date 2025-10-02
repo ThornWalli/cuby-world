@@ -12,7 +12,14 @@ export default class SelectionAppModule extends AppModule<State> {
     selectedUnit: null
   };
 
-  selectUnit$ = new ReplaySubject<Unit | null>(1);
+  observables = {
+    selectUnit$: new ReplaySubject<Unit | null>(1)
+  };
+
+  override destroy(): void {
+    super.destroy();
+    Object.values(this.observables).forEach(obs => obs.unsubscribe());
+  }
 
   getSelectedUnit() {
     return this.state.selectedUnit;
@@ -48,7 +55,7 @@ export default class SelectionAppModule extends AppModule<State> {
     }
     this.app.renderer.setSelectedObjects(selectedObjects);
     unit?.modules.selection?.select();
-    this.selectUnit$.next(unit);
+    this.observables.selectUnit$.next(unit);
   }
 
   setSelectedObjects(objects: Object3D[]) {

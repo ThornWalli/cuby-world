@@ -77,7 +77,25 @@ export function resizeRoom(
     walls: description.walls.filter(
       w => w.position.x < dimension.x && w.position.y < dimension.y
     ),
+    groundStyles: description.groundStyles.map(groundStyle => ({
+      ...groundStyle,
+      values: groundStyle.positions.filter(
+        ({ x, y }) => x < dimension.x && y < dimension.y
+      )
+    })),
     grid,
     start
   };
 }
+
+// grounds: Object.fromEntries(
+//   description.groundStyles.map(({ type, values }) => [type, values])
+// ),
+// .entries().map(ground => {
+//   return {
+//     ...ground,
+//     values: ground.values.filter(
+//       ([x, y]) => x < dimension.x && y < dimension.y
+//     )
+//   };
+// }),

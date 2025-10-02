@@ -71,17 +71,17 @@ async function setup() {
   const app = $props.app;
 
   subscription.add(
-    app.modules.selection.selectUnit$.subscribe(unit => {
+    app.modules.selection.observables.selectUnit$.subscribe(unit => {
       selectedUnit.value = unit ? markRaw(unit) : null;
     })
   );
   subscription.add(
-    app.modules.placement.startPlace$.subscribe(unit => {
+    app.modules.placement.observables.startPlace$.subscribe(unit => {
       placedUnit.value = markRaw(unit);
     })
   );
   subscription.add(
-    app.modules.placement.stopPlace$.subscribe(() => {
+    app.modules.placement.observables.stopPlace$.subscribe(() => {
       placedUnit.value = null;
     })
   );

@@ -21,7 +21,11 @@ import CwPanelEditorWallStyle from './panel/WallStyle.vue';
 import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import type { EditorApp } from '@cuby-world/app/lib/classes/App';
-import type { WallStyleTemplate } from '@cuby-world/app/lib/types/editor/style';
+import type { WallStyleTemplate } from '@cuby-world/app/lib/types/wall/style';
+import { Subscription } from 'rxjs';
+import type Wall from '@cuby-world/app/lib/classes/Wall';
+import type { FACE_INDEX } from '@cuby-world/app/lib/types/wall';
+import { CURSOR_TYPE } from '@cuby-world/app/lib/classes/appModule/Cursor';
 
 const style = ref<WallStyleTemplate>({
   id: 'color_blue',
@@ -37,14 +41,30 @@ const currentAction = ref<WallAction>({
   primary: WALL_ACTION.NONE
 });
 
+const subscription = new Subscription();
+
+const current = ref<{
+  wall: Wall | null;
+  faceIndex: FACE_INDEX;
+} | null>();
 onMounted(() => {
   currentAction.value = {
-    primary: WALL_ACTION.MODE_STYLE
+    primary: WALL_ACTION.ADD
   };
+
+  subscription.add(
+    $props.app.modules.editorWall.observables.current$.subscribe(value => {
+      $props.app.modules.cursor.setCursor(
+        value ? CURSOR_TYPE.POINTER : undefined
+      );
+      current.value = value;
+    })
+  );
 });
 
 onUnmounted(() => {
   resetAction();
+  subscription.unsubscribe();
 });
 
 watch(() => currentAction.value, onChangeAction);

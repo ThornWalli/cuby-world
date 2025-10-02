@@ -1,6 +1,6 @@
 <template>
   <cw-panel
-    class="cw-panel-editor-wall-actions"
+    class="cw-panel-editor-ground-actions"
     hide-title
     style-type="transparent"
     title="Wall Actions">
@@ -13,7 +13,7 @@
           @update:model-value="
             val =>
               onUpdateModelValue({
-                primary: val ? primary : WALL_ACTION.NONE
+                primary: val ? primary : GROUND_ACTION.NONE
               })
           " />
         <div class="subs">
@@ -45,85 +45,48 @@ import CwPanel from '../../Panel.vue';
 import { onUnmounted, ref } from 'vue';
 import { Subscription } from 'rxjs';
 import CwToggleIcon from '../../toggle/Icon.vue';
-import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
+import { GROUND_ACTION } from '@cuby-world/app/lib/types/editor';
 import icons from '@cuby-world/app/utils/icons';
-import { WALL_WINDOW_TYPE } from '@cuby-world/app/lib/types/wall';
 
 const $emit = defineEmits<{
-  (e: 'update:model-value', value: WallAction): void;
+  (e: 'update:model-value', value: GroundAction): void;
 }>();
 
 defineProps<{
-  modelValue: WallAction;
+  modelValue: GroundAction;
 }>();
 
 const actions = ref([
   {
-    icon: icons.add,
-    label: 'Add',
-    value: {
-      primary: WALL_ACTION.ADD
-    }
-  },
-  {
-    icon: icons.remove,
-    label: 'Remove',
-    value: {
-      primary: WALL_ACTION.REMOVE
-    }
-  },
-  {
-    icon: icons.door_mode,
-    label: 'Door',
-    value: {
-      primary: WALL_ACTION.MODE_DOOR
-    }
-  },
-  {
-    icon: icons.window_mode,
-    label: 'Window',
-    value: {
-      primary: WALL_ACTION.MODE_WINDOW
-    },
-    items: [
-      {
-        icon: icons.window_small,
-        label: 'Small',
-        value: {
-          primary: WALL_ACTION.MODE_WINDOW,
-          secondary: WALL_WINDOW_TYPE.SMALL
-        }
-      },
-      {
-        icon: icons.window_medium,
-        label: 'Medium',
-        value: {
-          primary: WALL_ACTION.MODE_WINDOW,
-          secondary: WALL_WINDOW_TYPE.MEDIUM
-        }
-      },
-      {
-        icon: icons.window_large,
-        label: 'Large',
-        value: {
-          primary: WALL_ACTION.MODE_WINDOW,
-          secondary: WALL_WINDOW_TYPE.LARGE
-        }
-      }
-    ]
-  },
-  {
     icon: icons.color,
     label: 'Color',
     value: {
-      primary: WALL_ACTION.MODE_STYLE
-    }
+      primary: GROUND_ACTION.MODE_STYLE
+    },
+    items: [
+      {
+        icon: icons.ground_single_set,
+        label: 'Single',
+        value: {
+          primary: GROUND_ACTION.MODE_STYLE,
+          secondary: GROUND_ACTION.GROUND_SINGLE_SET
+        }
+      },
+      {
+        icon: icons.ground_multiple_set,
+        label: 'Multiple',
+        value: {
+          primary: GROUND_ACTION.MODE_STYLE,
+          secondary: GROUND_ACTION.GROUND_MULTIPLE_SET
+        }
+      }
+    ]
   }
 ]);
 
 const subscription = new Subscription();
 
-function onUpdateModelValue(action: WallAction) {
+function onUpdateModelValue(action: GroundAction) {
   $emit('update:model-value', action);
 }
 
@@ -133,14 +96,14 @@ onUnmounted(() => {
 </script>
 
 <script lang="ts">
-export interface WallAction {
-  primary: WALL_ACTION;
-  secondary?: WALL_WINDOW_TYPE;
+export interface GroundAction {
+  primary: GROUND_ACTION;
+  secondary?: string;
 }
 </script>
 
 <style lang="css" scoped>
-.cw-panel-editor-wall-actions {
+.cw-panel-editor-ground-actions {
   position: relative;
 
   & div {

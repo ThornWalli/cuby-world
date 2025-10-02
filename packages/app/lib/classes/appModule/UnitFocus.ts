@@ -10,7 +10,14 @@ export default class UnitFocusAppModule extends AppModule<State> {
 
   state: State = {};
 
-  focusedUnit$ = new ReplaySubject<Unit | undefined>(1);
+  observables = {
+    focusedUnit$: new ReplaySubject<Unit | undefined>(1)
+  };
+
+  override destroy(): void {
+    super.destroy();
+    Object.values(this.observables).forEach(obs => obs.unsubscribe());
+  }
 
   get focusedUnit() {
     return this.state.focusedUnit;
@@ -39,7 +46,7 @@ export default class UnitFocusAppModule extends AppModule<State> {
       this.app.renderer.disableControls();
       controls.update();
     }
-    this.focusedUnit$.next(unit);
+    this.observables.focusedUnit$.next(unit);
   }
 
   unfocusUnit() {

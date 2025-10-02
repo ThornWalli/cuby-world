@@ -137,6 +137,68 @@
     },
     "rotation": "east"
   },
+  "groundStyles": [
+    {
+      "id": "default",
+      "options": {
+        "color": "#ff0000"
+      },
+      "positions": [
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "default",
+      "options": {
+        "color": "#00ff00"
+      },
+      "positions": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "default",
+      "options": {
+        "color": "#0000ff"
+      },
+      "positions": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    }
+  ],
   "walls": [
     {
       "type": "default",

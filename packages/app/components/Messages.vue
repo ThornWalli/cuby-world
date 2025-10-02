@@ -93,7 +93,7 @@ onMounted(() => {
   );
 
   subscription.add(
-    app.renderer.animationLoop$.subscribe(onUpdateMessagePositions)
+    app.renderer.observables.animationLoop$.subscribe(onUpdateMessagePositions)
   );
 });
 

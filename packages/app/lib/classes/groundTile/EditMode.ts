@@ -4,9 +4,9 @@ import {
   MeshPhongMaterial,
   PlaneGeometry
 } from 'three';
-import GroundTile from '../GroundTile';
+import Ground from '../Ground';
 
-export default class EditModeGroundTile extends GroundTile {
+export default class EditModeGroundTile extends Ground {
   active: boolean = false;
 
   constructor({

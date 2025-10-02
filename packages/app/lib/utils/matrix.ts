@@ -4,6 +4,7 @@ import { Vector3 } from 'three';
 import type Unit from '../classes/Unit';
 
 import type * as THREE from 'three';
+import type { FACE_INDEX } from '../types/wall';
 
 export function positionToMatrixPosition(
   position: THREE.Vector3
@@ -29,7 +30,7 @@ export interface PreparedPosition {
   object: Object3D | null;
   matrixPosition: THREE.Vector3 | null;
   worldPosition: THREE.Vector3 | null;
-  faceIndex?: number | null;
+  faceIndex?: FACE_INDEX | null;
 }
 
 export function preparePosition(onlyTopFace = false) {

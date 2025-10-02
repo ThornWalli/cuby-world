@@ -48,7 +48,7 @@ import { fromEvent, Subscription } from 'rxjs';
 import { useRouter } from '#imports';
 import type Renderer from '../../lib/classes/Renderer';
 
-import GroundTile from '../../lib/classes/GroundTile';
+import Ground from '../../lib/classes/Ground';
 import type Unit from '../../lib/classes/Unit';
 
 import AssetLoader from '../../lib/classes/AssetLoader';
@@ -170,7 +170,7 @@ async function setupScene(renderer: Renderer) {
   const scene = renderer.scene;
 
   // #region ground
-  const groundTile = new GroundTile({ position: new Vector3(0, 0, 0) }).box;
+  const groundTile = new Ground({ position: new Vector3(0, 0, 0) }).box;
   const groundMesh = new Mesh(groundTile.geometry, groundTile.material);
   groundMesh.material.side = DoubleSide;
   groundMesh.receiveShadow = true;
@@ -205,7 +205,7 @@ async function setupScene(renderer: Renderer) {
   // #endregion
 
   subscription.add(
-    renderer.animationLoop$.subscribe(time => {
+    renderer.observables.animationLoop$.subscribe(time => {
       if (currentUnit.value) {
         currentUnit.value.update(time);
       }

@@ -69,6 +69,12 @@ export function parseRoomDescription(
           : unit.options.position,
         rotation: unit.options.rotation as UNIT_ROTATION
       }
+    })),
+    groundStyles: room.groundStyles.map(({ positions, ...groundStyle }) => ({
+      ...groundStyle,
+      positions: positions.map(position =>
+        Array.isArray(position) ? new Vector2().fromArray(position) : position
+      )
     }))
   };
 }

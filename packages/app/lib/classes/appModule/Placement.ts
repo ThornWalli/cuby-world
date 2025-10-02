@@ -15,9 +15,16 @@ export default class PlacementAppModule extends AppModule<State> {
 
   unitSubscription?: Subscription;
 
-  abortPlace$ = new Subject<Unit>();
-  startPlace$ = new Subject<Unit>();
-  stopPlace$ = new Subject<Vector3>();
+  observables = {
+    abortPlace$: new Subject<Unit>(),
+    startPlace$: new Subject<Unit>(),
+    stopPlace$: new Subject<Vector3>()
+  };
+
+  override destroy(): void {
+    super.destroy();
+    Object.values(this.observables).forEach(obs => obs.unsubscribe());
+  }
 
   getPlaceUnit() {
     return this.state.placedUnit;
@@ -38,7 +45,7 @@ export default class PlacementAppModule extends AppModule<State> {
     }
 
     this.state.placedUnit = null;
-    this.abortPlace$.next(unit);
+    this.observables.abortPlace$.next(unit);
     unit.modules.placement.abortPlace();
   }
 
@@ -48,7 +55,7 @@ export default class PlacementAppModule extends AppModule<State> {
     }
 
     this.state.placedUnit = unit;
-    this.startPlace$.next(unit);
+    this.observables.startPlace$.next(unit);
     unit.modules.placement.startPlace();
   }
 
@@ -62,7 +69,7 @@ export default class PlacementAppModule extends AppModule<State> {
     }
     const position = this.state.placedUnit.getPosition();
     this.state.placedUnit = null;
-    this.stopPlace$.next(position);
+    this.observables.stopPlace$.next(position);
     unit.modules.placement.stopPlace();
   }
 }

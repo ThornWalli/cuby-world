@@ -40,8 +40,8 @@ import { APP_MODE } from '../App';
 import MeshWall from '../../../assets/wall/wall.glb?url';
 import type {
   WALL_DIRECTION,
-  WALL_GEOMETRY,
   WallDescription,
+  WallGeometryMap,
   WallRoomDescription
 } from '../../types/wall';
 
@@ -162,7 +162,7 @@ interface State extends RoomModuleState {
   wallRooms: Set<WallRoom>;
   wallRoomTiles: Map<string, WallRoom>;
   trackingUnits: Set<Unit>;
-  baseWallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+  baseWallGeometryMap: WallGeometryMap;
 }
 export default class WallModule extends RoomModule<State> {
   static override TYPE = 'wall';
@@ -177,7 +177,7 @@ export default class WallModule extends RoomModule<State> {
     wallRooms: new Set(),
     wallRoomTiles: new Map(),
     trackingUnits: new Set<Unit>(),
-    baseWallGeometries: new Map<WALL_GEOMETRY, BufferGeometry>()
+    baseWallGeometryMap: new Map()
   };
 
   viewMode$ = new ReplaySubject<WALL_VIEW_MODE>(0);
@@ -215,7 +215,7 @@ export default class WallModule extends RoomModule<State> {
     if (!description) {
       throw new Error('Room description is not set');
     }
-    this.state.baseWallGeometries = await loadWallGeometries(
+    this.state.baseWallGeometryMap = await loadWallGeometries(
       this.room.app.assetLoader,
       MeshWall
     );
@@ -223,7 +223,7 @@ export default class WallModule extends RoomModule<State> {
     this.addedWalls(description.walls);
 
     this.subscription.add(
-      this.room.app.modules.player.currentPlayer$
+      this.room.app.modules.player.observables.currentPlayer$
         .pipe(
           switchMap(player => player.unit$),
           switchMap(unit => unit.ready$),
@@ -233,7 +233,6 @@ export default class WallModule extends RoomModule<State> {
         )
         .subscribe(() => {
           if (this.updateActiveWallRooms()) {
-            console.log('Wall rooms changed');
             this.updateVisibility(this.room.app.renderer.camera);
           }
         })
@@ -266,14 +265,14 @@ export default class WallModule extends RoomModule<State> {
     );
 
     this.subscription.add(
-      this.room.app.modules.player.currentPlayer$
+      this.room.app.modules.player.observables.currentPlayer$
         .pipe(switchMap(player => player.unit$))
         .subscribe(unit => {
           this.addUnitForTracking(unit);
         })
     );
 
-    this.room.app.modules.player.currentPlayer$
+    this.room.app.modules.player.observables.currentPlayer$
       .pipe(
         switchMap(player => player.unit$),
         switchMap(unit => unit.ready$),
@@ -325,7 +324,7 @@ export default class WallModule extends RoomModule<State> {
       this.room.app.config.mode === APP_MODE.EDITOR,
       {
         assetLoader: this.room.app.assetLoader,
-        wallGeometries: this.state.baseWallGeometries!
+        wallGeometryMap: this.state.baseWallGeometryMap!
       }
     );
 
@@ -345,31 +344,6 @@ export default class WallModule extends RoomModule<State> {
 
     const descriptions = this.state.walls.map(wall => wall.description);
 
-    // const test2 = new Set<Wall>();
-    // walls.forEach(wall => {
-    //   const neighbors = findNeighbors(wall.description, descriptions);
-    //   Array.from(neighbors.values())
-    //     .flat()
-    //     .map(neighborWall => {
-    //       return this.state.wallMap.get(
-    //         getWallKey(
-    //           neighborWall.position.x,
-    //           neighborWall.position.y,
-    //           neighborWall.direction
-    //         )
-    //       );
-    //     })
-    //     .filter(Boolean)
-    //     .forEach(neighborWall => test2.add(neighborWall!));
-
-    //   test2.add(wall);
-    // });
-    // console.log('test', Array.from(test2));
-    // test2.forEach(wall => {
-    //   wall.update(descriptions);
-    //   wall.refreshObjects();
-    // });
-    //
     this.state.walls.forEach(wall => {
       wall.update(descriptions);
       wall.refreshObjects();
@@ -396,8 +370,6 @@ export default class WallModule extends RoomModule<State> {
   removeWalls(walls: Wall[]) {
     walls = walls || this.state.walls;
 
-    this.createWallRooms();
-
     // this.state.wallRooms.forEach(room => room.destroy());
     // this.state.wallRooms = [];
     // this.state.wallRoomTiles = new Map();
@@ -411,10 +383,18 @@ export default class WallModule extends RoomModule<State> {
         getWallKey(wall.position.x, wall.position.z, wall.direction)
       );
     });
+
+    this.createWallRooms();
+    const descriptions = this.state.walls.map(wall => wall.description);
+    this.state.walls.forEach(wall => {
+      wall.update(descriptions);
+      wall.refreshObjects();
+    });
+
+    this.updateVisibility(this.room.app.renderer.camera);
   }
 
   createWallRooms(walls: Wall[] = this.state.walls) {
-    console.log('createWallRooms', walls);
     if (this.state.wallRooms.size) {
       // Remove existing wall rooms
       this.state.wallRooms.forEach(room => room.destroy());
@@ -423,7 +403,6 @@ export default class WallModule extends RoomModule<State> {
     }
 
     const roomsDescriptions = getWallRoomDescriptions(walls);
-    console.log('roomsDescriptions', roomsDescriptions);
     const rooms = roomsDescriptions.map(
       desc => new WallRoom({ ...desc, debug: this.debug })
     );

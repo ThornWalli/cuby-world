@@ -12,15 +12,15 @@ export default class PlayerAppModule extends AppModule<State> {
     players: []
   };
 
-  currentPlayer$ = new ReplaySubject<Player>(0);
-  addPlayer$ = new Subject<Player>();
-  removePlayer$ = new Subject<Player>();
+  observables = {
+    currentPlayer$: new ReplaySubject<Player>(0),
+    addPlayer$: new Subject<Player>(),
+    removePlayer$: new Subject<Player>()
+  };
 
   override destroy(): void {
     super.destroy();
-    this.currentPlayer$.unsubscribe();
-    this.addPlayer$.unsubscribe();
-    this.removePlayer$.unsubscribe();
+    Object.values(this.observables).forEach(obs => obs.unsubscribe());
     this.state.players.forEach(player => player.destroy());
   }
 
@@ -37,7 +37,7 @@ export default class PlayerAppModule extends AppModule<State> {
 
   setCurrentPlayer(player: Player) {
     this.state.currentPlayer = player;
-    this.currentPlayer$.next(player);
+    this.observables.currentPlayer$.next(player);
   }
 
   getPlayers() {
@@ -46,7 +46,7 @@ export default class PlayerAppModule extends AppModule<State> {
 
   addPlayer(player: Player) {
     this.state.players.push(player);
-    this.addPlayer$.next(player);
+    this.observables.addPlayer$.next(player);
     if (player.client) {
       this.setCurrentPlayer(player);
     }
@@ -54,7 +54,7 @@ export default class PlayerAppModule extends AppModule<State> {
 
   removePlayer(player: Player) {
     this.state.players = this.state.players.filter(p => p.id !== player.id);
-    this.removePlayer$.next(player);
+    this.observables.removePlayer$.next(player);
     player.destroy();
   }
 }

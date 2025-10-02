@@ -31,6 +31,17 @@ export default {
       () => import('../assets/icons/editor/actions/ground_mode.svg?component')
     )
   ),
+  ground_single_set: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/ground_single.svg?component')
+    )
+  ),
+  ground_multiple_set: markRaw(
+    defineAsyncComponent(
+      () =>
+        import('../assets/icons/editor/actions/ground_multiple.svg?component')
+    )
+  ),
   wall_mode: markRaw(
     defineAsyncComponent(
       () => import('../assets/icons/editor/actions/wall_mode.svg?component')

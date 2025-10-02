@@ -35,6 +35,8 @@ export default class SelectionModule extends RoomModule<State> {
     if (this.state.visible) {
       this.showSelection();
     }
+
+    this.room.mesh.add(this.state.selectionMesh);
   }
 
   setSelectionPosition(position: Vector3) {
@@ -46,16 +48,14 @@ export default class SelectionModule extends RoomModule<State> {
   }
 
   showSelection() {
-    if (this.state.selectionMesh) {
-      this.room.mesh.add(this.state.selectionMesh);
+    if (this.state.selectionMesh && !this.state.selectionMesh.visible) {
       this.state.selectionMesh.visible = true;
       this.selectionVisible$.next(true);
     }
   }
 
   hideSelection() {
-    if (this.state.selectionMesh) {
-      this.state.selectionMesh.removeFromParent();
+    if (this.state.selectionMesh && this.state.selectionMesh.visible) {
       this.state.selectionMesh.visible = false;
       this.selectionVisible$.next(false);
     }

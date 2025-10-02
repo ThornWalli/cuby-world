@@ -32,7 +32,16 @@ const $props = defineProps<{
 
 const $emit = defineEmits<{
   (e: 'ready'): void;
-  (e: 'pointerdown' | 'pointerup', event: PointerEvent): void;
+  (
+    e:
+      | 'pointerdown'
+      | 'pointerup'
+      | 'pointermove'
+      | 'pointerup'
+      | 'pointerenter'
+      | 'pointerout',
+    event: PointerEvent
+  ): void;
 }>();
 
 const rootEl = ref();
@@ -70,20 +79,35 @@ onMounted(async () => {
   );
 
   subscription.add(
-    fromEvent<PointerEvent>(canvasEl.value, 'pointerdown').subscribe(event => {
+    fromEvent<PointerEvent>(canvasEl.value, 'pointerdown').subscribe(e => {
       const sub = fromEvent<PointerEvent>(document, 'pointerup').subscribe(
-        event => {
+        e => {
           sub.unsubscribe();
-          $emit('pointerup', event);
+          $emit('pointerup', e);
         }
       );
-      $emit('pointerdown', event);
+      $emit('pointerdown', e);
     })
   );
 
   subscription.add(
-    fromEvent<PointerEvent>(canvasEl.value, 'pointermove').subscribe(() => {
-      renderer.value?.modules.intersection?.onMove();
+    fromEvent<PointerEvent>(canvasEl.value, 'pointermove').subscribe(e => {
+      $emit('pointermove', e);
+      // renderer.value?.modules.intersection?.onMove();
+    })
+  );
+
+  subscription.add(
+    fromEvent<PointerEvent>(canvasEl.value, 'pointerenter').subscribe(e => {
+      $emit('pointerenter', e);
+      // renderer.value?.modules.intersection?.onEnter();
+    })
+  );
+
+  subscription.add(
+    fromEvent<PointerEvent>(canvasEl.value, 'pointerout').subscribe(e => {
+      $emit('pointerout', e);
+      // renderer.value?.modules.intersection?.onOut();
     })
   );
 

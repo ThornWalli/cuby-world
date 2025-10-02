@@ -1,7 +1,10 @@
 <template>
   <div>
     <client-only>
-      <app :config="config" :room-description="roomDescription" />
+      <app
+        v-if="roomDescription"
+        :config="config"
+        :room-description="roomDescription" />
     </client-only>
   </div>
 </template>
@@ -10,13 +13,14 @@
 import { useRoute, useRuntimeConfig } from '#imports';
 import { APP_MODE, type AppConfig } from '@cuby-world/app/lib/classes/App';
 
-import { defineAsyncComponent, ref } from 'vue';
+import { defineAsyncComponent, onMounted, ref } from 'vue';
 import roomTest2001 from '@cuby-world/app/lib/rooms/wall-test.json';
-// import roomTest2001 from '@cuby-world/app/lib/rooms/test-2004.json';
 import {
   jsonParse,
   parseRoomDescription
-} from '@cuby-world/room-editor/utils/parse';
+} from '@cuby-world/app/lib/utils/parse';
+import type { RoomDescription } from '@cuby-world/app/lib/classes/RoomDescription';
+// import roomTest2001 from '@cuby-world/app/lib/rooms/test-2004.json';
 
 const App = defineAsyncComponent(
   () => import('@cuby-world/app/components/App.vue')
@@ -26,9 +30,13 @@ const $route = useRoute();
 
 const runtimeConfig = useRuntimeConfig();
 
-const roomDescription = parseRoomDescription(
-  jsonParse(JSON.stringify(roomTest2001))
-);
+onMounted(() => {
+  roomDescription.value = parseRoomDescription(
+    jsonParse(JSON.stringify(roomTest2001))
+  );
+});
+
+const roomDescription = ref<RoomDescription>();
 
 const config = ref<AppConfig>({
   mode: getMode(),

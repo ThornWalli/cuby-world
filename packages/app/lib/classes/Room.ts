@@ -5,7 +5,6 @@ import WallModule from './roomModule/Wall';
 import GroundModule from './roomModule/Ground';
 import SelectionMode from './roomModule/Selection';
 import UnitsModule from './roomModule/Units';
-import type { EditorRoomDescription } from '@cuby-world/room-editor/types';
 import type { RoomDescription } from './RoomDescription';
 
 type RoomModuleList = (
@@ -106,9 +105,10 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     });
   }
 
-  toRoomEditorDescription(): EditorRoomDescription {
+  toRoomDescription(): RoomDescription {
     const description = this.description!;
     const start = description.start!;
+
     return {
       id: description.id,
       info: {
@@ -121,7 +121,8 @@ export default class Room<Modules extends RoomModules = RoomModules> {
       units: this.modules.units
         .getUnits()
         .filter(unit => !unit.modules.player.player)
-        .map(unit => unit.toJSON())
+        .map(unit => unit.toJSON()),
+      groundStyles: this.modules.ground.getGroundStyleMap().toGroundStyles()
     };
   }
 }

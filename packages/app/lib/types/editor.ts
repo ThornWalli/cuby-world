@@ -13,6 +13,13 @@ export enum WALL_ACTION {
   MODE_STYLE = 'style'
 }
 
+export enum GROUND_ACTION {
+  NONE = 'none',
+  MODE_STYLE = 'style',
+  GROUND_SINGLE_SET = 'ground_single_set',
+  GROUND_MULTIPLE_SET = 'ground_multiple_set'
+}
+
 // export interface WallStyleSelect {
 //   id: string;
 //   color: string;

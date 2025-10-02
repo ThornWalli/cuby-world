@@ -13,20 +13,23 @@ import { getFaceGroupIndex } from '@cuby-world/app/lib/utils/wall';
 import type {
   WallStyle,
   WallStyleTemplate
-} from '@cuby-world/app/lib/types/editor/style';
+} from '@cuby-world/app/lib/types/wall/style';
 import {
   type WALL_WINDOW_TYPE,
+  type FACE_INDEX,
   WALL_DIRECTION,
   WALL_TYPE,
   type WallDescription
 } from '@cuby-world/app/lib/types/wall';
+import type { WallAction } from '@cuby-world/app/components/editor/panel/WallActions.vue';
 
 interface State extends AppModuleState {
-  action: {
-    primary: WALL_ACTION;
-    secondary?: WALL_WINDOW_TYPE;
-  };
+  action: WallAction;
   style: WallStyle;
+  selection?: {
+    faceIndex: FACE_INDEX;
+    wall: Wall | null;
+  };
 }
 export default class EditorWallModule extends AppModule<State> {
   static override TYPE = 'editorWall';
@@ -43,16 +46,22 @@ export default class EditorWallModule extends AppModule<State> {
 
   creatorMesh: Mesh;
 
-  hoverObject$ = new Subject<{
-    current: Wall;
-    last: Wall | null;
-    faceIndex: number;
-  }>();
-  selectObject$ = new Subject<{
-    current: Object3D | null;
-    last: Object3D | null;
-    faceIndex: number;
-  }>();
+  observables = {
+    current$: new Subject<{
+      wall: Wall | null;
+      faceIndex: FACE_INDEX;
+    } | null>(),
+    hover$: new Subject<{
+      current: Wall;
+      last: Wall | null;
+      faceIndex: FACE_INDEX;
+    }>(),
+    select$: new Subject<{
+      current: Object3D | null;
+      last: Object3D | null;
+      faceIndex: FACE_INDEX;
+    }>()
+  };
 
   constructor(app: App) {
     super(app);
@@ -60,6 +69,8 @@ export default class EditorWallModule extends AppModule<State> {
   }
 
   override destroy(): void {
+    super.destroy();
+    Object.values(this.observables).forEach(obs => obs.unsubscribe());
     this.stopEditing();
     this.creatorMesh.geometry.dispose();
     (this.creatorMesh.material as MeshBasicMaterial).dispose();
@@ -67,7 +78,7 @@ export default class EditorWallModule extends AppModule<State> {
 
   override setup(): void {
     this.subscription.add(
-      this.app.modules.room.room$
+      this.app.modules.room.observables.room$
         .pipe(
           filter(Boolean),
           switchMap(room => room!.modules.selection.position$),
@@ -79,23 +90,52 @@ export default class EditorWallModule extends AppModule<State> {
     );
 
     this.subscription.add(
-      this.app.renderer.pointerUp$.subscribe(() => {
+      this.app.renderer.observables.pointerUp$.subscribe(() => {
         this.stopDrag();
-        console.log('pointer up', this.state.action);
       })
     );
 
     this.subscription.add(
-      this.selectObject$.pipe(concatMap(this.onSelect.bind(this))).subscribe({
-        next: () => void 0
-      })
+      this.observables.current$
+        .pipe(concatMap(this.onCurrent.bind(this)))
+        .subscribe({
+          next: () => void 0
+        })
     );
 
     this.subscription.add(
-      this.hoverObject$
+      this.observables.select$
+        .pipe(concatMap(this.onSelect.bind(this)))
+        .subscribe({
+          next: () => void 0
+        })
+    );
+
+    this.subscription.add(
+      this.observables.hover$
         .pipe(concatMap(this.onHover.bind(this)))
         .subscribe(void 0)
     );
+  }
+
+  private async onCurrent(
+    options: {
+      wall: Wall | null;
+      faceIndex: FACE_INDEX;
+    } | null
+  ) {
+    if (options) {
+      const { wall, faceIndex } = options;
+
+      if (wall) {
+        this.state.selection = {
+          faceIndex,
+          wall
+        };
+        return;
+      }
+    }
+    this.state.selection = undefined;
   }
 
   private async onSelect({
@@ -103,9 +143,13 @@ export default class EditorWallModule extends AppModule<State> {
     faceIndex
   }: {
     current: Object3D | null;
-    faceIndex: number;
+    faceIndex: FACE_INDEX;
   }) {
     const wall = this.getWallFromObject(current!)!;
+
+    console.log('select', { current, wall, faceIndex });
+
+    this.app.renderer.setSelectedObjects([wall.getMesh()]);
     if (this.state.action.primary === WALL_ACTION.MODE_STYLE && wall) {
       this.lastWall?.resetTmpState();
       this.lastWall = null;
@@ -144,7 +188,7 @@ export default class EditorWallModule extends AppModule<State> {
     faceIndex
   }: {
     current: Wall;
-    faceIndex: number;
+    faceIndex: FACE_INDEX;
   }) {
     if (current) {
       if (this.state.action.primary === WALL_ACTION.MODE_STYLE) {
@@ -164,6 +208,8 @@ export default class EditorWallModule extends AppModule<State> {
             this.lastWall?.restoreTmpState();
             this.lastWall = current;
 
+            this.observables.current$.next({ wall: current, faceIndex });
+
             await current.saveTmpState({
               style: style
             });
@@ -179,7 +225,7 @@ export default class EditorWallModule extends AppModule<State> {
             current.state.type === WALL_TYPE.DEFAULT
               ? WALL_TYPE.DOOR
               : WALL_TYPE.DEFAULT;
-          console.log('set tmp state', type);
+
           this.lastWall?.restoreTmpState();
           this.lastWall = current;
 
@@ -203,12 +249,13 @@ export default class EditorWallModule extends AppModule<State> {
 
           await current.saveTmpState({
             type,
-            windowType: this.state.action.secondary
+            windowType: this.state.action.secondary as WALL_WINDOW_TYPE
           });
         }
         return;
       }
     }
+    this.observables.current$.next(null);
     this.lastWall?.restoreTmpState();
     this.lastWall = null;
   }
@@ -224,7 +271,7 @@ export default class EditorWallModule extends AppModule<State> {
     }
   }
 
-  setAction(action: { primary: WALL_ACTION }) {
+  setAction(action: WallAction) {
     const { primary } = action;
     const lastAction = this.state.action;
 
@@ -280,7 +327,7 @@ export default class EditorWallModule extends AppModule<State> {
       ? getFaceGroupIndex(preparedPositions[0])
       : -1;
 
-    this.hoverObject$.next({
+    this.observables.hover$.next({
       current: wall ?? null,
       last: this.lastWall,
       faceIndex
@@ -300,7 +347,7 @@ export default class EditorWallModule extends AppModule<State> {
     const object = preparedPositions[0]?.object;
     const faceIndex = getFaceGroupIndex(preparedPositions[0]!);
 
-    this.selectObject$.next({
+    this.observables.select$.next({
       current: object ?? null,
       last: this._lastObject,
       faceIndex
@@ -344,6 +391,7 @@ export default class EditorWallModule extends AppModule<State> {
     this.wallDescriptions = [];
     this.dragOptions.moving = false;
     this.changeColor();
+    this.app.renderer.enableControls();
   }
 
   lastPosition?: Vector3;
@@ -503,7 +551,7 @@ function createWallCreatorMesh() {
 
   const mesh = new Mesh(geometry, material);
   mesh.add(subMeshPlane);
-  // mesh.rotation.x = -Math.PI / 2;
+
   mesh.name = MESH_WALL_CREATOR;
   prepareForRaycast(mesh);
   return mesh;

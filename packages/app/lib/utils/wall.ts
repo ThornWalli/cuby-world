@@ -12,6 +12,8 @@ import type AssetLoader from '../classes/AssetLoader';
 import EasyStar from 'easystarjs';
 import Wall from '../classes/Wall';
 
+import wallTextures from './wall/textures';
+
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LOADER } from '../classes/AssetLoader';
 import type { PreparedPosition } from './matrix';
@@ -25,9 +27,11 @@ import {
   WALL_WINDOW_TYPE,
   type WallDescription,
   type WallEdge,
+  type WallGeometryMap,
   type WallOptions,
   type WallRoomDescription
 } from '../types/wall';
+const wallTextureMap = new Map(wallTextures.map(t => [t.id, t]));
 
 function getDefaultDirections() {
   return [
@@ -319,26 +323,6 @@ function setDirectionalCondition(
     defaultDirections.filter(d_ => !d.has(d_))
   );
 }
-export enum WALL_CONNECTION_TYPE {
-  CORNER = 'corner',
-  CROSSING = 'crossing',
-  T_JUNCTION = 't-junction',
-  MISSING = 'missing'
-}
-
-export enum WALL_CONNECTION_DIRECTION {
-  UP = 'up',
-  DOWN = 'down',
-  LEFT = 'left',
-  RIGHT = 'right'
-}
-
-export interface WallConnection {
-  type: WALL_CONNECTION_TYPE;
-  direction?: WALL_CONNECTION_DIRECTION;
-  wall: WallDescription;
-  walls: WallDescription[];
-}
 
 export function findNeighborWallEdges(
   wall: WallDescription,
@@ -600,44 +584,15 @@ export function findNeighborWallEdges(
   }, [] as WallEdge[]);
 }
 
-export function findNeighbors(wall: WallDescription, walls: WallDescription[]) {
-  const neighbors = new Map<WALL_DIRECTION, WallDescription[]>();
-
-  const neighborDirections: [number, number][] = [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-    [1, 1],
-    [-1, 1],
-    [1, -1],
-    [-1, -1]
-  ];
-
-  const direction = wall.direction;
-  neighborDirections.forEach(([dx, dy]) => {
-    const neighborPos = wall.position.clone().add(new Vector2(dx, dy));
-    const neighborWall = walls.find(w => {
-      return w.position.equals(neighborPos);
-    });
-    if (neighborWall) {
-      neighbors.set(direction, neighbors.get(direction) ?? []);
-      neighbors.get(direction)!.push(neighborWall);
-    }
-  });
-
-  return neighbors;
-}
-
 export default function createWalls(
   descriptions: WallDescription[],
   editMode: boolean,
   {
     assetLoader,
-    wallGeometries
+    wallGeometryMap
   }: {
     assetLoader: AssetLoader;
-    wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+    wallGeometryMap: WallGeometryMap;
   }
 ) {
   const walls = descriptions.map(
@@ -657,7 +612,7 @@ export default function createWalls(
   );
 
   const meshes = walls.map(wall => {
-    wall.setup({ assetLoader, wallGeometries });
+    wall.setup({ assetLoader, wallGeometryMap, wallTextureMap });
     return wall;
   });
 
@@ -838,7 +793,6 @@ export function getWallRoomDescriptions(walls: Wall[]) {
 export function loadWallGeometries(assetLoader: AssetLoader, url: string) {
   return assetLoader.add<GLTF>({ loader: LOADER.GLTF, url }).then(gltf => {
     return Object.values(WALL_GEOMETRY).reduce((result, value: string) => {
-      console.log('Lade Wandgeometrie:', value);
       const mesh = gltf.scene.getObjectByName(value) as Mesh;
       if (!mesh) {
         console.warn(`Wandgeometrie "${value}" nicht gefunden`);
@@ -883,17 +837,6 @@ export function getWallGeometry(
   } else {
     return null;
   }
-}
-
-export function cloneWallDescription(
-  description: WallDescription<Vector2>
-): WallDescription<Vector2> {
-  return {
-    type: description.type,
-    direction: description.direction,
-    position: description.position.clone(),
-    style: description.style
-  };
 }
 
 function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
@@ -1009,10 +952,10 @@ export function createWallGeometry(
   windowType: WALL_WINDOW_TYPE = WALL_WINDOW_TYPE.SMALL,
   {
     edges,
-    wallGeometries
+    wallGeometryMap
   }: {
     edges: WallEdge[];
-    wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
+    wallGeometryMap: WallGeometryMap;
   }
 ) {
   const wallOptions = {
@@ -1027,9 +970,9 @@ export function createWallGeometry(
   const geometryKey = getGeometryKey(wallOptions, edges);
 
   const geometry =
-    getWallGeometry(wallGeometries, geometryKey) ||
+    getWallGeometry(wallGeometryMap, geometryKey) ||
     getWallGeometry(
-      wallGeometries,
+      wallGeometryMap,
       getGeometryKey(
         {
           ...wallOptions,
@@ -1042,14 +985,16 @@ export function createWallGeometry(
       )
     );
 
-  if (geometry) {
-    if (direction === WALL_DIRECTION.VERTICAL) {
-      geometry.translate(-0.5, 0, 0);
-    } else {
-      geometry.translate(0, 0, -1);
-      geometry.rotateY(Math.PI / 2);
-      geometry.translate(1, 0, -0.5);
-    }
+  if (!geometry) {
+    throw new Error(`No wall geometry found for key ${geometryKey}`);
+  }
+
+  if (direction === WALL_DIRECTION.VERTICAL) {
+    geometry.translate(-0.5, 0, 0);
+  } else {
+    geometry.translate(0, 0, -1);
+    geometry.rotateY(Math.PI / 2);
+    geometry.translate(1, 0, -0.5);
   }
 
   const key = `${JSON.stringify({
@@ -1061,10 +1006,120 @@ export function createWallGeometry(
   if (_wallGeometryCache[key]) {
     return _wallGeometryCache[key];
   }
+  groupByNormal(geometry, direction);
 
-  _wallGeometryCache[key] = { geometry: geometry!.clone() };
-  return _wallGeometryCache[key];
+  _wallGeometryCache[key] = { geometry: geometry.clone() };
+  return _wallGeometryCache[key]!;
 }
+
+export function createWallMesh(
+  {
+    type,
+    windowType,
+    small,
+    direction,
+    materials
+  }: {
+    type: WALL_TYPE;
+    windowType?: WALL_WINDOW_TYPE;
+    small: boolean;
+    direction: WALL_DIRECTION;
+    materials: MeshPhongMaterial[];
+  },
+  {
+    edges,
+    wallGeometryMap,
+    editMode = false
+  }: {
+    edges: WallEdge[];
+    editMode: boolean;
+    wallGeometryMap: WallGeometryMap;
+  }
+) {
+  const { geometry } = createWallGeometry(
+    direction,
+    type,
+    small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
+    windowType,
+    {
+      edges,
+      wallGeometryMap
+    }
+  );
+
+  let geometry_ = geometry?.clone();
+
+  geometry_ = geometry_ || new BoxGeometry(1, 1, 1);
+
+  const preparedGeometry = geometry_ || new BoxGeometry(1, 1, 1);
+
+  const mesh = new Mesh(preparedGeometry, materials);
+
+  // #region click helper
+  if (editMode) {
+    const { geometry: defaultGeometry } = createWallGeometry(
+      direction,
+      WALL_TYPE.DEFAULT,
+      small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
+      windowType,
+      {
+        edges,
+        wallGeometryMap
+      }
+    );
+    if (!defaultGeometry) {
+      throw new Error('Keine Standard-Wandgeometrie gefunden');
+    }
+    groupByNormal(defaultGeometry, direction);
+    const clickHelper = new Mesh(
+      defaultGeometry,
+      new MeshPhongMaterial({
+        color: 0x000000,
+        depthWrite: false
+      })
+    );
+    clickHelper.material.wireframe = true;
+    clickHelper.name = 'click_helper';
+    clickHelper.visible = false;
+    clickHelper.raycast = Mesh.prototype.raycast;
+    mesh.add(clickHelper);
+  }
+  // #endregion
+
+  mesh.castShadow = true;
+
+  return mesh;
+}
+
+export function getFaceGroupIndex(preparedPosition: PreparedPosition): number {
+  const object = preparedPosition.object!;
+  let groups: BufferGeometry['groups'] = [];
+
+  object.traverse((node: Object3D) => {
+    if (node instanceof Mesh && node.geometry instanceof BufferGeometry) {
+      groups = node.geometry.groups;
+    }
+  });
+
+  if (!(preparedPosition.faceIndex !== null && groups.length > 0)) {
+    return -1;
+  }
+
+  // faceIndex bezieht sich auf ein Dreieck → 3 Indizes pro Face
+  const firstIndex = preparedPosition.faceIndex! * 3;
+
+  // überprüfen, zu welchem Group-Bereich dieses Dreieck gehört
+  for (let i = 0; i < groups.length; i++) {
+    const g = groups[i]!;
+    if (firstIndex >= g.start && firstIndex < g.start + g.count) {
+      return i; // Index der passenden Gruppe
+    }
+  }
+
+  return -1;
+}
+
+// #region geometry groups
 
 export function groupByNormal(
   geometry: BufferGeometry,
@@ -1172,141 +1227,35 @@ export function getGroupBounds(geometry: BufferGeometry, groupIndex: number) {
   return { min, max, size: new Vector3().subVectors(max, min) };
 }
 
-export function getGroupSize(geometry: BufferGeometry, groupIndex: number) {
-  const group = geometry.groups[groupIndex];
-  if (!group) return null;
+// #endregion
 
-  const posAttr = geometry.attributes.position as BufferAttribute;
-  const indexAttr = geometry.index!;
-  const indices = indexAttr.array.slice(group.start, group.start + group.count);
+// -----
 
-  const min = new Vector3(Infinity, Infinity, Infinity);
-  const max = new Vector3(-Infinity, -Infinity, -Infinity);
+// export function findNeighbors(wall: WallDescription, walls: WallDescription[]) {
+//   const neighbors = new Map<WALL_DIRECTION, WallDescription[]>();
 
-  for (let i = 0; i < indices.length; i++) {
-    const idx = indices[i]!;
-    const x = posAttr.getX(idx);
-    const y = posAttr.getY(idx);
-    const z = posAttr.getZ(idx);
+//   const neighborDirections: [number, number][] = [
+//     [1, 0],
+//     [-1, 0],
+//     [0, 1],
+//     [0, -1],
+//     [1, 1],
+//     [-1, 1],
+//     [1, -1],
+//     [-1, -1]
+//   ];
 
-    if (x < min.x) min.x = x;
-    if (y < min.y) min.y = y;
-    if (z < min.z) min.z = z;
+//   const direction = wall.direction;
+//   neighborDirections.forEach(([dx, dy]) => {
+//     const neighborPos = wall.position.clone().add(new Vector2(dx, dy));
+//     const neighborWall = walls.find(w => {
+//       return w.position.equals(neighborPos);
+//     });
+//     if (neighborWall) {
+//       neighbors.set(direction, neighbors.get(direction) ?? []);
+//       neighbors.get(direction)!.push(neighborWall);
+//     }
+//   });
 
-    if (x > max.x) max.x = x;
-    if (y > max.y) max.y = y;
-    if (z > max.z) max.z = z;
-  }
-
-  const size = new Vector3().subVectors(max, min);
-  return { min, max, size };
-}
-
-export function createWallMesh(
-  {
-    type,
-    windowType,
-    small,
-    direction,
-    materials
-  }: {
-    type: WALL_TYPE;
-    windowType?: WALL_WINDOW_TYPE;
-    small: boolean;
-    direction: WALL_DIRECTION;
-    materials: MeshPhongMaterial[];
-  },
-  {
-    edges,
-    wallGeometries,
-    editMode = false
-  }: {
-    edges: WallEdge[];
-    editMode: boolean;
-    wallGeometries: Map<WALL_GEOMETRY, BufferGeometry | null>;
-  }
-) {
-  const { geometry } = createWallGeometry(
-    direction,
-    type,
-    small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
-    windowType,
-    {
-      edges,
-      wallGeometries
-    }
-  );
-
-  let geometry_ = geometry?.clone();
-
-  groupByNormal(geometry_!, direction);
-
-  geometry_ = geometry_ || new BoxGeometry(1, 1, 1);
-
-  const preparedGeometry = geometry_ || new BoxGeometry(1, 1, 1);
-
-  const mesh = new Mesh(preparedGeometry, materials);
-
-  // #region click helper
-  if (editMode) {
-    const { geometry: defaultGeometry } = createWallGeometry(
-      direction,
-      WALL_TYPE.DEFAULT,
-      small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
-      windowType,
-      {
-        edges,
-        wallGeometries
-      }
-    );
-    if (!defaultGeometry) {
-      throw new Error('Keine Standard-Wandgeometrie gefunden');
-    }
-    groupByNormal(defaultGeometry, direction);
-    const clickHelper = new Mesh(
-      defaultGeometry,
-      new MeshPhongMaterial({
-        color: 0x000000,
-        depthWrite: false
-      })
-    );
-    clickHelper.material.wireframe = true;
-    clickHelper.name = 'click_helper';
-    clickHelper.visible = false;
-    clickHelper.raycast = Mesh.prototype.raycast;
-    mesh.add(clickHelper);
-  }
-  // #endregion
-
-  mesh.castShadow = true;
-
-  return mesh;
-}
-
-export function getFaceGroupIndex(preparedPosition: PreparedPosition): number {
-  const object = preparedPosition.object!;
-  let groups: BufferGeometry['groups'] = [];
-
-  object.traverse((node: Object3D) => {
-    if (node instanceof Mesh && node.geometry instanceof BufferGeometry) {
-      groups = node.geometry.groups;
-    }
-  });
-
-  if (!(preparedPosition.faceIndex !== null && groups.length > 0)) {
-    return -1;
-  }
-
-  // faceIndex bezieht sich auf ein Dreieck → 3 Indizes pro Face
-  const firstIndex = preparedPosition.faceIndex! * 3;
-
-  // überprüfen, zu welchem Group-Bereich dieses Dreieck gehört
-  for (let i = 0; i < groups.length; i++) {
-    const g = groups[i]!;
-    if (firstIndex >= g.start && firstIndex < g.start + g.count) {
-      return i; // Index der passenden Gruppe
-    }
-  }
-
-  return -1;
-}
+//   return neighbors;
+// }

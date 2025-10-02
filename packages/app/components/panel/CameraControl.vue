@@ -40,7 +40,7 @@ const unitFocus = computed(() => {
 const focusedUnit = ref(false);
 onMounted(() => {
   subscription.add(
-    unitFocus.value.focusedUnit$.subscribe(unit => {
+    unitFocus.value.observables.focusedUnit$.subscribe(unit => {
       if (unit) {
         focusedUnit.value = true;
       } else {
