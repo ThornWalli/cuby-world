@@ -28,6 +28,7 @@ import image_sky_box_1_pz from './assets/sky_box_1/pz.png';
 import { defaultMaterial } from '../utils/material';
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
+import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 
 export interface LampOptions extends UnitOptions {
   size: number;
@@ -61,7 +62,7 @@ export default class Lamp extends Unit<
     );
   }
 
-  override createMesh({ assetLoader }: SetupContext) {
+  override async createMesh({ assetLoader }: SetupContext) {
     const geometry = new SphereGeometry(0.3, 32, 16);
     // const material = new MeshBasicMaterial({ color: 0xffff00 });
 
@@ -143,7 +144,7 @@ class UnitAnimation extends AnimationUnitModule {
 
     return mesh;
   }
-  override update(_deltaTime: number) {
-    this.mixer?.update(this.clock.getDelta());
+  override update({ delta }: AnimationLoopValue) {
+    this.mixer?.update(delta);
   }
 }

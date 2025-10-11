@@ -30,7 +30,7 @@ export default class Chair extends Unit<ChairOptions> {
     });
   }
 
-  override createMesh({ assetLoader }: SetupContext) {
+  override async createMesh({ assetLoader }: SetupContext) {
     const object = new Object3D();
     assetLoader.add<GLTF>({ loader: LOADER.GLTF, url: glbBase }).then(
       // Callback bei erfolgreichem Laden

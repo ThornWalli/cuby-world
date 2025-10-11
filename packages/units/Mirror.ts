@@ -35,7 +35,7 @@ export default class Mirror extends Unit<MirrorOptions> {
     this.size = new Vector3(1, 0, 1);
   }
 
-  override createMesh(_context: SetupContext) {
+  override async createMesh(_context: SetupContext) {
     const geometry = new PlaneGeometry(0.8, 1);
     const material = new MeshBasicMaterial({ color: 0x777777 });
     const mesh = new Mesh(geometry, material);

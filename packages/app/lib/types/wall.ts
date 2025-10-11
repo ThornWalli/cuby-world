@@ -1,6 +1,7 @@
-import type { BufferGeometry, Vector2 } from 'three';
-import type { WallStyle } from './wall/style';
+import type { BufferGeometry, Vector2, Vector3 } from 'three';
 import type { WallTexture } from '../utils/wall/textures';
+import type { WallExtensionDescription } from '../classes/WallExtension';
+import type { WallSkins } from './wall/skins';
 
 export type WallGeometryMap = Map<WALL_GEOMETRY, BufferGeometry | null>;
 export type WallTextureMap = Map<string, WallTexture>;
@@ -11,7 +12,7 @@ export enum FACE_INDEX {
 }
 
 export enum WALL_GEOMETRY {
-  // #region default
+  //#region default
   DEFAULT_LARGE_N_N = 'default_large_n_n',
   DEFAULT_LARGE_N_L = 'default_large_n_l',
   DEFAULT_LARGE_N_E0 = 'default_large_n_e0',
@@ -28,9 +29,9 @@ export enum WALL_GEOMETRY {
   DEFAILT_LARGE_L_N = 'default_large_l_n',
   DEFAILT_LARGE_L_E0 = 'default_large_l_e0',
   DEFAULT_LARGE_L_E1 = 'default_large_l_e1',
-  // #endregion
+  //#endregion
 
-  // #region default small
+  //#region default small
   DEFAULT_SMALL_N_N = 'default_small_n_n',
   DEFAULT_SMALL_N_L = 'default_small_n_l',
   DEFAULT_SMALL_N_E0 = 'default_small_n_e0',
@@ -47,9 +48,9 @@ export enum WALL_GEOMETRY {
   DEFAILT_SMALL_L_N = 'default_small_l_n',
   DEFAILT_SMALL_L_E0 = 'default_small_l_e0',
   DEFAULT_SMALL_L_E1 = 'default_small_l_e1',
-  // #endregion
+  //#endregion
 
-  // #region door
+  //#region door
 
   DOOR_LARGE_N_N = 'door_large_n_n',
   DOOR_LARGE_N_L = 'door_large_n_l',
@@ -67,9 +68,9 @@ export enum WALL_GEOMETRY {
   DOOR_LARGE_L_N = 'door_large_l_n',
   DOOR_LARGE_L_E0 = 'door_large_l_e0',
   DOOR_LARGE_L_E1 = 'door_large_l_e1',
-  // #endregion
+  //#endregion
 
-  // #region door small
+  //#region door small
 
   DOOR_SMALL_N_N = 'door_small_n_n',
   DOOR_SMALL_N_L = 'door_small_n_l',
@@ -88,9 +89,9 @@ export enum WALL_GEOMETRY {
   DOOR_SMALL_L_E0 = 'door_small_l_e0',
   DOOR_SMALL_L_E1 = 'door_small_l_e1',
 
-  // #endregion
+  //#endregion
 
-  // #region window small
+  //#region window small
 
   WINDOW_LARGE_SMALL_N_N = 'window_large_small_n_n',
   WINDOW_LARGE_SMALL_N_L = 'window_large_small_n_l',
@@ -109,9 +110,9 @@ export enum WALL_GEOMETRY {
   WINDOW_LARGE_SMALL_L_E0 = 'window_large_small_l_e0',
   WINDOW_LARGE_SMALL_L_E1 = 'window_large_small_l_e1',
 
-  // #endregion
+  //#endregion
 
-  // #region window medium
+  //#region window medium
 
   WINDOW_LARGE_MEDIUM_N_N = 'window_large_medium_n_n',
   WINDOW_LARGE_MEDIUM_N_L = 'window_large_medium_n_l',
@@ -130,9 +131,9 @@ export enum WALL_GEOMETRY {
   WINDOW_LARGE_MEDIUM_L_E0 = 'window_large_medium_l_e0',
   WINDOW_LARGE_MEDIUM_L_E1 = 'window_large_medium_l_e1',
 
-  // #endregion
+  //#endregion
 
-  // #region window large
+  //#region window large
 
   WINDOW_LARGE_LARGE_N_N = 'window_large_large_n_n',
   WINDOW_LARGE_LARGE_N_L = 'window_large_large_n_l',
@@ -151,7 +152,7 @@ export enum WALL_GEOMETRY {
   WINDOW_LARGE_LARGE_L_E0 = 'window_large_large_l_e0',
   WINDOW_LARGE_LARGE_L_E1 = 'window_large_large_l_e1'
 
-  // #endregion
+  //#endregion
 }
 
 export enum WALL_EDGE_TYPE {
@@ -178,7 +179,7 @@ export enum WALL_SIZE {
   SMALL = 'small',
   LARGE = 'large'
 }
-export enum WALL_WINDOW_TYPE {
+export enum WALL_WINDOW_SIZE {
   SMALL = 'small',
   MEDIUM = 'medium',
   LARGE = 'large'
@@ -191,20 +192,15 @@ export enum WALL_GEOMETRY_TYPE {
   EDGE_RIGHT = 'e1'
 }
 
-export interface WallDescription<Position = Vector2> {
-  type: WALL_TYPE;
+export interface WallDescription<
+  Position = Vector3,
+  Extension = WallExtensionDescription
+> {
+  type?: WALL_TYPE;
   direction: WALL_DIRECTION;
   position: Position;
-  style: [WallStyle | null, WallStyle | null];
-
-  /**
-   * @deprecated
-   */
-  startPosition?: Position;
-  /**
-   * @deprecated
-   */
-  endPosition?: Position;
+  skins: WallSkins;
+  extensions: Extension[];
 }
 
 export interface WallEdge {
@@ -212,7 +208,7 @@ export interface WallEdge {
   // position: Vector2;
   // direction: WALL_DIRECTION;
   type: WALL_TYPE;
-  offset: Vector2;
+  offset: Vector3;
   edgeType: WALL_EDGE_TYPE;
 }
 
@@ -227,7 +223,7 @@ export interface WallOptions {
   type: WALL_TYPE;
   direction: WALL_DIRECTION;
   size: WALL_SIZE;
-  windowType?: WALL_WINDOW_TYPE;
+  windowSize?: WALL_WINDOW_SIZE;
   left: WALL_GEOMETRY_TYPE;
   right: WALL_GEOMETRY_TYPE;
 }

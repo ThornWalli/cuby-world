@@ -1,3 +1,4 @@
+import type { Observable } from 'rxjs';
 import {
   concatMap,
   filter,
@@ -8,7 +9,10 @@ import {
   toArray
 } from 'rxjs';
 import type App from '../App';
-import AppModule, { type AppModuleState } from '../AppModule';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
 import Room from '../Room';
 import Cuby from '@cuby-world/units/cuby/Cuby';
 import {
@@ -23,10 +27,14 @@ import type Player from '../Player';
 import allUnits from '@cuby-world/units';
 import type { RoomDescription } from '../RoomDescription';
 
+interface Observables extends AppModuleObservables {
+  room$: Observable<Room | undefined>;
+}
+
 interface State extends AppModuleState {
   room?: Room;
 }
-export default class RoomAppModule extends AppModule<State> {
+export default class RoomAppModule extends AppModule<State, Observables> {
   static override TYPE = 'room';
 
   roomSubscription: Subscription | undefined;
@@ -36,9 +44,13 @@ export default class RoomAppModule extends AppModule<State> {
   };
 
   private roomSubject = new ReplaySubject<Room | undefined>(0);
-  observables = {
-    room$: this.roomSubject.pipe()
-  };
+
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.room$ = this.roomSubject.pipe();
+    //#endregion
+  }
 
   override destroy(): void {
     super.destroy();
@@ -58,7 +70,7 @@ export default class RoomAppModule extends AppModule<State> {
       })
     );
 
-    // #region units
+    //#region units
     const unitClasses = allUnits.reduce(
       (result, unitClass) => {
         result[unitClass.KEY] = unitClass as (typeof allUnits)[0];
@@ -68,16 +80,22 @@ export default class RoomAppModule extends AppModule<State> {
     );
 
     const units = roomDescription.units.map(
-      ({ unit: key, options: { position, rotation, options } }) => {
-        const unit = new unitClasses[key]!({
+      ({
+        unit: key,
+        options: { position, rotation, options, moduleStates }
+      }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const Class = unitClasses[key]! as any;
+        const unit = new Class({
           position,
           rotation,
-          options
+          options,
+          moduleStates
         });
         return unit;
       }
     );
-    // #endregion
+    //#endregion
 
     await room.modules.units.setupUnits(units);
     room.mesh.name = roomDescription.info.name;
@@ -150,28 +168,28 @@ export default class RoomAppModule extends AppModule<State> {
     this.subscription.add(
       renderer.observables.animationLoop$
         .pipe(throttleTime(250))
-        .subscribe(tim => {
-          room.updateThrottle(tim);
+        .subscribe(v => {
+          room.updateThrottle(v);
         })
     );
     this.subscription.add(
       renderer.observables.animationLoop$
         .pipe(throttleTime(500))
-        .subscribe(tim => {
-          room.updateThrottle500ms(tim);
+        .subscribe(v => {
+          room.updateThrottle500ms(v);
         })
     );
     this.subscription.add(
       renderer.observables.animationLoop$
         .pipe(throttleTime(1000))
-        .subscribe(tim => {
-          room.updateThrottle1Sec(tim);
+        .subscribe(v => {
+          room.updateThrottle1Sec(v);
         })
     );
 
     this.subscription.add(
-      renderer.observables.animationLoop$.subscribe(time => {
-        room.update(time);
+      renderer.observables.animationLoop$.subscribe(v => {
+        room.update(v);
         if (unitFocusModule?.focusedUnit) {
           const position = unitFocusModule.focusedUnit.getScenePosition();
           renderer.updateCamera(position);
@@ -277,7 +295,7 @@ export default class RoomAppModule extends AppModule<State> {
 
     this.subscribePlacement();
 
-    // #region intersection
+    //#region intersection
 
     if (renderer.modules.intersection) {
       // subscription.add(this.subscribeGroundSelection());
@@ -308,7 +326,7 @@ export default class RoomAppModule extends AppModule<State> {
       );
     }
 
-    // #endregion
+    //#endregion
     return subscription;
   }
 

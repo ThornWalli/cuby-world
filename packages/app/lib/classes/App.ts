@@ -52,9 +52,9 @@ export class BaseApp<
 
   state: AppState = {};
 
-  // #region room
+  //#region room
   roomSubscription?: Subscription;
-  // #endregion
+  //#endregion
 
   modules: Modules = {} as Modules;
   moduleList: ModuleList;
@@ -80,13 +80,13 @@ export class BaseApp<
   async setup() {
     if (this.ready) return;
 
-    // #region Modules
+    //#region Modules
     const preparedModules = this.moduleList.map(ModuleClass => {
       const moduleInstance = new ModuleClass(this);
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
-    // #endregion
+    //#endregion
 
     await Promise.all(
       Object.values(this.modules).map(module => module.setup())

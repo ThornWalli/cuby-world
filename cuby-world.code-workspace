@@ -75,7 +75,8 @@
       "@cuby-world/app": "${workspaceRoot}/packages/app",
       "@cuby-world/frontend": "${workspaceRoot}/packages/frontend",
       "@cuby-world/room-editor": "${workspaceRoot}/packages/room-editor",
-      "@cuby-world/units": "${workspaceRoot}/packages/units"
+      "@cuby-world/units": "${workspaceRoot}/packages/units",
+      "@cuby-world/wall-extensions": "${workspaceRoot}/packages/wall-extensions"
     },
     "window.title": "${dirty} ${activeEditorMedium}${separator}${rootName}",
     "workbench.settings.enableNaturalLanguageSearch": false

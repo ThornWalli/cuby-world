@@ -1,37 +1,54 @@
 <template>
   <div class="cw-editor-wall-control">
-    <teleport to="#teleports-panel-bottom">
+    <teleport to="#teleports-panel-right">
       <cw-panel-editor-wall-actions v-model="currentAction" />
     </teleport>
-    <teleport to="#teleports-panel-bottom-right">
-      <cw-panel-editor-wall-style
+    <teleport to="#teleports-panel-bottom">
+      <cw-panel-editor-door-skin
+        v-if="currentAction.primary === WALL_ACTION.MODE_DOOR"
+        v-model="extension"
+        :app="app"
+        :action="currentAction" />
+      <cw-panel-editor-window-skin
+        v-if="currentAction.primary === WALL_ACTION.MODE_WINDOW"
+        v-model="extension"
+        :app="app"
+        :action="currentAction" />
+      <cw-panel-editor-wall-skin
         v-if="currentAction.primary === WALL_ACTION.MODE_STYLE"
-        v-model="style"
+        v-model="skin"
+        :app="app"
         :action="currentAction" />
     </teleport>
   </div>
 </template>
 
 <script lang="ts" setup>
+import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { Subscription } from 'rxjs';
 import CwPanelEditorWallActions, {
   type WallAction
 } from './panel/WallActions.vue';
-import CwPanelEditorWallStyle from './panel/WallStyle.vue';
+import CwPanelEditorWallSkin from './panel/WallSkin.vue';
+import CwPanelEditorDoorSkin from './panel/DoorSelect.vue';
+import CwPanelEditorWindowSkin from './panel/WindowSelect.vue';
 
-import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
-import { onMounted, onUnmounted, ref, watch } from 'vue';
-import type { EditorApp } from '@cuby-world/app/lib/classes/App';
-import type { WallStyleTemplate } from '@cuby-world/app/lib/types/wall/style';
-import { Subscription } from 'rxjs';
-import type Wall from '@cuby-world/app/lib/classes/Wall';
-import type { FACE_INDEX } from '@cuby-world/app/lib/types/wall';
-import { CURSOR_TYPE } from '@cuby-world/app/lib/classes/appModule/Cursor';
+import { WALL_ACTION } from '../../lib/types/editor';
+import type { EditorApp } from '../../lib/classes/App';
+import type Wall from '../../lib/classes/Wall';
+import type { FACE_INDEX } from '../../lib/types/wall';
+import {
+  catalog,
+  type WallExtensionIdentifier
+} from '@cuby-world/wall-extensions';
+import { CURSOR_TYPE } from '../../lib/classes/appModule/Cursor';
+import type { CatalogItemIdentifier } from '@cuby-world/app/lib/utils/catalog';
 
-const style = ref<WallStyleTemplate>({
-  id: 'color_blue',
-  color: '#0066ff',
-  name: 'Blue'
-});
+import skins from '@cuby-world/app/lib/utils/wall/skins';
+import type { WallSkinIdentifier } from '@cuby-world/app/lib/types/wall/skins';
+
+const extension = ref<WallExtensionIdentifier>('');
+const skin = ref<WallSkinIdentifier>('');
 
 const $props = defineProps<{
   app: EditorApp;
@@ -49,7 +66,7 @@ const current = ref<{
 } | null>();
 onMounted(() => {
   currentAction.value = {
-    primary: WALL_ACTION.ADD
+    primary: WALL_ACTION.MODE_DOOR
   };
 
   subscription.add(
@@ -68,7 +85,8 @@ onUnmounted(() => {
 });
 
 watch(() => currentAction.value, onChangeAction);
-watch(() => style.value, onChangeStyle);
+watch(() => extension.value, onChangeExtension);
+watch(() => skin.value, onChangeStyle);
 
 function onChangeAction(action: WallAction) {
   const app = $props.app;
@@ -76,15 +94,25 @@ function onChangeAction(action: WallAction) {
   app.modules.editorWall.setAction(action);
 }
 
-function onChangeStyle(style: WallStyleTemplate) {
-  $props.app.modules.editorWall.setStyle(style);
+function onChangeExtension(extensionId: CatalogItemIdentifier) {
+  const item = catalog.get(extensionId);
+  if (item) {
+    $props.app.modules.editorWall.setExtension(item);
+  }
 }
 
-// #region Actions
+function onChangeStyle(styleId: WallSkinIdentifier) {
+  const item = skins.get(styleId);
+  if (item) {
+    $props.app.modules.editorWall.setStyle(item);
+  }
+}
+
+//#region Actions
 
 function resetAction() {
   $props.app.modules.editorWall.setAction({ primary: WALL_ACTION.NONE });
 }
 
-// #endregion
+//#endregion
 </script>

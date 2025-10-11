@@ -21,7 +21,7 @@ const $props = defineProps<{
 }>();
 
 async function onClickExport() {
-  await exportRoom($props.app.modules.room.getRoom()!.toRoomDescription());
+  await exportRoom($props.app.modules.room.getRoom()!.toDescription());
 }
 
 async function onFile(file?: File) {

@@ -1,14 +1,19 @@
-import { Object3D, Vector2 } from 'three';
+import type { Vector2 } from 'three';
+import { Object3D } from 'three';
 import type App from './App';
-import RoomGrid from './RoomGrid';
 import WallModule from './roomModule/Wall';
 import GroundModule from './roomModule/Ground';
 import SelectionMode from './roomModule/Selection';
 import UnitsModule from './roomModule/Units';
 import type { RoomDescription } from './RoomDescription';
+import type { AnimationLoopValue } from './Renderer';
+import RoofModule from './roomModule/Roof';
+import FloorModule from './roomModule/Floor';
 
 type RoomModuleList = (
   | typeof WallModule
+  | typeof RoofModule
+  | typeof FloorModule
   | typeof GroundModule
   | typeof SelectionMode
   | typeof UnitsModule
@@ -16,6 +21,8 @@ type RoomModuleList = (
 
 interface RoomModules {
   wall: WallModule;
+  roof: RoofModule;
+  floor: FloorModule;
   ground: GroundModule;
   selection: SelectionMode;
   units: UnitsModule;
@@ -25,13 +32,13 @@ interface RoomModules {
 interface RoomState {}
 
 export default class Room<Modules extends RoomModules = RoomModules> {
-  debug = true;
+  debug = false;
 
   state: RoomState = {};
   modules: Modules = {} as Modules;
   mesh = new Object3D();
   description: RoomDescription;
-  grid: RoomGrid;
+  gridSize: Vector2;
 
   constructor(
     public app: App,
@@ -39,7 +46,7 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     protected moduleList: RoomModuleList = []
   ) {
     this.description = description;
-    this.grid = new RoomGrid(description.grid);
+    this.gridSize = description.gridSize.clone();
     this.mesh = new Object3D();
     this.mesh.name = 'room';
   }
@@ -48,26 +55,22 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     const moduleList = this.moduleList;
     moduleList.push(SelectionMode);
     moduleList.push(WallModule);
+    moduleList.push(RoofModule);
+    moduleList.push(FloorModule);
     moduleList.push(GroundModule);
     moduleList.push(UnitsModule);
 
-    // #region editor
+    //#region editor
 
-    // await Promise.all(
-    //   [import('./roomModule/editor/Wall').then(m => m.default)].map(module => {
-    //     moduleList.push(module);
-    //   })
-    // );
+    //#endregion
 
-    // #endregion
-
-    // #region Modules
+    //#region Modules
     const preparedModules = moduleList.map(ModuleClass => {
       const moduleInstance = new ModuleClass(this, this.debug);
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
-    // #endregion
+    //#endregion
   }
 
   destroy() {
@@ -77,35 +80,31 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     this.app.renderer.scene.remove(this.mesh);
   }
 
-  get gridSize() {
-    return new Vector2(this.grid.width, this.grid.height);
-  }
-
-  update(time: number) {
+  update(value: AnimationLoopValue) {
     Object.values(this.modules).forEach(module => {
-      module.update(time);
+      module.update(value);
     });
   }
 
-  updateThrottle(time: number) {
+  updateThrottle(value: AnimationLoopValue) {
     Object.values(this.modules).forEach(module => {
-      module.updateThrottle(time, { camera: this.app.renderer.camera });
+      module.updateThrottle(value, { camera: this.app.renderer.camera });
     });
   }
 
-  updateThrottle500ms(time: number) {
+  updateThrottle500ms(value: AnimationLoopValue) {
     Object.values(this.modules).forEach(module => {
-      module.updateThrottle500ms(time, { camera: this.app.renderer.camera });
+      module.updateThrottle500ms(value, { camera: this.app.renderer.camera });
     });
   }
 
-  updateThrottle1Sec(time: number) {
+  updateThrottle1Sec(value: AnimationLoopValue) {
     Object.values(this.modules).forEach(module => {
-      module.updateThrottle1Sec(time, { camera: this.app.renderer.camera });
+      module.updateThrottle1Sec(value, { camera: this.app.renderer.camera });
     });
   }
 
-  toRoomDescription(): RoomDescription {
+  toDescription(): RoomDescription {
     const description = this.description!;
     const start = description.start!;
 
@@ -115,7 +114,7 @@ export default class Room<Modules extends RoomModules = RoomModules> {
         name: this.description?.info.name ?? '',
         description: this.description?.info.description ?? ''
       },
-      grid: this.grid.toJSON(),
+      gridSize: this.gridSize,
       start,
       walls: this.modules.wall.getWalls().map(wall => wall.toJSON()),
       units: this.modules.units

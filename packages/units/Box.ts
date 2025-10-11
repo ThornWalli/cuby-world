@@ -27,7 +27,7 @@ export default class Box extends Unit<BoxOptions> {
     });
   }
 
-  override createMesh() {
+  override async createMesh() {
     const material = new MeshPhongMaterial({ color: 0xff0000 });
 
     const size = this.size;

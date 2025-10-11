@@ -15,11 +15,13 @@ import {
   Raycaster,
   Vector3
 } from 'three';
-import RoomModule, { type RoomModuleState } from '../RoomModule';
+import RoomModule, {
+  type RoomModuleObservables,
+  type RoomModuleState
+} from '../RoomModule';
 import type Wall from '../Wall';
 
 import createWalls, {
-  getWallKey,
   getWallRoomDescriptions,
   loadWallGeometries
 } from '../../utils/wall';
@@ -44,13 +46,14 @@ import type {
   WallGeometryMap,
   WallRoomDescription
 } from '../../types/wall';
+import { ArrayKeyMap } from '../ArrayKeyMap';
 
 interface WallRoomTile {
   mesh: Mesh;
   position: Vector2;
 }
 
-class WallRoom implements Omit<WallRoomDescription, 'tiles'> {
+export class WallRoom implements Omit<WallRoomDescription, 'tiles'> {
   debug: boolean = false;
   id: string;
   tiles: WallRoomTile[];
@@ -155,7 +158,7 @@ interface State extends RoomModuleState {
   viewMode: WALL_VIEW_MODE;
   currentWallRoom?: WallRoomDescription;
   walls: Wall[];
-  wallMap: Map<string, Wall>;
+  wallMap: ArrayKeyMap<[number, number, WALL_DIRECTION], Wall>;
   targets: Mesh[];
   wallRoomTargets: Mesh[];
   activeWallRooms: Map<string, WallRoom>;
@@ -164,24 +167,67 @@ interface State extends RoomModuleState {
   trackingUnits: Set<Unit>;
   baseWallGeometryMap: WallGeometryMap;
 }
-export default class WallModule extends RoomModule<State> {
+
+interface WallModuleObservables extends RoomModuleObservables {
+  viewMode$: ReplaySubject<WALL_VIEW_MODE>;
+  currentWallRoom$: ReplaySubject<WallRoomDescription>;
+  wallRooms$: ReplaySubject<Set<WallRoom>>;
+  activeWallRooms$: ReplaySubject<Map<string, WallRoom>>;
+}
+
+interface WallState {
+  direction: Vector3;
+  targetBox: Box3;
+  raycaster: Raycaster;
+  matrix: Matrix4;
+  frustum: Frustum;
+  wallsToHide: Set<Wall>;
+}
+
+export default class WallModule extends RoomModule<
+  State,
+  WallModuleObservables
+> {
   static override TYPE = 'wall';
 
   state: State = {
     viewMode: WALL_VIEW_MODE.DYNAMIC,
     walls: [],
-    wallMap: new Map(),
+    wallMap: new ArrayKeyMap(),
     targets: [],
     wallRoomTargets: [],
-    activeWallRooms: new Map(),
+    activeWallRooms: new Map<string, WallRoom>(),
     wallRooms: new Set(),
     wallRoomTiles: new Map(),
     trackingUnits: new Set<Unit>(),
     baseWallGeometryMap: new Map()
   };
 
-  viewMode$ = new ReplaySubject<WALL_VIEW_MODE>(0);
-  currentWallRoom$ = new ReplaySubject<WallRoomDescription>(0);
+  wallState: WallState = {
+    targetBox: new Box3(),
+    direction: new Vector3(),
+    raycaster: new Raycaster(),
+    wallsToHide: new Set(),
+    matrix: new Matrix4(),
+    frustum: new Frustum()
+  };
+
+  private lastViewMode?: WALL_VIEW_MODE;
+
+  constructor(room: Room, debug: boolean = false) {
+    super(room, debug);
+    this.observables.viewMode$ = new ReplaySubject<WALL_VIEW_MODE>(0);
+    this.observables.viewMode$.next(this.state.viewMode);
+    this.observables.currentWallRoom$ = new ReplaySubject<WallRoomDescription>(
+      0
+    );
+    this.observables.wallRooms$ = new ReplaySubject<Set<WallRoom>>(0);
+    this.observables.activeWallRooms$ = new ReplaySubject<
+      Map<string, WallRoom>
+    >(0);
+  }
+
+  //#region tracking
 
   addUnitForTracking(unit: Unit) {
     this.state.trackingUnits.add(unit);
@@ -189,6 +235,10 @@ export default class WallModule extends RoomModule<State> {
   removeUnitForTracking(unit: Unit) {
     this.state.trackingUnits.delete(unit);
   }
+
+  //#endregion
+
+  //#region targets
 
   addTarget(mesh: Mesh | Object3D) {
     const raycasterMesh = mesh.getObjectByName(OBJECT_NAME.RAYCASTER) ?? mesh;
@@ -209,18 +259,18 @@ export default class WallModule extends RoomModule<State> {
     }
   }
 
+  //#endregion
+
   selectionPosition: Vector3 = new Vector3();
   override async setup(): Promise<void> {
     const description = this.room.description;
     if (!description) {
       throw new Error('Room description is not set');
     }
-    this.state.baseWallGeometryMap = await loadWallGeometries(
-      this.room.app.assetLoader,
-      MeshWall
-    );
 
-    this.addedWalls(description.walls);
+    this.state.baseWallGeometryMap = await loadWallGeometries(MeshWall);
+
+    await this.addedWalls(description.walls);
 
     this.subscription.add(
       this.room.app.modules.player.observables.currentPlayer$
@@ -239,7 +289,7 @@ export default class WallModule extends RoomModule<State> {
     );
 
     this.subscription.add(
-      this.room.modules.selection.position$
+      this.room.modules.selection.observables.position$
         .pipe(debounceTime(500))
         .subscribe(position => {
           this.selectionPosition = position;
@@ -248,20 +298,22 @@ export default class WallModule extends RoomModule<State> {
     );
 
     this.subscription.add(
-      this.room.modules.selection.selectionVisible$.subscribe(visible => {
-        const selectionObject =
-          this.room.modules.selection.state.selectionMesh?.getObjectByName(
-            OBJECT_NAME.RAYCASTER
-          ) as Mesh;
-        if (!selectionObject) {
-          return;
+      this.room.modules.selection.observables.selectionVisible$.subscribe(
+        visible => {
+          const selectionObject =
+            this.room.modules.selection.state.selectionMesh?.getObjectByName(
+              OBJECT_NAME.RAYCASTER
+            ) as Mesh;
+          if (!selectionObject) {
+            return;
+          }
+          if (visible) {
+            this.addTarget(selectionObject);
+          } else {
+            this.removeTarget(selectionObject);
+          }
         }
-        if (visible) {
-          this.addTarget(selectionObject);
-        } else {
-          this.removeTarget(selectionObject);
-        }
-      })
+      )
     );
 
     this.subscription.add(
@@ -284,6 +336,8 @@ export default class WallModule extends RoomModule<State> {
       });
   }
 
+  //#region viewMode
+
   getViewMode() {
     return this.state.viewMode;
   }
@@ -293,15 +347,19 @@ export default class WallModule extends RoomModule<State> {
     this.state.viewMode =
       modes[(modes.indexOf(this.state.viewMode) + 1) % modes.length]!;
     this.updateVisibility(this.room.app.renderer.camera);
-    this.viewMode$.next(this.state.viewMode);
+    this.observables.viewMode$.next(this.state.viewMode);
   }
+
+  //#endregion
+
+  //#region walls
 
   getWalls() {
     return this.state.walls.map(wall => wall);
   }
 
-  getWallByPosition(position: Vector2, direction?: WALL_DIRECTION) {
-    return this.state.walls.find(
+  getWallsByPosition(position: Vector2, direction?: WALL_DIRECTION) {
+    return this.state.walls.filter(
       wall =>
         wall.position.x === position.x &&
         wall.position.z === position.y &&
@@ -309,21 +367,21 @@ export default class WallModule extends RoomModule<State> {
     );
   }
 
-  addedWalls(wallDescriptions: WallDescription[]) {
+  async addedWalls(wallDescriptions: WallDescription[]) {
     wallDescriptions = wallDescriptions.filter(
       ({ position, direction }) =>
-        !this.state.wallMap.has(getWallKey(position.x, position.y, direction))
+        !this.state.wallMap.has([position.x, position.y, direction])
     );
 
     if (wallDescriptions.length === 0) {
       return [];
     }
 
-    const walls = createWalls(
+    const walls = await createWalls(
       wallDescriptions,
       this.room.app.config.mode === APP_MODE.EDITOR,
       {
-        assetLoader: this.room.app.assetLoader,
+        animationLoop$: this.room.app.renderer.observables.animationLoop$,
         wallGeometryMap: this.state.baseWallGeometryMap!
       }
     );
@@ -331,7 +389,7 @@ export default class WallModule extends RoomModule<State> {
     walls.forEach(wall => {
       this.state.walls.push(wall);
       this.state.wallMap.set(
-        getWallKey(wall.position.x, wall.position.z, wall.direction),
+        [wall.position.x, wall.position.z, wall.direction],
         wall
       );
     });
@@ -340,13 +398,13 @@ export default class WallModule extends RoomModule<State> {
       this.room.mesh.add(wall.root!);
     });
 
-    this.createWallRooms(this.state.walls);
+    this.refreshWallRooms(this.state.walls);
 
-    const descriptions = this.state.walls.map(wall => wall.description);
+    const descriptions = this.state.walls.map(wall => wall.toDescription());
 
     this.state.walls.forEach(wall => {
       wall.update(descriptions);
-      wall.refreshObjects();
+      wall.refreshWallMeshes();
     });
 
     this.updateVisibility(this.room.app.renderer.camera);
@@ -370,80 +428,32 @@ export default class WallModule extends RoomModule<State> {
   removeWalls(walls: Wall[]) {
     walls = walls || this.state.walls;
 
-    // this.state.wallRooms.forEach(room => room.destroy());
-    // this.state.wallRooms = [];
-    // this.state.wallRoomTiles = new Map();
-
     walls.forEach(wall => {
       wall.destroy();
     });
     this.state.walls = this.state.walls.filter(w => !walls.includes(w));
     walls.forEach(wall => {
-      this.state.wallMap.delete(
-        getWallKey(wall.position.x, wall.position.z, wall.direction)
-      );
+      this.state.wallMap.delete([
+        wall.position.x,
+        wall.position.z,
+        wall.direction
+      ]);
     });
 
-    this.createWallRooms();
-    const descriptions = this.state.walls.map(wall => wall.description);
+    this.refreshWallRooms();
+    const descriptions = this.state.walls.map(wall => wall.toDescription());
     this.state.walls.forEach(wall => {
       wall.update(descriptions);
-      wall.refreshObjects();
+      wall.refreshWallMeshes();
     });
 
     this.updateVisibility(this.room.app.renderer.camera);
   }
 
-  createWallRooms(walls: Wall[] = this.state.walls) {
-    if (this.state.wallRooms.size) {
-      // Remove existing wall rooms
-      this.state.wallRooms.forEach(room => room.destroy());
-      this.state.wallRooms.clear();
-      this.state.wallRoomTiles.clear();
-    }
-
-    const roomsDescriptions = getWallRoomDescriptions(walls);
-    const rooms = roomsDescriptions.map(
-      desc => new WallRoom({ ...desc, debug: this.debug })
-    );
-
-    rooms.forEach(room => {
-      room.tiles.forEach(tile => {
-        this.room.mesh.add(tile.mesh);
-      });
-    });
-
-    rooms.forEach(room => {
-      this.state.wallRooms.add(room);
-    });
-
-    this.state.wallRoomTiles = rooms.reduce((result, room) => {
-      room.tiles.forEach(tile => {
-        result.set(tile.position.toArray().toString(), room);
-      });
-      return result;
-    }, new Map<string, WallRoom>());
-  }
-
-  wallState: {
-    direction: Vector3;
-    targetBox: Box3;
-    raycaster: Raycaster;
-    matrix: Matrix4;
-    frustum: Frustum;
-    wallsToHide: Set<Wall>;
-  } = {
-    targetBox: new Box3(),
-    direction: new Vector3(),
-    raycaster: new Raycaster(),
-    wallsToHide: new Set(),
-    matrix: new Matrix4(),
-    frustum: new Frustum()
-  };
-
-  private lastViewMode?: WALL_VIEW_MODE;
+  //#endregion
 
   updateVisibility(camera: Camera) {
+    console.log('Update wall visibility', this.state.viewMode);
     if (this.lastViewMode !== this.state.viewMode) {
       this.state.walls.forEach(wall => wall.show());
     }
@@ -506,10 +516,15 @@ export default class WallModule extends RoomModule<State> {
 
         const intersects = raycaster.intersectObjects(visibleWalls);
         // console.log(intersects);
+
         if (intersects.length > 0) {
           const distanceToCorner = camera.position.distanceTo(corner);
           if (intersects[0] && intersects[0].distance < distanceToCorner) {
-            wallsToHide.add(intersects[0].object.parent!.userData.wall);
+            const wall = getWallFromParent(intersects[0].object);
+            if (!wall) {
+              throw new Error('Wall not found in object parent chain');
+            }
+            wallsToHide.add(wall);
           }
         }
 
@@ -528,15 +543,11 @@ export default class WallModule extends RoomModule<State> {
       wall.hide();
     });
   }
+  //#region wallRooms
 
-  // override updateThrottle500ms(
-  //   _time: number,
-  //   options: { camera: Camera }
-  // ): void {
-  //   if (options.camera) {
-  //     // this.updateVisibility(options.camera);
-  //   }
-  // }
+  getWallRooms() {
+    return this.state.wallRooms;
+  }
 
   updateActiveWallRooms() {
     const activeWallRooms = new Set<WallRoom>();
@@ -580,9 +591,45 @@ export default class WallModule extends RoomModule<State> {
 
         this.state.wallRoomTargets.push(...wallRoom.meshes);
       });
+
+      this.observables.activeWallRooms$.next(this.state.activeWallRooms);
     }
     return true;
   }
+
+  refreshWallRooms(walls: Wall[] = this.state.walls) {
+    if (this.state.wallRooms.size) {
+      // Remove existing wall rooms
+      this.state.wallRooms.forEach(room => room.destroy());
+      this.state.wallRooms.clear();
+      this.state.wallRoomTiles.clear();
+    }
+
+    const roomsDescriptions = getWallRoomDescriptions(walls);
+    const rooms = roomsDescriptions.map(
+      desc => new WallRoom({ ...desc, debug: this.debug })
+    );
+
+    rooms.forEach(room => {
+      room.tiles.forEach(tile => {
+        this.room.mesh.add(tile.mesh);
+      });
+    });
+
+    rooms.forEach(room => {
+      this.state.wallRooms.add(room);
+    });
+    this.observables.wallRooms$.next(this.state.wallRooms);
+
+    this.state.wallRoomTiles = rooms.reduce((result, room) => {
+      room.tiles.forEach(tile => {
+        result.set(tile.position.toArray().toString(), room);
+      });
+      return result;
+    }, new Map<string, WallRoom>());
+  }
+
+  //#endregion
 }
 
 function createRayLine(
@@ -617,4 +664,14 @@ function createDebugRayLines(
     line.geometry.dispose();
     (line.material as Material).dispose();
   }, 1000);
+}
+
+function getWallFromParent(object: Object3D | null): Wall | null {
+  if (!object) {
+    return null;
+  }
+  if (object.userData.wall) {
+    return object.userData.wall;
+  }
+  return getWallFromParent(object.parent);
 }

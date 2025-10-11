@@ -61,7 +61,7 @@ export default class Geometry extends Unit<GeometryOptions> {
       }
     });
   }
-  override createMesh() {
+  override async createMesh() {
     // const material = new MeshPhysicalMaterial({
     //   color: 0xffd700,
     //   metalness: 1.0,

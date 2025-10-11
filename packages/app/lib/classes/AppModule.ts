@@ -1,19 +1,27 @@
 import type App from './App';
-import { Subscription } from 'rxjs';
+import { Subscription, type SubscriptionLike } from 'rxjs';
 import type Player from './Player';
 import type { PreparedPosition } from '../utils/matrix';
+
+export type AppModuleObservables = {
+  [key: string]: SubscriptionLike | unknown;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AppModuleState {}
 
 export default abstract class AppModule<
-  State extends AppModuleState = AppModuleState
+  State extends AppModuleState = AppModuleState,
+  Observables extends AppModuleObservables = AppModuleObservables
 > {
   static TYPE: string;
 
   abstract state: State;
 
   subscription = new Subscription();
+
+  observables: Observables = {} as Observables;
+
   constructor(public app: App) {}
   setup() {
     // This method can be overridden by subclasses to set up specific handlers
@@ -21,6 +29,9 @@ export default abstract class AppModule<
 
   destroy() {
     this.subscription.unsubscribe();
+    Object.values(this.observables).forEach(o =>
+      (o as SubscriptionLike).unsubscribe()
+    );
   }
 
   update() {

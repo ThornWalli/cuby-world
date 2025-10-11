@@ -13,8 +13,15 @@ import Unit, {
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
 
-export type DoorOptions = UnitOptions;
-export default class Door extends Unit<DoorOptions> {
+export interface BaseDoorOptions extends UnitOptions {
+  open: boolean;
+}
+class BaseDoor<
+  Options extends BaseDoorOptions = BaseDoorOptions
+> extends Unit<Options> {}
+
+export type DoorOptions = BaseDoorOptions;
+export default class Door extends BaseDoor<DoorOptions> {
   static override KEY = 'door';
   static override NAME = 'Door';
 
@@ -34,7 +41,7 @@ export default class Door extends Unit<DoorOptions> {
     this.size = new Vector3(1, 0, 1);
   }
 
-  override createMesh() {
+  override async createMesh() {
     const geometry = new PlaneGeometry(0.8, 1);
     geometry.translate(0, 0.5, 0.5);
     geometry.rotateY(Math.PI / 2);

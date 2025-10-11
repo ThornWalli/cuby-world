@@ -9,6 +9,8 @@ import RoomModule, { type RoomModuleState } from '../RoomModule';
 import type Unit from '../Unit';
 import UnitChunkManager from '../UnitChunkManager';
 import { distinctUntilChanged, map } from 'rxjs';
+import { ArrayKeyMap } from '../ArrayKeyMap';
+import type { AnimationLoopValue } from '../Renderer';
 
 interface State extends RoomModuleState {
   visibleUnits: Unit[];
@@ -28,6 +30,8 @@ export default class UnitsModule extends RoomModule<State> {
     visibleUnits: [],
     units: new Map<string, Unit>()
   };
+
+  //#region methods
 
   getUnits() {
     return Array.from(this.state.units.values());
@@ -85,9 +89,9 @@ export default class UnitsModule extends RoomModule<State> {
     );
   }
 
-  override update(time: number) {
+  override update(v: AnimationLoopValue) {
     this.state.visibleUnits.forEach(unit => {
-      unit.update(time);
+      unit.update(v);
     });
   }
 
@@ -105,10 +109,12 @@ export default class UnitsModule extends RoomModule<State> {
       return result;
     }, [] as Unit[]);
   }
+
+  //#endregion
 }
 
 class UnitPositionMap {
-  data = new Map<string, Unit[]>();
+  data = new ArrayKeyMap<[number, number, number], Unit[]>();
   listsByUnits = new Map<string, Unit[][]>();
 
   getKey(position: Vector3) {
@@ -116,8 +122,7 @@ class UnitPositionMap {
   }
 
   getByPosition(position: Vector3) {
-    const key = this.getKey(position);
-    return this.data.get(key) || [];
+    return this.data.get(position.toArray()) || [];
   }
 
   remove(unit: Unit) {
@@ -137,15 +142,14 @@ class UnitPositionMap {
     this.remove(unit);
 
     unit.getMatrixPositions().forEach(pos => {
-      const key = this.getKey(pos);
-      const list = this.data.get(key) || [];
+      const list = this.data.get(pos.toArray()) || [];
       list.push(unit);
       if (!this.listsByUnits.has(unit.id)) {
         this.listsByUnits.set(unit.id, []);
       }
       this.listsByUnits.get(unit.id)?.push(list);
 
-      this.data.set(key, list);
+      this.data.set(pos.toArray(), list);
     });
   }
 }

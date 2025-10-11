@@ -49,16 +49,8 @@ export function parseRoomDescription(
     walls: (room.walls ?? []).map(wall => ({
       ...wall,
       position: Array.isArray(wall.position)
-        ? new Vector2().fromArray(wall.position)
-        : wall.position,
-      startPosition:
-        wall.startPosition && Array.isArray(wall.startPosition)
-          ? new Vector2().fromArray(wall.startPosition)
-          : wall.startPosition,
-      endPosition:
-        wall.endPosition && Array.isArray(wall.endPosition)
-          ? new Vector2().fromArray(wall.endPosition)
-          : wall.endPosition
+        ? new Vector3().fromArray(wall.position)
+        : wall.position
     })),
     units: room.units.map(unit => ({
       ...unit,
@@ -73,7 +65,7 @@ export function parseRoomDescription(
     groundStyles: room.groundStyles.map(({ positions, ...groundStyle }) => ({
       ...groundStyle,
       positions: positions.map(position =>
-        Array.isArray(position) ? new Vector2().fromArray(position) : position
+        Array.isArray(position) ? new Vector3().fromArray(position) : position
       )
     }))
   };

@@ -1,5 +1,6 @@
+import { textureMap as wallTextureMap } from './wall/textures';
 /* eslint-disable complexity */
-import type { BufferAttribute, Object3D } from 'three';
+import type { Object3D, BufferAttribute } from 'three';
 import {
   Vector2,
   Vector3,
@@ -8,11 +9,8 @@ import {
   Mesh,
   MeshPhongMaterial
 } from 'three';
-import type AssetLoader from '../classes/AssetLoader';
 import EasyStar from 'easystarjs';
 import Wall from '../classes/Wall';
-
-import wallTextures from './wall/textures';
 
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LOADER } from '../classes/AssetLoader';
@@ -24,14 +22,23 @@ import {
   WALL_GEOMETRY_TYPE,
   WALL_SIZE,
   WALL_TYPE,
-  WALL_WINDOW_TYPE,
+  WALL_WINDOW_SIZE,
   type WallDescription,
   type WallEdge,
   type WallGeometryMap,
   type WallOptions,
   type WallRoomDescription
 } from '../types/wall';
-const wallTextureMap = new Map(wallTextures.map(t => [t.id, t]));
+import { ArrayKeyMap } from '../classes/ArrayKeyMap';
+import type WallExtension from '../classes/WallExtension';
+import {
+  WALL_EXTENSION_TYPE,
+  type WallExtensionDescription,
+  type WallExtensionState
+} from '../classes/WallExtension';
+import type { AnimationLoopSubject } from '../classes/Renderer';
+import type DoorWallExtension from '../classes/wallExtension/Door';
+import assetLoader from '@cuby-world/app/services/assetLoader';
 
 function getDefaultDirections() {
   return [
@@ -55,18 +62,65 @@ enum WALL_ACCESIBLE_DIRECTIONS {
   EAST = 'east'
 }
 
-// #region wall pathfinding
+//#region wall pathfinding
+
+/**
+ * Ruft alle Türen anhand der Wände ab und legt jeweils ein Eintrag auf beiden auf beiden Tiles an, die von der Wand getrennt werden.
+ */
+export function getWallDoorExtensionsByPosition(walls: Wall[]) {
+  const preparedWalls = prepareWalls(walls);
+  const doorWalls = Array.from(preparedWalls.values()).filter(({ wall }) =>
+    wall.hasExtension(WALL_EXTENSION_TYPE.DOOR)
+  );
+
+  return doorWalls.reduce((result, { wall, directions, position }) => {
+    const extension = wall.getExtension<DoorWallExtension>(
+      WALL_EXTENSION_TYPE.DOOR
+    );
+
+    if (!extension) throw new Error('No door extension found');
+
+    if (directions.has(WALL_ACCESIBLE_DIRECTIONS.WEST)) {
+      result.set([position.x, position.z], extension); // Left
+      result.set([position.x - 1, position.z], extension); // Right
+    }
+    if (directions.has(WALL_ACCESIBLE_DIRECTIONS.EAST)) {
+      result.set([position.x, position.z], extension); // Right
+      result.set([position.x + 1, position.z], extension); // Left
+    }
+    if (directions.has(WALL_ACCESIBLE_DIRECTIONS.NORTH)) {
+      result.set([position.x, position.z], extension); // Top
+      result.set([position.x, position.z - 1], extension); // Bottom
+    }
+    if (directions.has(WALL_ACCESIBLE_DIRECTIONS.SOUTH)) {
+      result.set([position.x, position.z], extension); // Bottom
+      result.set([position.x, position.z + 1], extension); // Top
+    }
+    return result;
+  }, new ArrayKeyMap<[number, number], DoorWallExtension>());
+
+  // return walls
+  //   .map(w => w.getDoorUnits().map(d => ({ wall: w, door: d })))
+  //   .flat()
+  //   .reduce((result, { wall, door }) => {
+  //     const position = door.getPosition();
+  //     result.set([position.x, position.z], wall);
+  //     return result;
+  //   }, new ArrayKeyMap<[number, number], Wall>());
+}
 
 /**
  * Legt die Wandbedingungen für den Pfadfinder fest.
+ * Beispiel: Wenn Türen vorhanden sind, können Einheiten durch diese hindurchgehen.
  */
 export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
   const preparedWalls = prepareWalls(walls);
 
-  const doorMap = new Map<
-    string,
+  const doorMap = new ArrayKeyMap<
+    [number, number, WALL_DIRECTION],
     {
       type: WALL_TYPE;
+      originDirection: WALL_DIRECTION;
       directions: Set<WALL_ACCESIBLE_DIRECTIONS>;
       position: Vector3;
     }
@@ -74,14 +128,17 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
   preparedWalls.forEach(wall => {
     if (wall.type === WALL_TYPE.DOOR) {
       doorMap.set(
-        getWallKey(wall.position.x, wall.position.z, wall.originDirection),
+        [wall.position.x, wall.position.z, wall.originDirection],
         wall
       );
     }
   });
-  const directionMap = new Map<string, Set<EasyStar.Direction>>();
+  const directionMap = new ArrayKeyMap<
+    [number, number],
+    Set<EasyStar.Direction>
+  >();
 
-  preparedWalls.values().forEach(({ position, directions }) => {
+  Array.from(preparedWalls.values()).forEach(({ position, directions }) => {
     if (directions.has(WALL_ACCESIBLE_DIRECTIONS.WEST)) {
       setDirectionalCondition(
         directionMap,
@@ -89,7 +146,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
         position.z,
         [EasyStar.LEFT, EasyStar.TOP_LEFT, EasyStar.BOTTOM_LEFT],
         easystar,
-        doorMap.get(getWallKey(position.x, position.z, WALL_DIRECTION.VERTICAL))
+        doorMap.get([position.x, position.z, WALL_DIRECTION.VERTICAL])
           ? [EasyStar.LEFT]
           : []
       );
@@ -99,9 +156,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
         position.z,
         [EasyStar.RIGHT, EasyStar.TOP_RIGHT, EasyStar.BOTTOM_RIGHT],
         easystar,
-        doorMap.get(
-          getWallKey(position.x - 1, position.z, WALL_DIRECTION.VERTICAL)
-        )
+        doorMap.get([position.x - 1, position.z, WALL_DIRECTION.VERTICAL])
           ? [EasyStar.RIGHT]
           : []
       );
@@ -113,7 +168,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
         position.z,
         [EasyStar.RIGHT, EasyStar.TOP_RIGHT, EasyStar.BOTTOM_RIGHT],
         easystar,
-        doorMap.get(getWallKey(position.x, position.z, WALL_DIRECTION.VERTICAL))
+        doorMap.get([position.x, position.z, WALL_DIRECTION.VERTICAL])
           ? [EasyStar.RIGHT]
           : []
       );
@@ -123,9 +178,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
         position.z,
         [EasyStar.LEFT, EasyStar.TOP_LEFT, EasyStar.BOTTOM_LEFT],
         easystar,
-        doorMap.get(
-          getWallKey(position.x + 1, position.z, WALL_DIRECTION.VERTICAL)
-        )
+        doorMap.get([position.x + 1, position.z, WALL_DIRECTION.VERTICAL])
           ? [EasyStar.LEFT]
           : []
       );
@@ -137,9 +190,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
         position.z,
         [EasyStar.TOP, EasyStar.TOP_LEFT, EasyStar.TOP_RIGHT],
         easystar,
-        doorMap.get(
-          getWallKey(position.x, position.z, WALL_DIRECTION.HORIZONTAL)
-        )
+        doorMap.get([position.x, position.z, WALL_DIRECTION.HORIZONTAL])
           ? [EasyStar.TOP]
           : []
       );
@@ -149,9 +200,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
         position.z - 1,
         [EasyStar.BOTTOM, EasyStar.BOTTOM_LEFT, EasyStar.BOTTOM_RIGHT],
         easystar,
-        doorMap.get(
-          getWallKey(position.x, position.z - 1, WALL_DIRECTION.HORIZONTAL)
-        )
+        doorMap.get([position.x, position.z - 1, WALL_DIRECTION.HORIZONTAL])
           ? [EasyStar.BOTTOM]
           : []
       );
@@ -178,9 +227,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
         position.z,
         [EasyStar.BOTTOM, EasyStar.BOTTOM_LEFT, EasyStar.BOTTOM_RIGHT],
         easystar,
-        doorMap.get(
-          getWallKey(position.x, position.z, WALL_DIRECTION.HORIZONTAL)
-        )
+        doorMap.get([position.x, position.z, WALL_DIRECTION.HORIZONTAL])
           ? [EasyStar.BOTTOM]
           : []
       );
@@ -190,9 +237,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
         position.z + 1,
         [EasyStar.TOP, EasyStar.TOP_LEFT, EasyStar.TOP_RIGHT],
         easystar,
-        doorMap.get(
-          getWallKey(position.x, position.z + 1, WALL_DIRECTION.HORIZONTAL)
-        )
+        doorMap.get([position.x, position.z + 1, WALL_DIRECTION.HORIZONTAL])
           ? [EasyStar.TOP]
           : []
       );
@@ -214,13 +259,9 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
   });
 }
 
-export function getWallKey(x: number, y: number, direction?: WALL_DIRECTION) {
-  return `${x},${y}` + (direction ? `,${direction}` : '');
-}
-
 function prepareWalls(walls: Wall[]) {
   const wallMap = walls.reduce((result, wall) => {
-    const key = getWallKey(wall.position.x, wall.position.z);
+    const key: [number, number] = [wall.position.x, wall.position.z];
 
     const test = result.get(key) ?? [];
     test.push(wall);
@@ -229,19 +270,19 @@ function prepareWalls(walls: Wall[]) {
     }
 
     return result;
-  }, new Map<string, Wall[]>());
+  }, new ArrayKeyMap<[number, number], Wall[]>());
 
-  const preparedWalls = wallMap.values().reduce((result, walls) => {
+  const preparedWalls = Array.from(wallMap.values()).reduce((result, walls) => {
     walls.forEach(wall => {
       const data: {
+        wall: Wall;
         type: WALL_TYPE;
         originDirection: WALL_DIRECTION;
         directions: Set<WALL_ACCESIBLE_DIRECTIONS>;
         position: Vector3;
-      } = result.get(
-        getWallKey(wall.position.x, wall.position.z, wall.direction)
-      ) ?? {
-        type: wall.state.type,
+      } = result.get([wall.position.x, wall.position.z, wall.direction]) ?? {
+        wall,
+        type: wall.getType(),
         originDirection: wall.direction,
         directions: new Set(),
         position: wall.position!
@@ -249,10 +290,13 @@ function prepareWalls(walls: Wall[]) {
 
       if (wall.direction === WALL_DIRECTION.VERTICAL) {
         data.directions.add(WALL_ACCESIBLE_DIRECTIONS.WEST);
-        const westWall = result.get(
-          getWallKey(wall.position!.x - 1, wall.position!.z, wall.direction)
-        ) ?? {
-          type: wall.state.type,
+        const westWall = result.get([
+          wall.position!.x - 1,
+          wall.position!.z,
+          wall.direction
+        ]) ?? {
+          wall,
+          type: wall.getType(),
           originDirection: wall.direction,
           directions: new Set(),
           position: new Vector3(
@@ -263,15 +307,18 @@ function prepareWalls(walls: Wall[]) {
         };
         westWall.directions.add(WALL_ACCESIBLE_DIRECTIONS.EAST);
         result.set(
-          getWallKey(westWall.position.x, westWall.position.z, wall.direction),
+          [westWall.position.x, westWall.position.z, wall.direction],
           westWall
         );
       } else {
         data.directions.add(WALL_ACCESIBLE_DIRECTIONS.NORTH);
-        const northWall = result.get(
-          getWallKey(wall.position.x, wall.position.z - 1, wall.direction)
-        ) ?? {
-          type: wall.state.type,
+        const northWall = result.get([
+          wall.position.x,
+          wall.position.z - 1,
+          wall.direction
+        ]) ?? {
+          wall,
+          type: wall.getType(),
           originDirection: wall.direction,
           directions: new Set(),
           position: new Vector3(
@@ -282,41 +329,33 @@ function prepareWalls(walls: Wall[]) {
         };
         northWall.directions.add(WALL_ACCESIBLE_DIRECTIONS.SOUTH);
         result.set(
-          getWallKey(
-            northWall.position.x,
-            northWall.position.z,
-            wall.direction
-          ),
+          [northWall.position.x, northWall.position.z, wall.direction],
           northWall
         );
       }
 
-      result.set(
-        getWallKey(wall.position.x, wall.position.z, wall.direction),
-        data
-      );
+      result.set([wall.position.x, wall.position.z, wall.direction], data);
     });
     return result;
-  }, new Map<string, { type: WALL_TYPE; originDirection: WALL_DIRECTION; directions: Set<WALL_ACCESIBLE_DIRECTIONS>; position: Vector3 }>());
+  }, new ArrayKeyMap<[number, number, WALL_DIRECTION], { wall: Wall; type: WALL_TYPE; originDirection: WALL_DIRECTION; directions: Set<WALL_ACCESIBLE_DIRECTIONS>; position: Vector3 }>());
 
   return preparedWalls;
 }
 
 function setDirectionalCondition(
-  directionMap: Map<string, Set<EasyStar.Direction>>,
+  directionMap: ArrayKeyMap<[number, number], Set<EasyStar.Direction>>,
   x: number,
   y: number,
   directions: EasyStar.Direction[],
   easystar: EasyStar.js,
   ignoredDirections: EasyStar.Direction[] = []
 ) {
-  const key = getWallKey(x, y);
-  const d = directionMap.get(key) ?? new Set<EasyStar.Direction>();
+  const d = directionMap.get([x, y]) ?? new Set<EasyStar.Direction>();
   directions = directions.filter(d_ => !ignoredDirections.includes(d_));
   if (directions.length) {
     directions.forEach(d_ => d.add(d_));
   }
-  directionMap.set(key, d);
+  directionMap.set([x, y], d);
   easystar.setDirectionalCondition(
     x,
     y,
@@ -333,7 +372,7 @@ export function findNeighborWallEdges(
     [number, number, WALL_DIRECTION][],
     WALL_EDGE_TYPE
   ][] = [
-    // #region bottom right
+    //#region bottom right
     [
       WALL_DIRECTION.HORIZONTAL,
       [[1, -1, WALL_DIRECTION.VERTICAL]],
@@ -345,9 +384,9 @@ export function findNeighborWallEdges(
       WALL_EDGE_TYPE.BOTTOM_RIGHT
     ],
 
-    // #endregion
+    //#endregion
 
-    // #region top right
+    //#region top right
     [
       WALL_DIRECTION.VERTICAL,
       [[-1, 0, WALL_DIRECTION.HORIZONTAL]],
@@ -358,9 +397,9 @@ export function findNeighborWallEdges(
       [[1, 0, WALL_DIRECTION.VERTICAL]],
       WALL_EDGE_TYPE.TOP_RIGHT
     ],
-    // #endregion
+    //#endregion
 
-    // #region top left
+    //#region top left
 
     [
       WALL_DIRECTION.HORIZONTAL,
@@ -373,9 +412,9 @@ export function findNeighborWallEdges(
       WALL_EDGE_TYPE.TOP_LEFT
     ],
 
-    // #endregion
+    //#endregion
 
-    // #region bottom left
+    //#region bottom left
 
     [
       WALL_DIRECTION.VERTICAL,
@@ -410,7 +449,7 @@ export function findNeighborWallEdges(
       WALL_EDGE_TYPE.BOTTOM
     ],
 
-    // #region T-Left
+    //#region T-Left
 
     [
       WALL_DIRECTION.VERTICAL,
@@ -437,9 +476,9 @@ export function findNeighborWallEdges(
       WALL_EDGE_TYPE.T_CROSS_I_LEFT
     ],
 
-    // #endregion
+    //#endregion
 
-    // #region T-Right
+    //#region T-Right
     [
       WALL_DIRECTION.VERTICAL,
       [
@@ -465,9 +504,9 @@ export function findNeighborWallEdges(
       WALL_EDGE_TYPE.T_CROSS_I_RIGHT
     ],
 
-    // #endregion
+    //#endregion
 
-    // #region T-Top
+    //#region T-Top
 
     [
       WALL_DIRECTION.VERTICAL,
@@ -494,9 +533,9 @@ export function findNeighborWallEdges(
       WALL_EDGE_TYPE.T_CROSS_TOP
     ],
 
-    // #endregion
+    //#endregion
 
-    // #region T-Bottom
+    //#region T-Bottom
 
     [
       WALL_DIRECTION.VERTICAL,
@@ -523,9 +562,9 @@ export function findNeighborWallEdges(
       WALL_EDGE_TYPE.T_CROSS_BOTTOM
     ],
 
-    // #endregion
+    //#endregion
 
-    // #region Cross
+    //#region Cross
 
     [
       WALL_DIRECTION.VERTICAL,
@@ -546,16 +585,17 @@ export function findNeighborWallEdges(
       WALL_EDGE_TYPE.CROSS
     ]
 
-    // #endregion
+    //#endregion
   ];
 
   return cellDirections.reduce((result, [directionA, conditions, edgeType]) => {
     const walls_: WallEdge[] = conditions
       .map(c => {
-        const [dx, dy, directionB] = c;
-        const neighborPos = new Vector2(
+        const [dx, dz, directionB] = c;
+        const neighborPos = new Vector3(
           wall.position.x + dx,
-          wall.position.y + dy
+          wall.position.y,
+          wall.position.z + dz
         );
         const neighborWall = walls.find(
           w =>
@@ -566,7 +606,7 @@ export function findNeighborWallEdges(
         if (neighborWall) {
           return {
             wall,
-            offset: new Vector2(dx, dy),
+            offset: new Vector3(dx, 0, dz),
             // position: neighborWall.position,
             // direction: neighborWall.direction,
             type: neighborWall.type,
@@ -584,44 +624,61 @@ export function findNeighborWallEdges(
   }, [] as WallEdge[]);
 }
 
-export default function createWalls(
+export default async function createWalls(
   descriptions: WallDescription[],
   editMode: boolean,
   {
-    assetLoader,
+    animationLoop$,
     wallGeometryMap
   }: {
-    assetLoader: AssetLoader;
+    animationLoop$: AnimationLoopSubject;
     wallGeometryMap: WallGeometryMap;
   }
 ) {
-  const walls = descriptions.map(
-    description =>
-      new Wall({
-        description,
-        editMode,
-        style: description.style,
-        type: description.type,
-        direction: description.direction,
-        position: new Vector3(
-          description.position!.x,
-          0,
-          description.position!.y
-        )
-      })
+  let walls = await Promise.all(
+    descriptions.map(async description => {
+      const extensions = await resolveWallExtensions(description.extensions);
+      const wall = new Wall({ ...description, extensions });
+      wall.setEditMode(editMode);
+      return wall;
+    })
   );
 
-  const meshes = walls.map(wall => {
-    wall.setup({ assetLoader, wallGeometryMap, wallTextureMap });
-    return wall;
-  });
+  walls = await Promise.all(
+    walls.map(async wall => {
+      await wall.setup({
+        animationLoop$,
+        wallGeometryMap,
+        wallTextureMap
+      });
+      return wall;
+    })
+  );
 
-  return meshes;
+  return walls;
 }
 
-// #endregion
+export async function resolveWallExtensions(
+  extensions: WallExtensionDescription[]
+) {
+  const { doors, windows } = await import('@cuby-world/wall-extensions');
+  const extList = [...Object.values(doors), ...Object.values(windows)];
+  return extensions.map(ext => {
+    const ExtClass = extList.find(e => e.KEY === ext.key);
+    if (ExtClass) {
+      return [ExtClass, ext.state ?? {}] as [
+        typeof WallExtension,
+        WallExtensionState
+      ];
+    } else {
+      throw new Error(`Unknown wall extension: ${ext.key}`);
+    }
+  });
+}
 
-// #region wall room detection
+//#endregion
+
+//#region wall room detection
 
 function buildWallSet(walls: Wall[]) {
   const set = new Set();
@@ -775,7 +832,6 @@ export function getWallRoomDescriptions(walls: Wall[]) {
     }
   }
 
-  // ✅ Außenräume rausfiltern
   const isOutside = (room: WallRoomDescription) =>
     room.tiles.some(
       t =>
@@ -788,36 +844,18 @@ export function getWallRoomDescriptions(walls: Wall[]) {
   return rooms.filter(r => !isOutside(r));
 }
 
-// #endregion
+//#endregion
 
-export function loadWallGeometries(assetLoader: AssetLoader, url: string) {
+export function loadWallGeometries(url: string) {
   return assetLoader.add<GLTF>({ loader: LOADER.GLTF, url }).then(gltf => {
     return Object.values(WALL_GEOMETRY).reduce((result, value: string) => {
       const mesh = gltf.scene.getObjectByName(value) as Mesh;
       if (!mesh) {
-        console.warn(`Wandgeometrie "${value}" nicht gefunden`);
+        console.warn(`Wall geometry ${value} not found in gltf`);
         result.set(value as WALL_GEOMETRY, null);
       } else {
         const geometry = mesh?.geometry.clone();
-
-        geometry.applyMatrix4(mesh.matrixWorld);
-
-        geometry.computeBoundingBox();
-        const box = geometry.boundingBox!.clone();
-
-        // Scale berücksichtigen
-        box.min.multiply(mesh.scale);
-        box.max.multiply(mesh.scale);
-
-        const offset = new Vector3();
-
-        box.getCenter(offset);
-        offset.y = box.min.y; // Pivot auf Boden statt Mitte
-
-        // Pivot in die Mitte setzen
-        geometry.translate(-offset.x, -offset.y, -offset.z);
         geometry.rotateY(-Math.PI / 2);
-
         result.set(value as WALL_GEOMETRY, geometry);
       }
       return result;
@@ -841,15 +879,29 @@ export function getWallGeometry(
 
 function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
   options = { ...options };
-  edges = edges.filter(
-    edge =>
-      ![
-        WALL_EDGE_TYPE.LEFT,
-        WALL_EDGE_TYPE.RIGHT,
-        WALL_EDGE_TYPE.TOP,
-        WALL_EDGE_TYPE.BOTTOM
-      ].includes(edge.edgeType)
-  );
+  // edges = edges.filter(
+  //   edge =>
+  //     ![
+  //       WALL_EDGE_TYPE.LEFT,
+  //       WALL_EDGE_TYPE.RIGHT,
+  //       WALL_EDGE_TYPE.TOP,
+  //       WALL_EDGE_TYPE.BOTTOM
+  //     ].includes(edge.edgeType)
+  // );
+
+  edges.forEach(edge => {
+    if (
+      edge.edgeType === WALL_EDGE_TYPE.LEFT ||
+      edge.edgeType === WALL_EDGE_TYPE.TOP
+    ) {
+      options.right = WALL_GEOMETRY_TYPE.LINE;
+    } else if (
+      edge.edgeType === WALL_EDGE_TYPE.RIGHT ||
+      edge.edgeType === WALL_EDGE_TYPE.BOTTOM
+    ) {
+      options.left = WALL_GEOMETRY_TYPE.LINE;
+    }
+  });
 
   edges.forEach(edge => {
     switch (edge.edgeType) {
@@ -881,14 +933,6 @@ function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
           options.left = WALL_GEOMETRY_TYPE.EDGE_RIGHT;
         }
         break;
-    }
-  });
-
-  edges.forEach(edge => {
-    if (edge.edgeType === WALL_EDGE_TYPE.LEFT) {
-      options.left = WALL_GEOMETRY_TYPE.LINE;
-    } else if (edge.edgeType === WALL_EDGE_TYPE.RIGHT) {
-      options.right = WALL_GEOMETRY_TYPE.LINE;
     }
   });
 
@@ -930,13 +974,16 @@ function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
   }
   if (type === WALL_TYPE.WINDOW) {
     if (options.size !== WALL_SIZE.SMALL) {
-      size += `_${options.windowType || WALL_WINDOW_TYPE.MEDIUM}`;
+      size += `_${options.windowSize || WALL_WINDOW_SIZE.MEDIUM}`;
     } else {
       type = WALL_TYPE.DEFAULT;
     }
   }
-
-  return `${type}${size}_${options.left}_${options.right}` as WALL_GEOMETRY;
+  // console.log(`${type}${size}_${options.left}_${options.right}`);
+  return {
+    key: `${type}${size}_${options.left}_${options.right}` as WALL_GEOMETRY,
+    options
+  };
 }
 
 const _wallGeometryCache: {
@@ -949,11 +996,13 @@ export function createWallGeometry(
   direction: WALL_DIRECTION,
   type: WALL_TYPE = WALL_TYPE.DEFAULT,
   size: WALL_SIZE = WALL_SIZE.LARGE,
-  windowType: WALL_WINDOW_TYPE = WALL_WINDOW_TYPE.SMALL,
+  windowSize: WALL_WINDOW_SIZE = WALL_WINDOW_SIZE.SMALL,
   {
+    center = false,
     edges,
     wallGeometryMap
   }: {
+    center?: boolean;
     edges: WallEdge[];
     wallGeometryMap: WallGeometryMap;
   }
@@ -962,15 +1011,25 @@ export function createWallGeometry(
     direction,
     size,
     type,
-    windowType,
-    left: WALL_GEOMETRY_TYPE.LINE,
-    right: WALL_GEOMETRY_TYPE.LINE
+    windowSize,
+    left: WALL_GEOMETRY_TYPE.NONE,
+    right: WALL_GEOMETRY_TYPE.NONE
   };
 
-  const geometryKey = getGeometryKey(wallOptions, edges);
+  const { key, options } = getGeometryKey(wallOptions, edges);
+
+  const cacheKey = `${JSON.stringify({
+    options,
+    edges,
+    key
+  })}`;
+
+  if (_wallGeometryCache[cacheKey]) {
+    return _wallGeometryCache[cacheKey];
+  }
 
   const geometry =
-    getWallGeometry(wallGeometryMap, geometryKey) ||
+    getWallGeometry(wallGeometryMap, key) ||
     getWallGeometry(
       wallGeometryMap,
       getGeometryKey(
@@ -982,55 +1041,48 @@ export function createWallGeometry(
           type: WALL_TYPE.DEFAULT
         },
         []
-      )
+      ).key
     );
 
   if (!geometry) {
-    throw new Error(`No wall geometry found for key ${geometryKey}`);
+    throw new Error(`No wall geometry found for key ${key}`);
   }
-
-  if (direction === WALL_DIRECTION.VERTICAL) {
-    geometry.translate(-0.5, 0, 0);
-  } else {
-    geometry.translate(0, 0, -1);
-    geometry.rotateY(Math.PI / 2);
-    geometry.translate(1, 0, -0.5);
-  }
-
-  const key = `${JSON.stringify({
-    wallOptions,
-    edges,
-    geometryKey
-  })}`;
-
-  if (_wallGeometryCache[key]) {
-    return _wallGeometryCache[key];
+  if (!center) {
+    if (direction === WALL_DIRECTION.VERTICAL) {
+      geometry.translate(-0.5, 0, 0);
+    } else {
+      geometry.translate(0, 0, -1);
+      geometry.rotateY(Math.PI / 2);
+      geometry.translate(1, 0, -0.5);
+    }
   }
   groupByNormal(geometry, direction);
 
-  _wallGeometryCache[key] = { geometry: geometry.clone() };
-  return _wallGeometryCache[key]!;
+  _wallGeometryCache[cacheKey] = { geometry: geometry.clone() };
+  return _wallGeometryCache[cacheKey]!;
 }
 
 export function createWallMesh(
   {
     type,
-    windowType,
+    windowSize,
     small,
     direction,
     materials
   }: {
     type: WALL_TYPE;
-    windowType?: WALL_WINDOW_TYPE;
+    windowSize?: WALL_WINDOW_SIZE;
     small: boolean;
     direction: WALL_DIRECTION;
     materials: MeshPhongMaterial[];
   },
   {
+    center,
     edges,
     wallGeometryMap,
     editMode = false
   }: {
+    center: boolean;
     edges: WallEdge[];
     editMode: boolean;
     wallGeometryMap: WallGeometryMap;
@@ -1040,8 +1092,9 @@ export function createWallMesh(
     direction,
     type,
     small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
-    windowType,
+    windowSize,
     {
+      center,
       edges,
       wallGeometryMap
     }
@@ -1055,13 +1108,13 @@ export function createWallMesh(
 
   const mesh = new Mesh(preparedGeometry, materials);
 
-  // #region click helper
+  //#region click helper
   if (editMode) {
     const { geometry: defaultGeometry } = createWallGeometry(
       direction,
       WALL_TYPE.DEFAULT,
       small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
-      windowType,
+      windowSize,
       {
         edges,
         wallGeometryMap
@@ -1084,7 +1137,7 @@ export function createWallMesh(
     clickHelper.raycast = Mesh.prototype.raycast;
     mesh.add(clickHelper);
   }
-  // #endregion
+  //#endregion
 
   mesh.castShadow = true;
 
@@ -1119,7 +1172,7 @@ export function getFaceGroupIndex(preparedPosition: PreparedPosition): number {
   return -1;
 }
 
-// #region geometry groups
+//#region geometry groups
 
 export function groupByNormal(
   geometry: BufferGeometry,
@@ -1128,7 +1181,6 @@ export function groupByNormal(
   const pos = geometry.attributes.position!;
   const index = geometry.index!.array;
   const faceNormals = [];
-
   // 1. Normalen berechnen
   for (let i = 0; i < index.length; i += 3) {
     const vA = new Vector3().fromBufferAttribute(pos, index[i]!);
@@ -1139,26 +1191,21 @@ export function groupByNormal(
     cb.cross(ab).normalize();
     faceNormals.push({ i, normal: cb.clone() });
   }
-
   // 2. BoundingBox für Axis-Logik
   if (!geometry.boundingBox) {
     geometry.computeBoundingBox();
   }
   const size = new Vector3();
   geometry.boundingBox!.getSize(size);
-
   let axisDepth: 'x' | 'y' | 'z' = 'x';
   if (size.z < size.x && size.z < size.y) axisDepth = 'z';
   else if (size.x < size.y) axisDepth = 'x';
   else axisDepth = 'x';
-
-  const threshold = 0.8;
-
+  const threshold = 0.4;
   // 3. Faces pro Seite einsortieren
   const sideFaces: Record<number, number[]> = {}; // matIndex → indices
   faceNormals.forEach(({ i, normal }) => {
     let matIndex = 6;
-
     if (direction === WALL_DIRECTION.VERTICAL) {
       if (Math.abs(normal.y) > threshold) {
         matIndex = normal.y > 0 ? 2 : 3; // Oben/Unten
@@ -1182,11 +1229,9 @@ export function groupByNormal(
         }
       }
     }
-
     if (!sideFaces[matIndex]) sideFaces[matIndex] = [];
     sideFaces[matIndex]!.push(index[i]!, index[i + 1]!, index[i + 2]!);
   });
-
   // 4. Neues Index-Array bauen
   const newIndex: number[] = [];
   const groups: { start: number; count: number; mat: number }[] = [];
@@ -1195,7 +1240,6 @@ export function groupByNormal(
     newIndex.push(...sideFaces[matIndex]!);
     groups.push({ start, count: sideFaces[matIndex]!.length, mat: matIndex });
   }
-
   // 5. Geometry neu schreiben
   geometry.setIndex(newIndex);
   geometry.clearGroups();
@@ -1227,7 +1271,7 @@ export function getGroupBounds(geometry: BufferGeometry, groupIndex: number) {
   return { min, max, size: new Vector3().subVectors(max, min) };
 }
 
-// #endregion
+//#endregion
 
 // -----
 

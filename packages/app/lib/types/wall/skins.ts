@@ -1,4 +1,10 @@
 import type { Vector2 } from 'three';
+import type { SkinIdentifier } from '../skin';
+
+export type WallSkinIdentifier = SkinIdentifier;
+export type ExtensionSkinIdentifier = SkinIdentifier;
+
+export type WallSkins = [WallSkinIdentifier, WallSkinIdentifier];
 
 export interface WallStyleTexture {
   options?: {
@@ -16,11 +22,8 @@ export interface InternalWallStyleTexture extends WallStyleTexture {
 }
 
 export interface WallStyle {
-  id: string;
-  texture?:
-    | WallStyleTexture
-    | ExternalWallStyleTexture
-    | InternalWallStyleTexture;
+  type: string;
+  texture?: ExternalWallStyleTexture | InternalWallStyleTexture;
   color: string | number;
 }
 

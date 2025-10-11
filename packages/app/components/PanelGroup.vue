@@ -41,6 +41,7 @@ export enum PANEL_GROUP_DIRECTION {
   display: flex;
   gap: var(--panel-gap);
   align-items: flex-start;
+  max-width: 100%;
 
   .direction-column {
     flex-direction: column;
@@ -72,6 +73,8 @@ export enum PANEL_GROUP_DIRECTION {
   &.position-bottom {
     bottom: var(--panel-offset);
     left: 50%;
+    justify-content: center;
+    width: 100%;
     transform: translateX(-50%);
   }
 

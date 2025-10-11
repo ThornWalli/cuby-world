@@ -1,22 +1,28 @@
 import { ReplaySubject } from 'rxjs';
-import AppModule, { type AppModuleState } from '../AppModule';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
 import type Unit from '../Unit';
+import type App from '../App';
+
+interface Observables extends AppModuleObservables {
+  focusedUnit$: ReplaySubject<Unit | undefined>;
+}
 
 interface State extends AppModuleState {
   focusedUnit?: Unit;
 }
-export default class UnitFocusAppModule extends AppModule<State> {
+export default class UnitFocusAppModule extends AppModule<State, Observables> {
   static override TYPE = 'unitFocus';
 
   state: State = {};
 
-  observables = {
-    focusedUnit$: new ReplaySubject<Unit | undefined>(1)
-  };
-
-  override destroy(): void {
-    super.destroy();
-    Object.values(this.observables).forEach(obs => obs.unsubscribe());
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.focusedUnit$ = new ReplaySubject<Unit | undefined>(1);
+    //#endregion
   }
 
   get focusedUnit() {

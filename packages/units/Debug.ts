@@ -25,7 +25,7 @@ export default class Debug extends Unit<DebugOptions> {
     });
   }
 
-  override createMesh() {
+  override async createMesh() {
     const texture = checkerboardTexture(64, 32, '#ffffff', '#000000');
     const material = new MeshPhongMaterial({ map: texture });
 

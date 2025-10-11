@@ -7,7 +7,13 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 
 import type { Observable } from 'rxjs';
 import { fromEvent, ReplaySubject } from 'rxjs';
-import { Vector3, type Object3D } from 'three';
+import {
+  ACESFilmicToneMapping,
+  Clock,
+  SRGBColorSpace,
+  Vector3,
+  type Object3D
+} from 'three';
 
 import {
   Vector2,
@@ -39,21 +45,31 @@ interface Passes {
   output: OutputPass;
 }
 
+export type AnimationLoopValue = {
+  time: number;
+  delta: number;
+};
+export type AnimationLoopSubject = ReplaySubject<AnimationLoopValue>;
+
 export default class Renderer<
   Modules extends RendererModules = RendererModules
 > {
   observables: {
-    animationLoop$: ReplaySubject<number>;
+    animationLoop$: AnimationLoopSubject;
     pointerDown$: Observable<PointerEvent>;
     pointerMove$: Observable<PointerEvent>;
     pointerUp$: Observable<PointerEvent>;
   } = {
-    animationLoop$: new ReplaySubject<number>(0),
+    animationLoop$: new ReplaySubject<{
+      time: number;
+      delta: number;
+    }>(0),
     pointerDown$: undefined!,
     pointerMove$: undefined!,
     pointerUp$: undefined!
   };
 
+  clock = new Clock();
   renderer: WebGLRenderer;
   scene!: Scene;
   camera!: OrthographicCamera;
@@ -129,21 +145,28 @@ export default class Renderer<
       this.initControls();
     }
 
-    // #region Modules
+    //#region Modules
     const preparedModules = modules.map(ModuleClass => {
       const moduleInstance = new ModuleClass(this);
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
     Object.values(this.modules).forEach(module => module.setup());
-    // #endregion
+    //#endregion
+
+    renderer.outputColorSpace = SRGBColorSpace;
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(dimension.x, dimension.y);
     this.composer.setSize(dimension.x, dimension.y);
 
     renderer.setAnimationLoop(time => {
-      this.observables.animationLoop$.next(time);
+      this.observables.animationLoop$.next({
+        time,
+        delta: this.clock.getDelta()
+      });
       // this.renderer.render(this.scene, this.camera);
       this.composer.render(time);
 
@@ -193,7 +216,7 @@ export default class Renderer<
     return this.dimension.x / this.dimension.y;
   }
 
-  // #region inits
+  //#region inits
 
   initScene(color: Color = new Color(0x333333)) {
     const scene = new Scene();
@@ -203,6 +226,14 @@ export default class Renderer<
 
   initControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+
+    // this.setCameraClamp(true);
+
+    // this.controls.enableDamping = true;
+    // this.controls.dampingFactor = 0.1;
+    this.controls.zoomSpeed = 1.0;
+    this.controls.panSpeed = 1.0;
+
     this.controls.update();
   }
 
@@ -233,14 +264,14 @@ export default class Renderer<
 
     // let renderPixelatedPass;
     // if (withRenderPixelatedPass) {
-    //   // #region render pixelated pass
+    //   //#region render pixelated pass
     //   passes.renderPixelated = renderPixelatedPass;
-    //   // #endregion
-    //   // #region output pass
+    //   //#endregion
+    //   //#region output pass
     //   const outputPass = new OutputPass();
     //   passes.output = outputPass;
     //   composer.addPass(outputPass);
-    //   // #endregion
+    //   //#endregion
     // }
 
     this.passes = passes as Passes;
@@ -291,6 +322,18 @@ export default class Renderer<
 
       this.camera.position.copy(defaultPosition);
       this.camera.lookAt(0, 0, 0);
+    }
+  }
+
+  setCameraClamp(value: boolean) {
+    if (value) {
+      this.controls.enableRotate = false; // Kein Drehen
+      this.controls.enablePan = true; // Nur bewegen
+      this.controls.enableZoom = true; // Zoom mit Mausrad
+    } else {
+      this.controls.enableRotate = true; // Kein Drehen
+      this.controls.enablePan = true; // Nur bewegen
+      this.controls.enableZoom = true; // Zoom mit Mausrad
     }
   }
 

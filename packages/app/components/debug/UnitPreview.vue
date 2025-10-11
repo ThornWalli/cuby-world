@@ -58,6 +58,10 @@ import DebugRendererModule from '../../lib/classes/rendererModule/Debug';
 import { getGltfObjectFromFile } from '../../utils/file';
 import Custom from '@cuby-world/units/Custom';
 import { UNIT_ROTATION } from '@cuby-world/app/lib/types/unit';
+import { groundTextureMap } from '@cuby-world/app/lib/utils/ground/textures';
+import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
+
+import MeshGround from '@cuby-world/app/assets/ground/ground.glb?url';
 
 let unitWrapper: Object3D;
 const subscription = new Subscription();
@@ -135,7 +139,7 @@ const preparedUnits = ref(
 
 onMounted(() => {
   nextTick(async () => {
-    setup();
+    await setup();
     if (options.value.unit) {
       onSelectUnit(options.value.unit);
     }
@@ -146,16 +150,16 @@ onUnmounted(() => {
   subscription.unsubscribe();
 });
 
-// #region setup
+//#region setup
 
-function setup() {
+async function setup() {
   const { $el, renderer } = rendererEl.value!;
 
   if (!renderer) {
     throw new Error('Renderer not ready');
   }
 
-  setupScene(renderer);
+  await setupScene(renderer);
   const onResize = () => {
     dimension.value = new Vector2($el.offsetWidth, $el.offsetHeight);
     renderer!.resize(dimension.value);
@@ -169,20 +173,30 @@ let ghostWrapper: Object3D;
 async function setupScene(renderer: Renderer) {
   const scene = renderer.scene;
 
-  // #region ground
-  const groundTile = new Ground({ position: new Vector3(0, 0, 0) }).box;
-  const groundMesh = new Mesh(groundTile.geometry, groundTile.material);
+  const groundGeometryMap = await loadGroundGeometries(assetLoader, MeshGround);
+
+  //#region ground
+  const groundTile = new Ground({
+    position: new Vector3(0, 0, 0),
+    texture: groundTextureMap.get('wood_laminate_1')
+  });
+  const geometry = groundTile.createGeometry({ groundGeometryMap });
+  const material = await groundTile.createMaterial({
+    assetLoader,
+    groundTextureMap
+  });
+  const groundMesh = new Mesh(geometry, material);
   groundMesh.material.side = DoubleSide;
   groundMesh.receiveShadow = true;
   groundMesh.material.side = DoubleSide;
   scene.add(groundMesh);
-  // #endregion
+  //#endregion
 
   unitWrapper = new Object3D();
   unitWrapper.position.set(0, 0, 0);
   scene.add(unitWrapper);
 
-  // #region ghost
+  //#region ghost
 
   ghostWrapper = new Object3D();
   ghostWrapper.visible = options.value.ghost ?? false;
@@ -202,17 +216,17 @@ async function setupScene(renderer: Renderer) {
   ghostMesh.position.set(0, (size * ratio) / 2 + 0.2, 0);
 
   ghostWrapper.add(ghostMesh);
-  // #endregion
+  //#endregion
 
   subscription.add(
-    renderer.observables.animationLoop$.subscribe(time => {
+    renderer.observables.animationLoop$.subscribe(v => {
       if (currentUnit.value) {
-        currentUnit.value.update(time);
+        currentUnit.value.update(v);
       }
     })
   );
 }
-// #endregion
+//#endregion
 
 const currentSelectedUnit = ref<string>('');
 const isUpload = computed(() => currentSelectedUnit.value === 'custom');

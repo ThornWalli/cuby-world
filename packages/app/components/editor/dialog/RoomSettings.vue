@@ -25,9 +25,6 @@
       <cw-button style-type="tertiary" @click="onClickRoomGridResize()">
         Grid Resize
       </cw-button>
-      <cw-button style-type="tertiary" @click="onClickRoomGridGround()">
-        Grid Ground
-      </cw-button>
       <span class="spacer"></span>
       <cw-button @click="onClickSave()"> Save </cw-button>
     </template>
@@ -43,7 +40,7 @@ import CwButton from '../../../components/Button.vue';
 import CwRoomEditorDialogRoomGridResize from './RoomGridResize.vue';
 import CwRoomEditorDialogRoomGridGround from './RoomGridGround.vue';
 import type { RoomDescription } from '../../../lib/classes/RoomDescription';
-import { Vector2 } from 'three';
+
 import type App from '@cuby-world/app/lib/classes/App';
 import { resizeRoom } from '@cuby-world/app/lib/utils/editor/room';
 
@@ -80,26 +77,12 @@ async function onClickRoomGridResize() {
   }
   let description = model.value!;
   const dialogValue = await dialogRoomGridResize.value!.open(
-    new Vector2(description.grid[0]!.length, description.grid.length)
+    description.gridSize
   );
   if (dialogValue) {
-    const { origin, dimension } = dialogValue;
+    const { dimension } = dialogValue;
 
-    description = resizeRoom(description, origin, dimension);
-    model.value = description;
-    $props.app.loadRoom(description);
-  }
-}
-
-async function onClickRoomGridGround() {
-  const roomModel = model.value!;
-  const { grid, start } = await dialogRoomGridGround.value!.open(model.value);
-  if (grid && start) {
-    const description: RoomDescription = {
-      ...roomModel,
-      grid,
-      start
-    };
+    description = resizeRoom(description, dimension);
     model.value = description;
     $props.app.loadRoom(description);
   }

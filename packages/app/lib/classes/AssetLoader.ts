@@ -76,16 +76,13 @@ export default class AssetLoader {
     T = Texture | CubeTexture | GLTF,
     L extends LoadDescription = LoadDescription
   >(description: L) {
-    const key = JSON.stringify(description);
-    const id = description.id || description.url.toString();
-    if (this.textures.has(key)) {
-      return this.textures.get(
-        description.id || description.url.toString()
-      ) as Promise<T>;
+    const cacheKey = JSON.stringify(description);
+    if (this.textures.has(cacheKey)) {
+      return this.textures.get(cacheKey) as Promise<T>;
     }
     const { promise, resolve, reject } = Promise.withResolvers<T>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.textures.set(id, promise as any);
+    this.textures.set(cacheKey, promise as any);
     this.addDescription$.next({ resolve, reject, description });
 
     return promise;

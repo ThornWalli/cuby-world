@@ -25,7 +25,7 @@ export default class Custom extends Unit<CustomOptions> {
     });
   }
 
-  override createMesh(_context: SetupContext) {
+  override async createMesh(_context: SetupContext) {
     const object = new Object3D();
     return object;
   }

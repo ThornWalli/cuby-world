@@ -2,14 +2,16 @@
   <cw-panel
     class="cw-panel-editor-wall-actions"
     hide-title
-    style-type="transparent"
+    style-type="none"
     title="Wall Actions">
     <div>
       <div v-for="{ icon, label, value: { primary } } in actions" :key="label">
         <cw-toggle-icon
+          hide-label
           :icon="icon"
           :label="label"
           :model-value="modelValue.primary === primary"
+          label-direction="left"
           @update:model-value="
             val =>
               onUpdateModelValue({
@@ -23,6 +25,7 @@
             :key="item.label"
             :icon="item.icon"
             :label="item.label"
+            label-direction="left"
             :model-value="
               modelValue.primary === primary &&
               modelValue.secondary === item.value.secondary
@@ -47,7 +50,7 @@ import { Subscription } from 'rxjs';
 import CwToggleIcon from '../../toggle/Icon.vue';
 import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
 import icons from '@cuby-world/app/utils/icons';
-import { WALL_WINDOW_TYPE } from '@cuby-world/app/lib/types/wall';
+import type { WALL_WINDOW_SIZE } from '@cuby-world/app/lib/types/wall';
 
 const $emit = defineEmits<{
   (e: 'update:model-value', value: WallAction): void;
@@ -57,7 +60,17 @@ defineProps<{
   modelValue: WallAction;
 }>();
 
-const actions = ref([
+interface Item {
+  icon: typeof icons.add;
+  label: string;
+  value: {
+    primary: WALL_ACTION;
+    secondary?: WALL_WINDOW_SIZE;
+  };
+  items?: Item[];
+}
+
+const actions = ref<Item[]>([
   {
     icon: icons.add,
     label: 'Add',
@@ -84,33 +97,7 @@ const actions = ref([
     label: 'Window',
     value: {
       primary: WALL_ACTION.MODE_WINDOW
-    },
-    items: [
-      {
-        icon: icons.window_small,
-        label: 'Small',
-        value: {
-          primary: WALL_ACTION.MODE_WINDOW,
-          secondary: WALL_WINDOW_TYPE.SMALL
-        }
-      },
-      {
-        icon: icons.window_medium,
-        label: 'Medium',
-        value: {
-          primary: WALL_ACTION.MODE_WINDOW,
-          secondary: WALL_WINDOW_TYPE.MEDIUM
-        }
-      },
-      {
-        icon: icons.window_large,
-        label: 'Large',
-        value: {
-          primary: WALL_ACTION.MODE_WINDOW,
-          secondary: WALL_WINDOW_TYPE.LARGE
-        }
-      }
-    ]
+    }
   },
   {
     icon: icons.color,
@@ -135,7 +122,7 @@ onUnmounted(() => {
 <script lang="ts">
 export interface WallAction {
   primary: WALL_ACTION;
-  secondary?: WALL_WINDOW_TYPE;
+  secondary?: WALL_WINDOW_SIZE;
 }
 </script>
 
@@ -146,6 +133,7 @@ export interface WallAction {
   & div {
     position: relative;
     display: flex;
+    flex-direction: column;
     gap: 10px;
 
     &:active,
@@ -158,11 +146,11 @@ export interface WallAction {
 
   & .subs {
     position: absolute;
-    bottom: 100%;
+    right: 100%;
     display: none;
     flex-direction: column;
     gap: 10px;
-    padding-bottom: 10px;
+    padding-right: 10px;
   }
 }
 </style>

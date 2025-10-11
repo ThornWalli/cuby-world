@@ -1,26 +1,38 @@
 import { ReplaySubject, Subject } from 'rxjs';
-import AppModule, { type AppModuleState } from '../AppModule';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
 import type Player from '../Player';
+import type App from '../App';
+
+interface Observables extends AppModuleObservables {
+  currentPlayer$: ReplaySubject<Player>;
+  addPlayer$: Subject<Player>;
+  removePlayer$: Subject<Player>;
+}
 
 interface State extends AppModuleState {
   currentPlayer?: Player;
   players: Player[];
 }
-export default class PlayerAppModule extends AppModule<State> {
+export default class PlayerAppModule extends AppModule<State, Observables> {
   static override TYPE = 'player';
   state: State = {
     players: []
   };
 
-  observables = {
-    currentPlayer$: new ReplaySubject<Player>(0),
-    addPlayer$: new Subject<Player>(),
-    removePlayer$: new Subject<Player>()
-  };
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.currentPlayer$ = new ReplaySubject<Player>(0);
+    this.observables.addPlayer$ = new Subject<Player>();
+    this.observables.removePlayer$ = new Subject<Player>();
+    //#endregion
+  }
 
   override destroy(): void {
     super.destroy();
-    Object.values(this.observables).forEach(obs => obs.unsubscribe());
     this.state.players.forEach(player => player.destroy());
   }
 

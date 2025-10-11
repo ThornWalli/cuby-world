@@ -24,7 +24,7 @@ const $props = defineProps<{
   title?: string;
   hideTitle?: boolean;
   position?: PANEL_POSITION | `${PANEL_POSITION}`;
-  styleType?: 'default' | 'outlined' | 'transparent';
+  styleType?: 'none' | 'default' | 'outlined';
 }>();
 
 const hasTitle = computed(() => $props.title || $slots.title);
@@ -50,6 +50,7 @@ export enum PANEL_POSITION {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-width: 100%;
   padding: 8px;
 
   &.style-type-default {
@@ -87,6 +88,7 @@ export enum PANEL_POSITION {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 100%;
   }
 
   &[class*='position-'] {

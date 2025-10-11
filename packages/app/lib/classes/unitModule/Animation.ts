@@ -7,10 +7,8 @@ import { OBJECT_NAME } from '../Unit';
 
 type State = UnitModuleState;
 
-export class AnimationUnitModule extends UnitModule {
+export class AnimationUnitModule extends UnitModule<State> {
   static override TYPE = 'animation';
-
-  state: State = {};
 
   clock: Clock = new Clock();
   mixer!: AnimationMixer;

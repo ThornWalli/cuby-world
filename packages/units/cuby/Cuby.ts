@@ -30,6 +30,7 @@ import {
 } from '@cuby-world/app/lib/classes/AssetLoader';
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
+import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 
 export enum CUBY_COLOR {
   BLUE = 'blue',
@@ -94,7 +95,7 @@ export default class Cuby extends Unit<
             stepDuration: 325,
             rotationDuration: 125
           },
-          size: 0.6,
+          size: 0.55,
           color: CUBY_COLOR.BLUE,
           state: CUBY_STATE.DEFAULT,
           ...options.options
@@ -122,12 +123,12 @@ export default class Cuby extends Unit<
       this._sleepPlain = sleepPlain;
     }
     this.subscription.add(
-      this.modules.movement.moveStart$.subscribe(() => {
+      this.modules.movement.observables.moveStart$.subscribe(() => {
         this.wakeUp();
       })
     );
     this.subscription.add(
-      this.modules.movement.moveEnd$.subscribe(() => {
+      this.modules.movement.observables.moveEnd$.subscribe(() => {
         this.sleep();
       })
     );
@@ -154,16 +155,16 @@ export default class Cuby extends Unit<
 
   assetsByCubyState?: { [key in CUBY_STATE]: MeshPhongMaterial[] };
   private _sleepPlain?: Mesh;
-  override createMesh({ assetLoader }: SetupContext) {
+  override async createMesh({ assetLoader }: SetupContext) {
     const size = this.options.size;
     const ratio = 19 / 20;
     const geometry = new BoxGeometry(size * 1, size * ratio, size * 1);
 
     const mesh: Mesh = new Mesh(geometry, defaultMaterial());
 
-    setupBodyMaterials(this, mesh, assetLoader).then(assets => {
+    await setupBodyMaterials(this, mesh, assetLoader).then(assets => {
       this.assetsByCubyState = assets;
-      this.setCubyState(this.options.state);
+      this.setCubyState(this.options.state, mesh);
       this.materialReady$.next();
     });
 
@@ -174,11 +175,10 @@ export default class Cuby extends Unit<
     return mesh;
   }
 
-  setCubyState(state: CUBY_STATE) {
+  setCubyState(state: CUBY_STATE, mesh: Mesh = this.mesh) {
     if (!this.assetsByCubyState) {
       throw new Error('Cuby materials not ready yet');
     }
-    const mesh = this.mesh;
     mesh.material = this.assetsByCubyState[state];
   }
 
@@ -464,7 +464,7 @@ class UnitAnimation extends AnimationUnitModule {
 
     return mesh;
   }
-  override update(_deltaTime: number) {
-    this.mixer?.update(this.clock.getDelta());
+  override update({ delta }: AnimationLoopValue) {
+    this.mixer?.update(delta);
   }
 }

@@ -20,16 +20,17 @@ export interface RoomStartPosition<
 }
 export interface RoomDescription<
   Rotation = UNIT_ROTATION,
-  WallPosition = Vector2,
+  WallPosition = Vector3,
   UnitPosition = Vector3,
-  GroundPosition = Vector2
+  GroundPosition = Vector3
 > {
   id: string;
   info: {
     name: string;
     description?: string;
   };
-  grid: Grid;
+  gridSize: Vector2;
+
   units: UnitDescription<Rotation, UnitPosition>[];
   walls: WallDescription<WallPosition>[];
   groundStyles: GroundStyleDescription<GroundPosition[]>[];
@@ -41,9 +42,9 @@ export interface RoomDescription<
 
 export type ImportRoomDescription = RoomDescription<
   UNIT_ROTATION,
-  Vector2,
   Vector3,
-  Vector2
+  Vector3,
+  Vector3
 >;
 export type JsonRoomDescription = RoomDescription<
   string,

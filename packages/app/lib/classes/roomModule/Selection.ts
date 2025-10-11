@@ -7,9 +7,19 @@ import {
   BoxGeometry,
   Vector3
 } from 'three';
-import RoomModule, { type RoomModuleState } from '../RoomModule';
+import RoomModule, {
+  type RoomModuleObservables,
+  type RoomModuleState
+} from '../RoomModule';
 import { OBJECT_NAME } from '../Unit';
+import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
+import type Room from '../Room';
+
+interface Observables extends RoomModuleObservables {
+  selectionVisible$: ReplaySubject<boolean>;
+  position$: Observable<Vector3>;
+}
 
 interface State extends RoomModuleState {
   position: Vector3;
@@ -17,7 +27,7 @@ interface State extends RoomModuleState {
   visible: boolean;
 }
 
-export default class SelectionModule extends RoomModule<State> {
+export default class SelectionModule extends RoomModule<State, Observables> {
   static override TYPE = 'selection';
 
   state: State = {
@@ -26,9 +36,15 @@ export default class SelectionModule extends RoomModule<State> {
     visible: true
   };
 
-  selectionVisible$ = new ReplaySubject<boolean>(0);
   private positionSubject = new ReplaySubject<Vector3>(0);
-  position$ = this.positionSubject.pipe();
+
+  constructor(room: Room, debug: boolean = false) {
+    super(room, debug);
+    //#region observables
+    this.observables.selectionVisible$ = new ReplaySubject<boolean>(0);
+    this.observables.position$ = this.positionSubject.pipe();
+    //#endregion
+  }
 
   override setup(): void {
     this.state.selectionMesh = createSelectionMesh();
@@ -39,6 +55,8 @@ export default class SelectionModule extends RoomModule<State> {
     this.room.mesh.add(this.state.selectionMesh);
   }
 
+  //#region getter/setters
+
   setSelectionPosition(position: Vector3) {
     this.state.position = position;
     this.positionSubject.next(position);
@@ -47,23 +65,29 @@ export default class SelectionModule extends RoomModule<State> {
     }
   }
 
+  //#endregion
+
+  //#region methods
+
   showSelection() {
     if (this.state.selectionMesh && !this.state.selectionMesh.visible) {
       this.state.selectionMesh.visible = true;
-      this.selectionVisible$.next(true);
+      this.observables.selectionVisible$.next(true);
     }
   }
 
   hideSelection() {
     if (this.state.selectionMesh && this.state.selectionMesh.visible) {
       this.state.selectionMesh.visible = false;
-      this.selectionVisible$.next(false);
+      this.observables.selectionVisible$.next(false);
     }
   }
 
   isSelectionVisible() {
     return this.state.selectionMesh?.visible;
   }
+
+  //#endregion
 }
 
 function createSelectionMesh() {

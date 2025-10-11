@@ -3,11 +3,12 @@
     class="cw-panel-editor-actions"
     hide-title
     title="Actions"
-    style-type="transparent">
+    style-type="none">
     <slot name="before"></slot>
     <cw-toggle-icon
       v-for="action in preparedActions"
       :key="action.label"
+      label-direction="right"
       v-bind="action" />
     <slot name="after"></slot>
   </cw-panel>

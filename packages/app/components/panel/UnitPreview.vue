@@ -14,17 +14,14 @@
 
 <script lang="ts" setup>
 import type { Mesh, OrthographicCamera, Scene } from 'three';
-import { WebGLRenderer } from 'three';
+import { Vector2, WebGLRenderer } from 'three';
 import type Unit from '../../lib/classes/Unit';
 import { computed, onMounted, ref, watch } from 'vue';
 import { OBJECT_NAME } from '../../lib/classes/Unit';
 import { Subscription } from 'rxjs';
 
 import CwPanel from '../Panel.vue';
-import {
-  createPreviewCamera,
-  createPreviewScene
-} from '../../utils/unitPreview';
+import { createPreviewCamera, createScene } from '../../utils/thumbs';
 
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
@@ -83,14 +80,16 @@ function setup() {
     return;
   }
 
-  previewScene = createPreviewScene();
-  previewCamera = createPreviewCamera();
-
   renderer = new WebGLRenderer({ canvas: canvasEl.value, alpha: true });
   const canvas = canvasEl.value;
+  const dimension = new Vector2(canvas.offsetWidth, canvas.offsetHeight);
   if (canvas) {
-    renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+    renderer.setSize(dimension.x, dimension.y);
   }
+
+  previewScene = createScene();
+  previewCamera = createPreviewCamera(canvas, dimension.width);
+
   ready.value = true;
 }
 

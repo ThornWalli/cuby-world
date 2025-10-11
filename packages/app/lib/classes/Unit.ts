@@ -17,6 +17,8 @@ import { findAllMeshes } from '@cuby-world/units/utils/mesh';
 import RoomUnitModule from './unitModule/Room';
 import type { UnitChunking } from './UnitChunkManager';
 import { ROTATION_TYPE, UNIT_ROTATION } from '../types/unit';
+import type { UnitModuleState } from './UnitModule';
+import type { AnimationLoopValue } from './Renderer';
 
 export interface RawUnitDescription<Rotation = string, Position = number[]> {
   unit: string;
@@ -24,7 +26,8 @@ export interface RawUnitDescription<Rotation = string, Position = number[]> {
     accessible?: boolean;
     position: Position;
     rotation: Rotation;
-    options?: { [key: string]: unknown };
+    options: { [key: string]: unknown };
+    moduleStates: { [key: string]: UnitModuleState };
     [key: string]: unknown;
   };
 }
@@ -33,13 +36,14 @@ export type UnitDescription<
   Position = Vector3
 > = RawUnitDescription<Rotation, Position>;
 
-export type UnitModuleList =
+export type UnitModuleList = (
   | typeof PlayerUnitModule
   | typeof RoomUnitModule
   | typeof MovementUnitModule
   | typeof SelectionUnitModule
   | typeof AnimationUnitModule
-  | typeof PlacementUnitModule;
+  | typeof PlacementUnitModule
+)[];
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type UnitOptionsPlaceholder = {};
@@ -66,6 +70,7 @@ export interface UnitConstructorOptions<
   size?: Vector3;
   rotation?: UNIT_ROTATION;
   options?: Options;
+  moduleState?: { [key: string]: UnitModuleState };
 }
 
 export const rotationDirections = {
@@ -150,7 +155,8 @@ export enum ACCESSIBLE_TYPE {
 
 export default class Unit<
   Options extends UnitOptions = UnitOptions,
-  Modules extends UnitModules = UnitModules
+  Modules extends UnitModules = UnitModules,
+  ModuleList extends UnitModuleList = UnitModuleList
 > implements UnitChunking
 {
   debug = false;
@@ -160,14 +166,15 @@ export default class Unit<
   static KEY = 'unit';
   static NAME = 'Unit';
 
-  // #region subscriptions
+  //#region subscriptions
   ready$ = new ReplaySubject<Unit>(1);
   materialReady$ = new ReplaySubject<void>(1);
   rotate$ = new ReplaySubject<UNIT_ROTATION>(0);
-  // #endregion
+  //#endregion
 
-  moduleDefinitions = [PlayerUnitModule];
-  modules: Modules;
+  modules: Modules = {} as Modules;
+  moduleList: ModuleList;
+
   assetLoader?: AssetLoader;
 
   subscription = new Subscription();
@@ -181,17 +188,30 @@ export default class Unit<
 
   position$: ReplaySubject<Vector3> = new ReplaySubject(0);
   private _position: Vector3 = new Vector3(0, 0, 0);
+  get position() {
+    return this._position;
+  }
   rotation: UNIT_ROTATION = UNIT_ROTATION.SOUTH;
 
   size: Vector3 = new Vector3(1, 1, 1);
 
+  get key(): string {
+    return (this.constructor as typeof Unit).KEY;
+  }
+
   toDescription(): UnitDescription {
+    const moduleStates = Object.fromEntries(
+      Object.entries(this.modules).map(([key, module]) => {
+        return [key, module.getState()];
+      })
+    );
     return {
-      unit: (this.constructor as typeof Unit).KEY,
+      unit: this.key,
       options: {
         position: this._position.clone(),
         rotation: this.rotation,
-        options: { ...this.options }
+        options: { ...this.options },
+        moduleStates
       }
     };
   }
@@ -210,11 +230,13 @@ export default class Unit<
       position,
       size,
       rotation,
-      options
+      options,
+      moduleState
     }: UnitConstructorOptions<Options> & { debug?: boolean } = {
-      name: 'Unit'
+      name: 'Unit',
+      moduleState: {}
     },
-    modules: UnitModuleList[] = []
+    moduleList: ModuleList = [] as unknown as ModuleList
   ) {
     this.debug = debug ?? false;
     this.options = {
@@ -225,25 +247,26 @@ export default class Unit<
     this.size = size || this.size;
     this.accessible = accessible ?? false;
 
-    // #region modules
-    modules.push(PlayerUnitModule);
-    modules.push(RoomUnitModule);
-    modules.push(MovementUnitModule);
-
+    //#region modules
+    moduleList.push(PlayerUnitModule, RoomUnitModule, MovementUnitModule);
     if (selectable) {
-      modules.push(SelectionUnitModule);
+      moduleList.push(SelectionUnitModule);
     }
 
     if (placeable) {
-      modules.push(PlacementUnitModule);
+      moduleList.push(PlacementUnitModule);
     }
 
-    const preparedModules = modules.map(ModuleClass => {
-      const moduleInstance = new ModuleClass(this, this.debug);
+    this.moduleList = moduleList;
+    console.log(moduleState);
+    const preparedModules = moduleList.map(ModuleClass => {
+      const state = moduleState?.[ModuleClass.TYPE] ?? {};
+      const moduleInstance = new ModuleClass(this, state, this.debug);
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
-    // #endregion
+
+    //#endregion
 
     this.root = this.createRoot(name);
 
@@ -251,6 +274,10 @@ export default class Unit<
     this.setRotation(
       rotation || getRotationByEuler(this.root.rotation) || UNIT_ROTATION.SOUTH
     );
+  }
+
+  equal(unit: Unit) {
+    return this.id === unit.id;
   }
 
   createRoot(name: string) {
@@ -320,7 +347,7 @@ export default class Unit<
     this.setPosition(this.getPosition());
   }
 
-  // #region rotation
+  //#region rotation
 
   setRotation(rotation: UNIT_ROTATION) {
     this.rotation = rotation;
@@ -376,7 +403,7 @@ export default class Unit<
       ]!
     );
   }
-  // #endregion
+  //#endregion
 
   centerInTile(position: Vector3) {
     let offset: Vector3 = new Vector3(0, 0, 0);
@@ -431,7 +458,7 @@ export default class Unit<
 
   async setup(context: SetupContext) {
     this.assetLoader = context.assetLoader;
-    let mesh = this.createMesh(context);
+    let mesh = await this.createMesh(context);
 
     const modules: UnitModule[] = Object.values(this.modules);
 
@@ -460,9 +487,9 @@ export default class Unit<
 
   _updateModules: UnitModule[] = [];
 
-  update(time: number) {
+  update(v: AnimationLoopValue) {
     this._updateModules.forEach(module => {
-      module.update(time);
+      module.update(v);
     });
   }
 
@@ -472,17 +499,17 @@ export default class Unit<
     return getRotationFromVector(direction, diagonal);
   }
 
-  // #region visible
+  //#region visible
   getVisible() {
     return this.root.visible;
   }
   setVisible(visible: boolean) {
     this.root.visible = visible;
   }
-  // #endregion
+  //#endregion
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  createMesh(context: SetupContext): Object3D {
+  createMesh(context: SetupContext): Promise<Object3D> {
     // Override in subclasses to create a mesh
     throw new Error('createMesh method must be implemented in subclasses');
   }

@@ -14,13 +14,12 @@ import { useRoute, useRuntimeConfig } from '#imports';
 import { APP_MODE, type AppConfig } from '@cuby-world/app/lib/classes/App';
 
 import { defineAsyncComponent, onMounted, ref } from 'vue';
-import roomTest2001 from '@cuby-world/app/lib/rooms/wall-test.json';
+import roomTest2001 from '@cuby-world/app/lib/rooms/wall-test-2.json';
 import {
   jsonParse,
   parseRoomDescription
 } from '@cuby-world/app/lib/utils/parse';
 import type { RoomDescription } from '@cuby-world/app/lib/classes/RoomDescription';
-// import roomTest2001 from '@cuby-world/app/lib/rooms/test-2004.json';
 
 const App = defineAsyncComponent(
   () => import('@cuby-world/app/components/App.vue')

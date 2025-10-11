@@ -1,3 +1,5 @@
+import type { SkinIdentifier } from './skin';
+
 export enum EDITOR_ACTION {
   NONE = 'none',
   WALL = 'wall',
@@ -15,13 +17,15 @@ export enum WALL_ACTION {
 
 export enum GROUND_ACTION {
   NONE = 'none',
-  MODE_STYLE = 'style',
-  GROUND_SINGLE_SET = 'ground_single_set',
-  GROUND_MULTIPLE_SET = 'ground_multiple_set'
+  STYLE = 'style',
+  REMOVE = 'remove',
+  STYLE_SINGLE_SET = 'style_single_set',
+  STYLE_MULTIPLE_SET = 'style_multiple_set',
+  REMOVE_SINGLE_SET = 'remove_single_set',
+  REMOVE_MULTIPLE_SET = 'remove_multiple_set'
 }
 
-// export interface WallStyleSelect {
-//   id: string;
-//   color: string;
-//   name: string;
-// }
+export interface ExtensionSelectDescription {
+  id: string;
+  skin: SkinIdentifier;
+}

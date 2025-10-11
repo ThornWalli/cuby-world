@@ -6,6 +6,7 @@
     <cw-panel-group position="top-left">
       <cw-panel-camera-control :app="app" />
       <cw-panel-wall-control :app="app" />
+      <cw-panel-floor-control :app="app" />
     </cw-panel-group>
     <cw-panel-group position="top-right">
       <cw-panel-general :app="app" />
@@ -16,9 +17,15 @@
         :actions="actions"
         :app="app">
         <template #before>
-          <cw-button-icon icon="settings" @click="onClickSettings" />
+          <cw-button-icon
+            label="Settings"
+            label-direction="right"
+            icon="settings"
+            @click="onClickSettings" />
         </template>
       </cw-panel-editor-actions>
+    </cw-panel-group>
+    <cw-panel-group id="teleports-panel-right" position="right">
     </cw-panel-group>
     <cw-panel-group id="teleports-panel-bottom" position="bottom">
     </cw-panel-group>
@@ -32,6 +39,7 @@
         ref="dialogRoomSettings"
         :app="app" />
     </teleport>
+    <!-- <cw-room-editor-dialog-debug ref="dialogDebug" :app="app" /> -->
   </div>
 </template>
 
@@ -51,14 +59,16 @@ import type Unit from '../../lib/classes/Unit';
 
 import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelWallControl from '../panel/WallControl.vue';
+import CwPanelFloorControl from '../panel/FloorControl.vue';
 
 import CwPanelGeneral from '../editor/panel/General.vue';
 import CwPanelGroup from '../PanelGroup.vue';
 import CwPanelEditorActions from '../editor/panel/Actions.vue';
 import CwRoomEditorDialogRoomSettings from '../editor/dialog/RoomSettings.vue';
+import type CwRoomEditorDialogDebug from '../editor/dialog/Debug.vue';
 
-import { EDITOR_ACTION } from '@cuby-world/app/lib/types/editor';
-import icons from '@cuby-world/app/utils/icons';
+import { EDITOR_ACTION } from '../../lib/types/editor';
+import icons from '../../utils/icons';
 import type { EditorApp } from '../../lib/classes/App';
 
 import CwButtonIcon from '../button/IconButton.vue';
@@ -66,6 +76,9 @@ import CwButtonIcon from '../button/IconButton.vue';
 const dialogRoomSettings = ref<InstanceType<
   typeof CwRoomEditorDialogRoomSettings
 > | null>(null);
+const dialogDebug = ref<InstanceType<typeof CwRoomEditorDialogDebug> | null>(
+  null
+);
 
 const controlComponent = computed(() => {
   switch (currentAction.value) {
@@ -119,8 +132,10 @@ onMounted(async () => {
   nextTick(() => {
     setup();
 
-    currentAction.value = EDITOR_ACTION.WALL;
+    // currentAction.value = EDITOR_ACTION.GROUND;
     // onClickSettings();
+
+    dialogDebug.value?.open();
   });
 });
 

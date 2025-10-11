@@ -1,94 +1,38 @@
 import {
   Box3,
   Frustum,
-  Matrix4,
-  Vector2,
   type Vector3,
-  type Camera,
+  Matrix4,
   Object3D,
+  type Camera,
   type InstancedMesh
 } from 'three';
-import RoomModule, { type RoomModuleState } from '../RoomModule';
-import { createGroundChunks } from '../../utils/ground';
+import RoomModule, {
+  type RoomModuleObservables,
+  type RoomModuleState
+} from '../RoomModule';
+import { createGroundChunks, loadGroundGeometries } from '../../utils/ground';
 import type Room from '../Room';
 import {
   concatAll,
   concatMap,
+  debounceTime,
   distinctUntilChanged,
   filter,
-  Subject,
-  tap
+  Subject
 } from 'rxjs';
 import { preparePosition, type PreparedPosition } from '../../utils/matrix';
+import type { GroundGeometryMap } from '../../types/ground';
+import MeshGround from '@cuby-world/app/assets/ground/ground.glb?url';
+import skins from '../../utils/ground/skins';
+import GroundStyleMap from '../GroundStyleMap';
 
-import type { GroundStyle } from '../../types/ground/style';
-import type { GroundStyleDescription } from '../../types/ground';
-
-export class GroundStyleMap {
-  map: GroundStyle[][];
-
-  constructor({
-    map: map
-  }: {
-    map?: GroundStyle[][];
-  } = {}) {
-    this.map = map ?? [];
-  }
-
-  get(x: number, y: number) {
-    if (this.map[y] && this.map[y][x]) {
-      return this.map[y][x];
-    }
-    return {
-      id: 'color_grey',
-      options: {
-        color: '#888888'
-      }
-    };
-  }
-
-  set(x: number, y: number, style: GroundStyle) {
-    if (!this.map[y]) {
-      this.map[y] = [];
-    }
-    this.map[y][x] = style;
-  }
-
-  toGroundStyles() {
-    return Array.from(
-      this.map
-        .reduce(
-          (result, map_, x) => {
-            map_.forEach((groundStyle, y) => {
-              result.set(
-                groundStyle.id,
-                result.get(groundStyle.id) ?? { ...groundStyle, positions: [] }
-              );
-              result.get(groundStyle.id)!.positions.push(new Vector2(x, y));
-            });
-            return result;
-          },
-          new Map() as Map<string, GroundStyleDescription<Vector2[]>>
-        )
-        .values()
-    );
-  }
-
-  toJSON() {
-    return {
-      map: this.map
-    };
-  }
-
-  static fromGroundsStyles(groundstyles: GroundStyleDescription[]) {
-    const groundStyleMap = new GroundStyleMap();
-    groundstyles.forEach(({ id, options, positions }) => {
-      positions.forEach(position => {
-        groundStyleMap.set(position.x, position.y, { id, options });
-      });
-    });
-    return groundStyleMap;
-  }
+interface Observables extends RoomModuleObservables {
+  hover$: Subject<Vector3>;
+  click$: Subject<Vector3>;
+  pointerOut$: Subject<PointerEvent>;
+  pointerEnter$: Subject<PointerEvent>;
+  refreshGround$: Subject<GroundStyleMap>;
 }
 
 interface State extends RoomModuleState {
@@ -96,7 +40,7 @@ interface State extends RoomModuleState {
   groundChunks: InstancedMesh[];
   groundMesh: Object3D | null;
 }
-export default class GroundModule extends RoomModule<State> {
+export default class GroundModule extends RoomModule<State, Observables> {
   static override TYPE = 'ground';
 
   private frustum: Frustum;
@@ -108,15 +52,17 @@ export default class GroundModule extends RoomModule<State> {
     groundMesh: null
   };
 
-  override observables = {
-    hover$: new Subject<Vector3>(),
-    click$: new Subject<Vector3>(),
-    pointerOut$: new Subject<PointerEvent>(),
-    pointerEnter$: new Subject<PointerEvent>()
-  };
-
   constructor(room: Room, debug: boolean = false) {
     super(room, debug);
+
+    //#region observables
+    this.observables.hover$ = new Subject<Vector3>();
+    this.observables.click$ = new Subject<Vector3>();
+    this.observables.pointerOut$ = new Subject<PointerEvent>();
+    this.observables.pointerEnter$ = new Subject<PointerEvent>();
+    this.observables.refreshGround$ = new Subject<GroundStyleMap>();
+    //#endregion
+
     this.frustum = new Frustum();
     this.projScreenMatrix = new Matrix4();
 
@@ -127,11 +73,12 @@ export default class GroundModule extends RoomModule<State> {
 
   override destroy() {
     this.state.groundChunks.forEach(chunk => {
-      chunk.geometry.dispose();
-      if (Array.isArray(chunk.material)) {
-        chunk.material.forEach(mat => mat.dispose());
+      const { geometry, material } = chunk;
+      geometry.dispose();
+      if (Array.isArray(material)) {
+        material.forEach(mat => mat.dispose());
       } else {
-        chunk.material.dispose();
+        material.dispose();
       }
     });
     if (this.state.groundMesh) {
@@ -141,7 +88,12 @@ export default class GroundModule extends RoomModule<State> {
     super.destroy();
   }
 
-  override setup() {
+  groundGeometryMap: GroundGeometryMap = new Map();
+  override async setup() {
+    this.groundGeometryMap = await loadGroundGeometries(
+      this.room.app.assetLoader,
+      MeshGround
+    );
     this.setupGround();
 
     const renderer = this.room.app.renderer!;
@@ -195,9 +147,7 @@ export default class GroundModule extends RoomModule<State> {
       groundIntersectionListener.hoverIntersect$
         .pipe(
           filter(intersections => intersections.length < 1),
-          tap(() => {
-            console.log('no hover');
-          })
+          debounceTime(100)
         )
         .subscribe(() => {
           this.room.modules.selection.hideSelection();
@@ -232,7 +182,20 @@ export default class GroundModule extends RoomModule<State> {
     );
   }
 
-  // #region events
+  //#region getters/setters
+
+  getGroundStyleMap() {
+    return this.state.groundStyleMap;
+  }
+
+  setGroundStyles(groundStyleMap: GroundStyleMap) {
+    this.state.groundStyleMap = groundStyleMap;
+    this.refreshGround();
+  }
+
+  //#endregion
+
+  //#region events
 
   private onClick({ worldPosition }: PreparedPosition) {
     this.observables.click$.next(worldPosition!);
@@ -254,22 +217,13 @@ export default class GroundModule extends RoomModule<State> {
     this.observables.pointerOut$.next(e);
   }
 
-  // #endregion
+  //#endregion
 
   override updateThrottle500ms(
     _time: number,
     options: { camera: Camera }
   ): void {
     this.updateVisibility(options.camera);
-  }
-
-  getGroundStyleMap() {
-    return this.state.groundStyleMap;
-  }
-
-  setGroundStyles(groundStyleMap: GroundStyleMap) {
-    this.state.groundStyleMap = groundStyleMap;
-    this.refreshGround();
   }
 
   private setupGround() {
@@ -286,28 +240,54 @@ export default class GroundModule extends RoomModule<State> {
     this.refreshGround();
   }
 
+  getGrid() {
+    const groundStyleMap = this.state.groundStyleMap;
+
+    return Array.from(groundStyleMap.map.values())
+      .flat()
+      .flat()
+      .map(skinId => {
+        return skinId && (skins.get(skinId)?.skin.accessible ?? 1) ? 1 : 0;
+      });
+  }
+  getGrids() {
+    const groundStyleMap = this.room.modules.ground.getGroundStyleMap();
+
+    return Array.from(groundStyleMap.map.values()).map(data => {
+      data.flat().map(skinId => {
+        return skinId && (skins.get(skinId)?.skin.accessible ?? 1) ? 1 : 0;
+      });
+    });
+  }
+
   refreshGround() {
     const groundMesh = this.state.groundMesh;
     if (!groundMesh) {
       throw new Error('Setup before refresh ground');
     }
     this.state.groundChunks.forEach(chunk => {
-      chunk.geometry.dispose();
-      if (Array.isArray(chunk.material)) {
-        chunk.material.forEach(mat => mat.dispose());
+      const { geometry, material } = chunk;
+      geometry.dispose();
+      if (Array.isArray(material)) {
+        material.forEach(mat => mat.dispose());
       } else {
-        chunk.material.dispose();
+        material.dispose();
       }
       this.state.groundMesh?.remove(chunk);
     });
     this.state.groundChunks = [];
 
     this.state.groundChunks = createGroundChunks(
-      this.room.grid,
+      this.room.gridSize,
       this.state.groundStyleMap,
-      16
+      16,
+      {
+        assetLoader: this.room.app.assetLoader,
+        groundGeometryMap: this.groundGeometryMap
+      }
     );
     this.state.groundChunks.forEach(chunk => this.state.groundMesh!.add(chunk));
+    this.observables.refreshGround$.next(this.state.groundStyleMap);
   }
 
   private updateVisibility(camera: Camera) {

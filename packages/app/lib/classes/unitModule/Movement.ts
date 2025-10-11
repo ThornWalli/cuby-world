@@ -1,5 +1,9 @@
 /* eslint-disable complexity */
-import type { UnitModuleOptions, UnitModuleState } from './../UnitModule';
+import type {
+  UnitModuleObservables,
+  UnitModuleOptions,
+  UnitModuleState
+} from './../UnitModule';
 import { Vector3, Euler } from 'three';
 import EasyStar from 'easystarjs';
 import UnitModule from '../UnitModule';
@@ -9,13 +13,21 @@ import { getYPositionByPosition } from '../../utils/room';
 import { getRadByRotation, type UnitOptions } from '../Unit';
 import { easeOutExpo, easeOutQuad } from '@cuby-world/app/utils/easings';
 import RoomGrid from '../RoomGrid';
-import { setWallConditions } from '../../utils/wall';
+import {
+  getWallDoorExtensionsByPosition,
+  setWallConditions
+} from '../../utils/wall';
 import type Wall from '../Wall';
+import type { ArrayKeyMap } from '../ArrayKeyMap';
+import type { AnimationLoopValue } from '../Renderer';
+import type DoorWallExtension from '../wallExtension/Door';
+import { WALL_DIRECTION } from '../../types/wall';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
   nextPosition: Vector3 | null; // Nächste Position, zu der sich die Einheit bewegen soll
   startPosition: Vector3 | null; // Startposition der Bewegung
+  lastPosition: Vector3 | null; // Letzte Position der Bewegung
 }
 
 interface RotateOptions {
@@ -33,35 +45,61 @@ export interface MovementModuleOptions extends UnitModuleOptions {
   };
 }
 
-type State = UnitModuleState;
-
-export default class MovementUnitModule extends UnitModule {
-  static override TYPE = 'movement';
-
-  state: State = {};
-
-  moveStart$ = new Subject<Vector3>();
-  moveStep$ = new Subject<Vector3>();
-  moveEnd$ = new Subject<void>();
-
-  private moveOptions: MoveOptions = {
+function getDefaultMoveOptions(): MoveOptions {
+  return {
     startDuration: 0,
     nextPosition: null,
-    startPosition: null
+    startPosition: null,
+    lastPosition: null
   };
-  private rotateOptions: RotateOptions = {
+}
+
+function getDefaultRotateOptions(): RotateOptions {
+  return {
     startDuration: 0,
     nextRotation: null,
     startRotation: null,
     lastRotation: null
   };
+}
 
-  currentPath: Vector3[] = [];
+interface MovementDescription {
+  path: Vector3[];
+  doorWallByPosition: ArrayKeyMap<[number, number], DoorWallExtension>;
+}
 
-  moveTo(position: Vector3, options: { force?: boolean } = {}) {
+interface Observables extends UnitModuleObservables {
+  moveStart$: Subject<Vector3>;
+  moveStep$: Subject<Vector3>;
+  moveEnd$: Subject<void>;
+}
+
+type State = UnitModuleState;
+
+export default class MovementUnitModule extends UnitModule<State, Observables> {
+  static override TYPE = 'movement';
+
+  private moveOptions: MoveOptions | null = null;
+  private rotateOptions: RotateOptions | null = null;
+
+  currentMovement: MovementDescription | null = null;
+
+  constructor(unit: Unit, state: State, debug: boolean) {
+    super(unit, state, debug);
+    this.observables.moveStart$ = new Subject<Vector3>();
+    this.observables.moveStep$ = new Subject<Vector3>();
+    this.observables.moveEnd$ = new Subject<void>();
+  }
+
+  async moveTo(position: Vector3, options: { force?: boolean } = {}) {
     const room = this.currentRoom;
     if (!room?.description) {
       throw new Error('Unit is not in a room, cannot move to position');
+    }
+
+    if (this.currentMovement) {
+      console.log('Bewegung läuft bereits');
+      return;
     }
 
     const grid = createRoomGrid(this.unit, 1 / (1 / 4));
@@ -77,7 +115,9 @@ export default class MovementUnitModule extends UnitModule {
 
     const startPosition = this.unit.getPosition().clone().round();
 
-    this.setCurrentPath(
+    this.moveOptions = getDefaultMoveOptions();
+    this.rotateOptions = getDefaultRotateOptions();
+    this.currentMovement = await this.prepareMovement(
       startPosition,
       position.clone().round(),
       grid,
@@ -86,44 +126,44 @@ export default class MovementUnitModule extends UnitModule {
       options.force
     );
 
-    if (this.rotateOptions.nextRotation && this.moveOptions.nextPosition) {
-      this.moveOptions.nextPosition = null;
-    }
-
-    this.moveStart$.next(position);
+    this.observables.moveStart$.next(position);
   }
 
   /**
    * Bewegt und animiert die Position des Einheitsobjekts.
    * @param time
    */
-  override update(time: number) {
-    this.movementUpdate(time);
+  override update(v: AnimationLoopValue) {
+    if (this.currentMovement) {
+      this.movementUpdate(v);
+    }
   }
 
-  endPosition: Vector3 | null = null;
-  async setCurrentPath(
+  private async prepareMovement(
     startPosition: Vector3,
     endPosition: Vector3,
     roomGrid: RoomGrid,
     walls: Wall[],
     isBlocked: boolean,
     force?: boolean
-  ) {
+  ): Promise<MovementDescription> {
     const movementOptions = (
       this.unit as Unit<UnitOptions<MovementModuleOptions>>
     ).options.movement;
-    this.endPosition = endPosition;
 
     const easystar = new EasyStar.js();
-    console.log('roomGrid', roomGrid.toMatrix());
     easystar.setGrid(roomGrid.toMatrix());
 
     if (movementOptions.diagonalMovement) {
       easystar.enableDiagonals();
     }
+
     easystar.setAcceptableTiles([0]);
 
+    /**
+     * Übernehme Wand-Daten in das Grid
+     * Beispiel Wände nicht begehbar, Türen begehbar
+     */
     setWallConditions(walls, easystar);
 
     let path = await new Promise<number[][]>(resolve => {
@@ -149,30 +189,78 @@ export default class MovementUnitModule extends UnitModule {
       ];
     }
 
+    const doorWallByPosition = getWallDoorExtensionsByPosition(walls);
+
     // Exclude the starting position and the blocked end position if necessary
-    this.currentPath = path
-      .map(point => new Vector3(point[0], 0, point[1]))
-      .slice(1, path.length - (isBlocked ? 1 : 0));
+    return {
+      path: path
+        .map(point => new Vector3(point[0], 0, point[1]))
+        .slice(1, path.length - (isBlocked ? 1 : 0)),
+      doorWallByPosition
+    };
   }
 
   lastRotation: Euler | null = null;
-  movementUpdate(time: number) {
+
+  /**
+   * Bewegt die Einheit entlang des aktuellen Pfads.
+   * Aktion Reihenfolge: Rotation -> Bewegung
+   * Rotation wird nur ausgeführt, wenn die nächste Position nicht in Blickrichtung liegt.
+   */
+  movementUpdate({ time }: AnimationLoopValue) {
     const room = this.currentRoom!;
     const rotateOptions = this.rotateOptions;
     const moveOptions = this.moveOptions;
     const unit = this.unit;
 
+    if (!moveOptions || !rotateOptions) {
+      throw new Error('MoveOptions or RotateOptions not set');
+    }
+
+    if (this.currentMovement === null) {
+      throw new Error('No current movement set');
+    }
+
     const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
       .options.movement;
 
-    if (this.currentPath.length || moveOptions.nextPosition) {
+    if (this.currentMovement?.path.length || moveOptions.nextPosition) {
       const { startDuration } = moveOptions;
       const nextPosition = moveOptions.nextPosition;
       const startPosition = moveOptions.startPosition;
+      const lastPosition = moveOptions.lastPosition;
 
+      const lastDoor =
+        lastPosition &&
+        this.currentMovement.doorWallByPosition.get([
+          lastPosition.x,
+          lastPosition.z
+        ]);
+      let nextDoor =
+        moveOptions.nextPosition &&
+        this.currentMovement.doorWallByPosition.get([
+          moveOptions.nextPosition.x,
+          moveOptions.nextPosition.z
+        ]);
+      if (nextDoor && nextDoor.isOpening()) {
+        return;
+      }
+
+      if (lastDoor && lastDoor.isClosing()) {
+        return;
+      }
+
+      /**
+       * Wenn `nextPosition` nicht gesetzt ist, handelt es sich um den Beginn eines neuen Bewegungsschritts.
+       * Nächste Aktion wird definiert: Rotation oder Bewegung.
+       *
+       * Bricht ab, wenn die nächste Position nicht begehbar ist.
+       */
       if (!nextPosition) {
         moveOptions.startPosition = unit.getPosition().clone();
-        moveOptions.nextPosition = this.currentPath.shift()!;
+        moveOptions.nextPosition = this.currentMovement.path.shift()!;
+
+        //#endregion
 
         if (
           !room?.modules.units?.isPositionFree(moveOptions.nextPosition, [unit])
@@ -181,11 +269,13 @@ export default class MovementUnitModule extends UnitModule {
           return;
         }
 
+        //#region set start values
+
         rotateOptions.startDuration = time;
         rotateOptions.startRotation = unit.root.rotation.clone();
 
         const rotation = unit.getRotationByPosition(
-          this.moveOptions.nextPosition!,
+          moveOptions.nextPosition!,
           movementOptions.diagonalMovement
         );
 
@@ -193,14 +283,65 @@ export default class MovementUnitModule extends UnitModule {
         if (!this.lastRotation?.equals(nextRotation)) {
           rotateOptions.nextRotation = nextRotation;
         } else {
-          this.moveOptions.startDuration = time;
+          moveOptions.startDuration = time;
           rotateOptions.nextRotation = null;
         }
 
         this.lastRotation = nextRotation;
+
+        //#endregion
       }
 
-      if (!this.rotateOptions.nextRotation && nextPosition) {
+      nextDoor =
+        moveOptions.nextPosition &&
+        this.currentMovement.doorWallByPosition.get([
+          moveOptions.nextPosition.x,
+          moveOptions.nextPosition.z
+        ]);
+
+      // console.log({
+      //   nextDoor,
+      //   lastDoor
+      // });
+
+      //#region Door Check
+      if (nextDoor && nextDoor == lastDoor && !nextDoor.isOpen()) {
+        // console.log(
+        //   'Öffne Tür',
+        //   [moveOptions.lastPosition!.x, moveOptions.nextPosition!.x],
+        //   [moveOptions.lastPosition!.z, moveOptions.nextPosition!.z],
+        //   (nextDoor.wall.direction === WALL_DIRECTION.VERTICAL &&
+        //     moveOptions.lastPosition!.x < moveOptions.nextPosition!.x) ||
+        //     (nextDoor.wall.direction === WALL_DIRECTION.HORIZONTAL &&
+        //       moveOptions.lastPosition!.z > moveOptions.nextPosition!.z)
+        //     ? false
+        //     : true
+        // );
+        if (
+          !nextDoor.open(
+            (nextDoor.wall.direction === WALL_DIRECTION.VERTICAL &&
+              moveOptions.lastPosition!.x < moveOptions.nextPosition!.x) ||
+              (nextDoor.wall.direction === WALL_DIRECTION.HORIZONTAL &&
+                moveOptions.lastPosition!.z > moveOptions.nextPosition!.z)
+              ? false
+              : true
+          )
+        ) {
+          // Wenn Tür verschlossen oder nicht geöffnet werden kann, Abbruch der Bewegung
+          debugger;
+          moveOptions.nextPosition = null;
+        }
+        return;
+      } else if (lastDoor && !nextDoor && lastDoor.isOpen()) {
+        // console.log('Schließe Tür');
+        // lastDoor.close();
+        // return;
+      }
+
+      /**
+       * Fahre mit der Bewegung fort, wenn keine Rotation mehr aussteht.
+       */
+      if (!rotateOptions.nextRotation && nextPosition) {
         const elapsedTime = time - startDuration;
 
         const progress = Math.min(
@@ -226,15 +367,26 @@ export default class MovementUnitModule extends UnitModule {
           .add(distance!.multiplyScalar(Math.min(progress, 1)));
         this.unit.setPosition(new Vector3(position.x, position.y, position.z));
 
+        /**
+         * Bewegungsschritt beendet
+         */
         if (progress >= 1) {
-          this.moveOptions.nextPosition = null;
-          this.moveOptions.startDuration = time;
-          if (!this.currentPath.length) {
-            this.moveEnd$.next();
+          moveOptions.lastPosition = moveOptions.nextPosition?.clone() || null;
+          moveOptions.nextPosition = null;
+          moveOptions.startDuration = time;
+          if (!this.currentMovement.path.length) {
+            /**
+             * Bewegung beendet
+             */
+            this.currentMovement = null;
+            this.observables.moveEnd$.next();
           }
         }
       }
 
+      /**
+       * Überprft ob Rotation notwendig, wenn nicht, dann Abbruch der nächsten Rotation.
+       */
       if (
         rotateOptions.lastRotation &&
         rotateOptions.nextRotation?.equals(rotateOptions.lastRotation)
@@ -244,6 +396,9 @@ export default class MovementUnitModule extends UnitModule {
         return;
       }
 
+      /**
+       * Fahre mit der Rotation fort, wenn eine Rotation definiert ist.
+       */
       if (rotateOptions.nextRotation) {
         const { nextRotation, startRotation, startDuration } = rotateOptions;
         const elapsedTime = time - startDuration;
@@ -264,12 +419,15 @@ export default class MovementUnitModule extends UnitModule {
 
         unit.setRootRotation(interpolatedRotation);
 
+        /**
+         * Rotation beendet
+         */
         if (progress >= 1) {
           rotateOptions.lastRotation =
             rotateOptions.nextRotation?.clone() || null;
           rotateOptions.nextRotation = null;
           moveOptions.startDuration = time;
-          this.moveStep$.next(unit.getPosition());
+          this.observables.moveStep$.next(unit.getPosition());
         }
       }
     }
@@ -306,10 +464,11 @@ function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
     throw new Error('Unit is not in a room, cannot create grid data');
   }
 
-  const grid = room.grid.clone();
+  let data: number[] = room.modules.ground.getGrid();
+
   const unitY = unit.getPosition().y;
 
-  const data = grid.data.map(v => {
+  data = data.map(v => {
     if (
       unitY > 0 &&
       unitY * heightMultiplicator >= 1 &&
@@ -351,16 +510,21 @@ function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
         otherUnit
           .getMatrixPositions()
           .filter(
-            p => p.x >= 0 && p.x < grid.width && p.z >= 0 && p.z < grid.height
+            p =>
+              p.x >= 0 &&
+              p.x < room.gridSize.x &&
+              p.z >= 0 &&
+              p.z < room.gridSize.y
           )
           .forEach(p => {
-            data[p.z * grid.width + p.x] = value;
+            data[p.z * room.gridSize.x + p.x] = value;
           });
       }
     });
   // console.log('Grid data for pathfinding:', grid.toMatrix());
+
   return RoomGrid.fromData(
     data.map(value => (value ? 0 : 1)),
-    grid.width
+    room.gridSize.x
   );
 }

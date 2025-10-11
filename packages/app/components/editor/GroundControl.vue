@@ -1,12 +1,13 @@
 <template>
   <div class="cw-editor-ground-control">
-    <teleport to="#teleports-panel-bottom">
+    <teleport to="#teleports-panel-right">
       <cw-panel-editor-ground-actions v-model="currentAction" />
     </teleport>
-    <teleport to="#teleports-panel-bottom-right">
-      <cw-panel-editor-ground-style
-        v-if="currentAction.primary === GROUND_ACTION.MODE_STYLE"
-        v-model="style"
+    <teleport to="#teleports-panel-bottom">
+      <cw-panel-editor-ground-skin
+        v-if="currentAction.primary === GROUND_ACTION.STYLE"
+        v-model="skinId"
+        :app="app"
         :action="currentAction" />
     </teleport>
   </div>
@@ -16,25 +17,14 @@
 import CwPanelEditorGroundActions, {
   type GroundAction
 } from './panel/GroundActions.vue';
-import CwPanelEditorGroundStyle from './panel/GroundStyle.vue';
+import CwPanelEditorGroundSkin from './panel/GroundSkin.vue';
 
 import { GROUND_ACTION } from '@cuby-world/app/lib/types/editor';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import type { EditorApp } from '@cuby-world/app/lib/classes/App';
 import { Subscription } from 'rxjs';
 import { CURSOR_TYPE } from '@cuby-world/app/lib/classes/appModule/Cursor';
-import type { GroundStyleTemplate } from '@cuby-world/app/lib/types/ground/style';
-
-const style = ref<GroundStyleTemplate>({
-  id: 'color_blue',
-  style: {
-    id: 'default',
-    options: {
-      color: '#0066ff'
-    }
-  },
-  name: 'Blue'
-});
+import type { GroundSkinIdentifier } from '@cuby-world/app/lib/types/ground/skins';
 
 const $props = defineProps<{
   app: EditorApp;
@@ -46,11 +36,13 @@ const currentAction = ref<GroundAction>({
 
 const subscription = new Subscription();
 
+const skinId = ref<GroundSkinIdentifier>('');
+
 onMounted(() => {
-  currentAction.value = {
-    primary: GROUND_ACTION.MODE_STYLE,
-    secondary: GROUND_ACTION.GROUND_SINGLE_SET
-  };
+  // currentAction.value = {
+  //   primary: GROUND_ACTION.REMOVE,
+  //   secondary: GROUND_ACTION.REMOVE_MULTIPLE_SET
+  // };
 });
 
 onUnmounted(() => {
@@ -59,7 +51,7 @@ onUnmounted(() => {
 });
 
 watch(() => currentAction.value, onChangeAction);
-watch(() => style.value, onChangeStyle);
+watch(() => skinId.value, onChangeSkin);
 
 function onChangeAction(action: GroundAction) {
   const app = $props.app;
@@ -72,15 +64,15 @@ function onChangeAction(action: GroundAction) {
   app.modules.editorGround.setAction(action);
 }
 
-function onChangeStyle({ style }: GroundStyleTemplate) {
-  $props.app.modules.editorGround.setStyle(style);
+function onChangeSkin(skinId: GroundSkinIdentifier) {
+  $props.app.modules.editorGround.setSkin(skinId);
 }
 
-// #region Actions
+//#region Actions
 
 function resetAction() {
   $props.app.modules.editorGround.setAction({ primary: GROUND_ACTION.NONE });
 }
 
-// #endregion
+//#endregion
 </script>

@@ -14,7 +14,7 @@ export function getYPositionByPosition(
       !ignoreIds.includes(u.id) &&
       u
         .getMatrixPositions()
-        .find(p => p.equals(positionToMatrixPosition(position)))
+        .some(p => p.equals(positionToMatrixPosition(position)))
     );
   });
 

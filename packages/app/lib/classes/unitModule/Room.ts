@@ -6,10 +6,8 @@ import UnitModule, {
 
 type State = UnitModuleState;
 
-export default class RoomUnitModule extends UnitModule {
+export default class RoomUnitModule extends UnitModule<State> {
   static override TYPE = 'room';
-
-  state: State = {};
 
   override async setup(context: UnitModuleSetupContext) {
     this.room = context.room;

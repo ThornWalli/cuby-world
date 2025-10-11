@@ -2,18 +2,22 @@
   <cw-panel
     class="cw-panel-editor-ground-actions"
     hide-title
-    style-type="transparent"
+    style-type="none"
     title="Wall Actions">
     <div>
-      <div v-for="{ icon, label, value: { primary } } in actions" :key="label">
+      <div
+        v-for="{ icon, label, value: { primary, secondary } } in actions"
+        :key="label">
         <cw-toggle-icon
           :icon="icon"
           :label="label"
+          hide-label
           :model-value="modelValue.primary === primary"
           @update:model-value="
             val =>
               onUpdateModelValue({
-                primary: val ? primary : GROUND_ACTION.NONE
+                primary: val ? primary : GROUND_ACTION.NONE,
+                secondary: val ? secondary : undefined
               })
           " />
         <div class="subs">
@@ -21,8 +25,10 @@
             v-for="item in actions.find(a => a.value.primary === primary)
               ?.items || []"
             :key="item.label"
+            label-direction="left"
             :icon="item.icon"
             :label="item.label"
+            :data-test="modelValue.secondary"
             :model-value="
               modelValue.primary === primary &&
               modelValue.secondary === item.value.secondary
@@ -61,23 +67,50 @@ const actions = ref([
     icon: icons.color,
     label: 'Color',
     value: {
-      primary: GROUND_ACTION.MODE_STYLE
+      primary: GROUND_ACTION.STYLE,
+      secondary: GROUND_ACTION.STYLE_SINGLE_SET
     },
     items: [
       {
         icon: icons.ground_single_set,
         label: 'Single',
         value: {
-          primary: GROUND_ACTION.MODE_STYLE,
-          secondary: GROUND_ACTION.GROUND_SINGLE_SET
+          primary: GROUND_ACTION.STYLE,
+          secondary: GROUND_ACTION.STYLE_SINGLE_SET
         }
       },
       {
         icon: icons.ground_multiple_set,
         label: 'Multiple',
         value: {
-          primary: GROUND_ACTION.MODE_STYLE,
-          secondary: GROUND_ACTION.GROUND_MULTIPLE_SET
+          primary: GROUND_ACTION.STYLE,
+          secondary: GROUND_ACTION.STYLE_MULTIPLE_SET
+        }
+      }
+    ]
+  },
+  {
+    icon: icons.remove_2,
+    label: 'Remove',
+    value: {
+      primary: GROUND_ACTION.REMOVE,
+      secondary: GROUND_ACTION.REMOVE_SINGLE_SET
+    },
+    items: [
+      {
+        icon: icons.ground_single_set,
+        label: 'Single',
+        value: {
+          primary: GROUND_ACTION.REMOVE,
+          secondary: GROUND_ACTION.REMOVE_SINGLE_SET
+        }
+      },
+      {
+        icon: icons.ground_multiple_set,
+        label: 'Multiple',
+        value: {
+          primary: GROUND_ACTION.REMOVE,
+          secondary: GROUND_ACTION.REMOVE_MULTIPLE_SET
         }
       }
     ]
@@ -109,6 +142,7 @@ export interface GroundAction {
   & div {
     position: relative;
     display: flex;
+    flex-direction: column;
     gap: 10px;
 
     &:active,
@@ -121,11 +155,11 @@ export interface GroundAction {
 
   & .subs {
     position: absolute;
-    bottom: 100%;
+    right: 100%;
     display: none;
     flex-direction: column;
     gap: 10px;
-    padding-bottom: 10px;
+    padding-right: 10px;
   }
 }
 </style>

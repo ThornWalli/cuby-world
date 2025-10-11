@@ -40,7 +40,9 @@ function getUnits() {
       unit: 'door',
       options: {
         position: new Vector3(0, 0, 2),
-        rotation: UNIT_ROTATION.WEST
+        rotation: UNIT_ROTATION.WEST,
+        options: {},
+        moduleStates: {}
       }
     },
     // new Block({
@@ -79,35 +81,45 @@ function getUnits() {
       unit: 'lamp',
       options: {
         position: new Vector3(1, 0, 0),
-        rotation: UNIT_ROTATION.EAST
+        rotation: UNIT_ROTATION.EAST,
+        options: {},
+        moduleStates: {}
       }
     },
     {
       unit: 'mirror',
       options: {
         position: new Vector3(3, 0, 0),
-        rotation: UNIT_ROTATION.SOUTH
+        rotation: UNIT_ROTATION.SOUTH,
+        options: {},
+        moduleStates: {}
       }
     },
     {
       unit: 'lamp',
       options: {
         position: new Vector3(6, 0, 0),
-        rotation: UNIT_ROTATION.EAST
+        rotation: UNIT_ROTATION.EAST,
+        options: {},
+        moduleStates: {}
       }
     },
     {
       unit: 'lamp',
       options: {
         position: new Vector3(6, 0, 4),
-        rotation: UNIT_ROTATION.EAST
+        rotation: UNIT_ROTATION.EAST,
+        options: {},
+        moduleStates: {}
       }
     },
     {
       unit: 'lamp',
       options: {
         position: new Vector3(1, 0, 4),
-        rotation: UNIT_ROTATION.EAST
+        rotation: UNIT_ROTATION.EAST,
+        options: {},
+        moduleStates: {}
       }
     },
 
@@ -125,14 +137,15 @@ function getUnits() {
             color: ['#FFCCCC', '#ADD8E6', '#CCFFCC', '#FFFFCC', '#CCCCFF'][
               i % 4
             ]
-          }
+          },
+          moduleStates: {}
         }
       };
     })
     //
   ];
 
-  // #region blocks
+  //#region blocks
   const count = 5;
   for (let i = 0; i < count; i++) {
     units.push({
@@ -142,11 +155,12 @@ function getUnits() {
         accessible: true,
         size: new Vector3(1, 1 / count, 1),
         position: new Vector3(2, (1 / count) * i, 0),
-        options: { color: getColorByIndex(i, count) }
+        options: { color: getColorByIndex(i, count) },
+        moduleStates: {}
       }
     });
   }
-  // #endregion
+  //#endregion
 
   const size = 1 / 5;
   const test = [
@@ -165,7 +179,8 @@ function getUnits() {
         accessible: true,
         size: new Vector3(1, size, 1),
         position: new Vector3((b[0] ?? 0) + 2, b[1], (b[2] ?? 0) + 3),
-        options: { color: getColorByIndex(i, test.length) }
+        options: { color: getColorByIndex(i, test.length) },
+        moduleStates: {}
       }
     });
   });

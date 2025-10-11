@@ -18,7 +18,7 @@ import CwToggle from '../formField/compact/Toggle.vue';
 import CwButton from '../Button.vue';
 import type App from '../../lib/classes/App';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { Subscription } from 'rxjs';
+import { filter, Subscription, switchMap } from 'rxjs';
 import { WALL_VIEW_MODE } from '@cuby-world/app/lib/classes/roomModule/Wall';
 
 const subscription = new Subscription();
@@ -28,10 +28,6 @@ const $props = defineProps<{
 }>();
 
 const viewMode = ref<WALL_VIEW_MODE>(WALL_VIEW_MODE.DYNAMIC);
-
-const room = computed(() => {
-  return $props.app.modules.room.getRoom();
-});
 
 const unitFocus = computed(() => {
   return $props.app.modules.unitFocus!;
@@ -49,9 +45,14 @@ onMounted(() => {
     })
   );
   subscription.add(
-    room.value!.modules.wall.viewMode$.subscribe(mode => {
-      viewMode.value = mode;
-    })
+    $props.app.modules.room.observables.room$
+      .pipe(
+        filter(Boolean),
+        switchMap(room => room.modules.wall.observables.viewMode$)
+      )
+      .subscribe(mode => {
+        viewMode.value = mode;
+      })
   );
 });
 

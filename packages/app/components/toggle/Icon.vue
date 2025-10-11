@@ -1,10 +1,14 @@
 <template>
   <base-button
     class="cw-toggle-icon"
-    :class="{ selected: modelValue, [`color-${color ?? 'default'}`]: true }"
+    :class="{
+      selected: modelValue,
+      [`color-${color ?? 'default'}`]: true,
+      [`label-${labelDirection ?? 'bottom'}`]: !!label && !hideLabel
+    }"
     :aria-label="label"
     @click="$emit('update:model-value', !modelValue)">
-    <span v-if="!hideLabel">{{ label }}</span>
+    <span v-if="label && !hideLabel">{{ label }}</span>
     <div>
       <component :is="currentIcon" class="icon" />
     </div>
@@ -23,6 +27,7 @@ defineEmits<{
 const $props = defineProps<{
   hideLabel?: boolean;
   label?: string;
+  labelDirection?: 'right' | 'left' | 'top' | 'bottom';
   icon: keyof typeof icons | FunctionalComponent;
   modelValue: boolean;
   color?: 'default' | 'red';
@@ -80,15 +85,36 @@ const currentIcon = computed(() => {
 
   & span {
     position: absolute;
-    left: 100%;
-    padding-left: 8px;
     font-weight: bold;
     white-space: nowrap;
     opacity: 0;
-    transform: translateX(calc(100% / -3));
     transition:
       opacity 0.2s ease,
       transform 0.2s ease;
+  }
+
+  &.label-top span {
+    bottom: 100%;
+    padding-bottom: 8px;
+    transform: translateY(calc(100% / 3));
+  }
+
+  &.label-left span {
+    right: 100%;
+    padding-right: 8px;
+    transform: translateX(calc(100% / 3));
+  }
+
+  &.label-right span {
+    left: 100%;
+    padding-left: 8px;
+    transform: translateX(calc(100% / -3));
+  }
+
+  &.label-bottom span {
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 8px);
   }
 
   &.selected,

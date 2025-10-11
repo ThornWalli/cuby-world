@@ -2,10 +2,14 @@ import type { Object3D } from 'three';
 
 import type Unit from './Unit';
 import type { SetupContext } from './Unit';
-import { Subscription } from 'rxjs';
+import { Subscription, type SubscriptionLike } from 'rxjs';
+import type { AnimationLoopValue } from './Renderer';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface UnitModuleState {}
+export type UnitModuleObservables = {
+  [key: string]: SubscriptionLike | unknown;
+};
+
+export type UnitModuleState = Record<string, unknown>;
 
 export interface UnitModuleSetupContext extends SetupContext {
   mesh: Object3D;
@@ -15,22 +19,27 @@ export interface UnitModuleSetupContext extends SetupContext {
 export interface UnitModuleOptions {}
 
 export default abstract class UnitModule<
-  U extends Unit = Unit,
-  State extends UnitModuleState = UnitModuleState
+  State extends UnitModuleState = UnitModuleState,
+  Obervables extends UnitModuleObservables = UnitModuleObservables,
+  U extends Unit = Unit
 > {
   static TYPE: string;
 
-  abstract state: State;
-
   subscription = new Subscription();
+
+  observables: Obervables = {} as Obervables;
 
   constructor(
     private _unit: U,
+    public state: State = {} as State,
     public readonly debug: boolean
   ) {}
 
   destroy() {
     this.subscription.unsubscribe();
+    Object.values(this.observables).forEach(obs =>
+      (obs as SubscriptionLike).unsubscribe()
+    );
   }
 
   get unit() {
@@ -45,7 +54,13 @@ export default abstract class UnitModule<
     return context.mesh;
   }
 
-  update(_deltaTime: number) {
+  update(_v: AnimationLoopValue) {
     // This method can be overridden by subclasses to handle updates
+  }
+
+  getState() {
+    return {
+      ...this.state
+    };
   }
 }

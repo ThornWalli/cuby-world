@@ -1,24 +1,34 @@
 import { ReplaySubject } from 'rxjs';
-import AppModule, { type AppModuleState } from '../AppModule';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
 import type Unit from '../Unit';
 import type { Object3D } from 'three';
+import type App from '../App';
+
+interface Observables extends AppModuleObservables {
+  selectUnit$: ReplaySubject<Unit | null>;
+}
 
 interface State extends AppModuleState {
   selectedUnit: Unit | null;
 }
-export default class SelectionAppModule extends AppModule<State> {
+export default class SelectionAppModule extends AppModule<State, Observables> {
   static override TYPE = 'selection';
   state: State = {
     selectedUnit: null
   };
 
-  observables = {
-    selectUnit$: new ReplaySubject<Unit | null>(1)
-  };
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.selectUnit$ = new ReplaySubject<Unit | null>(1);
+    //#endregion
+  }
 
   override destroy(): void {
     super.destroy();
-    Object.values(this.observables).forEach(obs => obs.unsubscribe());
   }
 
   getSelectedUnit() {

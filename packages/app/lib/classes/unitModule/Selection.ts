@@ -1,19 +1,28 @@
 import { Subject } from 'rxjs';
-import UnitModule, { type UnitModuleState } from '../UnitModule';
+import UnitModule, {
+  type UnitModuleObservables,
+  type UnitModuleState
+} from '../UnitModule';
+import type Unit from '../Unit';
+
+interface Obervables extends UnitModuleObservables {
+  select$: Subject<boolean>;
+}
 
 type State = UnitModuleState;
-export default class SelectionUnitModule extends UnitModule {
+export default class SelectionUnitModule extends UnitModule<State, Obervables> {
   static override TYPE = 'selection';
 
-  state: State = {};
-
-  select$ = new Subject<boolean>();
+  constructor(unit: Unit, state: State, debug: boolean) {
+    super(unit, state, debug);
+    this.observables.select$ = new Subject<boolean>();
+  }
 
   select() {
-    this.select$.next(true);
+    this.observables.select$.next(true);
   }
 
   unselect() {
-    this.select$.next(false);
+    this.observables.select$.next(false);
   }
 }

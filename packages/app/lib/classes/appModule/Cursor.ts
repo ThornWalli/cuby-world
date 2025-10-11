@@ -1,5 +1,10 @@
+import type { Observable } from 'rxjs';
 import { distinctUntilChanged, ReplaySubject } from 'rxjs';
-import AppModule, { type AppModuleState } from '../AppModule';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
+import type App from '../App';
 
 export enum CURSOR_TYPE {
   DEFAULT = 'default',
@@ -11,10 +16,14 @@ export interface Cursor {
   src?: string;
 }
 
+interface Observables extends AppModuleObservables {
+  current$: Observable<Cursor>;
+}
+
 interface State extends AppModuleState {
   current: Cursor;
 }
-export default class CursorAppModule extends AppModule<State> {
+export default class CursorAppModule extends AppModule<State, Observables> {
   static override TYPE = 'cursor';
 
   state: State = {
@@ -22,15 +31,14 @@ export default class CursorAppModule extends AppModule<State> {
   };
 
   private currentSubject = new ReplaySubject<Cursor>(0);
-  observables = {
-    current$: this.currentSubject.pipe(
-      distinctUntilChanged((prev, current) => current.type === prev.type)
-    )
-  };
 
-  override destroy(): void {
-    this.currentSubject.unsubscribe();
-    super.destroy();
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.current$ = this.currentSubject.pipe(
+      distinctUntilChanged((prev, current) => current.type === prev.type)
+    );
+    //#endregion
   }
 
   setCursor(type?: CURSOR_TYPE) {

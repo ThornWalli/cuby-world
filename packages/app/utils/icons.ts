@@ -26,6 +26,11 @@ export default {
       () => import('../assets/icons/editor/actions/remove.svg?component')
     )
   ),
+  remove_2: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/remove_2.svg?component')
+    )
+  ),
   ground_mode: markRaw(
     defineAsyncComponent(
       () => import('../assets/icons/editor/actions/ground_mode.svg?component')
@@ -80,6 +85,28 @@ export default {
   window_large: markRaw(
     defineAsyncComponent(
       () => import('../assets/icons/editor/actions/window_large.svg?component')
+    )
+  ),
+
+  arrow_navigation_filled_left: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/arrow-navigation-filled/left.svg?component')
+    )
+  ),
+  arrow_navigation_filled_right: markRaw(
+    defineAsyncComponent(
+      () =>
+        import('../assets/icons/arrow-navigation-filled/right.svg?component')
+    )
+  ),
+  arrow_navigation_filled_up: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/arrow-navigation-filled/up.svg?component')
+    )
+  ),
+  arrow_navigation_filled_down: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/arrow-navigation-filled/down.svg?component')
     )
   )
 };

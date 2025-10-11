@@ -1,12 +1,20 @@
-import type { Vector2 } from 'three';
+import type { BufferGeometry, Vector3 } from 'three';
+import type { GroundTexture } from '../utils/ground/textures';
 
 export interface GroundDescription {
   type: string;
   values: [number, number][];
 }
 
-export interface GroundStyleDescription<V = Vector2[]> {
+export interface GroundStyleDescription<V = Vector3[]> {
   id: string;
-  options?: { color?: string | number };
   positions: V;
+}
+
+export type GroundGeometryMap = Map<GROUND_GEOMETRY, BufferGeometry | null>;
+export type GroundTextureMap = Map<string, GroundTexture>;
+
+export enum GROUND_GEOMETRY {
+  MEDIUM = 'medium',
+  SMALL = 'small'
 }

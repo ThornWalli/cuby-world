@@ -1,23 +1,41 @@
+/* eslint-disable complexity */
 import type { GroundAction } from '@cuby-world/app/components/editor/panel/GroundActions.vue';
-import type { AppModuleState, SceneSelectContext } from '../../AppModule';
+import type {
+  AppModuleObservables,
+  AppModuleState,
+  SceneSelectContext
+} from '../../AppModule';
 import type { FACE_INDEX } from '@cuby-world/app/lib/types/wall';
 import type Wall from '../../Wall';
 import AppModule from '../../AppModule';
 import { GROUND_ACTION } from '@cuby-world/app/lib/types/editor';
-import { concatMap, filter, Subscription, switchMap } from 'rxjs';
+import {
+  concatMap,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  fromEvent,
+  Subscription,
+  switchMap
+} from 'rxjs';
 import { Vector3 } from 'three';
-import type { GroundStyleMap } from '../../roomModule/Ground';
-import type { GroundStyle } from '@cuby-world/app/lib/types/ground/style';
+import type { GrountStyleIdentifier } from '@cuby-world/app/lib/utils/ground/skins';
+import type App from '../../App';
+import type GroundStyleMap from '../../GroundStyleMap';
+
+interface Observables extends AppModuleObservables {
+  select$: unknown;
+}
 
 interface State extends AppModuleState {
   action: GroundAction;
-  style: GroundStyle;
+  skinId: GrountStyleIdentifier;
   selection?: {
     faceIndex: FACE_INDEX;
     wall: Wall | null;
   };
 }
-export default class EditorGroundModule extends AppModule<State> {
+export default class EditorGroundModule extends AppModule<State, Observables> {
   static override TYPE = 'editorGround';
 
   interactionSubscription = new Subscription();
@@ -26,27 +44,30 @@ export default class EditorGroundModule extends AppModule<State> {
     action: {
       primary: GROUND_ACTION.NONE
     },
-    style: {
-      id: 'default',
-      options: { color: '#ff00ff' }
-    }
+    skinId: 'default'
   };
 
-  observables = {
-    select$: this.app.renderer.observables.pointerDown$.pipe()
-  };
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.select$ =
+      this.app.renderer.observables.pointerDown$.pipe();
+    //#endregion
+  }
 
   private async onClick(position: Vector3) {
-    if (this.state.action.secondary === GROUND_ACTION.GROUND_SINGLE_SET) {
+    console.log(this.state.action);
+    if (this.state.action.secondary === GROUND_ACTION.REMOVE_SINGLE_SET) {
       const room = this.app.modules.room.getRoom()!;
       const groundModule = room.modules.ground;
       const groundStyleMap = groundModule.getGroundStyleMap();
+      console.log('REMOVE_SINGLE_SET', position);
 
-      groundStyleMap.set(position.x, position.z, this.state.style);
+      groundStyleMap.set(position.x, position.y, position.z);
       this.lastGroundData = [];
       groundModule.refreshGround();
     } else if (
-      this.state.action.secondary === GROUND_ACTION.GROUND_MULTIPLE_SET
+      this.state.action.secondary === GROUND_ACTION.REMOVE_MULTIPLE_SET
     ) {
       if (!this.multipleSet?.startPosition) {
         this.multipleSet = { startPosition: position.clone() };
@@ -54,14 +75,46 @@ export default class EditorGroundModule extends AppModule<State> {
         const room = this.app.modules.room.getRoom()!;
         const groundModule = room.modules.ground;
         const groundStyleMap = groundModule.getGroundStyleMap();
-        //
+
         const startX = Math.min(this.multipleSet.startPosition.x, position.x);
         const endX = Math.max(this.multipleSet.startPosition.x, position.x);
         const startZ = Math.min(this.multipleSet.startPosition.z, position.z);
         const endZ = Math.max(this.multipleSet.startPosition.z, position.z);
         for (let x = startX; x <= endX; x++) {
           for (let z = startZ; z <= endZ; z++) {
-            groundStyleMap.set(x, z, this.state.style);
+            groundStyleMap.delete(x, 0, z);
+          }
+        }
+        this.multipleSet = null;
+        this.lastGroundData = [];
+        groundModule.refreshGround();
+      }
+    } else if (this.state.action.secondary === GROUND_ACTION.STYLE_SINGLE_SET) {
+      const room = this.app.modules.room.getRoom()!;
+      const groundModule = room.modules.ground;
+      const groundStyleMap = groundModule.getGroundStyleMap();
+
+      groundStyleMap.set(position.x, 0, position.z, this.state.skinId);
+      this.lastGroundData = [];
+      groundModule.refreshGround();
+    } else if (
+      this.state.action.secondary === GROUND_ACTION.STYLE_MULTIPLE_SET
+    ) {
+      if (!this.multipleSet?.startPosition) {
+        this.multipleSet = { startPosition: position.clone() };
+      } else {
+        const room = this.app.modules.room.getRoom()!;
+        const groundModule = room.modules.ground;
+        const groundStyleMap = groundModule.getGroundStyleMap();
+
+        const startX = Math.min(this.multipleSet.startPosition.x, position.x);
+        const endX = Math.max(this.multipleSet.startPosition.x, position.x);
+        const startZ = Math.min(this.multipleSet.startPosition.z, position.z);
+        const endZ = Math.max(this.multipleSet.startPosition.z, position.z);
+        for (let x = startX; x <= endX; x++) {
+          for (let z = startZ; z <= endZ; z++) {
+            console.log(this.state.skinId);
+            groundStyleMap.set(x, 0, z, this.state.skinId);
           }
         }
         this.multipleSet = null;
@@ -75,7 +128,7 @@ export default class EditorGroundModule extends AppModule<State> {
 
   private lastGroundData: {
     position: Vector3;
-    groundStyle: GroundStyle;
+    groundStyle?: GrountStyleIdentifier;
   }[] = [];
 
   private currentGroundStyleMap: GroundStyleMap | null = null;
@@ -87,7 +140,12 @@ export default class EditorGroundModule extends AppModule<State> {
 
     const groundStyleMap = groundModule.getGroundStyleMap();
     this.lastGroundData.forEach(data => {
-      groundStyleMap.set(data?.position.x, data?.position.z, data?.groundStyle);
+      groundStyleMap.set(
+        data?.position.x,
+        data?.position.y,
+        data?.position.z,
+        data?.groundStyle
+      );
     });
     this.lastGroundData = [];
 
@@ -95,24 +153,27 @@ export default class EditorGroundModule extends AppModule<State> {
     startPosition = startPosition.min(position);
     let endPosition = (this.multipleSet?.startPosition || position).clone();
     endPosition = endPosition.max(position);
-    // const startX = Math.min(startPosition.x, position.x);
-    // const endX = Math.max(startPosition.x, position.x);
-    // const startZ = Math.min(startPosition.z, position.z);
-    // const endZ = Math.max(startPosition.z, position.z);
 
     for (let x = startPosition.x; x <= endPosition.x; x++) {
       for (let z = startPosition.z; z <= endPosition.z; z++) {
         this.lastGroundData.push({
           position: new Vector3(x, 0, z),
-          groundStyle: groundStyleMap.get(x, z)
+          groundStyle: groundStyleMap.get(x, 0, z)
         });
-        groundStyleMap.set(x, z, this.state.style);
+        groundStyleMap.set(
+          x,
+          0,
+          z,
+          this.state.action.primary === GROUND_ACTION.REMOVE
+            ? 'hidden'
+            : this.state.skinId
+        );
       }
     }
     groundModule.refreshGround();
   }
 
-  resetHover() {
+  reset() {
     if (this.lastGroundData.length) {
       const room = this.app.modules.room.getRoom()!;
       const groundModule = room.modules.ground;
@@ -121,12 +182,14 @@ export default class EditorGroundModule extends AppModule<State> {
       this.lastGroundData.forEach(data => {
         groundStyleMap.set(
           data?.position.x,
+          data?.position.y,
           data?.position.z,
           data?.groundStyle
         );
       });
-      groundModule.refreshGround();
 
+      this.multipleSet = null;
+      groundModule.refreshGround();
       this.lastGroundData = [];
     }
 
@@ -146,23 +209,45 @@ export default class EditorGroundModule extends AppModule<State> {
 
     this.state.action = action;
 
-    this.interactionSubscription.unsubscribe();
-    this.interactionSubscription = new Subscription();
-
-    if (primary === GROUND_ACTION.MODE_STYLE) {
+    if (
+      this.state.skinId &&
+      (primary === GROUND_ACTION.STYLE || primary === GROUND_ACTION.REMOVE)
+    ) {
       this.registerSubscriptions();
+    } else {
+      this.unregisterSubscriptions();
+      this.reset();
     }
   }
 
-  setStyle(style: GroundStyle) {
-    if ('id' in style || 'texture' in style) {
-      this.state.style = style as GroundStyle;
+  setSkin(skinId: GrountStyleIdentifier) {
+    if (!skinId) {
+      this.unregisterSubscriptions();
+      this.reset();
+    } else {
+      this.registerSubscriptions();
     }
-    this.state.style = style;
+    this.state.skinId = skinId;
+  }
+
+  unregisterSubscriptions() {
+    this.interactionSubscription.unsubscribe();
+    this.interactionSubscription = new Subscription();
   }
 
   registerSubscriptions() {
-    this.interactionSubscription.add(
+    this.unregisterSubscriptions();
+    const subscription = this.interactionSubscription;
+    subscription.add(
+      fromEvent<KeyboardEvent>(document, 'keydown').subscribe(event => {
+        const keyboardEvent = event;
+        if (keyboardEvent.key === 'Escape') {
+          this.reset();
+        }
+      })
+    );
+
+    subscription.add(
       this.app.modules.room.observables.room$
         .pipe(
           filter(Boolean),
@@ -172,16 +257,19 @@ export default class EditorGroundModule extends AppModule<State> {
         .subscribe(void 0)
     );
 
-    this.interactionSubscription.add(
+    subscription.add(
       this.app.modules.room.observables.room$
         .pipe(
           filter(Boolean),
           switchMap(room => room!.modules.ground.observables.hover$),
+          debounceTime(50),
+          distinctUntilChanged((prev, curr) => prev.equals(curr)),
           concatMap(this.onHover.bind(this))
         )
         .subscribe(void 0)
     );
-    this.interactionSubscription.add(
+
+    subscription.add(
       this.app.modules.room.observables.room$
         .pipe(
           filter(Boolean),
@@ -193,7 +281,7 @@ export default class EditorGroundModule extends AppModule<State> {
   }
 
   async onPointerOut() {
-    this.resetHover();
+    this.reset();
   }
 
   override onSceneSelect(_context: SceneSelectContext): boolean {
