@@ -47,6 +47,7 @@ import type {
   WallRoomDescription
 } from '../../types/wall';
 import { ArrayKeyMap } from '../ArrayKeyMap';
+import type { FloorIndex } from '../../types/floor';
 
 interface WallRoomTile {
   mesh: Mesh;
@@ -56,6 +57,7 @@ interface WallRoomTile {
 export class WallRoom implements Omit<WallRoomDescription, 'tiles'> {
   debug: boolean = false;
   id: string;
+  floor: number;
   tiles: WallRoomTile[];
   centroid: Vector2;
   size: number;
@@ -74,6 +76,7 @@ export class WallRoom implements Omit<WallRoomDescription, 'tiles'> {
   constructor(desc: WallRoomDescription & { debug?: boolean }) {
     this.debug = desc.debug ?? false;
     this.id = desc.id;
+    this.floor = desc.floor;
     this.centroid = desc.centroid;
     this.size = desc.size;
     this.tiles = desc.tiles.map(tile => {
@@ -158,7 +161,7 @@ interface State extends RoomModuleState {
   viewMode: WALL_VIEW_MODE;
   currentWallRoom?: WallRoomDescription;
   walls: Wall[];
-  wallMap: ArrayKeyMap<[number, number, WALL_DIRECTION], Wall>;
+  wallMap: ArrayKeyMap<[number, number, number, WALL_DIRECTION], Wall>;
   targets: Mesh[];
   wallRoomTargets: Mesh[];
   activeWallRooms: Map<string, WallRoom>;
@@ -370,7 +373,7 @@ export default class WallModule extends RoomModule<
   async addedWalls(wallDescriptions: WallDescription[]) {
     wallDescriptions = wallDescriptions.filter(
       ({ position, direction }) =>
-        !this.state.wallMap.has([position.x, position.y, direction])
+        !this.state.wallMap.has([position.x, position.y, position.z, direction])
     );
 
     if (wallDescriptions.length === 0) {
@@ -389,8 +392,12 @@ export default class WallModule extends RoomModule<
     walls.forEach(wall => {
       this.state.walls.push(wall);
       this.state.wallMap.set(
-        [wall.position.x, wall.position.z, wall.direction],
+        [wall.position.x, wall.position.y, wall.position.z, wall.direction],
         wall
+      );
+      this.wallsByFloorMap.set(
+        wall.position.y,
+        (this.wallsByFloorMap.get(wall.position.y) || []).concat([wall])
       );
     });
 
@@ -417,7 +424,8 @@ export default class WallModule extends RoomModule<
       wallDescriptions.some(desc => {
         return (
           desc.position.x === wall.position.x &&
-          desc.position.y === wall.position.z &&
+          desc.position.y === wall.position.y &&
+          desc.position.z === wall.position.z &&
           desc.direction === wall.direction
         );
       })
@@ -435,9 +443,17 @@ export default class WallModule extends RoomModule<
     walls.forEach(wall => {
       this.state.wallMap.delete([
         wall.position.x,
+        wall.position.y,
         wall.position.z,
         wall.direction
       ]);
+
+      this.wallsByFloorMap.set(
+        wall.position.y,
+        (this.wallsByFloorMap.get(wall.position.y) || []).filter(
+          w => w !== wall
+        )
+      );
     });
 
     this.refreshWallRooms();
@@ -452,7 +468,18 @@ export default class WallModule extends RoomModule<
 
   //#endregion
 
-  updateVisibility(camera: Camera) {
+  wallsByFloorMap: Map<FloorIndex, Wall[]> = new Map();
+  getWallsByFloor(floorIndex?: FloorIndex) {
+    if (floorIndex === undefined) {
+      return this.state.walls;
+    }
+    return this.wallsByFloorMap.get(floorIndex) || [];
+    // return this.state.walls.filter(wall =>
+    //   floorIndex !== undefined ? wall.position.y === floorIndex : true
+    // );
+  }
+
+  updateVisibility(camera: Camera, floorIndex?: FloorIndex) {
     console.log('Update wall visibility', this.state.viewMode);
     if (this.lastViewMode !== this.state.viewMode) {
       this.state.walls.forEach(wall => wall.show());
@@ -485,12 +512,15 @@ export default class WallModule extends RoomModule<
     matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     frustum.setFromProjectionMatrix(matrix);
 
-    const visibleWalls = this.state.walls.reduce((result, wall) => {
-      if (frustum.intersectsBox(wall.tmpBox)) {
-        result.push(wall.root!);
-      }
-      return result;
-    }, [] as Object3D[]);
+    const visibleWalls = this.getWallsByFloor(floorIndex).reduce(
+      (result, wall) => {
+        if (frustum.intersectsBox(wall.tmpBox)) {
+          result.push(wall.root!);
+        }
+        return result;
+      },
+      [] as Object3D[]
+    );
 
     objectsToKeepVisible.forEach(target => {
       targetBox.setFromObject(target);
@@ -561,7 +591,7 @@ export default class WallModule extends RoomModule<
       )
       .forEach(position => {
         const wallRoom = this.state.wallRoomTiles.get(
-          `${position.x},${position.z}`
+          `${position.x},${position.y},${position.z}`
         );
         if (wallRoom) {
           activeWallRooms.add(wallRoom);
@@ -597,12 +627,29 @@ export default class WallModule extends RoomModule<
     return true;
   }
 
-  refreshWallRooms(walls: Wall[] = this.state.walls) {
-    if (this.state.wallRooms.size) {
-      // Remove existing wall rooms
-      this.state.wallRooms.forEach(room => room.destroy());
+  removeWallRooms(floorIndex?: number) {
+    if (floorIndex === undefined) {
+      this.state.wallRooms.forEach(wallRoom => wallRoom.destroy());
       this.state.wallRooms.clear();
       this.state.wallRoomTiles.clear();
+    } else {
+      this.state.wallRooms.forEach(wallRoom => {
+        if (wallRoom.floor >= floorIndex) {
+          this.state.wallRooms.delete(wallRoom);
+          wallRoom.tiles.forEach(tile => {
+            this.state.wallRoomTiles.get(
+              `${tile.position.x},${floorIndex},${tile.position.y}`
+            );
+          });
+          wallRoom.destroy();
+        }
+      });
+    }
+  }
+
+  refreshWallRooms(walls: Wall[] = this.state.walls, floorIndex?: FloorIndex) {
+    if (this.state.wallRooms.size) {
+      this.removeWallRooms(floorIndex);
     }
 
     const roomsDescriptions = getWallRoomDescriptions(walls);
@@ -623,7 +670,10 @@ export default class WallModule extends RoomModule<
 
     this.state.wallRoomTiles = rooms.reduce((result, room) => {
       room.tiles.forEach(tile => {
-        result.set(tile.position.toArray().toString(), room);
+        result.set(
+          [tile.position.x, floorIndex, tile.position.y].toString(),
+          room
+        );
       });
       return result;
     }, new Map<string, WallRoom>());

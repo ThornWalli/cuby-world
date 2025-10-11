@@ -40,6 +40,7 @@ import type { WallExtensionItem } from '@cuby-world/wall-extensions';
 import type WallExtension from '../../WallExtension';
 import { WALL_EXTENSION_TYPE } from '../../WallExtension';
 import type { WallSkins } from '@cuby-world/app/lib/types/wall/skins';
+import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 
 interface Observables extends AppModuleObservables {
   current$: Subject<{
@@ -271,7 +272,6 @@ export default class EditorWallModule extends AppModule<State, Observables> {
             };
 
             current.state.skins = skins;
-
             await current.refresh();
           }
         }
@@ -337,7 +337,6 @@ export default class EditorWallModule extends AppModule<State, Observables> {
     }
 
     this.observables.current$.next(null);
-    this.lastWall?.restoreTmpState();
     this.lastWall = null;
   }
 
@@ -503,8 +502,8 @@ export default class EditorWallModule extends AppModule<State, Observables> {
         this.dragOptions.endPosition = position;
 
         const wallDescriptions = getWallsFromPositions(
-          vector3ToVector2(this.dragOptions.startPosition!),
-          vector3ToVector2(this.dragOptions.endPosition!)
+          this.dragOptions.startPosition!,
+          this.dragOptions.endPosition!
         );
 
         this.wallDescriptions = wallDescriptions;
@@ -521,25 +520,26 @@ export default class EditorWallModule extends AppModule<State, Observables> {
     }
 
     this.lastPosition = position;
-
-    this.creatorMesh.position.copy(position);
+    this.creatorMesh.position.copy(
+      new Vector3(position.x, position.y * FLOOR_HEIGHT, position.z)
+    );
   }
 }
 
 function getWallsFromPositions(
-  start: Vector2,
-  end: Vector2
+  start: Vector3,
+  end: Vector3
 ): WallDescription[] {
   const wallList: WallDescription[] = [];
 
-  if (start.x === end.x || start.y === end.y) {
-    const isNorth = start.x === end.x && start.y > end.y;
-    const isWest = start.y === end.y && start.x > end.x;
+  if (start.x === end.x || start.z === end.z) {
+    const isNorth = start.x === end.x && start.z > end.z;
+    const isWest = start.z === end.z && start.x > end.x;
 
     const direction = getDirection(start, end)!;
 
     const originLength = Math.abs(
-      new Vector2().subVectors(end, start).ceil().length()
+      new Vector2(end.x - start.x, end.z - start.z).ceil().length()
     );
 
     if (originLength < 1 || !direction) {
@@ -549,17 +549,19 @@ function getWallsFromPositions(
     const startPosition = start.clone();
     const endPosition = end.clone();
     if (isNorth) {
-      startPosition.y--;
+      startPosition.z--;
     } else if (isWest) {
       startPosition.x--;
     }
-    const diff = new Vector2().subVectors(endPosition, startPosition);
+    const diff = new Vector2(
+      endPosition.x - startPosition.x,
+      endPosition.z - startPosition.z
+    );
     let length = Math.abs(Math.ceil(diff.length()));
-
     wallList.push({
       type: WALL_TYPE.DEFAULT,
       direction,
-      position: new Vector3(startPosition.x, 0, startPosition.y),
+      position: startPosition.clone(),
       skins: getDefaultSkin(),
       extensions: []
     });
@@ -569,16 +571,15 @@ function getWallsFromPositions(
       endPosition.x--;
     } else if (isNorth) {
       length++;
-      endPosition.y--;
+      endPosition.z--;
     }
 
     const totalDirection = endPosition.clone().sub(startPosition);
     const stepVector = totalDirection.divideScalar(length);
-
     for (let i = wallList.length; i < length; i++) {
-      const newVector = new Vector3()
-        .copy(new Vector3(startPosition.x, 0, startPosition.y))
-        .add(new Vector3(stepVector.x, 0, stepVector.y).multiplyScalar(i));
+      const newVector = startPosition
+        .clone()
+        .add(new Vector3(stepVector.x, 0, stepVector.z).multiplyScalar(i));
       wallList.push({
         type: WALL_TYPE.DEFAULT,
         direction,
@@ -591,17 +592,13 @@ function getWallsFromPositions(
   return wallList;
 }
 
-function vector3ToVector2(v: Vector3) {
-  return new Vector2(v.x, v.z);
-}
-
 function getDirection(
-  startPosition: Vector2,
-  endPosition: Vector2
+  startPosition: Vector3,
+  endPosition: Vector3
 ): WALL_DIRECTION | undefined {
   if (startPosition!.x === endPosition!.x) {
     return WALL_DIRECTION.VERTICAL;
-  } else if (startPosition!.y === endPosition!.y) {
+  } else if (startPosition!.z === endPosition!.z) {
     return WALL_DIRECTION.HORIZONTAL;
   }
 }

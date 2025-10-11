@@ -4,21 +4,19 @@ import {
   type Vector3,
   Matrix4,
   Object3D,
-  type Camera,
-  type InstancedMesh
+  type Camera
 } from 'three';
 import RoomModule, {
   type RoomModuleObservables,
   type RoomModuleState
 } from '../RoomModule';
-import { createGroundChunks, loadGroundGeometries } from '../../utils/ground';
 import type Room from '../Room';
 import {
-  concatAll,
   concatMap,
   debounceTime,
   distinctUntilChanged,
   filter,
+  map,
   Subject
 } from 'rxjs';
 import { preparePosition, type PreparedPosition } from '../../utils/matrix';
@@ -26,6 +24,11 @@ import type { GroundGeometryMap } from '../../types/ground';
 import MeshGround from '@cuby-world/app/assets/ground/ground.glb?url';
 import skins from '../../utils/ground/skins';
 import GroundStyleMap from '../GroundStyleMap';
+import {
+  createGroundChunks,
+  loadGroundGeometries,
+  type GroundChunk
+} from '../../utils/ground';
 
 interface Observables extends RoomModuleObservables {
   hover$: Subject<Vector3>;
@@ -37,7 +40,7 @@ interface Observables extends RoomModuleObservables {
 
 interface State extends RoomModuleState {
   groundStyleMap: GroundStyleMap;
-  groundChunks: InstancedMesh[];
+  groundChunks: GroundChunk[];
   groundMesh: Object3D | null;
 }
 export default class GroundModule extends RoomModule<State, Observables> {
@@ -72,8 +75,8 @@ export default class GroundModule extends RoomModule<State, Observables> {
   }
 
   override destroy() {
-    this.state.groundChunks.forEach(chunk => {
-      const { geometry, material } = chunk;
+    this.state.groundChunks.forEach(({ mesh }) => {
+      const { geometry, material } = mesh;
       geometry.dispose();
       if (Array.isArray(material)) {
         material.forEach(mat => mat.dispose());
@@ -106,6 +109,12 @@ export default class GroundModule extends RoomModule<State, Observables> {
     );
 
     this.subscription.add(
+      this.room.modules.floor.observables.floor$.subscribe(() => {
+        this.refreshGround();
+      })
+    );
+
+    this.subscription.add(
       groundIntersectionListener.clickIntersect$
         .pipe(
           filter(
@@ -126,10 +135,13 @@ export default class GroundModule extends RoomModule<State, Observables> {
     this.subscription.add(
       groundIntersectionListener.hoverIntersect$
         .pipe(
-          concatAll(),
-          filter(
-            intersection => intersection.object?.parent?.name === 'ground'
+          map(
+            intersections =>
+              intersections.filter(intersection => {
+                return intersection.object?.parent?.name === 'ground';
+              })[0]!
           ),
+          filter(Boolean),
           preparePosition(),
           filter(({ worldPosition }) => !!worldPosition),
           distinctUntilChanged(
@@ -260,33 +272,72 @@ export default class GroundModule extends RoomModule<State, Observables> {
     });
   }
 
-  refreshGround() {
-    const groundMesh = this.state.groundMesh;
-    if (!groundMesh) {
-      throw new Error('Setup before refresh ground');
+  getGroundChunks(floorIndex?: number) {
+    if (floorIndex === undefined) {
+      return this.state.groundChunks;
     }
-    this.state.groundChunks.forEach(chunk => {
-      const { geometry, material } = chunk;
+    return this.state.groundChunks.filter(({ floor }) => floor === floorIndex);
+  }
+
+  removeGroundChunks(floorIndex?: number) {
+    const { removes, chunks } = this.state.groundChunks.reduce(
+      (result, chunk) => {
+        if (floorIndex === undefined || chunk.floor >= floorIndex) {
+          result.removes.push(chunk);
+        } else {
+          result.chunks.push(chunk);
+        }
+
+        return result;
+      },
+      {
+        removes: [] as GroundChunk[],
+        chunks: [] as GroundChunk[]
+      }
+    );
+
+    this.state.groundChunks = chunks;
+
+    removes.forEach(({ mesh }) => {
+      const { geometry, material } = mesh;
       geometry.dispose();
       if (Array.isArray(material)) {
         material.forEach(mat => mat.dispose());
       } else {
         material.dispose();
       }
-      this.state.groundMesh?.remove(chunk);
+      this.state.groundMesh?.remove(mesh);
     });
-    this.state.groundChunks = [];
+  }
 
-    this.state.groundChunks = createGroundChunks(
-      this.room.gridSize,
-      this.state.groundStyleMap,
-      16,
-      {
-        assetLoader: this.room.app.assetLoader,
-        groundGeometryMap: this.groundGeometryMap
-      }
+  refreshGround(floorIndex?: number) {
+    this.removeGroundChunks(floorIndex ?? -1);
+
+    const currentFloor = this.room.modules.floor.getFloor();
+    console.log('refreshGround', { floorIndex, currentFloor });
+    const groundChunks = [];
+    for (
+      let floor = floorIndex ?? 0;
+      floor <= (floorIndex ?? currentFloor);
+      floor++
+    ) {
+      const chunks = createGroundChunks(
+        this.room.gridSize,
+        floor,
+        this.state.groundStyleMap,
+        16,
+        {
+          assetLoader: this.room.app.assetLoader,
+          groundGeometryMap: this.groundGeometryMap
+        }
+      );
+      groundChunks.push(...chunks);
+    }
+
+    this.state.groundChunks = groundChunks;
+    this.state.groundChunks.forEach(chunk =>
+      this.state.groundMesh!.add(chunk.mesh)
     );
-    this.state.groundChunks.forEach(chunk => this.state.groundMesh!.add(chunk));
     this.observables.refreshGround$.next(this.state.groundStyleMap);
   }
 
@@ -297,8 +348,8 @@ export default class GroundModule extends RoomModule<State, Observables> {
     );
     this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
     this.state.groundChunks.forEach(chunk => {
-      const box = new Box3().setFromObject(chunk);
-      chunk.visible = this.frustum.intersectsBox(box);
+      const box = new Box3().setFromObject(chunk.mesh);
+      chunk.mesh.visible = this.frustum.intersectsBox(box);
     });
   }
 }

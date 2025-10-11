@@ -39,6 +39,7 @@ import {
 import type { AnimationLoopSubject } from '../classes/Renderer';
 import type DoorWallExtension from '../classes/wallExtension/Door';
 import assetLoader from '@cuby-world/app/services/assetLoader';
+import { FLOOR_HEIGHT } from './ground';
 
 function getDefaultDirections() {
   return [
@@ -752,96 +753,119 @@ function getEndPositionFromStartPosition(
   }
 }
 
+function splitWallsByFloors(walls: Wall[]) {
+  const map = walls.reduce((result, wall) => {
+    const floor = Math.floor(wall.position!.y / FLOOR_HEIGHT);
+    const test = result.get(floor) ?? [];
+    test.push(wall);
+    if (!result.has(floor)) {
+      result.set(floor, test);
+    }
+
+    return result;
+  }, new Map<number, Wall[]>());
+
+  return map.values();
+  // Nur die Wände des niedrigsten Stockwerks zurückgeben
+  // const minFloor = Math.min(...Array.from(map.keys()));
+  // return map.get(minFloor) ?? [];
+}
+
 /**
  * Wird genutzt um Räume zu erkennen, die durch Wände begrenzt sind.
  */
 export function getWallRoomDescriptions(walls: Wall[]) {
-  const wallSet = buildWallSet(walls);
+  const wallsByFloors = Array.from(splitWallsByFloors(walls));
+  return wallsByFloors
+    .map((walls, floorIndex) => {
+      const wallSet = buildWallSet(walls);
 
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
 
-  walls.forEach(w => {
-    const endPosition = getEndPositionFromStartPosition(
-      w.position,
-      w.direction
-    );
-    minX = Math.min(minX, w.position.x, endPosition.x);
-    minY = Math.min(minY, w.position.z, endPosition.z);
-    maxX = Math.max(maxX, w.position.x, endPosition.x);
-    maxY = Math.max(maxY, w.position.z, endPosition.z);
-  });
+      walls.forEach(w => {
+        const endPosition = getEndPositionFromStartPosition(
+          w.position,
+          w.direction
+        );
+        minX = Math.min(minX, w.position.x, endPosition.x);
+        minY = Math.min(minY, w.position.z, endPosition.z);
+        maxX = Math.max(maxX, w.position.x, endPosition.x);
+        maxY = Math.max(maxY, w.position.z, endPosition.z);
+      });
 
-  const tileMinX = Math.floor(minX - 1);
-  const tileMinY = Math.floor(minY - 1);
-  const tileMaxX = Math.ceil(maxX + 1);
-  const tileMaxY = Math.ceil(maxY + 1);
+      const tileMinX = Math.floor(minX - 1);
+      const tileMinY = Math.floor(minY - 1);
+      const tileMaxX = Math.ceil(maxX + 1);
+      const tileMaxY = Math.ceil(maxY + 1);
 
-  const visited = new Set<string>();
-  const rooms: WallRoomDescription[] = [];
+      const visited = new Set<string>();
+      const rooms: WallRoomDescription[] = [];
 
-  const inBounds = (x: number, y: number) =>
-    x >= tileMinX && y >= tileMinY && x < tileMaxX && y < tileMaxY;
+      const inBounds = (x: number, y: number) =>
+        x >= tileMinX && y >= tileMinY && x < tileMaxX && y < tileMaxY;
 
-  for (let tx = tileMinX; tx < tileMaxX; tx++) {
-    for (let ty = tileMinY; ty < tileMaxY; ty++) {
-      const key = `${tx},${ty}`;
-      if (visited.has(key)) continue;
+      for (let tx = tileMinX; tx < tileMaxX; tx++) {
+        for (let ty = tileMinY; ty < tileMaxY; ty++) {
+          const key = `${tx},${ty}`;
+          if (visited.has(key)) continue;
 
-      // BFS starten
-      const queue = [new Vector2(tx, ty)];
-      const roomTiles: Vector2[] = [];
-      visited.add(key);
+          // BFS starten
+          const queue = [new Vector2(tx, ty)];
+          const roomTiles: Vector2[] = [];
+          visited.add(key);
 
-      while (queue.length > 0) {
-        const cur = queue.shift()!;
-        roomTiles.push(new Vector2(cur.x, cur.y));
+          while (queue.length > 0) {
+            const cur = queue.shift()!;
+            roomTiles.push(new Vector2(cur.x, cur.y));
 
-        const neighs = [
-          new Vector2(cur.x + 1, cur.y),
-          new Vector2(cur.x - 1, cur.y),
-          new Vector2(cur.x, cur.y + 1),
-          new Vector2(cur.x, cur.y - 1)
-        ];
+            const neighs = [
+              new Vector2(cur.x + 1, cur.y),
+              new Vector2(cur.x - 1, cur.y),
+              new Vector2(cur.x, cur.y + 1),
+              new Vector2(cur.x, cur.y - 1)
+            ];
 
-        neighs.forEach(n => {
-          const nKey = `${n.x},${n.y}`;
-          if (!inBounds(n.x, n.y)) return;
-          if (visited.has(nKey)) return;
-          if (!canMoveBetweenTiles(cur.x, cur.y, n.x, n.y, wallSet)) return;
-          visited.add(nKey);
-          queue.push(n);
-        });
+            neighs.forEach(n => {
+              const nKey = `${n.x},${n.y}`;
+              if (!inBounds(n.x, n.y)) return;
+              if (visited.has(nKey)) return;
+              if (!canMoveBetweenTiles(cur.x, cur.y, n.x, n.y, wallSet)) return;
+              visited.add(nKey);
+              queue.push(n);
+            });
+          }
+
+          if (roomTiles.length > 0) {
+            const cx =
+              roomTiles.reduce((s, p) => s + (p.x + 0.5), 0) / roomTiles.length;
+            const cy =
+              roomTiles.reduce((s, p) => s + (p.y + 0.5), 0) / roomTiles.length;
+
+            rooms.push({
+              id: crypto.randomUUID(),
+              floor: floorIndex,
+              tiles: roomTiles,
+              centroid: new Vector2(cx, cy),
+              size: roomTiles.length
+            });
+          }
+        }
       }
+      const isOutside = (room: WallRoomDescription) =>
+        room.tiles.some(
+          t =>
+            t.x === tileMinX ||
+            t.y === tileMinY ||
+            t.x === tileMaxX - 1 ||
+            t.y === tileMaxY - 1
+        );
 
-      if (roomTiles.length > 0) {
-        const cx =
-          roomTiles.reduce((s, p) => s + (p.x + 0.5), 0) / roomTiles.length;
-        const cy =
-          roomTiles.reduce((s, p) => s + (p.y + 0.5), 0) / roomTiles.length;
-
-        rooms.push({
-          id: crypto.randomUUID(),
-          tiles: roomTiles,
-          centroid: new Vector2(cx, cy),
-          size: roomTiles.length
-        });
-      }
-    }
-  }
-
-  const isOutside = (room: WallRoomDescription) =>
-    room.tiles.some(
-      t =>
-        t.x === tileMinX ||
-        t.y === tileMinY ||
-        t.x === tileMaxX - 1 ||
-        t.y === tileMaxY - 1
-    );
-
-  return rooms.filter(r => !isOutside(r));
+      return rooms.filter(r => !isOutside(r));
+    })
+    .flat();
 }
 
 //#endregion

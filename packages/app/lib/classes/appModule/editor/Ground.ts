@@ -65,7 +65,7 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
 
       groundStyleMap.set(position.x, position.y, position.z);
       this.lastGroundData = [];
-      groundModule.refreshGround();
+      groundModule.refreshGround(room.modules.floor.getFloor());
     } else if (
       this.state.action.secondary === GROUND_ACTION.REMOVE_MULTIPLE_SET
     ) {
@@ -82,21 +82,21 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
         const endZ = Math.max(this.multipleSet.startPosition.z, position.z);
         for (let x = startX; x <= endX; x++) {
           for (let z = startZ; z <= endZ; z++) {
-            groundStyleMap.delete(x, 0, z);
+            groundStyleMap.delete(x, this.multipleSet.startPosition.y, z);
           }
         }
         this.multipleSet = null;
         this.lastGroundData = [];
-        groundModule.refreshGround();
+        groundModule.refreshGround(room.modules.floor.getFloor());
       }
     } else if (this.state.action.secondary === GROUND_ACTION.STYLE_SINGLE_SET) {
       const room = this.app.modules.room.getRoom()!;
       const groundModule = room.modules.ground;
       const groundStyleMap = groundModule.getGroundStyleMap();
 
-      groundStyleMap.set(position.x, 0, position.z, this.state.skinId);
+      groundStyleMap.set(position.x, position.y, position.z, this.state.skinId);
       this.lastGroundData = [];
-      groundModule.refreshGround();
+      groundModule.refreshGround(room.modules.floor.getFloor());
     } else if (
       this.state.action.secondary === GROUND_ACTION.STYLE_MULTIPLE_SET
     ) {
@@ -114,12 +114,17 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
         for (let x = startX; x <= endX; x++) {
           for (let z = startZ; z <= endZ; z++) {
             console.log(this.state.skinId);
-            groundStyleMap.set(x, 0, z, this.state.skinId);
+            groundStyleMap.set(
+              x,
+              this.multipleSet.startPosition.y,
+              z,
+              this.state.skinId
+            );
           }
         }
         this.multipleSet = null;
         this.lastGroundData = [];
-        groundModule.refreshGround();
+        groundModule.refreshGround(room.modules.floor.getFloor());
       }
     }
   }
@@ -157,12 +162,12 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
     for (let x = startPosition.x; x <= endPosition.x; x++) {
       for (let z = startPosition.z; z <= endPosition.z; z++) {
         this.lastGroundData.push({
-          position: new Vector3(x, 0, z),
-          groundStyle: groundStyleMap.get(x, 0, z)
+          position: new Vector3(x, startPosition.y, z),
+          groundStyle: groundStyleMap.get(x, startPosition.y, z)
         });
         groundStyleMap.set(
           x,
-          0,
+          startPosition.y,
           z,
           this.state.action.primary === GROUND_ACTION.REMOVE
             ? 'hidden'
@@ -170,7 +175,7 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
         );
       }
     }
-    groundModule.refreshGround();
+    groundModule.refreshGround(room.modules.floor.getFloor());
   }
 
   reset() {
@@ -189,7 +194,7 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
       });
 
       this.multipleSet = null;
-      groundModule.refreshGround();
+      groundModule.refreshGround(room.modules.floor.getFloor());
       this.lastGroundData = [];
     }
 

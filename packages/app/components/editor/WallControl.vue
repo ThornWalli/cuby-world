@@ -66,7 +66,7 @@ const current = ref<{
 } | null>();
 onMounted(() => {
   currentAction.value = {
-    primary: WALL_ACTION.MODE_DOOR
+    primary: WALL_ACTION.ADD
   };
 
   subscription.add(

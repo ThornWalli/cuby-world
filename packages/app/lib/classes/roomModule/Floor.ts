@@ -3,6 +3,7 @@ import type { FloorIndex } from '../../types/floor';
 import type { RoomModuleObservables, RoomModuleState } from '../RoomModule';
 import RoomModule from '../RoomModule';
 import type Room from '../Room';
+import { FLOOR_HEIGHT } from '../../utils/ground';
 
 interface Observables extends RoomModuleObservables {
   floor$: ReplaySubject<FloorIndex>;
@@ -42,6 +43,14 @@ export default class FloorModule extends RoomModule<State, Observables> {
   }
 
   //#region getters/setters
+
+  getFloorHeight() {
+    return this.state.floor * FLOOR_HEIGHT;
+  }
+
+  getFloor() {
+    return this.state.floor;
+  }
 
   getMinFloor() {
     return 0;

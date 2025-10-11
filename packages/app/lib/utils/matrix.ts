@@ -5,13 +5,14 @@ import type Unit from '../classes/Unit';
 
 import type * as THREE from 'three';
 import type { FACE_INDEX } from '../types/wall';
+import { FLOOR_HEIGHT } from './ground';
 
 export function positionToMatrixPosition(
   position: THREE.Vector3
 ): THREE.Vector3 {
   return new Vector3(
     Math.round(position.x),
-    Math.round(position.y),
+    Math.round(position.y / FLOOR_HEIGHT),
     Math.round(position.z)
   );
 }

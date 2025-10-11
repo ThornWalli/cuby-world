@@ -214,6 +214,7 @@ export interface WallEdge {
 
 export interface WallRoomDescription {
   id: string;
+  floor: number;
   tiles: Vector2[];
   centroid: Vector2;
   size: number;

@@ -15,6 +15,7 @@ import { OBJECT_NAME } from '../Unit';
 import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import type Room from '../Room';
+import { FLOOR_HEIGHT } from '../../utils/ground';
 
 interface Observables extends RoomModuleObservables {
   selectionVisible$: ReplaySubject<boolean>;
@@ -61,7 +62,9 @@ export default class SelectionModule extends RoomModule<State, Observables> {
     this.state.position = position;
     this.positionSubject.next(position);
     if (this.state.visible) {
-      this.state.selectionMesh!.position.copy(position);
+      this.state.selectionMesh!.position.copy(
+        new Vector3(position.x, position.y * FLOOR_HEIGHT, position.z)
+      );
     }
   }
 

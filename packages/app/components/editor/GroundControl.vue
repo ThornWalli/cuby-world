@@ -39,10 +39,10 @@ const subscription = new Subscription();
 const skinId = ref<GroundSkinIdentifier>('');
 
 onMounted(() => {
-  // currentAction.value = {
-  //   primary: GROUND_ACTION.REMOVE,
-  //   secondary: GROUND_ACTION.REMOVE_MULTIPLE_SET
-  // };
+  currentAction.value = {
+    primary: GROUND_ACTION.STYLE,
+    secondary: GROUND_ACTION.STYLE_SINGLE_SET
+  };
 });
 
 onUnmounted(() => {

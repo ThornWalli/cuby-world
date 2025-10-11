@@ -16,38 +16,51 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import styles, { type GrountStyleIdentifier } from './ground/skins';
 import type GroundStyleMap from '../classes/GroundStyleMap';
 
+export interface GroundChunk {
+  mesh: InstancedMesh;
+  floor: number;
+}
+
+export const FLOOR_HEIGHT = 2.2;
+
 export function createGroundChunks(
   gridSize: Vector2,
+  floor: number,
   groundStyleMap: GroundStyleMap,
   chunkSize = 16,
   {
     assetLoader,
     groundGeometryMap
   }: { assetLoader: AssetLoader; groundGeometryMap: GroundGeometryMap }
-): InstancedMesh[] {
+): GroundChunk[] {
   const rows = gridSize.x;
   const cols = gridSize.y;
-  const chunks: InstancedMesh[] = [];
-
-  for (let y = 0; y < cols; y += chunkSize) {
+  const chunks: {
+    mesh: InstancedMesh;
+    floor: number;
+  }[] = [];
+  console.log('createGroundChunks', { floor });
+  const y = floor;
+  const helper = new Object3D();
+  for (let z = 0; z < cols; z += chunkSize) {
     for (let x = 0; x < rows; x += chunkSize) {
       const groundTypes = new Set<GrountStyleIdentifier>();
       const positionsByType = new Map<GrountStyleIdentifier, Vector3[]>();
 
       // const tilesInChunk: Ground[] = [];
-      for (let r = y; r < y + chunkSize && r < cols; r++) {
+      for (let r = z; r < z + chunkSize && r < cols; r++) {
         for (let c = x; c < x + chunkSize && c < rows; c++) {
-          const skinId = groundStyleMap.get(c, 0, r);
+          const skinId = groundStyleMap.get(c, y, r);
           if (skinId) {
             if (!positionsByType.has(skinId)) {
               positionsByType.set(skinId, positionsByType.get(skinId) || []);
             }
-            positionsByType.get(skinId)?.push(new Vector3(c, 0, r));
+            positionsByType.get(skinId)?.push(new Vector3(c, y, r));
 
             groundTypes.add(skinId);
 
             // else {
-            //   tilesInChunk.push(new Ground({ position: new Vector3(c, 0, r) }));
+            //   tilesInChunk.push(new Ground({ position: new Vector3(c, y, r) }));
             // }
           }
         }
@@ -96,15 +109,17 @@ export function createGroundChunks(
         const instancedMesh = instancesMeshByType.get(type)!;
 
         tiles.forEach((tile, index) => {
-          const helper = new Object3D();
           helper.updateMatrix();
-          helper.matrix.makeTranslation(tile.x, tile.y, tile.z);
+          helper.matrix.makeTranslation(tile.x, tile.y * FLOOR_HEIGHT, tile.z);
           instancedMesh.setMatrixAt(index, helper.matrix);
         });
 
         instancedMesh.instanceMatrix.needsUpdate = true;
 
-        chunks.push(instancedMesh);
+        chunks.push({
+          mesh: instancedMesh,
+          floor
+        });
       });
     }
   }

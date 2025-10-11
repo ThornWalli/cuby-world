@@ -1,0 +1,1487 @@
+{
+  "id": "b4ec75c2-4ea7-476c-a766-dd96947d555e",
+  "info": {
+    "name": "Default Room",
+    "description": "This is the default room. You can edit it to create your own room."
+  },
+  "gridSize": {
+    "type": "Vector2",
+    "value": [
+      10,
+      10
+    ]
+  },
+  "start": {
+    "position": {
+      "type": "Vector3",
+      "value": [
+        0,
+        0,
+        2
+      ]
+    },
+    "rotation": "east"
+  },
+  "walls": [
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "window",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": [
+        {
+          "key": "window_standard",
+          "state": {
+            "type": "default",
+            "size": "small"
+          }
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_light_brown"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          0,
+          2
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_light_brown"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "window",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          0,
+          3
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_light_brown"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          0,
+          4
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_light_brown"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          0,
+          5
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "window",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          0,
+          6
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "window",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          2
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "door",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          3
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": [
+        {
+          "key": "door_standard",
+          "state": {
+            "open": false
+          }
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          4
+        ]
+      },
+      "skins": [
+        "color_light_light_brown",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          5
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "window",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          6
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          8
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          7
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          0,
+          7
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          0,
+          8
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          0,
+          9
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          0,
+          9
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "window",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          0,
+          9
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          0,
+          9
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          9
+        ]
+      },
+      "skins": [
+        "texture_brick_1",
+        "color_light_blue"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          5
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "color_light_light_brown"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          0,
+          5
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "color_light_light_brown"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          0,
+          5
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "color_light_light_brown"
+      ],
+      "extensions": []
+    },
+    {
+      "type": "door",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          0,
+          5
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "color_light_light_brown"
+      ],
+      "extensions": [
+        {
+          "key": "door_standard",
+          "state": {
+            "open": false
+          }
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          0,
+          5
+        ]
+      },
+      "skins": [
+        "color_light_blue",
+        "color_light_light_brown"
+      ],
+      "extensions": []
+    }
+  ],
+  "units": [],
+  "groundStyles": [
+    {
+      "id": "color_green",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wood_laminate_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "id": "color_light_light_brown",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "default",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            10
+          ]
+        }
+      ]
+    }
+  ]
+}

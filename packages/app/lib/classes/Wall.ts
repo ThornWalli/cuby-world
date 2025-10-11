@@ -41,6 +41,7 @@ import type WallExtension from './WallExtension';
 import type { AnimationLoopSubject } from './Renderer';
 import assetLoader from '@cuby-world/app/services/assetLoader';
 import type { WallSkinIdentifier, WallSkins } from '../types/wall/skins';
+import { FLOOR_HEIGHT } from '../utils/ground';
 
 enum MESH_WALL_NAME {
   SMALL_WALL = 'small_wall',
@@ -149,7 +150,14 @@ export default class Wall {
     }
 
     root.userData = { wall: this };
-    root.position.copy(this.position);
+
+    root.position.copy(
+      new Vector3(
+        this.position.x,
+        this.position.y * FLOOR_HEIGHT,
+        this.position.z
+      )
+    );
   }
 
   //#region extension
@@ -258,67 +266,6 @@ export default class Wall {
     return WALL_TYPE.DEFAULT;
   }
 
-  /**
-   * @deprecated wird durch die extensions und getType() ersetzt
-   */
-  setType(type: WALL_TYPE) {
-    if (this.state.type !== type) {
-      this.tmpState = null;
-      this.state.type = type;
-      const mesh = this.getMesh();
-      if (mesh) {
-        this.refreshWallMeshes({
-          root: this.root!,
-          wallGeometryMap: this.wallGeometryMap!,
-          editMode: this.editMode
-        });
-        this.tmpBox.setFromObject(this.root!);
-      }
-    }
-  }
-
-  //#region TmpState
-  private tmpState: WallState | null = null;
-  async saveTmpState({ type, skins: style, windowType }: Partial<WallState>) {
-    this.tmpState = this.state;
-    this.state = {
-      ...this.state,
-      type: type ?? this.state.type,
-      skins: style ?? this.state.skins,
-      windowType: windowType ?? this.state.windowType
-    };
-    const mesh = this.getMesh();
-    if (mesh) {
-      await this.refreshWallMeshes({
-        root: this.root!,
-        wallGeometryMap: this.wallGeometryMap!,
-        editMode: this.editMode
-      });
-      this.tmpBox.setFromObject(this.root!);
-    }
-  }
-
-  restoreTmpState() {
-    if (this.tmpState) {
-      this.state = this.tmpState;
-      this.resetTmpState();
-      const mesh = this.getMesh();
-      if (mesh) {
-        this.refreshWallMeshes({
-          root: this.root!,
-          wallGeometryMap: this.wallGeometryMap!,
-          editMode: this.editMode
-        });
-        this.tmpBox.setFromObject(this.root!);
-      }
-    }
-  }
-
-  resetTmpState() {
-    this.tmpState = null;
-  }
-  //#endregion
-
   toggleVisibility(value?: boolean, mesh: Mesh = this.getMesh()) {
     let materials;
     if (Array.isArray(mesh.material)) {
@@ -335,8 +282,6 @@ export default class Wall {
   show() {
     if (!this.visible) {
       this.toggleVisibility(true, this.wallMeshes[WALL_SIZE.LARGE]!);
-      // this.toggleVisibility(false, this.wallMeshes[WALL_SIZE.SMALL]!);
-      // this.wallMeshes[WALL_SIZE.LARGE]!.visible = true;
       this.wallMeshes[WALL_SIZE.SMALL]!.visible = false;
       this.visible = true;
     }
@@ -345,8 +290,6 @@ export default class Wall {
   hide() {
     if (this.visible) {
       this.toggleVisibility(false, this.wallMeshes[WALL_SIZE.LARGE]!);
-      // this.toggleVisibility(true, this.wallMeshes[WALL_SIZE.SMALL]!);
-      // this.wallMeshes[WALL_SIZE.LARGE]!.visible = false;
       this.wallMeshes[WALL_SIZE.SMALL]!.visible = true;
       this.visible = false;
     }
@@ -395,7 +338,6 @@ export default class Wall {
         (obj.material as Material).dispose?.();
       }
     });
-
     const materials = [
       new MeshPhongMaterial({
         transparent: true,
@@ -449,8 +391,6 @@ export default class Wall {
         }
       );
       largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-      // largeWall.visible = this.visible;
-      // this.toggleVisibility(true, largeWall);
       largeWall.userData = { wall: this, ignoreSelect: true };
       this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
       root.add(largeWall);
@@ -465,6 +405,7 @@ export default class Wall {
           wallGeometryMap: this.wallGeometryMap
         }
       );
+      largeWall.material = materials.map(m => m.clone());
       largeWall.geometry.dispose();
       largeWall.geometry = geometry!;
     }
@@ -488,7 +429,6 @@ export default class Wall {
       );
       smallWall.name = MESH_WALL_NAME.SMALL_WALL;
       smallWall.visible = !this.visible;
-      // this.toggleVisibility(true, smallWall);
       smallWall.userData = { wall: this, ignoreSelect: true };
       this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
       root.add(smallWall);
@@ -503,6 +443,7 @@ export default class Wall {
           wallGeometryMap: this.wallGeometryMap
         }
       );
+      smallWall.material = materials.map(m => m.clone());
       smallWall.geometry.dispose();
       smallWall.geometry = geometry!;
     }
@@ -530,7 +471,7 @@ export default class Wall {
                   url,
                   options: {
                     position: new Vector2(0, 0),
-                    dimension: new Vector2(512, 1028)
+                    dimension: new Vector2(512, 1024)
                   }
                 },
                 largeWall.geometry,
@@ -551,20 +492,21 @@ export default class Wall {
               )
             ];
           }
-          return [materials[index], materials[index]];
+          return [
+            (largeWall.material as Material[])[index],
+            (smallWall.material as Material[])[index]
+          ];
         })
       ).then(([styleA, styleB]) => {
-        const [largeMaterial, smallMaterial, ..._] = materials;
-
         const largeMaterials = [...(largeWall.material as Material[])];
-        largeMaterials[0] = styleA?.[0] || largeMaterial!;
-        largeMaterials[1] = styleB?.[0] || largeMaterial!;
-        largeWall.material = largeMaterials.map(m => m.clone());
+        largeMaterials[0] = styleA?.[0] || largeMaterials[0]!;
+        largeMaterials[1] = styleB?.[0] || largeMaterials[1]!;
+        largeWall.material = largeMaterials;
 
-        const smallMaterials = [...largeWall.material];
-        smallMaterials[0] = styleA?.[1] || smallMaterial!;
-        smallMaterials[1] = styleB?.[1] || smallMaterial!;
-        smallWall.material = smallMaterials.map(m => m.clone());
+        const smallMaterials = [...(smallWall.material as Material[])];
+        smallMaterials[0] = styleA?.[1] || smallMaterials[0]!;
+        smallMaterials[1] = styleB?.[1] || smallMaterials[1]!;
+        smallWall.material = smallMaterials;
       });
     }
   }

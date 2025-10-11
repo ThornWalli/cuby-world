@@ -7,13 +7,17 @@ import { OBJECT_NAME } from '../Unit';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface State extends RoomModuleState {}
+
+interface State extends RoomModuleState {
+  visible: boolean;
+}
 
 export default class RoofModule extends RoomModule<State, Observables> {
   static override TYPE = 'roof';
 
-  state: State = {};
+  state: State = {
+    visible: false
+  };
 
   root?: Object3D = new Object3D();
   meshes: Mesh[] = [];
@@ -21,7 +25,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
   override setup(): void {
     super.setup();
 
-    this.setupRoot();
+    // this.setupRoot();
 
     this.subscription.add(
       this.room.modules.wall.observables.activeWallRooms$.subscribe(
