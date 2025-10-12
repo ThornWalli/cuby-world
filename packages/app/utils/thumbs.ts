@@ -11,11 +11,13 @@ import {
   Vector3,
   WebGLRenderer
 } from 'three';
-import { groundTextureMap } from '../lib/utils/ground/textures';
 import type AssetLoader from '../lib/classes/AssetLoader';
 import { loadGroundGeometries } from '../lib/utils/ground';
 import Ground from '../lib/classes/Ground';
-import groundGlb from '../assets/ground/ground.glb?url';
+import {
+  default_mesh as groundGlb,
+  groundTextureMap
+} from '@cuby-world/grounds';
 
 export async function setupGround({
   assetLoader

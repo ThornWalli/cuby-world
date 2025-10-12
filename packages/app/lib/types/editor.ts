@@ -1,5 +1,3 @@
-import type { SkinIdentifier } from './skin';
-
 export enum EDITOR_ACTION {
   NONE = 'none',
   WALL = 'wall',
@@ -23,9 +21,4 @@ export enum GROUND_ACTION {
   STYLE_MULTIPLE_SET = 'style_multiple_set',
   REMOVE_SINGLE_SET = 'remove_single_set',
   REMOVE_MULTIPLE_SET = 'remove_multiple_set'
-}
-
-export interface ExtensionSelectDescription {
-  id: string;
-  skin: SkinIdentifier;
 }

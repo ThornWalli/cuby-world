@@ -1,6 +1,8 @@
 import { Vector3 } from 'three';
-import type { GrountStyleIdentifier } from '../utils/ground/skins';
-import type { GroundStyleDescription } from '../types/ground';
+import type {
+  GroundStyleDescription,
+  GrountStyleIdentifier
+} from '../types/ground';
 
 export default class GroundStyleMap {
   getPositions() {
@@ -30,7 +32,7 @@ export default class GroundStyleMap {
     if (this.map[y] && this.map[y][x] && this.map[y][x][z]) {
       return this.map[y][x][z];
     }
-    return 'hidden';
+    return 'default_hidden';
   }
 
   set(x: number, y: number, z: number, styleId?: GrountStyleIdentifier) {

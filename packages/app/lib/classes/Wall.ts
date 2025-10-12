@@ -36,12 +36,12 @@ import {
   type WallTextureMap,
   type WallGeometryMap
 } from '../types/wall';
-import styles from '../utils/wall/skins';
 import type WallExtension from './WallExtension';
 import type { AnimationLoopSubject } from './Renderer';
 import assetLoader from '@cuby-world/app/services/assetLoader';
 import type { WallSkinIdentifier, WallSkins } from '../types/wall/skins';
 import { FLOOR_HEIGHT } from '../utils/ground';
+import { skins } from '@cuby-world/walls';
 
 enum MESH_WALL_NAME {
   SMALL_WALL = 'small_wall',
@@ -49,7 +49,7 @@ enum MESH_WALL_NAME {
 }
 
 function getDefaultSkin(): [WallSkinIdentifier, WallSkinIdentifier] {
-  return ['default', 'default'];
+  return ['default_base', 'default_base'];
 }
 
 interface WallState {
@@ -189,7 +189,7 @@ export default class Wall {
   ) {
     const resolvedExts = await Promise.all(
       extensions.map(async ext => {
-        await ext.setup({ animationLoop$, assetLoader });
+        await ext.setup({ animationLoop$ });
         return ext;
       })
     );
@@ -342,14 +342,12 @@ export default class Wall {
       new MeshPhongMaterial({
         transparent: true,
         color:
-          styles.get(this.state.skins[0] || 'default')?.options.color ||
-          0x333333
+          skins.get(this.state.skins[0] || 'default')?.options.color || 0x333333
       }), // Front
       new MeshPhongMaterial({
         transparent: true,
         color:
-          styles.get(this.state.skins[1] || 'default')?.options.color ||
-          0x333333
+          skins.get(this.state.skins[1] || 'default')?.options.color || 0x333333
       }), // Back
       new MeshPhongMaterial({
         transparent: true,
@@ -452,7 +450,7 @@ export default class Wall {
       await Promise.all(
         this.state.skins.map(async (style, index: number) => {
           let url: string | undefined = undefined;
-          const texture = styles.get(style || 'default')?.options.texture;
+          const texture = skins.get(style || 'default')?.options.texture;
           if (texture && 'id' in texture) {
             if (this.wallTextureMap.has(texture.id)) {
               url = this.wallTextureMap.get(texture.id)?.url;
@@ -527,6 +525,9 @@ export default class Wall {
     };
   }
 
+  /**
+   * @deprecated use toDescription()
+   */
   toJSON(): WallDescription {
     return this.toDescription();
   }

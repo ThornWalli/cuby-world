@@ -48,15 +48,15 @@ import CwButton from '../../Button.vue';
 import CwToggle from '../../formField/compact/Toggle.vue';
 import { computed } from 'vue';
 import type { Options } from '../UnitPreview.vue';
-import { UNIT_ROTATION } from '../../../lib/types/unit';
+import { ROTATION } from '@cuby-world/app/lib/types';
 
 const $emit = defineEmits<{
   (e: 'select-unit', value: string): void;
-  (e: 'rotate-unit', value: UNIT_ROTATION): void;
+  (e: 'rotate-unit', value: ROTATION): void;
   (e: 'update:model-value', value: Options): void;
 }>();
 
-const rotations = Object.values(UNIT_ROTATION);
+const rotations = Object.values(ROTATION);
 
 function getNextRotation() {
   return rotations[

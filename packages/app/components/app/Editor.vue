@@ -132,7 +132,7 @@ onMounted(async () => {
   nextTick(() => {
     setup();
 
-    currentAction.value = EDITOR_ACTION.WALL;
+    // currentAction.value = EDITOR_ACTION.WALL;
     // onClickSettings();
 
     dialogDebug.value?.open();

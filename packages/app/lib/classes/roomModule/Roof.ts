@@ -1,9 +1,17 @@
-import type { Material, Mesh } from 'three';
-import { Object3D, BoxGeometry, MeshBasicMaterial, InstancedMesh } from 'three';
+import {
+  ExtrudeGeometry,
+  Mesh,
+  MeshPhongMaterial,
+  Shape,
+  Vector2,
+  type Material
+} from 'three';
+import { Object3D, DoubleSide } from 'three';
 import type { RoomModuleObservables, RoomModuleState } from '../RoomModule';
 import RoomModule from '../RoomModule';
 import { WALL_VIEW_MODE, type WallRoom } from './Wall';
-import { OBJECT_NAME } from '../Unit';
+
+import { FLOOR_HEIGHT } from '../../utils/ground';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
@@ -25,7 +33,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
   override setup(): void {
     super.setup();
 
-    // this.setupRoot();
+    this.setupRoot();
 
     this.subscription.add(
       this.room.modules.wall.observables.activeWallRooms$.subscribe(
@@ -42,30 +50,55 @@ export default class RoofModule extends RoomModule<State, Observables> {
 
   //#region methods
 
-  createMesh(wallRooms: Set<WallRoom>) {
-    wallRooms.forEach(room => {
-      const instancedMesh = new InstancedMesh(
-        new BoxGeometry(1, 0.1, 1),
-        new MeshBasicMaterial({
-          color: 0x333333,
-          transparent: true
-        }),
-        room.tiles.length
+  createMesh(wallRooms: Set<WallRoom>): Mesh[] {
+    const depth = 0.11;
+    const meshes: Mesh[] = [];
+
+    for (const room of wallRooms) {
+      const stairPositions = new Set(
+        room.tiles
+          .filter(t => this.room.modules.stair.isStairAt(t.position))
+          .map(t => `${t.position.x},${t.position.y}`)
       );
-      instancedMesh.name = OBJECT_NAME.MESH;
-      room.tiles.forEach((tile, index) => {
-        const helper = new Object3D();
-        helper.updateMatrix();
-        helper.matrix.makeTranslation(tile.position.x, 0, tile.position.y);
-        instancedMesh.setMatrixAt(index, helper.matrix);
-      });
-      instancedMesh.userData.wallRoom = room;
-      instancedMesh.instanceMatrix.needsUpdate = true;
-      instancedMesh.castShadow = true;
-      instancedMesh.receiveShadow = true;
-      this.root!.add(instancedMesh);
-      this.meshes.push(instancedMesh);
-    });
+
+      for (const tile of room.tiles) {
+        const x = tile.position.x;
+        const y = tile.position.y;
+
+        if (stairPositions.has(`${x},${y}`)) continue;
+
+        const shape = new Shape([
+          new Vector2(x, y),
+          new Vector2(x + 1, y),
+          new Vector2(x + 1, y + 1),
+          new Vector2(x, y + 1)
+        ]);
+
+        const geom = new ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+
+        const mesh = new Mesh(
+          geom,
+          new MeshPhongMaterial({
+            color: 0x9e9e9e,
+            side: DoubleSide,
+            transparent: true
+          })
+        );
+
+        if (this.room.modules.wall.state.viewMode !== WALL_VIEW_MODE.LARGE) {
+          mesh.material.opacity = 0;
+          (mesh.material as Material).depthWrite = false;
+        }
+
+        mesh.receiveShadow = true;
+        mesh.rotateX(Math.PI / 2);
+        mesh.position.set(-0.5, depth, -0.5);
+
+        meshes.push(mesh);
+      }
+    }
+
+    return meshes;
   }
 
   setupRoot() {
@@ -75,8 +108,9 @@ export default class RoofModule extends RoomModule<State, Observables> {
           this.room.app.renderer.scene.remove(this.root);
         }
         this.root = new Object3D();
-        this.root.add(this.createMesh(wallRooms)!);
-        this.root.position.y = 2;
+        this.meshes = this.createMesh(wallRooms);
+        this.meshes.forEach(mesh => this.root!.add(mesh));
+        this.root.position.y = 1 * FLOOR_HEIGHT - 0.2;
         this.root.raycast = () => void 0;
         this.room.app.renderer.scene.add(this.root);
       })
@@ -100,6 +134,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
   }
 
   toggle(value: boolean, meshes = this.meshes) {
+    console.log('toggle roof');
     if (value) {
       this.show(meshes);
     } else {

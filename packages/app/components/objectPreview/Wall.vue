@@ -26,9 +26,11 @@ import {
   type WallGeometryMap
 } from '@cuby-world/app/lib/types/wall';
 import { loadWallGeometries } from '@cuby-world/app/lib/utils/wall';
-import wallGlb from '../../assets/wall/wall.glb?url';
 
-import { textureMap as wallTextureMap } from '@cuby-world/app/lib/utils/wall/textures';
+import { default_mesh as wallGlb } from '@cuby-world/walls';
+
+import { textureMap as wallTextureMap } from '@cuby-world/walls/textures';
+
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
 import type {

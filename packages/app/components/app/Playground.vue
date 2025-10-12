@@ -3,6 +3,8 @@
     <cw-messages v-if="isMessagingActive" :app="app" />
     <cw-panel-group position="top-left">
       <cw-panel-camera-control :app="app" />
+      <cw-panel-wall-control :app="app" />
+      <cw-panel-floor-control :app="app" />
     </cw-panel-group>
     <cw-panel-group position="top-right">
       <cw-panel-general :app="app" />
@@ -41,7 +43,11 @@ import type App from '../../lib/classes/App';
 import type Unit from '../../lib/classes/Unit';
 
 import CwMessages from '../Messages.vue';
+
 import CwPanelCameraControl from '../panel/CameraControl.vue';
+import CwPanelWallControl from '../panel/WallControl.vue';
+import CwPanelFloorControl from '../panel/FloorControl.vue';
+
 import CwPanelUnitPreview from '../panel/UnitPreview.vue';
 import CwPanelGeneral from '../panel/General.vue';
 import CwPanelGroup from '../PanelGroup.vue';

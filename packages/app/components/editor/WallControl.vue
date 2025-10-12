@@ -37,15 +37,12 @@ import { WALL_ACTION } from '../../lib/types/editor';
 import type { EditorApp } from '../../lib/classes/App';
 import type Wall from '../../lib/classes/Wall';
 import type { FACE_INDEX } from '../../lib/types/wall';
-import {
-  catalog,
-  type WallExtensionIdentifier
-} from '@cuby-world/wall-extensions';
 import { CURSOR_TYPE } from '../../lib/classes/appModule/Cursor';
-import type { CatalogItemIdentifier } from '@cuby-world/app/lib/utils/catalog';
 
-import skins from '@cuby-world/app/lib/utils/wall/skins';
 import type { WallSkinIdentifier } from '@cuby-world/app/lib/types/wall/skins';
+import { catalog, skins } from '@cuby-world/walls';
+import type { CatalogItemIdentifier } from '@cuby-world/app/lib/types/catalog';
+import type { WallExtensionIdentifier } from '@cuby-world/app/lib/types/wall/extension/skins';
 
 const extension = ref<WallExtensionIdentifier>('');
 const skin = ref<WallSkinIdentifier>('');

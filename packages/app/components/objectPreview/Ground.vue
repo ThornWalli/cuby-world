@@ -23,10 +23,11 @@ import CwObjectPreview from '../ObjectPreview.vue';
 import Ground from '@cuby-world/app/lib/classes/Ground';
 import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
 import assetLoader from '@cuby-world/app/services/assetLoader';
-
-import groundGlb from '../../assets/ground/ground.glb?url';
-import { groundTextureMap } from '@cuby-world/app/lib/utils/ground/textures';
-import skins from '@cuby-world/app/lib/utils/ground/skins';
+import {
+  default_mesh as groundGlb,
+  groundTextureMap,
+  skins
+} from '@cuby-world/grounds';
 
 const $props = defineProps<{
   app: App;

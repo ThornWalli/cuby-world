@@ -1,5 +1,5 @@
 import type { BufferGeometry, Vector2, Vector3 } from 'three';
-import type { WallTexture } from '../utils/wall/textures';
+import type { WallTexture } from './textures';
 import type { WallExtensionDescription } from '../classes/WallExtension';
 import type { WallSkins } from './wall/skins';
 

@@ -53,9 +53,10 @@ import CwCatalogWallItemSelect, {
 import { computed, ref, useId } from 'vue';
 
 import type App from '../../../lib/classes/App';
-import skins, { type WallSkinItem } from '@cuby-world/app/lib/utils/wall/skins';
-import { CATALOG_TAG } from '@cuby-world/app/lib/utils/catalog';
-import type { WallSkinIdentifier } from '@cuby-world/app/lib/types/wall/skins';
+import { CATALOG_TAG } from '../../../lib/utils/catalog';
+import type { WallSkinIdentifier } from '../../../lib/types/wall/skins';
+import { skins } from '@cuby-world/walls';
+import type { WallSkinItem } from '../../../lib/types/wall/catalog';
 
 const id = useId();
 

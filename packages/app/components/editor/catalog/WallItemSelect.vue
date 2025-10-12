@@ -29,8 +29,7 @@ import CwObjectPreviewWall, {
 } from '../../objectPreview/Wall.vue';
 
 import type App from '../../../lib/classes/App';
-
-import type { CatalogItem } from '@cuby-world/app/lib/utils/catalog';
+import type { CatalogItem } from '../../../lib/types/catalog';
 
 const $props = defineProps<{
   app: App;

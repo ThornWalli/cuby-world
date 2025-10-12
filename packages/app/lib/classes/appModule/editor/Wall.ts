@@ -32,15 +32,13 @@ import {
   type WallDescription
 } from '@cuby-world/app/lib/types/wall';
 import type { WallAction } from '@cuby-world/app/components/editor/panel/WallActions.vue';
-import {
-  getDefaultSkin,
-  type WallSkinItem
-} from '@cuby-world/app/lib/utils/wall/skins';
-import type { WallExtensionItem } from '@cuby-world/wall-extensions';
+import { getDefaultSkin } from '@cuby-world/app/lib/utils/wall/skins';
 import type WallExtension from '../../WallExtension';
 import { WALL_EXTENSION_TYPE } from '../../WallExtension';
 import type { WallSkins } from '@cuby-world/app/lib/types/wall/skins';
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
+import type { WallExtensionItem } from '@cuby-world/app/lib/types/wall/extension/catalog';
+import type { WallSkinItem } from '@cuby-world/app/lib/types/wall/catalog';
 
 interface Observables extends AppModuleObservables {
   current$: Subject<{
@@ -478,7 +476,7 @@ export default class EditorWallModule extends AppModule<State, Observables> {
     if (this.state.action.primary === WALL_ACTION.ADD) {
       await this.app.modules.room
         .getRoom()!
-        .modules.wall.addedWalls(this.wallDescriptions);
+        .modules.wall.addWalls(this.wallDescriptions);
     } else if (this.state.action.primary === WALL_ACTION.REMOVE) {
       this.app.modules.room
         .getRoom()!
@@ -510,7 +508,7 @@ export default class EditorWallModule extends AppModule<State, Observables> {
         if (this.state.action.primary === WALL_ACTION.ADD) {
           await this.app.modules.room
             .getRoom()!
-            .modules.wall.addedWalls(wallDescriptions);
+            .modules.wall.addWalls(wallDescriptions);
         } else {
           this.app.modules.room
             .getRoom()!

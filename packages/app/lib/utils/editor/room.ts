@@ -1,6 +1,6 @@
 import type { RoomDescription } from '../../classes/RoomDescription';
 import { Vector3, type Vector2 } from 'three';
-import { UNIT_ROTATION } from '../../types/unit';
+import { ROTATION } from '../../types';
 
 export function resizeRoom(
   description: RoomDescription,
@@ -13,13 +13,16 @@ export function resizeRoom(
   ) {
     start = {
       position: new Vector3(0, 0, 0),
-      rotation: UNIT_ROTATION.SOUTH
+      rotation: ROTATION.SOUTH
     };
   }
 
   return {
     id: crypto.randomUUID(),
     info: description.info,
+    start,
+    gridSize,
+    stairs: description.stairs,
     units: description.units.filter(
       u =>
         u.options.position.x < gridSize.x && u.options.position.z < gridSize.y
@@ -32,9 +35,7 @@ export function resizeRoom(
       values: groundStyle.positions.filter(
         ({ x, y }) => x < gridSize.x && y < gridSize.y
       )
-    })),
-    gridSize,
-    start
+    }))
   };
 }
 

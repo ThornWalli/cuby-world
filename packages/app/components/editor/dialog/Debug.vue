@@ -27,9 +27,9 @@ import type App from '../../../lib/classes/App';
 // import CwObjectPreviewWallExtension from '../../objectPreview/WallExtension.vue';
 import CwObjectPreviewUnit from '../../objectPreview/Unit.vue';
 import Cuby from '@cuby-world/units/cuby/Cuby';
-import StandardWindow from '@cuby-world/wall-extensions/window/standard/Standard';
 import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
 import type Unit from '@cuby-world/app/lib/classes/Unit';
+import StandardWindow from '@cuby-world/walls/extensions/default/windows/standard/Standard';
 
 const unit = ref(
   markRaw({

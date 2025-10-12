@@ -1,5 +1,4 @@
 import { Object3D } from 'three';
-import type AssetLoader from './AssetLoader';
 import type Wall from './Wall';
 import { Subscription } from 'rxjs';
 import type { AnimationLoopSubject } from './Renderer';
@@ -49,10 +48,7 @@ export default class WallExtension<
     this.root.remove();
   }
 
-  setup(_context: {
-    animationLoop$: AnimationLoopSubject;
-    assetLoader: AssetLoader;
-  }): void {
+  setup(_context: { animationLoop$: AnimationLoopSubject }): void {
     // Override in subclass if needed
   }
 

@@ -19,9 +19,10 @@ import {
   switchMap
 } from 'rxjs';
 import { Vector3 } from 'three';
-import type { GrountStyleIdentifier } from '@cuby-world/app/lib/utils/ground/skins';
+
 import type App from '../../App';
 import type GroundStyleMap from '../../GroundStyleMap';
+import type { GrountStyleIdentifier } from '@cuby-world/app/lib/types/ground';
 
 interface Observables extends AppModuleObservables {
   select$: unknown;
@@ -44,7 +45,7 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
     action: {
       primary: GROUND_ACTION.NONE
     },
-    skinId: 'default'
+    skinId: 'default_base'
   };
 
   constructor(app: App) {
@@ -170,7 +171,7 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
           startPosition.y,
           z,
           this.state.action.primary === GROUND_ACTION.REMOVE
-            ? 'hidden'
+            ? 'default_hidden'
             : this.state.skinId
         );
       }

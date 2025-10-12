@@ -24,7 +24,6 @@ import {
 import { onMounted, onUnmounted, ref } from 'vue';
 
 import type App from '../lib/classes/App';
-import type { UNIT_ROTATION } from '../lib/types/unit';
 import {
   createCamera,
   createRenderer,
@@ -32,6 +31,7 @@ import {
   setupGround,
   updateOrthoCameraForObject
 } from '../utils/thumbs';
+import type { ROTATION } from '../lib/types';
 
 const rootEl = ref<HTMLDivElement | null>(null);
 const previewSrc = ref<string | null>(null);
@@ -45,7 +45,7 @@ const $props = defineProps<{
   app: App;
   width?: number | 'auto';
   ratio: number;
-  direction?: UNIT_ROTATION | `${UNIT_ROTATION}`;
+  direction?: ROTATION | `${ROTATION}`;
   root: Object3D;
   zoomRoot?: Object3D;
   hideGround?: boolean;

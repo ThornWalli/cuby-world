@@ -14,7 +14,7 @@ import { useRoute, useRuntimeConfig } from '#imports';
 import { APP_MODE, type AppConfig } from '@cuby-world/app/lib/classes/App';
 
 import { defineAsyncComponent, onMounted, ref } from 'vue';
-import roomTest2001 from '@cuby-world/app/lib/rooms/wall-test-2.json';
+import roomTest2001 from '@cuby-world/app/lib/rooms/default.json';
 import {
   jsonParse,
   parseRoomDescription

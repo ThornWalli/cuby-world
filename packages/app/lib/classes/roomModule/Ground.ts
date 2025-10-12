@@ -21,8 +21,8 @@ import {
 } from 'rxjs';
 import { preparePosition, type PreparedPosition } from '../../utils/matrix';
 import type { GroundGeometryMap } from '../../types/ground';
-import MeshGround from '@cuby-world/app/assets/ground/ground.glb?url';
-import skins from '../../utils/ground/skins';
+
+import { default_mesh as MeshGround, skins } from '@cuby-world/grounds';
 import GroundStyleMap from '../GroundStyleMap';
 import {
   createGroundChunks,
@@ -239,10 +239,6 @@ export default class GroundModule extends RoomModule<State, Observables> {
   }
 
   private setupGround() {
-    const description = this.room.description;
-    if (!description) {
-      throw new Error('Room description is not set');
-    }
     const groundMesh = new Object3D();
     groundMesh.name = 'ground';
 

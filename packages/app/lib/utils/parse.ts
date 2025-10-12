@@ -4,7 +4,7 @@ import type {
   JsonRoomDescription,
   RoomDescription
 } from '@cuby-world/app/lib/classes/RoomDescription';
-import type { UNIT_ROTATION } from '@cuby-world/app/lib/types/unit';
+import type { ROTATION } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function jsonStringify(data: any) {
@@ -39,12 +39,15 @@ export function parseRoomDescription(
 ): RoomDescription {
   return {
     ...room,
+    gridSize: Array.isArray(room.gridSize)
+      ? new Vector2().fromArray(room.gridSize)
+      : room.gridSize,
     start: {
       ...room.start,
       position: Array.isArray(room.start.position)
         ? new Vector3().fromArray(room.start.position)
         : room.start.position,
-      rotation: room.start.rotation as UNIT_ROTATION
+      rotation: room.start.rotation as ROTATION
     },
     walls: (room.walls ?? []).map(wall => ({
       ...wall,
@@ -59,7 +62,7 @@ export function parseRoomDescription(
         position: Array.isArray(unit.options.position)
           ? new Vector3().fromArray(unit.options.position)
           : unit.options.position,
-        rotation: unit.options.rotation as UNIT_ROTATION
+        rotation: unit.options.rotation as ROTATION
       }
     })),
     groundStyles: room.groundStyles.map(({ positions, ...groundStyle }) => ({
@@ -67,6 +70,12 @@ export function parseRoomDescription(
       positions: positions.map(position =>
         Array.isArray(position) ? new Vector3().fromArray(position) : position
       )
+    })),
+    stairs: (room.stairs ?? []).map(stair => ({
+      ...stair,
+      position: Array.isArray(stair.position)
+        ? new Vector3().fromArray(stair.position)
+        : stair.position
     }))
   };
 }

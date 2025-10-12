@@ -53,11 +53,10 @@ import CwCatalogGroundItemSelect, {
 import { computed, ref, useId } from 'vue';
 
 import type App from '../../../lib/classes/App';
-import skins, {
-  type GroundSkinItem
-} from '@cuby-world/app/lib/utils/ground/skins';
-import { CATALOG_TAG } from '@cuby-world/app/lib/utils/catalog';
-import type { GroundSkinIdentifier } from '@cuby-world/app/lib/types/ground/skins';
+import { CATALOG_TAG } from '../../../lib/utils/catalog';
+import type { GroundSkinIdentifier } from '../../../lib/types/ground/skins';
+import { skins } from '@cuby-world/grounds';
+import type { GroundSkinItem } from '../../../lib/types/ground/catalog';
 
 const id = useId();
 

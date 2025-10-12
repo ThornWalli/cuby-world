@@ -19,16 +19,14 @@ import CwCatalogWallItemSelect, {
 } from '../catalog/WallItemSelect.vue';
 import { ref } from 'vue';
 import type App from '../../../lib/classes/App';
-import {
-  doors,
-  doorsCatalog,
-  type WallExtensionIdentifier,
-  type WallExtensionItem
-} from '@cuby-world/wall-extensions';
-import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
+import type WallExtension from '../../../lib/classes/WallExtension';
+import { defaultDoors, doorsCatalog } from '@cuby-world/walls';
+import type { WallExtensionItem } from '../../../lib/types/wall/extension/catalog';
+import type { WallExtensionIdentifier } from '../../../lib/types/wall/extension/skins';
 
 const extensionTypes = new Map(
-  Object.values(doors).map(door => [door.KEY, door])
+  // TODO: Hier kommen dann weiteren door typen rein
+  [...Object.values(defaultDoors)].map(door => [door.KEY, door])
 );
 
 function prepareItem(item: WallExtensionItem) {
@@ -43,7 +41,8 @@ function prepareItem(item: WallExtensionItem) {
 }
 
 const items = ref<WallItem<WallExtensionItem>[]>(
-  Array.from(doorsCatalog.values()).map(item => {
+  // TODO: Hier kommen dann weiteren door typen rein
+  [...Array.from(doorsCatalog.values())].map(item => {
     return {
       item,
       wall: prepareItem(item)

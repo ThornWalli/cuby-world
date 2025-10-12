@@ -9,10 +9,12 @@ import type { RoomDescription } from './RoomDescription';
 import type { AnimationLoopValue } from './Renderer';
 import RoofModule from './roomModule/Roof';
 import FloorModule from './roomModule/Floor';
+import StairModule from './roomModule/Stair';
 
 type RoomModuleList = (
   | typeof WallModule
   | typeof RoofModule
+  | typeof StairModule
   | typeof FloorModule
   | typeof GroundModule
   | typeof SelectionMode
@@ -22,6 +24,7 @@ type RoomModuleList = (
 interface RoomModules {
   wall: WallModule;
   roof: RoofModule;
+  stair: StairModule;
   floor: FloorModule;
   ground: GroundModule;
   selection: SelectionMode;
@@ -56,6 +59,7 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     moduleList.push(SelectionMode);
     moduleList.push(WallModule);
     moduleList.push(RoofModule);
+    moduleList.push(StairModule);
     moduleList.push(FloorModule);
     moduleList.push(GroundModule);
     moduleList.push(UnitsModule);
@@ -116,12 +120,13 @@ export default class Room<Modules extends RoomModules = RoomModules> {
       },
       gridSize: this.gridSize,
       start,
-      walls: this.modules.wall.getWalls().map(wall => wall.toJSON()),
+      walls: this.modules.wall.getWalls().map(wall => wall.toDescription()),
       units: this.modules.units
         .getUnits()
         .filter(unit => !unit.modules.player.player)
         .map(unit => unit.toJSON()),
-      groundStyles: this.modules.ground.getGroundStyleMap().toGroundStyles()
+      groundStyles: this.modules.ground.getGroundStyleMap().toGroundStyles(),
+      stairs: this.modules.stair.getStairs().map(stair => stair.toDescription())
     };
   }
 }

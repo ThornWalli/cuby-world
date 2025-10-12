@@ -1,6 +1,8 @@
 import type { BufferGeometry, Vector3 } from 'three';
 import type { GroundTexture } from '../utils/ground/textures';
 
+export type GrountStyleIdentifier = string;
+
 export interface GroundDescription {
   type: string;
   values: [number, number][];

@@ -8,13 +8,16 @@ import {
   Object3D
 } from 'three';
 
-import { groundTextureMap } from './ground/textures';
 import type AssetLoader from '../classes/AssetLoader';
-import { GROUND_GEOMETRY, type GroundGeometryMap } from '../types/ground';
+import {
+  GROUND_GEOMETRY,
+  type GroundGeometryMap,
+  type GrountStyleIdentifier
+} from '../types/ground';
 import { LOADER } from '../classes/AssetLoader';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import styles, { type GrountStyleIdentifier } from './ground/skins';
 import type GroundStyleMap from '../classes/GroundStyleMap';
+import { groundTextureMap, skins } from '@cuby-world/grounds';
 
 export interface GroundChunk {
   mesh: InstancedMesh;
@@ -69,7 +72,7 @@ export function createGroundChunks(
       const instanceMap: [string, InstancedMesh][] = Array.from(
         groundTypes
       ).map(type => {
-        const { color, opacity, texture } = styles.get(type)?.skin || {};
+        const { color, opacity, texture } = skins.get(type)?.skin || {};
         const tile = new Ground({
           color,
           opacity,

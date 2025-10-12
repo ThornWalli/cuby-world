@@ -15,22 +15,21 @@
 </template>
 
 <script lang="ts" setup>
-import styles, {
-  type GrountStyleIdentifier
-} from '@cuby-world/app/lib/utils/ground/skins';
 import CwPanel from '../../Panel.vue';
 import BaseButton from '../../base/Button.vue';
 
 import { computed, ref } from 'vue';
+import { skins } from '@cuby-world/grounds';
+import type { GrountStyleIdentifier } from '../../../lib/types/ground';
 
 const $props = defineProps<{
   modelValue: GrountStyleIdentifier;
 }>();
 
-const items = ref(Array.from(styles.values()));
+const items = ref(Array.from(skins.values()));
 const title = computed(() => {
   if ($props.modelValue) {
-    const style = styles.get($props.modelValue);
+    const style = skins.get($props.modelValue);
     return style ? style.name : '?';
   }
   return 'Select Style';

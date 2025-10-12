@@ -1,4 +1,3 @@
-import { textureMap as wallTextureMap } from './wall/textures';
 /* eslint-disable complexity */
 import type { Object3D, BufferAttribute } from 'three';
 import {
@@ -40,6 +39,7 @@ import type { AnimationLoopSubject } from '../classes/Renderer';
 import type DoorWallExtension from '../classes/wallExtension/Door';
 import assetLoader from '@cuby-world/app/services/assetLoader';
 import { FLOOR_HEIGHT } from './ground';
+import { textureMap as wallTextureMap } from '@cuby-world/walls/textures';
 
 function getDefaultDirections() {
   return [
@@ -662,7 +662,9 @@ export default async function createWalls(
 export async function resolveWallExtensions(
   extensions: WallExtensionDescription[]
 ) {
-  const { doors, windows } = await import('@cuby-world/wall-extensions');
+  const { defaultDoors: doors, defaultWindows: windows } = await import(
+    '@cuby-world/walls'
+  );
   const extList = [...Object.values(doors), ...Object.values(windows)];
   return extensions.map(ext => {
     const ExtClass = extList.find(e => e.KEY === ext.key);

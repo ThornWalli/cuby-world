@@ -39,7 +39,6 @@ import type Room from '../Room';
 import { OBJECT_NAME } from '../Unit';
 import { APP_MODE } from '../App';
 
-import MeshWall from '../../../assets/wall/wall.glb?url';
 import type {
   WALL_DIRECTION,
   WallDescription,
@@ -48,6 +47,7 @@ import type {
 } from '../../types/wall';
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { FloorIndex } from '../../types/floor';
+import { default_mesh as MeshWall } from '@cuby-world/walls';
 
 interface WallRoomTile {
   mesh: Mesh;
@@ -267,13 +267,10 @@ export default class WallModule extends RoomModule<
   selectionPosition: Vector3 = new Vector3();
   override async setup(): Promise<void> {
     const description = this.room.description;
-    if (!description) {
-      throw new Error('Room description is not set');
-    }
 
     this.state.baseWallGeometryMap = await loadWallGeometries(MeshWall);
 
-    await this.addedWalls(description.walls);
+    await this.addWalls(description.walls);
 
     this.subscription.add(
       this.room.app.modules.player.observables.currentPlayer$
@@ -370,7 +367,7 @@ export default class WallModule extends RoomModule<
     );
   }
 
-  async addedWalls(wallDescriptions: WallDescription[]) {
+  async addWalls(wallDescriptions: WallDescription[]) {
     wallDescriptions = wallDescriptions.filter(
       ({ position, direction }) =>
         !this.state.wallMap.has([position.x, position.y, position.z, direction])

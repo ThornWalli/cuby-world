@@ -1,56 +1,44 @@
 import type { Vector2, Vector3 } from 'three';
-import type { UNIT_ROTATION } from '../types/unit';
 import type { UnitDescription } from './Unit';
 import type { WallDescription } from '../types/wall';
 import type { GroundStyleDescription } from '../types/ground';
+import type { ROTATION } from '../types';
+import type { StairDescription } from './Stair';
 
 export type Grid = number[][];
 
-export interface StartPosition {
-  position: Vector3;
-  rotation: UNIT_ROTATION;
-}
-
-export interface RoomStartPosition<
-  Position = Vector3,
-  Rotation = UNIT_ROTATION
-> {
+export interface StartPosition<Position = Vector3, Rotation = ROTATION> {
   position: Position;
   rotation: Rotation;
 }
+
+export interface RoomStartPosition<Position = Vector3, Rotation = ROTATION> {
+  position: Position;
+  rotation: Rotation;
+}
+
 export interface RoomDescription<
-  Rotation = UNIT_ROTATION,
-  WallPosition = Vector3,
-  UnitPosition = Vector3,
-  GroundPosition = Vector3
+  Rotation = ROTATION,
+  GridSize = Vector2,
+  Position = Vector3
 > {
   id: string;
   info: {
     name: string;
     description?: string;
   };
-  gridSize: Vector2;
+  gridSize: GridSize;
+  start: StartPosition<Position, Rotation>;
 
-  units: UnitDescription<Rotation, UnitPosition>[];
-  walls: WallDescription<WallPosition>[];
-  groundStyles: GroundStyleDescription<GroundPosition[]>[];
-
-  start: StartPosition;
+  units: UnitDescription<Rotation, Position>[];
+  walls: WallDescription<Position>[];
+  groundStyles: GroundStyleDescription<Position[]>[];
+  stairs: StairDescription<Position>[];
 }
 
 // export interface EditorRoomDescription extends RoomDescription { }
 
-export type ImportRoomDescription = RoomDescription<
-  UNIT_ROTATION,
-  Vector3,
-  Vector3,
-  Vector3
->;
-export type JsonRoomDescription = RoomDescription<
-  string,
-  number[],
-  number[],
-  number[]
->;
+export type ImportRoomDescription = RoomDescription<ROTATION, Vector2, Vector3>;
+export type JsonRoomDescription = RoomDescription<string, number[], number[]>;
 
 export type GroundMap = string[][];

@@ -19,16 +19,14 @@ import CwCatalogWallItemSelect, {
 } from '../catalog/WallItemSelect.vue';
 import { ref } from 'vue';
 import type App from '../../../lib/classes/App';
-import {
-  windowsCatalog,
-  windows,
-  type WallExtensionIdentifier,
-  type WallExtensionItem
-} from '@cuby-world/wall-extensions';
-import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
+import type WallExtension from '../../../lib/classes/WallExtension';
+import { defaultWindows, windowsCatalog } from '@cuby-world/walls';
+import type { WallExtensionItem } from '../../../lib/types/wall/extension/catalog';
+import type { WallExtensionIdentifier } from '../../../lib/types/wall/extension/skins';
 
 const extensionTypes = new Map(
-  Object.values(windows).map(item => [item.KEY, item])
+  // TODO: Hier kommen dann weiteren window typen rein
+  [...Object.values(defaultWindows)].map(item => [item.KEY, item])
 );
 
 function prepareItem(item: WallExtensionItem): WallItem<WallExtensionItem> {

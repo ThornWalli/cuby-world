@@ -57,11 +57,12 @@ import units from './units';
 import DebugRendererModule from '../../lib/classes/rendererModule/Debug';
 import { getGltfObjectFromFile } from '../../utils/file';
 import Custom from '@cuby-world/units/Custom';
-import { UNIT_ROTATION } from '@cuby-world/app/lib/types/unit';
-import { groundTextureMap } from '@cuby-world/app/lib/utils/ground/textures';
+import { groundTextureMap } from '@cuby-world/grounds';
+
 import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
 
 import MeshGround from '@cuby-world/app/assets/ground/ground.glb?url';
+import { ROTATION } from '@cuby-world/app/lib/types';
 
 let unitWrapper: Object3D;
 const subscription = new Subscription();
@@ -70,14 +71,14 @@ const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 
 const assetLoader = new AssetLoader();
 const currentUnit = ref<Unit>();
-const currentRotation = ref<UNIT_ROTATION>(UNIT_ROTATION.SOUTH);
+const currentRotation = ref<ROTATION>(ROTATION.SOUTH);
 const $router = useRouter();
 
 const options = ref<Options>({
   unit: String($router.currentRoute.value.query.unit || ''),
   rotation: String(
-    $router.currentRoute.value.query.rotation || UNIT_ROTATION.SOUTH
-  ) as UNIT_ROTATION,
+    $router.currentRoute.value.query.rotation || ROTATION.SOUTH
+  ) as ROTATION,
   axes: $router.currentRoute.value.query.axes === 'true',
   ghost: $router.currentRoute.value.query.ghost === 'true'
 });
@@ -240,7 +241,7 @@ function onSelectUnit(key: string) {
   }
 }
 
-function onRotateUnit(rotation: UNIT_ROTATION) {
+function onRotateUnit(rotation: ROTATION) {
   currentRotation.value = rotation;
   if (currentUnit.value) {
     currentUnit.value.setRotation(rotation);
@@ -290,7 +291,7 @@ async function onFile(file: File | undefined) {
 <script lang="ts">
 export interface Options {
   unit: string;
-  rotation: UNIT_ROTATION;
+  rotation: ROTATION;
   axes?: boolean;
   ghost?: boolean;
   ground?: boolean;
