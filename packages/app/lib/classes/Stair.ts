@@ -1,37 +1,150 @@
-import { Object3D, type Vector3 } from 'three';
-import type { ROTATION } from '../types';
+import { Euler, Object3D, Vector2, Vector3 } from 'three';
+import { ROTATION } from '../types';
 import type { StairIdentifier } from '../types/stair';
 import { Subscription } from 'rxjs';
 import type { AnimationLoopSubject } from './Renderer';
+import type { StairSkinIdentifier } from '../types/stair/skins';
+import { FLOOR_HEIGHT } from '../utils/ground';
+
+export interface EntryPositions {
+  start: Vector2;
+  end: Vector2;
+}
 
 export interface StairDescription<Position = Vector3> {
-  skin: StairIdentifier;
+  key: StairIdentifier;
+  skin: StairSkinIdentifier;
   position: Position;
   rotation: ROTATION;
 }
 
-export default class Stair {
-  skin: StairIdentifier = 'default';
+export interface StairConstructorOptions {
+  size: Vector2;
+  entryPositions: EntryPositions;
   position: Vector3;
   rotation: ROTATION;
+}
+
+export default class Stair {
+  /**
+   * Der Typ muss eindeutig sein und dem Muster "<Kategorie>_<Name>" folgen, z.B. "stair_default"
+   */
+  static KEY: StairIdentifier;
+
+  skin: StairSkinIdentifier = 'default_base';
+
+  entryPositions: {
+    start: Vector2;
+    end: Vector2;
+  } = { start: new Vector2(0, 0), end: new Vector2(0, 0) };
+
+  size: Vector2 = new Vector2(1, 1);
+
+  position: Vector3;
+
+  /**
+   * Standard Rotation im Mesh ist Norden.
+   */
+  rotation: ROTATION = ROTATION.NORTH;
 
   root = new Object3D();
 
   subscription = new Subscription();
 
   constructor({
+    size,
+    entryPositions,
     position,
     rotation
-  }: {
-    position: Vector3;
-    rotation: ROTATION;
-  }) {
+  }:
+    | StairConstructorOptions
+    | (Omit<StairConstructorOptions, 'size' | 'entryPositions'> & {
+        size?: Vector2;
+        entryPositions?: EntryPositions;
+      })) {
+    this.size = size ?? this.size;
+    this.entryPositions = entryPositions ?? this.entryPositions;
     this.position = position;
+    this.setRotation(rotation);
+  }
+
+  setupRoot() {
+    const root = this.root;
+    root.position.copy(
+      new Vector3(
+        this.position.x,
+        this.position.y * FLOOR_HEIGHT,
+        this.position.z
+      )
+    );
+  }
+
+  getMatrixPositions(): Vector3[] {
+    const positions = [];
+    const size = this.getSizeByRotation();
+    for (let x = 0; x < size.x; x++) {
+      for (let y = 0; y < size.y; y++) {
+        positions.push(
+          new Vector3(this.position.x + x, this.position.y, this.position.z + y)
+        );
+      }
+    }
+    return positions;
+  }
+
+  getSizeByRotation(): Vector2 {
+    if (
+      this.rotation === ROTATION.EAST ||
+      this.rotation === ROTATION.WEST ||
+      this.rotation === ROTATION.EAST_UP ||
+      this.rotation === ROTATION.EAST_DOWN ||
+      this.rotation === ROTATION.WEST_UP ||
+      this.rotation === ROTATION.WEST_DOWN
+    ) {
+      return new Vector2(this.size.y, this.size.x);
+    }
+    return this.size;
+  }
+
+  setRotation(rotation: ROTATION) {
     this.rotation = rotation;
+    switch (rotation) {
+      case ROTATION.WEST:
+        this.setRootRotation(new Euler(0, Math.PI, 0));
+        break;
+      case ROTATION.EAST:
+        this.setRootRotation(new Euler(0, 0, 0));
+        break;
+      case ROTATION.WEST_UP:
+        this.setRootRotation(new Euler(0, (3 * Math.PI) / 4, 0));
+        break;
+      case ROTATION.WEST_DOWN:
+        this.setRootRotation(new Euler(0, -(3 * Math.PI) / 4, 0));
+        break;
+      case ROTATION.EAST_UP:
+        this.setRootRotation(new Euler(0, Math.PI / 4, 0));
+        break;
+      case ROTATION.EAST_DOWN:
+        this.setRootRotation(new Euler(0, -Math.PI / 4, 0));
+        break;
+      case ROTATION.NORTH:
+        this.setRootRotation(new Euler(0, Math.PI / 2, 0));
+        break;
+      case ROTATION.SOUTH:
+        this.setRootRotation(new Euler(0, -Math.PI / 2, 0));
+        break;
+      default:
+        this.setRootRotation(new Euler(0, 0, 0));
+        break;
+    }
+  }
+  setRootRotation(rotation: Euler) {
+    this.root.rotation.copy(rotation);
   }
 
   toDescription(): StairDescription {
     return {
+      key: this.key,
       skin: this.skin,
       position: this.position.clone(),
       rotation: this.rotation
@@ -43,14 +156,11 @@ export default class Stair {
     this.root.remove();
   }
 
-  setup(_context: { animationLoop$: AnimationLoopSubject }): void {
-    // Override in subclass if needed
+  async setup(_context: { animationLoop$: AnimationLoopSubject }) {
+    this.setupRoot();
   }
 
-  // get key(): string {
-  //   return (this.constructor as typeof WallExtension).KEY;
-  // }
-  // get type(): WALL_EXTENSION_TYPE {
-  //   return (this.constructor as typeof WallExtension).TYPE;
-  // }
+  get key(): string {
+    return (this.constructor as typeof Stair).KEY;
+  }
 }

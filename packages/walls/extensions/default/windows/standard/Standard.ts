@@ -16,7 +16,6 @@ export default class Standard extends WindowWallExtension {
 
   override async setup(context: {
     animationLoop$: AnimationLoopSubject;
-    assetLoader: AssetLoader;
   }): Promise<void> {
     super.setup(context);
 
@@ -40,7 +39,6 @@ async function loadGltf(
     url: glbBase
   });
 
-  // Die geladene Szene ist im .scene-Property verfügbar
   const model = gltf.scene
     .getObjectByName(`${state.size ?? 'small'}_base`)!
     .clone();
@@ -53,9 +51,7 @@ async function loadGltf(
 
   model.name = OBJECT_NAME.MESH;
   model.traverse(object => {
-    // Prüfe, ob das Objekt ein Mesh ist
     if (object instanceof Mesh) {
-      // Setze castShadow und receiveShadow für jedes Mesh
       object.castShadow = true;
       object.receiveShadow = true;
     }
@@ -65,22 +61,3 @@ async function loadGltf(
 
   return { object };
 }
-
-// class UnitAnimation extends AnimationUnitModule {
-//   override async setup(context: UnitModuleSetupContext) {
-//     const mesh = await super.setup(context);
-
-//     const hoverClip = getHoverClip(0.03);
-//     const action = this.mixer.clipAction(hoverClip);
-//     action.setLoop(LoopPingPong, Infinity);
-
-//     window.setTimeout(() => {
-//       action.play();
-//     }, Math.random() * 1000);
-
-//     return mesh;
-//   }
-//   override update(_deltaTime: number) {
-//     this.mixer?.update(this.clock.getDelta());
-//   }
-// }

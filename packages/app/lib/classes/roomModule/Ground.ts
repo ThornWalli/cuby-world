@@ -1,9 +1,10 @@
 import {
+  type Vector2,
   Box3,
   Frustum,
-  type Vector3,
   Matrix4,
   Object3D,
+  type Vector3,
   type Camera
 } from 'three';
 import RoomModule, {
@@ -248,24 +249,32 @@ export default class GroundModule extends RoomModule<State, Observables> {
     this.refreshGround();
   }
 
-  getGrid() {
+  getGridByFloor(foorIndex: number = 0) {
     const groundStyleMap = this.state.groundStyleMap;
+    const skinIds = Array.from(groundStyleMap.map.values())[foorIndex]!.flat();
 
-    return Array.from(groundStyleMap.map.values())
-      .flat()
-      .flat()
-      .map(skinId => {
-        return skinId && (skins.get(skinId)?.skin.accessible ?? 1) ? 1 : 0;
+    return Array(this.room.gridSize.x * this.room.gridSize.y)
+      .fill(null)
+      .map((_, index) => {
+        const skinId = skinIds[index];
+        return skinId && (skins.get(skinId)?.skin.accessible ?? true) ? 0 : 1;
       });
   }
   getGrids() {
     const groundStyleMap = this.room.modules.ground.getGroundStyleMap();
 
-    return Array.from(groundStyleMap.map.values()).map(data => {
-      data.flat().map(skinId => {
-        return skinId && (skins.get(skinId)?.skin.accessible ?? 1) ? 1 : 0;
-      });
-    });
+    // Etagen Anzahl wird vom Boden definiert.
+    const flooCount = Array.from(groundStyleMap.map.values()).length;
+
+    return Array(flooCount)
+      .fill(null)
+      .map((_, floor) => this.getGridByFloor(floor));
+
+    // return Array.from(groundStyleMap.map.values()).map(data => {
+    //   return data.flat().map(skinId => {
+    //     return skinId && (skins.get(skinId)?.skin.accessible ?? 1) ? 1 : 0;
+    //   });
+    // });
   }
 
   getGroundChunks(floorIndex?: number) {
@@ -311,6 +320,11 @@ export default class GroundModule extends RoomModule<State, Observables> {
 
     const currentFloor = this.room.modules.floor.getFloor();
     console.log('refreshGround', { floorIndex, currentFloor });
+
+    const tileChecker = (position: Vector2) => {
+      return this.room.modules.stair.isStairAt(position) === false;
+    };
+
     const groundChunks = [];
     for (
       let floor = floorIndex ?? 0;
@@ -323,6 +337,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
         this.state.groundStyleMap,
         16,
         {
+          tileChecker,
           assetLoader: this.room.app.assetLoader,
           groundGeometryMap: this.groundGeometryMap
         }

@@ -133,7 +133,6 @@ async function loadGltf(
     url: glbBase
   });
 
-  // Die geladene Szene ist im .scene-Property verfügbar
   const model = gltf.scene.clone();
 
   model.position.y = 0;

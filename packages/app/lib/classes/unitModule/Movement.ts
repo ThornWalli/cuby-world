@@ -92,25 +92,25 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
   }
 
   async moveTo(position: Vector3, options: { force?: boolean } = {}) {
-    const room = this.currentRoom;
-    if (!room?.description) {
-      throw new Error('Unit is not in a room, cannot move to position');
-    }
+    const room = this.currentRoom!;
 
     if (this.currentMovement) {
       console.log('Bewegung läuft bereits');
       return;
     }
 
-    const grid = createRoomGrid(this.unit, 1 / (1 / 4));
+    const grid = createRoomGrid(this.unit);
 
-    const data = grid.data;
+    console.log('Grid for pathfinding:', grid, grid.toMatrix());
 
+    /**
+     * Temporär die Position als begehbar markieren im Grid, damit die Einheit dort hinlaufen kann.
+     */
     let isBlocked = false;
-    if (Array.isArray(data[position.z])) {
-      const i = position.z * room.gridSize.x + position.x;
-      isBlocked = data[i] === 1;
-      data[i] = 0;
+
+    if (grid.get(position.x, position.y, position.z) === 1) {
+      isBlocked = true;
+      grid.set(position.x, position.y, position.z, 0);
     }
 
     const startPosition = this.unit.getPosition().clone().round();
@@ -152,7 +152,9 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     ).options.movement;
 
     const easystar = new EasyStar.js();
-    easystar.setGrid(roomGrid.toMatrix());
+
+    // TODO: STOCKWERKE!
+    easystar.setGrid(roomGrid.toMatrix()[0]!);
 
     if (movementOptions.diagonalMovement) {
       easystar.enableDiagonals();
@@ -457,74 +459,162 @@ function normalizeAngle(angle: number) {
   return normalized;
 }
 
-function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
+// function createRoomGrid(unit: Unit) {
+//   const room = unit.modules.room?.getRoom();
+
+//   if (!room) {
+//     throw new Error('Unit is not in a room, cannot create grid data');
+//   }
+
+//   const data: number[] = room.modules.ground.getGridByFloor(0);
+//   console.log(room.modules.units.getUnits());
+//   room.modules.units
+//     .getUnits()
+//     .reduce(
+//       (result, unit_) => {
+//         if (!unit_.accessible && !unit.equal(unit_)) {
+//           result.push({ unit: unit_, value: 0 });
+//         }
+//         return result;
+//       },
+//       [] as { unit: Unit; value: number }[]
+//     )
+//     .forEach(({ unit: otherUnit, value }) => {
+//       otherUnit
+//         .getMatrixPositions()
+//         .filter(
+//           p =>
+//             p.x >= 0 &&
+//             p.x < room.gridSize.x &&
+//             p.z >= 0 &&
+//             p.z < room.gridSize.y
+//         )
+//         .forEach(p => {
+//           data[p.z * room.gridSize.x + p.x] = value;
+//         });
+//     });
+//   // console.log('Grid data for pathfinding:', grid.toMatrix());
+
+//   return RoomGrid.fromData(
+//     data.map(value => (value ? 0 : 1)),
+//     room.gridSize.x
+//   );
+// }
+
+function createRoomGrid(unit: Unit) {
   const room = unit.modules.room?.getRoom();
 
   if (!room) {
     throw new Error('Unit is not in a room, cannot create grid data');
   }
 
-  let data: number[] = room.modules.ground.getGrid();
+  /**
+   * Grid wird erst vom Boden übernommen.
+   */
+  const data: number[][] = room.modules.ground.getGrids();
 
-  const unitY = unit.getPosition().y;
+  const grid = RoomGrid.fromData(data, room.gridSize.x);
 
-  data = data.map(v => {
-    if (
-      unitY > 0 &&
-      unitY * heightMultiplicator >= 1 &&
-      unitY * heightMultiplicator >= -1
-    ) {
-      return unitY * heightMultiplicator > 1 ? 0 : 1;
+  room.modules.units.getUnits().forEach(unit_ => {
+    if (!unit_.accessible && !unit.equal(unit_)) {
+      unit_
+        .getMatrixPositions()
+        .filter(
+          p =>
+            p.x >= 0 &&
+            p.x < room.gridSize.x &&
+            p.z >= 0 &&
+            p.z < room.gridSize.y
+        )
+        .forEach(p => {
+          grid.set(p.x, p.y, p.z, 1);
+        });
     }
-    return v;
   });
 
-  room.modules.units
-    .getUnits()
-    .reduce(
-      (result, unit_) => {
-        const unitPosition = unit_.getPosition();
-        const y_diff = unitPosition.y + unit_.size.y - unit.getPosition().y;
+  room.modules.stair.getStairs().forEach(stair => {
+    stair
+      .getMatrixPositions()
+      .filter(
+        p =>
+          p.x >= 0 && p.x < room.gridSize.x && p.z >= 0 && p.z < room.gridSize.y
+      )
+      .forEach(p => {
+        grid.set(p.x, p.y, p.z, 1);
+      });
+  });
 
-        if (!unit_.accessible) {
-          result.push({ unit: unit_, value: 0 });
-        } else if (
-          unit_.accessible &&
-          y_diff * heightMultiplicator > 1 &&
-          y_diff * heightMultiplicator > -1
-        ) {
-          result.push({ unit: unit_, value: 0 });
-        } else if (
-          unit_.accessible &&
-          y_diff * heightMultiplicator <= 1 &&
-          y_diff * heightMultiplicator >= -1
-        ) {
-          result.push({ unit: unit_, value: 1 });
-        }
-        return result;
-      },
-      [] as { unit: Unit; value: number }[]
-    )
-    .forEach(({ unit: otherUnit, value }) => {
-      if (unit.id !== otherUnit.id) {
-        otherUnit
-          .getMatrixPositions()
-          .filter(
-            p =>
-              p.x >= 0 &&
-              p.x < room.gridSize.x &&
-              p.z >= 0 &&
-              p.z < room.gridSize.y
-          )
-          .forEach(p => {
-            data[p.z * room.gridSize.x + p.x] = value;
-          });
-      }
-    });
-  // console.log('Grid data for pathfinding:', grid.toMatrix());
-
-  return RoomGrid.fromData(
-    data.map(value => (value ? 0 : 1)),
-    room.gridSize.x
-  );
+  return grid;
 }
+
+// function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
+//   const room = unit.modules.room?.getRoom();
+
+//   if (!room) {
+//     throw new Error('Unit is not in a room, cannot create grid data');
+//   }
+
+//   let data: number[] = room.modules.ground.getGrid();
+
+//   const unitY = unit.getPosition().y;
+
+//   data = data.map(v => {
+//     if (
+//       unitY > 0 &&
+//       unitY * heightMultiplicator >= 1 &&
+//       unitY * heightMultiplicator >= -1
+//     ) {
+//       return unitY * heightMultiplicator > 1 ? 0 : 1;
+//     }
+//     return v;
+//   });
+
+//   room.modules.units
+//     .getUnits()
+//     .reduce(
+//       (result, unit_) => {
+//         const unitPosition = unit_.getPosition();
+//         const y_diff = unitPosition.y + unit_.size.y - unit.getPosition().y;
+
+//         if (!unit_.accessible) {
+//           result.push({ unit: unit_, value: 0 });
+//         } else if (
+//           unit_.accessible &&
+//           y_diff * heightMultiplicator > 1 &&
+//           y_diff * heightMultiplicator > -1
+//         ) {
+//           result.push({ unit: unit_, value: 0 });
+//         } else if (
+//           unit_.accessible &&
+//           y_diff * heightMultiplicator <= 1 &&
+//           y_diff * heightMultiplicator >= -1
+//         ) {
+//           result.push({ unit: unit_, value: 1 });
+//         }
+//         return result;
+//       },
+//       [] as { unit: Unit; value: number }[]
+//     )
+//     .forEach(({ unit: otherUnit, value }) => {
+//       if (unit.id !== otherUnit.id) {
+//         otherUnit
+//           .getMatrixPositions()
+//           .filter(
+//             p =>
+//               p.x >= 0 &&
+//               p.x < room.gridSize.x &&
+//               p.z >= 0 &&
+//               p.z < room.gridSize.y
+//           )
+//           .forEach(p => {
+//             data[p.z * room.gridSize.x + p.x] = value;
+//           });
+//       }
+//     });
+//   // console.log('Grid data for pathfinding:', grid.toMatrix());
+
+//   return RoomGrid.fromData(
+//     data.map(value => (value ? 0 : 1)),
+//     room.gridSize.x
+//   );
+// }

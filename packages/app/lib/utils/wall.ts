@@ -636,7 +636,7 @@ export default async function createWalls(
     wallGeometryMap: WallGeometryMap;
   }
 ) {
-  let walls = await Promise.all(
+  const walls = await Promise.all(
     descriptions.map(async description => {
       const extensions = await resolveWallExtensions(description.extensions);
       const wall = new Wall({ ...description, extensions });
@@ -645,16 +645,24 @@ export default async function createWalls(
     })
   );
 
-  walls = await Promise.all(
-    walls.map(async wall => {
-      await wall.setup({
-        animationLoop$,
-        wallGeometryMap,
-        wallTextureMap
-      });
-      return wall;
-    })
-  );
+  for (const wall of walls) {
+    await wall.setup({
+      animationLoop$,
+      wallGeometryMap,
+      wallTextureMap
+    });
+  }
+
+  // walls = await Promise.all(
+  //   walls.map(async wall => {
+  //     await wall.setup({
+  //       animationLoop$,
+  //       wallGeometryMap,
+  //       wallTextureMap
+  //     });
+  //     return wall;
+  //   })
+  // );
 
   return walls;
 }

@@ -259,7 +259,7 @@
           "state": {
             "hasDoor": true,
             "open": false,
-            "opened": true
+            "opened": false
           }
         }
       ]
@@ -1581,15 +1581,202 @@
           ]
         }
       ]
+    },
+    {
+      "id": "default_hidden",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            1,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            1,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            1,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            1,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            1,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            1,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            1,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            1,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            1,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "id": "default_color_red",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            2
+          ]
+        }
+      ]
     }
   ],
   "stairs": [
     {
+      "key": "stair_default",
       "skin": "default_base",
       "position": {
         "type": "Vector3",
         "value": [
-          6,
+          5,
           0,
           1
         ]

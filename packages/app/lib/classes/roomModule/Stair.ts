@@ -1,9 +1,10 @@
 import type { Mesh, Vector2 } from 'three';
-import { Object3D } from 'three';
 import type { RoomModuleObservables, RoomModuleState } from '../RoomModule';
 import RoomModule from '../RoomModule';
-import Stair from '../Stair';
+import type Stair from '../Stair';
 import type { StairDescription } from '../Stair';
+import { resolveStairs } from '../../utils/stair';
+import type { AnimationLoopSubject } from '../Renderer';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
@@ -19,7 +20,6 @@ export default class StairModule extends RoomModule<State, Observables> {
     stairs: []
   };
 
-  root?: Object3D = new Object3D();
   meshes: Mesh[] = [];
 
   override setup(): void {
@@ -27,11 +27,35 @@ export default class StairModule extends RoomModule<State, Observables> {
 
     const description = this.room.description;
 
-    this.addStairs(description.stairs);
+    this.addStairs(description.stairs, {
+      animationLoop$: this.room.app.renderer.observables.animationLoop$
+    });
   }
 
-  addStairs(stairs: StairDescription[]) {
-    this.state.stairs = stairs.map(desc => new Stair(desc));
+  async addStairs(
+    stairs: StairDescription[],
+    {
+      animationLoop$
+    }: {
+      animationLoop$: AnimationLoopSubject;
+    }
+  ) {
+    const resolvedStairs = [];
+
+    for (const [StairClass, description] of await resolveStairs(stairs)) {
+      const stair = new StairClass(description);
+
+      await stair.setup({
+        animationLoop$
+      });
+
+      resolvedStairs.push(stair);
+
+      this.room.mesh.add(stair.root!);
+    }
+    console.log('resolvedStairs', resolvedStairs);
+
+    this.state.stairs = resolvedStairs;
   }
 
   //#region getters/setters
@@ -46,7 +70,18 @@ export default class StairModule extends RoomModule<State, Observables> {
 
   isStairAt(position: Vector2) {
     return this.state.stairs.some(stair => {
-      return stair.position.x === position.x && stair.position.z === position.y;
+      const size = stair.getSizeByRotation();
+      for (let x = 0; x < size.x; x++) {
+        for (let y = 0; y < size.y; y++) {
+          if (
+            stair.position.x + x === position.x &&
+            stair.position.z + y === position.y
+          ) {
+            return true;
+          }
+        }
+      }
+      return false;
     });
   }
 

@@ -1,5 +1,5 @@
 import Ground from '../classes/Ground';
-import type { Mesh, BufferGeometry, Vector2 } from 'three';
+import { type Mesh, type BufferGeometry, Vector2 } from 'three';
 import {
   InstancedMesh,
   MeshPhongMaterial,
@@ -26,15 +26,21 @@ export interface GroundChunk {
 
 export const FLOOR_HEIGHT = 2.2;
 
+// eslint-disable-next-line complexity
 export function createGroundChunks(
   gridSize: Vector2,
   floor: number,
   groundStyleMap: GroundStyleMap,
   chunkSize = 16,
   {
+    tileChecker,
     assetLoader,
     groundGeometryMap
-  }: { assetLoader: AssetLoader; groundGeometryMap: GroundGeometryMap }
+  }: {
+    tileChecker: (position: Vector2) => boolean;
+    assetLoader: AssetLoader;
+    groundGeometryMap: GroundGeometryMap;
+  }
 ): GroundChunk[] {
   const rows = gridSize.x;
   const cols = gridSize.y;
@@ -45,26 +51,21 @@ export function createGroundChunks(
   console.log('createGroundChunks', { floor });
   const y = floor;
   const helper = new Object3D();
+  const positionHelper = new Vector2();
   for (let z = 0; z < cols; z += chunkSize) {
     for (let x = 0; x < rows; x += chunkSize) {
       const groundTypes = new Set<GrountStyleIdentifier>();
       const positionsByType = new Map<GrountStyleIdentifier, Vector3[]>();
-
-      // const tilesInChunk: Ground[] = [];
       for (let r = z; r < z + chunkSize && r < cols; r++) {
         for (let c = x; c < x + chunkSize && c < rows; c++) {
           const skinId = groundStyleMap.get(c, y, r);
-          if (skinId) {
+          positionHelper.set(c, r);
+          if (tileChecker(positionHelper) && skinId) {
             if (!positionsByType.has(skinId)) {
               positionsByType.set(skinId, positionsByType.get(skinId) || []);
             }
             positionsByType.get(skinId)?.push(new Vector3(c, y, r));
-
             groundTypes.add(skinId);
-
-            // else {
-            //   tilesInChunk.push(new Ground({ position: new Vector3(c, y, r) }));
-            // }
           }
         }
       }

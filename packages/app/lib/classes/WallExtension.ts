@@ -23,7 +23,7 @@ export default class WallExtension<
   State extends WallExtensionState = WallExtensionState
 > {
   /**
-   * Der Typ muss eindeutig sein und dem Muster "<Kategorie>-<Name>" folgen, z.B. "door-default"
+   * Der Typ muss eindeutig sein und dem Muster "<Kategorie>_<Name>" folgen, z.B. "door_default"
    */
   static KEY: string;
   static TYPE: WALL_EXTENSION_TYPE;
@@ -48,7 +48,7 @@ export default class WallExtension<
     this.root.remove();
   }
 
-  setup(_context: { animationLoop$: AnimationLoopSubject }): void {
+  async setup(_context: { animationLoop$: AnimationLoopSubject }) {
     // Override in subclass if needed
   }
 

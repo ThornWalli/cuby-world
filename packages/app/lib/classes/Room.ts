@@ -58,11 +58,11 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     const moduleList = this.moduleList;
     moduleList.push(SelectionMode);
     moduleList.push(WallModule);
-    moduleList.push(RoofModule);
     moduleList.push(StairModule);
-    moduleList.push(FloorModule);
     moduleList.push(GroundModule);
     moduleList.push(UnitsModule);
+    moduleList.push(FloorModule);
+    moduleList.push(RoofModule);
 
     //#region editor
 
