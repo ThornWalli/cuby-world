@@ -20,8 +20,8 @@ const textures = [
     medium: image_ground_texture_medium_wood_laminate_1
   },
   {
-    id: 'hidden',
-    name: 'Hidden',
+    id: 'edit_empty',
+    name: 'Edit Empty',
     small: image_ground_texture_small_hidden,
     medium: image_ground_texture_medium_hidden
   }

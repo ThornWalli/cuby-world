@@ -54,34 +54,31 @@ export default class Ground {
     this.texture = texture ?? this.texture;
   }
 
-  createGeometry({
-    groundGeometryMap
-  }: {
-    groundGeometryMap: GroundGeometryMap;
-  }) {
-    return groundGeometryMap.get(this.type)!.clone()!;
+  createGeometry(geometryMap: GroundGeometryMap) {
+    return geometryMap.get(this.type)!.clone()!;
   }
+
   async createMaterial({
     assetLoader,
-    groundTextureMap
+    textureMap
   }: {
     assetLoader: AssetLoader;
-    groundTextureMap: GroundTextureMap;
+    textureMap: GroundTextureMap;
   }) {
     let texture: Texture | null = null;
     const opacity = this.opacity;
     if ((this.texture as InternalGroundSkinTexture)?.id) {
-      const test = groundTextureMap.get(
+      const asset = textureMap.get(
         (this.texture as InternalGroundSkinTexture).id
       );
-      if (!test) {
+      if (!asset) {
         throw new Error(
           `Texture with id ${(this.texture as InternalGroundSkinTexture).id} not found in groundTextureMap`
         );
       }
       texture = await assetLoader.add<Texture>({
         loader: LOADER.TEXTURE,
-        url: this.type === GROUND_GEOMETRY.SMALL ? test?.small : test?.medium,
+        url: this.type === GROUND_GEOMETRY.SMALL ? asset?.small : asset?.medium,
         options: { density: 1 }
       });
       texture.flipY = false;

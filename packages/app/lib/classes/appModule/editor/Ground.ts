@@ -171,7 +171,7 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
           startPosition.y,
           z,
           this.state.action.primary === GROUND_ACTION.REMOVE
-            ? 'default_hidden'
+            ? 'default_editor_empty'
             : this.state.skinId
         );
       }

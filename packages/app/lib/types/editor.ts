@@ -1,7 +1,8 @@
 export enum EDITOR_ACTION {
   NONE = 'none',
   WALL = 'wall',
-  GROUND = 'ground'
+  GROUND = 'ground',
+  STAIR = 'stair'
 }
 
 export enum WALL_ACTION {
@@ -21,4 +22,11 @@ export enum GROUND_ACTION {
   STYLE_MULTIPLE_SET = 'style_multiple_set',
   REMOVE_SINGLE_SET = 'remove_single_set',
   REMOVE_MULTIPLE_SET = 'remove_multiple_set'
+}
+
+export enum STAIR_ACTION {
+  NONE = 'none',
+  ADD = 'add',
+  SKIN = 'skin',
+  SELECT = 'select'
 }

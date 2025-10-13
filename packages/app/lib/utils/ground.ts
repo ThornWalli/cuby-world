@@ -18,6 +18,7 @@ import { LOADER } from '../classes/AssetLoader';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type GroundStyleMap from '../classes/GroundStyleMap';
 import { groundTextureMap, skins } from '@cuby-world/grounds';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
 
 export interface GroundChunk {
   mesh: InstancedMesh;
@@ -32,14 +33,15 @@ export function createGroundChunks(
   floor: number,
   groundStyleMap: GroundStyleMap,
   chunkSize = 16,
+  editMode = false,
   {
     tileChecker,
     assetLoader,
-    groundGeometryMap
+    geometryMap
   }: {
     tileChecker: (position: Vector2) => boolean;
     assetLoader: AssetLoader;
-    groundGeometryMap: GroundGeometryMap;
+    geometryMap: GroundGeometryMap;
   }
 ): GroundChunk[] {
   const rows = gridSize.x;
@@ -58,7 +60,14 @@ export function createGroundChunks(
       const positionsByType = new Map<GrountStyleIdentifier, Vector3[]>();
       for (let r = z; r < z + chunkSize && r < cols; r++) {
         for (let c = x; c < x + chunkSize && c < rows; c++) {
-          const skinId = groundStyleMap.get(c, y, r);
+          let skinId = groundStyleMap.get(c, y, r);
+          if (!skinId) {
+            if (editMode) {
+              skinId = 'default_editor_empty';
+            } else {
+              skinId = 'default_empty';
+            }
+          }
           positionHelper.set(c, r);
           if (tileChecker(positionHelper) && skinId) {
             if (!positionsByType.has(skinId)) {
@@ -73,14 +82,16 @@ export function createGroundChunks(
       const instanceMap: [string, InstancedMesh][] = Array.from(
         groundTypes
       ).map(type => {
-        const { color, opacity, texture } = skins.get(type)?.skin || {};
+        const { accessible, color, opacity, texture } =
+          skins.get(type)?.skin || {};
         const tile = new Ground({
+          accessible,
           color,
           opacity,
           texture
         });
 
-        const geometry = tile.createGeometry({ groundGeometryMap });
+        const geometry = tile.createGeometry(geometryMap);
 
         const instancedMesh = new InstancedMesh(
           geometry,
@@ -88,10 +99,13 @@ export function createGroundChunks(
           positionsByType.get(type)!.length
         );
 
+        instancedMesh.userData[OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION] =
+          !editMode;
+
         tile
           .createMaterial({
             assetLoader,
-            groundTextureMap
+            textureMap: groundTextureMap
           })
           .then(material => {
             // material.onBeforeCompile = shader => useGroundTileShader(shader);

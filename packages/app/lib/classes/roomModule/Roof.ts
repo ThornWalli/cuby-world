@@ -4,6 +4,7 @@ import {
   MeshPhongMaterial,
   Shape,
   Vector2,
+  Vector3,
   type Material
 } from 'three';
 import { Object3D, DoubleSide } from 'three';
@@ -12,6 +13,7 @@ import RoomModule from '../RoomModule';
 import { WALL_VIEW_MODE, type WallRoom } from './Wall';
 
 import { FLOOR_HEIGHT } from '../../utils/ground';
+import { OBJECT_USER_DATA } from '../../utils/objectMeta';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
@@ -57,7 +59,11 @@ export default class RoofModule extends RoomModule<State, Observables> {
     for (const room of wallRooms) {
       const stairPositions = new Set(
         room.tiles
-          .filter(t => this.room.modules.stair.isStairAt(t.position))
+          .filter(t =>
+            this.room.modules.stair.isStairAt(
+              new Vector3(t.position.x, room.floor, t.position.y)
+            )
+          )
           .map(t => `${t.position.x},${t.position.y}`)
       );
 
@@ -148,11 +154,22 @@ export default class RoofModule extends RoomModule<State, Observables> {
 
   onChangeActiveWallRooms(wallRooms: Map<string, WallRoom>) {
     this.meshes.forEach(mesh => {
-      this.toggle(!wallRooms.get((mesh.userData.wallRoom as WallRoom).id), [
-        mesh
-      ]);
+      this.toggle(
+        !wallRooms.get(
+          (mesh.userData[OBJECT_USER_DATA.WALL_ROOM] as WallRoom).id
+        ),
+        [mesh]
+      );
     });
   }
 
   //#endregion
 }
+
+declare module '../../utils/objectMeta' {
+  interface ObjectUserData {
+    WALL_ROOM: string;
+  }
+}
+
+OBJECT_USER_DATA.WALL_ROOM = 'wallRoom';

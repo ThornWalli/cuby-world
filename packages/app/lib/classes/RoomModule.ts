@@ -3,6 +3,7 @@ import { Subscription } from 'rxjs';
 import type Room from './Room';
 import type { Camera } from 'three';
 import type { AnimationLoopValue } from './Renderer';
+import { APP_MODE } from './App';
 
 export type RoomModuleObservables = {
   [key: string]: SubscriptionLike | unknown;
@@ -35,6 +36,10 @@ export default abstract class RoomModule<
       (o as SubscriptionLike).unsubscribe()
     );
     this.subscription.unsubscribe();
+  }
+
+  isEditMode() {
+    return this.room.app.config.mode === APP_MODE.EDITOR;
   }
 
   update(_v: AnimationLoopValue) {

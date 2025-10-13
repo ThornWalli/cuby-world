@@ -12,7 +12,6 @@ export interface EntryPositions {
 }
 
 export interface StairDescription<Position = Vector3> {
-  key: StairIdentifier;
   skin: StairSkinIdentifier;
   position: Position;
   rotation: ROTATION;
@@ -20,6 +19,7 @@ export interface StairDescription<Position = Vector3> {
 
 export interface StairConstructorOptions {
   size: Vector2;
+  skin: StairSkinIdentifier;
   entryPositions: EntryPositions;
   position: Vector3;
   rotation: ROTATION;
@@ -53,6 +53,7 @@ export default class Stair {
 
   constructor({
     size,
+    skin,
     entryPositions,
     position,
     rotation
@@ -63,6 +64,7 @@ export default class Stair {
         entryPositions?: EntryPositions;
       })) {
     this.size = size ?? this.size;
+    this.skin = skin ?? this.skin;
     this.entryPositions = entryPositions ?? this.entryPositions;
     this.position = position;
     this.setRotation(rotation);
@@ -77,6 +79,32 @@ export default class Stair {
         this.position.z
       )
     );
+  }
+
+  getEntryPositionByPosition(position: Vector3) {
+    if (this.position.y === position.y) {
+      return this.position
+        .clone()
+        .add(
+          new Vector3(
+            this.entryPositions.start.x,
+            this.position.y,
+            this.entryPositions.start.y
+          )
+        );
+    } else if (this.position.y + 1 === position.y) {
+      return this.position
+        .clone()
+        .add(
+          new Vector3(
+            this.entryPositions.end.x,
+            this.position.y + 1,
+            this.entryPositions.end.y
+          )
+        );
+    } else {
+      throw new Error('Position not on stair level');
+    }
   }
 
   getMatrixPositions(): Vector3[] {
@@ -144,7 +172,6 @@ export default class Stair {
 
   toDescription(): StairDescription {
     return {
-      key: this.key,
       skin: this.skin,
       position: this.position.clone(),
       rotation: this.rotation

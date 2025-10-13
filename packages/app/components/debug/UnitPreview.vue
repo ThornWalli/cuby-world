@@ -174,17 +174,17 @@ let ghostWrapper: Object3D;
 async function setupScene(renderer: Renderer) {
   const scene = renderer.scene;
 
-  const groundGeometryMap = await loadGroundGeometries(assetLoader, MeshGround);
+  const geometryMap = await loadGroundGeometries(assetLoader, MeshGround);
 
   //#region ground
   const groundTile = new Ground({
     position: new Vector3(0, 0, 0),
     texture: groundTextureMap.get('wood_laminate_1')
   });
-  const geometry = groundTile.createGeometry({ groundGeometryMap });
+  const geometry = groundTile.createGeometry(geometryMap);
   const material = await groundTile.createMaterial({
     assetLoader,
-    groundTextureMap
+    textureMap: groundTextureMap
   });
   const groundMesh = new Mesh(geometry, material);
   groundMesh.material.side = DoubleSide;

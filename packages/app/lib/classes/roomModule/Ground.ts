@@ -4,7 +4,7 @@ import {
   Frustum,
   Matrix4,
   Object3D,
-  type Vector3,
+  Vector3,
   type Camera
 } from 'three';
 import RoomModule, {
@@ -30,10 +30,19 @@ import {
   loadGroundGeometries,
   type GroundChunk
 } from '../../utils/ground';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
+
+declare module '../../../lib/utils/objectMeta' {
+  interface ObjectUserData {
+    IGNORE_GROUND_INTERSECTION: string;
+  }
+}
+OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION = 'ignoreGroundIntersection';
 
 interface Observables extends RoomModuleObservables {
   hover$: Subject<Vector3>;
   click$: Subject<Vector3>;
+  pointerDown$: Subject<PointerEvent>;
   pointerOut$: Subject<PointerEvent>;
   pointerEnter$: Subject<PointerEvent>;
   refreshGround$: Subject<GroundStyleMap>;
@@ -62,6 +71,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
     //#region observables
     this.observables.hover$ = new Subject<Vector3>();
     this.observables.click$ = new Subject<Vector3>();
+    this.observables.pointerDown$ = new Subject<PointerEvent>();
     this.observables.pointerOut$ = new Subject<PointerEvent>();
     this.observables.pointerEnter$ = new Subject<PointerEvent>();
     this.observables.refreshGround$ = new Subject<GroundStyleMap>();
@@ -118,9 +128,13 @@ export default class GroundModule extends RoomModule<State, Observables> {
     this.subscription.add(
       groundIntersectionListener.clickIntersect$
         .pipe(
-          filter(
-            intersection => intersection.object?.parent?.name === 'ground'
-          ),
+          filter(intersection => {
+            return (
+              !intersection.object.userData[
+                OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
+              ] && intersection.object?.parent?.name === 'ground'
+            );
+          }),
           preparePosition(),
           filter(({ worldPosition }) => !!worldPosition),
           distinctUntilChanged(
@@ -139,7 +153,11 @@ export default class GroundModule extends RoomModule<State, Observables> {
           map(
             intersections =>
               intersections.filter(intersection => {
-                return intersection.object?.parent?.name === 'ground';
+                return (
+                  !intersection.object.userData[
+                    OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
+                  ] && intersection.object?.parent?.name === 'ground'
+                );
               })[0]!
           ),
           filter(Boolean),
@@ -169,7 +187,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
 
     this.subscription.add(
       groundIntersectionListener.pointerdown$.subscribe(e =>
-        this.observables.pointerEnter$.next(e)
+        this.observables.pointerDown$.next(e)
       )
     );
     this.subscription.add(
@@ -251,30 +269,28 @@ export default class GroundModule extends RoomModule<State, Observables> {
 
   getGridByFloor(foorIndex: number = 0) {
     const groundStyleMap = this.state.groundStyleMap;
-    const skinIds = Array.from(groundStyleMap.map.values())[foorIndex]!.flat();
-
-    return Array(this.room.gridSize.x * this.room.gridSize.y)
-      .fill(null)
-      .map((_, index) => {
-        const skinId = skinIds[index];
-        return skinId && (skins.get(skinId)?.skin.accessible ?? true) ? 0 : 1;
-      });
+    const values = [];
+    for (let x = 0; x < this.room.gridSize.x; x++) {
+      for (let y = 0; y < this.room.gridSize.y; y++) {
+        const skinId = groundStyleMap.get(y, foorIndex, x);
+        if (skinId && (skins.get(skinId)?.skin.accessible ?? true)) {
+          values.push(0);
+        } else {
+          values.push(1);
+        }
+      }
+    }
+    return values;
   }
   getGrids() {
     const groundStyleMap = this.room.modules.ground.getGroundStyleMap();
 
     // Etagen Anzahl wird vom Boden definiert.
-    const flooCount = Array.from(groundStyleMap.map.values()).length;
+    const floorCount = Array.from(groundStyleMap.map.values()).length;
 
-    return Array(flooCount)
+    return Array(floorCount)
       .fill(null)
       .map((_, floor) => this.getGridByFloor(floor));
-
-    // return Array.from(groundStyleMap.map.values()).map(data => {
-    //   return data.flat().map(skinId => {
-    //     return skinId && (skins.get(skinId)?.skin.accessible ?? 1) ? 1 : 0;
-    //   });
-    // });
   }
 
   getGroundChunks(floorIndex?: number) {
@@ -321,8 +337,10 @@ export default class GroundModule extends RoomModule<State, Observables> {
     const currentFloor = this.room.modules.floor.getFloor();
     console.log('refreshGround', { floorIndex, currentFloor });
 
-    const tileChecker = (position: Vector2) => {
-      return this.room.modules.stair.isStairAt(position) === false;
+    const tileChecker = (floor: number) => (position: Vector2) => {
+      return !this.room.modules.stair.isStairAt(
+        new Vector3(position.x, floor - 1, position.y)
+      );
     };
 
     const groundChunks = [];
@@ -336,10 +354,11 @@ export default class GroundModule extends RoomModule<State, Observables> {
         floor,
         this.state.groundStyleMap,
         16,
+        this.isEditMode(),
         {
-          tileChecker,
+          tileChecker: tileChecker(floor),
           assetLoader: this.room.app.assetLoader,
-          groundGeometryMap: this.groundGeometryMap
+          geometryMap: this.groundGeometryMap
         }
       );
       groundChunks.push(...chunks);

@@ -6,6 +6,7 @@ import type Unit from '../classes/Unit';
 import type * as THREE from 'three';
 import type { FACE_INDEX } from '../types/wall';
 import { FLOOR_HEIGHT } from './ground';
+import { OBJECT_USER_DATA } from './objectMeta';
 
 export function positionToMatrixPosition(
   position: THREE.Vector3
@@ -54,7 +55,7 @@ export function preparePosition(onlyTopFace = false) {
         let object: Object3D | null = intersection.object;
         let unit: Unit | undefined;
         while (object) {
-          const objUnit = object.userData.unit;
+          const objUnit = object.userData[OBJECT_USER_DATA.UNIT];
           if (objUnit && objUnit.modules && objUnit.modules.selection) {
             unit = objUnit;
             break;

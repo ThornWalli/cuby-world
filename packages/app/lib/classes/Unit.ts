@@ -1,3 +1,4 @@
+import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 import { ReplaySubject, Subscription } from 'rxjs';
 import { Box3, Euler, Vector3, type Mesh } from 'three';
 import { Object3D } from 'three';
@@ -19,6 +20,14 @@ import type { UnitChunking } from './UnitChunkManager';
 import type { UnitModuleState } from './UnitModule';
 import type { AnimationLoopValue } from './Renderer';
 import { ROTATION, ROTATION_TYPE } from '../types';
+import { OBJECT_USER_DATA } from '../../lib/utils/objectMeta';
+
+declare module '../../lib/utils/objectMeta' {
+  interface ObjectUserData {
+    UNIT: string;
+  }
+}
+OBJECT_USER_DATA.UNIT = 'unit';
 
 export interface RawUnitDescription<Rotation = string, Position = number[]> {
   unit: string;
@@ -283,9 +292,7 @@ export default class Unit<
   createRoot(name: string) {
     const root = new Object3D();
     root.name = name;
-    root.userData = {
-      unit: this
-    };
+    root.userData[OBJECT_USER_DATA.UNIT] = this;
     return root;
   }
 
@@ -315,7 +322,9 @@ export default class Unit<
   }
 
   setScenePosition(position: Vector3) {
-    this.root.position.copy(this.centerInTile(position));
+    this.root.position.copy(
+      this.centerInTile(position).multiply(new Vector3(1, FLOOR_HEIGHT, 1))
+    );
   }
 
   getRootRotation() {

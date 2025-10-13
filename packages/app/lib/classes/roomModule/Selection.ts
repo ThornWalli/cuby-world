@@ -16,6 +16,7 @@ import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import type Room from '../Room';
 import { FLOOR_HEIGHT } from '../../utils/ground';
+import { OBJECT_USER_DATA } from '../../utils/objectMeta';
 
 interface Observables extends RoomModuleObservables {
   selectionVisible$: ReplaySubject<boolean>;
@@ -135,6 +136,6 @@ function extendMesh() {
   });
   const mesh = new Mesh(geometry, material);
   mesh.name = OBJECT_NAME.RAYCASTER;
-  mesh.userData = { ignoreSelect: true };
+  mesh.userData[OBJECT_USER_DATA.IGNORE_SELECT] = true;
   return mesh;
 }

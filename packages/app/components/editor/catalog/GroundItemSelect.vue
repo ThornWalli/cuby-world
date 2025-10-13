@@ -3,7 +3,7 @@
     <slot name="before"></slot>
     <div class="items">
       <base-button
-        v-for="{ item, ground } in items"
+        v-for="{ item, preview } in items"
         :key="item.id"
         :class="{ selected: modelValue === item.id }"
         @click="onClickItem(item.id)">
@@ -12,7 +12,7 @@
             class="image"
             :app="app"
             :ratio="1"
-            :model-value="ground"
+            :model-value="preview"
             hydrate-when-visible />
         </div>
         <span>{{ item.name }}</span>
@@ -49,7 +49,7 @@ function onClickItem(id: Item['id']) {
 <script lang="ts">
 export interface GroundItem<Item extends CatalogItem> {
   item: Item;
-  ground: GroundPreview;
+  preview: GroundPreview;
 }
 </script>
 
@@ -112,14 +112,6 @@ export interface GroundItem<Item extends CatalogItem> {
     & span {
       display: none;
       min-width: 96px;
-    }
-  }
-
-  & .remove {
-    & svg {
-      display: block;
-      width: 48px;
-      fill: var(--color-red-5);
     }
   }
 }

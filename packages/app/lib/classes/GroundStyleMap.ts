@@ -4,6 +4,8 @@ import type {
   GrountStyleIdentifier
 } from '../types/ground';
 
+const IGNORED_GROUND_STYLES = ['default_empty', 'default_editor_empty'];
+
 export default class GroundStyleMap {
   getPositions() {
     return this.map
@@ -32,7 +34,7 @@ export default class GroundStyleMap {
     if (this.map[y] && this.map[y][x] && this.map[y][x][z]) {
       return this.map[y][x][z];
     }
-    return 'default_hidden';
+    // return 'default_empty';
   }
 
   set(x: number, y: number, z: number, styleId?: GrountStyleIdentifier) {
@@ -63,7 +65,7 @@ export default class GroundStyleMap {
           (result, map_, y) => {
             map_.forEach((map__, x) => {
               map__.forEach((styleId, z) => {
-                if (!styleId) return;
+                if (!styleId || IGNORED_GROUND_STYLES.includes(styleId)) return;
                 result.set(
                   styleId,
                   result.get(styleId) ?? { id: styleId, positions: [] }

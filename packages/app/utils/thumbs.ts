@@ -24,16 +24,16 @@ export async function setupGround({
 }: {
   assetLoader: AssetLoader;
 }) {
-  const groundGeometryMap = await loadGroundGeometries(assetLoader, groundGlb);
+  const geometryMap = await loadGroundGeometries(assetLoader, groundGlb);
 
   const groundTile = new Ground({
     position: new Vector3(0, 0, 0),
     texture: groundTextureMap.get('wood_laminate_1')
   });
-  const geometry = groundTile.createGeometry({ groundGeometryMap });
+  const geometry = groundTile.createGeometry(geometryMap);
   const material = await groundTile.createMaterial({
     assetLoader,
-    groundTextureMap
+    textureMap: groundTextureMap
   });
   const groundMesh = new Mesh(geometry, material);
   groundMesh.material.side = DoubleSide;

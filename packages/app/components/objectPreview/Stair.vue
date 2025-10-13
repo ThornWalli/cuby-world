@@ -8,11 +8,11 @@
     :width="width ?? 'auto'"
     :ratio="ratio"
     :hydrate-when-visible="hydrateWhenVisible"
-    class="cw-object-preview-ground" />
+    class="cw-object-preview-stair" />
 </template>
 
 <script lang="ts" setup>
-import { Mesh, Object3D, Vector3 } from 'three';
+import { Object3D, Vector3 } from 'three';
 import { markRaw, ref, watch } from 'vue';
 import { ReplaySubject } from 'rxjs';
 
@@ -20,20 +20,16 @@ import type App from '../../lib/classes/App';
 
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 import CwObjectPreview from '../ObjectPreview.vue';
-import Ground from '@cuby-world/app/lib/classes/Ground';
-import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
-import assetLoader from '@cuby-world/app/services/assetLoader';
-import {
-  default_mesh as groundGlb,
-  groundTextureMap,
-  skins
-} from '@cuby-world/grounds';
+import { skins } from '@cuby-world/stairs';
+
+import { ROTATION } from '@cuby-world/app/lib/types';
+import { resolveStair } from '@cuby-world/app/lib/utils/stair';
 
 const $props = defineProps<{
   app: App;
   width?: number | 'auto';
   ratio: number;
-  modelValue: GroundPreview;
+  modelValue: StairPreview;
   hydrateWhenVisible?: boolean;
 }>();
 
@@ -42,28 +38,23 @@ const root = ref<Object3D>(new Object3D());
 const animationLoop$ = new ReplaySubject<AnimationLoopValue>(1);
 animationLoop$.next({ time: 0, delta: 0 });
 
-async function setup(data: GroundPreview) {
-  const geometryMap = await loadGroundGeometries(assetLoader, groundGlb);
-  const { skin } = skins.get(data.skin)!;
-  const ground = new Ground({
+async function setup(data: StairPreview) {
+  const root = new Object3D();
+
+  const [Stair, description] = await resolveStair({
     position: new Vector3(0, 0, 0),
-    color: skin.color,
-    texture:
-      skin.texture &&
-      groundTextureMap.get(
-        'id' in skin.texture ? skin.texture.id : skin.texture.url
-      )
+    skin: skins.get(data.skin)!.skin,
+    rotation: ROTATION.EAST
   });
 
-  const geometry = ground.createGeometry(geometryMap);
-  const material = await ground.createMaterial({
-    assetLoader,
-    textureMap: groundTextureMap
+  const stair = new Stair(description);
+
+  await stair.setup({
+    animationLoop$
   });
-  const groundMesh = new Mesh(geometry, material);
-  groundMesh.receiveShadow = true;
-  const root = new Object3D();
-  root.add(groundMesh);
+  root.position.set(0 - Math.round(stair.size.y / 3), -0.5, 0);
+
+  root.add(stair.root);
   return root;
 }
 
@@ -78,13 +69,13 @@ watch(
 </script>
 
 <script lang="ts">
-export interface GroundPreview {
+export interface StairPreview {
   skin: string;
 }
 </script>
 
 <style lang="postcss" scoped>
-.cw-object-preview-ground {
+.cw-object-preview-stair {
   /* empty */
 }
 </style>

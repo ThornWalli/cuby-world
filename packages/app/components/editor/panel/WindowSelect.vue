@@ -32,7 +32,7 @@ const extensionTypes = new Map(
 function prepareItem(item: WallExtensionItem): WallItem<WallExtensionItem> {
   return {
     item,
-    wall: {
+    preview: {
       extensions: [
         {
           extension: extensionTypes.get(item.extension) as typeof WallExtension,

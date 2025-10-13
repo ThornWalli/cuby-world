@@ -42,6 +42,15 @@ import assetLoader from '@cuby-world/app/services/assetLoader';
 import type { WallSkinIdentifier, WallSkins } from '../types/wall/skins';
 import { FLOOR_HEIGHT } from '../utils/ground';
 import { skins } from '@cuby-world/walls';
+import { OBJECT_USER_DATA } from '../utils/objectMeta';
+
+declare module '../utils/objectMeta' {
+  interface ObjectUserData {
+    WALL: string;
+  }
+}
+
+OBJECT_USER_DATA.WALL = 'wall';
 
 enum MESH_WALL_NAME {
   SMALL_WALL = 'small_wall',
@@ -112,6 +121,21 @@ export default class Wall {
     this.root?.removeFromParent();
   }
 
+  setEditMode(editMode: boolean) {
+    if (this.editMode !== editMode) {
+      this.editMode = editMode;
+      const mesh = this.getMesh();
+      if (mesh) {
+        this.refreshWallMeshes({
+          root: this.root!,
+          wallGeometryMap: this.wallGeometryMap!,
+          editMode
+        });
+        this.tmpBox.setFromObject(this.root!);
+      }
+    }
+  }
+
   async setup({
     animationLoop$,
     wallGeometryMap,
@@ -149,7 +173,7 @@ export default class Wall {
       }
     }
 
-    root.userData = { wall: this };
+    root.userData[OBJECT_USER_DATA.WALL] = this;
 
     root.position.copy(
       new Vector3(
@@ -230,21 +254,6 @@ export default class Wall {
   }
 
   //#endregion
-
-  setEditMode(editMode: boolean) {
-    if (this.editMode !== editMode) {
-      this.editMode = editMode;
-      const mesh = this.getMesh();
-      if (mesh) {
-        this.refreshWallMeshes({
-          root: this.root!,
-          wallGeometryMap: this.wallGeometryMap!,
-          editMode
-        });
-        this.tmpBox.setFromObject(this.root!);
-      }
-    }
-  }
 
   setStyle(style: WallSkinIdentifier, index: number) {
     if (this.state.skins[index] && this.state.skins[index] !== style) {
@@ -389,7 +398,9 @@ export default class Wall {
         }
       );
       largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-      largeWall.userData = { wall: this, ignoreSelect: true };
+      largeWall.userData[OBJECT_USER_DATA.WALL] = this;
+      largeWall.userData[OBJECT_USER_DATA.IGNORE_SELECT] = this;
+
       this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
       root.add(largeWall);
     } else {
@@ -427,7 +438,9 @@ export default class Wall {
       );
       smallWall.name = MESH_WALL_NAME.SMALL_WALL;
       smallWall.visible = !this.visible;
-      smallWall.userData = { wall: this, ignoreSelect: true };
+      smallWall.userData[OBJECT_USER_DATA.WALL] = this;
+      smallWall.userData[OBJECT_USER_DATA.IGNORE_SELECT] = this;
+
       this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
       root.add(smallWall);
     } else {

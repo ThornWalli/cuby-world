@@ -13,6 +13,7 @@ import MultiplayerAppModule from './appModule/Multiplayer';
 import EditorWallAppModule from './appModule/editor/Wall';
 import EditorGroundAppModule from './appModule/editor/Ground';
 import type { ImportRoomDescription } from './RoomDescription';
+import EditorStairModule from './appModule/editor/Stair';
 
 type AppModuleList = (
   | typeof CursorAppModule
@@ -132,23 +133,33 @@ export default class App extends BaseApp<AppPlaygroundModules> {
 }
 
 interface AppEditorModules extends AppModules {
-  player: PlayerAppModule;
   editorWall: EditorWallAppModule;
   editorGround: EditorGroundAppModule;
+  editorStair: EditorStairModule;
 }
 
 export class EditorApp extends BaseApp<
   AppEditorModules,
-  (typeof EditorWallAppModule | typeof EditorGroundAppModule)[] & AppModuleList
+  (
+    | typeof EditorWallAppModule
+    | typeof EditorGroundAppModule
+    | typeof EditorStairModule
+  )[] &
+    AppModuleList
 > {
   constructor(
     config: AppConfig,
     renderer: Renderer,
-    moduleList: (typeof EditorWallAppModule | typeof EditorGroundAppModule)[] &
+    moduleList: (
+      | typeof EditorWallAppModule
+      | typeof EditorGroundAppModule
+      | typeof EditorStairModule
+    )[] &
       AppModuleList = []
   ) {
     moduleList.push(EditorWallAppModule);
     moduleList.push(EditorGroundAppModule);
+    moduleList.push(EditorStairModule);
 
     super(config, renderer, moduleList);
   }

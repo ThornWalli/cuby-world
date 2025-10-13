@@ -1,5 +1,5 @@
 <template>
-  <div class="cw-panel-catalog-wall-item-select">
+  <div class="cw-panel-catalog-stair-item-select">
     <slot name="before"></slot>
     <div class="items">
       <base-button
@@ -8,10 +8,10 @@
         :class="{ selected: modelValue === item.id }"
         @click="onClickItem(item.id)">
         <div>
-          <cw-object-preview-wall
+          <cw-object-preview-stair
             class="image"
             :app="app"
-            :ratio="8 / 4"
+            :ratio="1"
             :model-value="preview"
             hydrate-when-visible />
         </div>
@@ -24,16 +24,15 @@
 <script lang="ts" setup generic="Item extends CatalogItem">
 import BaseButton from '../../base/Button.vue';
 
-import CwObjectPreviewWall, {
-  type WallPreview
-} from '../../objectPreview/Wall.vue';
+import CwObjectPreviewStair from '../../objectPreview/Stair.vue';
 
 import type App from '../../../lib/classes/App';
 import type { CatalogItem } from '../../../lib/types/catalog';
+import type { StairPreview } from '../../objectPreview/Stair.vue';
 
 const $props = defineProps<{
   app: App;
-  items: WallItem<Item>[];
+  items: StairItem<Item>[];
   modelValue: Item['id'] | null;
 }>();
 
@@ -47,14 +46,14 @@ function onClickItem(id: Item['id']) {
 </script>
 
 <script lang="ts">
-export interface WallItem<Item extends CatalogItem> {
+export interface StairItem<Item extends CatalogItem> {
   item: Item;
-  preview: WallPreview;
+  preview: StairPreview;
 }
 </script>
 
 <style lang="postcss" scoped>
-.cw-panel-catalog-wall-item-select {
+.cw-panel-catalog-stair-item-select {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -106,7 +105,7 @@ export interface WallItem<Item extends CatalogItem> {
     }
 
     & .image {
-      width: 48px;
+      width: 128px;
     }
 
     & span {

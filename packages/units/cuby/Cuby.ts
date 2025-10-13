@@ -31,6 +31,15 @@ import {
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
+
+declare module '@cuby-world/app/lib/utils/objectMeta' {
+  interface ObjectUserData {
+    INTERVAL: string;
+  }
+}
+
+OBJECT_USER_DATA.INTERVAL = 'interval';
 
 export enum CUBY_COLOR {
   BLUE = 'blue',
@@ -109,7 +118,7 @@ export default class Cuby extends Unit<
 
   override destroy(): void {
     super.destroy();
-    clearInterval(this._sleepPlain?.userData.interval);
+    clearInterval(this._sleepPlain?.userData[OBJECT_USER_DATA.INTERVAL]);
   }
 
   sleepTimer?: number;
@@ -203,7 +212,7 @@ export default class Cuby extends Unit<
     setupSleepMaterials(this.assetLoader!).then(assets => {
       mesh.material = assets[index]!;
       mesh.visible = true;
-      mesh.userData.interval = setInterval(() => {
+      mesh.userData[OBJECT_USER_DATA.INTERVAL] = setInterval(() => {
         index = (index + 1) % assets.length;
         mesh.material = assets[index]!;
       }, this._sleepFrameDuration);
@@ -213,7 +222,7 @@ export default class Cuby extends Unit<
   stopSleepIndicator() {
     const sleepPlain = this.root.getObjectByName('sleep_plain') as Mesh;
     if (sleepPlain) {
-      clearInterval(sleepPlain.userData.interval);
+      clearInterval(sleepPlain.userData[OBJECT_USER_DATA.INTERVAL]);
       sleepPlain.visible = false;
     }
     clearTimeout(this._sleepTimeout);

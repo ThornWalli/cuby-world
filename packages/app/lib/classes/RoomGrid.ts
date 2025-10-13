@@ -17,15 +17,15 @@ export default class RoomGrid {
   }
 
   get(x: number, y: number, z: number) {
-    if (this.grid[z] && this.grid[z]![y]) {
-      return this.grid[z]![y]![x];
+    if (this.grid[y] && this.grid[y]![z]) {
+      return this.grid[y]![z]![x];
     }
     return undefined;
   }
   set(x: number, y: number, z: number, value: number) {
     if (this.grid[y] && this.grid[y]![z]) {
       this.grid[y]![z]![x] = value;
-      this.data[y * this.depth * this.width + y * this.width + x] = value;
+      this.data[y * this.depth * this.width + z * this.width + x] = value;
     }
   }
 

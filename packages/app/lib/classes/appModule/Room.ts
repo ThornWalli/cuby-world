@@ -26,6 +26,7 @@ import type Player from '../Player';
 
 import allUnits from '@cuby-world/units';
 import type { RoomDescription } from '../RoomDescription';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
 
 interface Observables extends AppModuleObservables {
   room$: Observable<Room | undefined>;
@@ -319,7 +320,15 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         clickIntersects$
           .pipe(
             concatMap(interactions => {
-              return from(interactions).pipe(preparePosition(), toArray());
+              return from(
+                interactions.filter(interaction => {
+                  return (
+                    !interaction.object.userData[
+                      OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
+                    ] && interaction.object?.parent?.name === 'ground'
+                  );
+                })
+              ).pipe(preparePosition(), toArray());
             })
           )
           .subscribe(this.onSelect.bind(this))

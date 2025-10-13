@@ -37,7 +37,6 @@ import type Unit from '../Unit';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type Room from '../Room';
 import { OBJECT_NAME } from '../Unit';
-import { APP_MODE } from '../App';
 
 import type {
   WALL_DIRECTION,
@@ -48,6 +47,7 @@ import type {
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { FloorIndex } from '../../types/floor';
 import { default_mesh as MeshWall } from '@cuby-world/walls';
+import { OBJECT_USER_DATA } from '../../utils/objectMeta';
 
 interface WallRoomTile {
   mesh: Mesh;
@@ -377,14 +377,10 @@ export default class WallModule extends RoomModule<
       return [];
     }
 
-    const walls = await createWalls(
-      wallDescriptions,
-      this.room.app.config.mode === APP_MODE.EDITOR,
-      {
-        animationLoop$: this.room.app.renderer.observables.animationLoop$,
-        wallGeometryMap: this.state.baseWallGeometryMap!
-      }
-    );
+    const walls = await createWalls(wallDescriptions, this.isEditMode(), {
+      animationLoop$: this.room.app.renderer.observables.animationLoop$,
+      wallGeometryMap: this.state.baseWallGeometryMap!
+    });
 
     walls.forEach(wall => {
       this.state.walls.push(wall);
@@ -693,7 +689,7 @@ function createRayLine(
   const geometry = new BufferGeometry().setFromPoints(points);
   const material = new LineBasicMaterial({ color });
   const line = new Line(geometry, material);
-  line.userData = { ignoreSelect: true };
+  line.userData = { [OBJECT_USER_DATA.IGNORE_SELECT]: true };
   return line;
 }
 function createDebugRayLines(
@@ -717,8 +713,8 @@ function getWallFromParent(object: Object3D | null): Wall | null {
   if (!object) {
     return null;
   }
-  if (object.userData.wall) {
-    return object.userData.wall;
+  if (object.userData[OBJECT_USER_DATA.WALL]) {
+    return object.userData[OBJECT_USER_DATA.WALL];
   }
   return getWallFromParent(object.parent);
 }

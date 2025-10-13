@@ -65,7 +65,7 @@ const tag = ref<CATALOG_TAG | 'all'>('all');
 function prepareItem(item: GroundSkinItem): GroundItem<GroundSkinItem> {
   return {
     item,
-    ground: {
+    preview: {
       skin: item.id
     }
   };

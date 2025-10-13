@@ -1,8 +1,17 @@
 import { fromEvent, ReplaySubject } from 'rxjs';
-import type { Intersection, Object3D, Object3DEventMap } from 'three';
+import type { Object3D, Intersection, Object3DEventMap } from 'three';
 import { Raycaster, Vector2 } from 'three';
 import type Renderer from '../Renderer';
 import RendererModule, { type RendererModuleState } from '../RendererModule';
+import { OBJECT_USER_DATA } from '../../utils/objectMeta';
+
+declare module '../../utils/objectMeta' {
+  interface ObjectUserData {
+    IGNORE_SELECT: string;
+  }
+}
+
+OBJECT_USER_DATA.IGNORE_SELECT = 'ignoreSelect';
 
 export type State = RendererModuleState;
 export default class IntersectionRendererModule extends RendererModule<State> {
@@ -63,7 +72,9 @@ export default class IntersectionRendererModule extends RendererModule<State> {
         this.listeners.forEach(listener => {
           let intersects = this.raycaster.intersectObject(listener.mesh, true);
           // console.log('intersects', [...intersects]);
-          intersects = intersects.filter(i => !i.object.userData?.ignoreSelect);
+          intersects = intersects.filter(
+            i => !i.object.userData?.[OBJECT_USER_DATA.IGNORE_SELECT]
+          );
           if (intersects.length > 0 && intersects[0]) {
             listener.clickIntersect$.next(intersects[0]);
             listener.clickIntersects$.next(intersects);

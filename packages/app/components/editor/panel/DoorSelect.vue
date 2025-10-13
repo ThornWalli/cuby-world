@@ -45,8 +45,8 @@ const items = ref<WallItem<WallExtensionItem>[]>(
   [...Array.from(doorsCatalog.values())].map(item => {
     return {
       item,
-      wall: prepareItem(item)
-    };
+      preview: prepareItem(item)
+    } as WallItem<WallExtensionItem>;
   })
 );
 

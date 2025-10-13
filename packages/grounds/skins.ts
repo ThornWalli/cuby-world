@@ -3,15 +3,27 @@ import { CATALOG_TAG } from '@cuby-world/app/lib/utils/catalog';
 
 const styles: GroundSkinItem[] = [
   {
-    id: 'default_hidden',
-    skinId: 'hidden',
-    name: 'HIDDEN',
+    id: 'default_editor_empty',
+    skinId: 'edit_empty',
+    name: 'Edit Empty',
+    tags: [CATALOG_TAG.HIDE],
+    type: 'default',
+    skin: {
+      color: '#000000',
+      accessible: false,
+      opacity: 0.4,
+      texture: { id: 'edit_empty' }
+    }
+  },
+  {
+    id: 'default_empty',
+    skinId: 'empty',
+    name: 'EMPTY',
     tags: [CATALOG_TAG.HIDE],
     type: 'default',
     skin: {
       accessible: false,
-      opacity: 0.4,
-      texture: { id: 'hidden' }
+      opacity: 0
     }
   },
   {

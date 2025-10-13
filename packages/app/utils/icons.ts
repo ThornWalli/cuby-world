@@ -108,5 +108,11 @@ export default {
     defineAsyncComponent(
       () => import('../assets/icons/arrow-navigation-filled/down.svg?component')
     )
+  ),
+
+  stair_mode: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/stair_mode.svg?component')
+    )
   )
 };

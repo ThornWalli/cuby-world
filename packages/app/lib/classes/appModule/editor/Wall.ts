@@ -39,6 +39,7 @@ import type { WallSkins } from '@cuby-world/app/lib/types/wall/skins';
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 import type { WallExtensionItem } from '@cuby-world/app/lib/types/wall/extension/catalog';
 import type { WallSkinItem } from '@cuby-world/app/lib/types/wall/catalog';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
 
 interface Observables extends AppModuleObservables {
   current$: Subject<{
@@ -415,7 +416,7 @@ export default class EditorWallModule extends AppModule<State, Observables> {
 
   override onSceneHover({ preparedPositions }: SceneSelectContext) {
     const object = preparedPositions?.[0]?.object;
-    const wall = object?.parent?.userData.wall;
+    const wall = object?.parent?.userData[OBJECT_USER_DATA.WALL];
 
     const faceIndex = preparedPositions[0]
       ? getFaceGroupIndex(preparedPositions[0])
@@ -430,8 +431,8 @@ export default class EditorWallModule extends AppModule<State, Observables> {
   }
 
   private getWallFromObject(object: Object3D): Wall | null {
-    if (object.parent?.userData.wall) {
-      return object.parent.userData.wall as Wall;
+    if (object.parent?.userData[OBJECT_USER_DATA.WALL]) {
+      return object.parent.userData[OBJECT_USER_DATA.WALL] as Wall;
     }
     return null;
   }

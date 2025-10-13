@@ -92,6 +92,11 @@ const controlComponent = computed(() => {
         defineAsyncComponent(() => import('../editor/WallControl.vue'))
       );
     }
+    case EDITOR_ACTION.STAIR: {
+      return markRaw(
+        defineAsyncComponent(() => import('../editor/StairControl.vue'))
+      );
+    }
     default:
       return null;
   }
@@ -115,6 +120,11 @@ const actions = ref([
     icon: icons.ground_mode,
     label: 'Ground',
     value: EDITOR_ACTION.GROUND
+  },
+  {
+    icon: icons.stair_mode,
+    label: 'Stair',
+    value: EDITOR_ACTION.STAIR
   }
 ]);
 const currentAction = ref<EDITOR_ACTION>(EDITOR_ACTION.NONE);
@@ -132,7 +142,7 @@ onMounted(async () => {
   nextTick(() => {
     setup();
 
-    // currentAction.value = EDITOR_ACTION.WALL;
+    currentAction.value = EDITOR_ACTION.STAIR;
     // onClickSettings();
 
     dialogDebug.value?.open();

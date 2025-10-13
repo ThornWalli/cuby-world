@@ -2,9 +2,9 @@
   <cw-panel
     hide-title
     style-type="none"
-    class="cw-panel-editor-wall-skin"
+    class="cw-panel-editor-stair-select"
     title="Wall Skin">
-    <cw-catalog-wall-item-select
+    <cw-catalog-stair-item-select
       :app="app"
       :items="items"
       :model-value="modelValue"
@@ -41,37 +41,37 @@
           </li>
         </ul>
       </template>
-    </cw-catalog-wall-item-select>
+    </cw-catalog-stair-item-select>
   </cw-panel>
 </template>
 
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
-import CwCatalogWallItemSelect, {
-  type WallItem
-} from '../catalog/WallItemSelect.vue';
+import CwCatalogStairItemSelect from '../catalog/StairItemSelect.vue';
 import { computed, ref, useId } from 'vue';
 
-import type App from '../../../lib/classes/App';
 import { CATALOG_TAG } from '../../../lib/utils/catalog';
-import type { WallSkinIdentifier } from '../../../lib/types/wall/skins';
-import { skins } from '@cuby-world/walls';
-import type { WallSkinItem } from '../../../lib/types/wall/catalog';
+import { skins } from '@cuby-world/stairs';
+
+import type App from '../../../lib/classes/App';
+import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
+import type { StairSkinItem } from '@cuby-world/app/lib/types/stair/catalog';
+import type { StairItem } from '../catalog/StairItemSelect.vue';
 
 const id = useId();
 
 const tag = ref<CATALOG_TAG | 'all'>('all');
 
-function prepareItem(item: WallSkinItem): WallItem<WallSkinItem> {
+function prepareItem(item: StairSkinItem): StairItem<StairSkinItem> {
   return {
     item,
     preview: {
-      skins: [item.id, item.id]
+      skin: item.id
     }
   };
 }
 
-const items = computed<WallItem<WallSkinItem>[]>(() =>
+const items = computed<StairItem<StairSkinItem>[]>(() =>
   Array.from(skins.values())
     .filter(item => {
       return (
@@ -80,26 +80,26 @@ const items = computed<WallItem<WallSkinItem>[]>(() =>
         item.tags.includes(tag.value)
       );
     })
-    .map(prepareItem)
+    .map(skin => prepareItem(skin))
 );
 
 defineProps<{
   app: App;
-  modelValue: WallSkinIdentifier | null;
+  modelValue: StairSkinIdentifier | null;
 }>();
 
 const $emit = defineEmits<{
-  (e: 'update:model-value', value: WallSkinIdentifier | null): void;
+  (e: 'update:model-value', value: StairSkinIdentifier | null): void;
 }>();
 </script>
 
 <style lang="postcss" scoped>
-.cw-panel-editor-wall-skin {
+.cw-panel-editor-stair-select {
   align-items: center;
   align-self: center;
   width: 90%;
 
-  & :deep(.cw-panel-catalog-wall-item-select) {
+  & :deep(.cw-panel-catalog-select-item-select) {
     width: 100%;
   }
 }
