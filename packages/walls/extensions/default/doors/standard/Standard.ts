@@ -1,4 +1,11 @@
-import { AnimationMixer, LoopOnce, Mesh, Object3D } from 'three';
+import {
+  AnimationMixer,
+  DoubleSide,
+  LoopOnce,
+  Mesh,
+  MeshPhongMaterial,
+  Object3D
+} from 'three';
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import DoorWallExtension, {
   type DoorState
@@ -13,8 +20,15 @@ import type {
   AnimationLoopValue
 } from '@cuby-world/app/lib/classes/Renderer';
 import assetLoader from '@cuby-world/app/services/assetLoader';
+import {
+  MATERIAL_NAME,
+  replaceMaterialByName
+} from '@cuby-world/app/lib/utils/material';
 
-export default class Standard extends DoorWallExtension<DoorState> {
+interface StandardState extends DoorState {
+  color: string | number;
+}
+export default class Standard extends DoorWallExtension<StandardState> {
   static override KEY = 'door_standard';
 
   override async setup(context: {
@@ -23,6 +37,16 @@ export default class Standard extends DoorWallExtension<DoorState> {
     await super.setup(context);
 
     const { object, animations } = await loadGltf(this.wall, assetLoader);
+
+    replaceMaterialByName(
+      object,
+      MATERIAL_NAME.BASE,
+      new MeshPhongMaterial({
+        color: this.state.color || 0xffffff,
+        side: DoubleSide
+      })
+    );
+
     if (!this.state.hasDoor) {
       const inner = object.getObjectByName('inner');
       if (inner) {
@@ -34,7 +58,7 @@ export default class Standard extends DoorWallExtension<DoorState> {
         animationLoop$: context.animationLoop$
       });
     }
-    this.root.add(object);
+    this.addToRoot(object);
   }
 
   private mixer!: AnimationMixer;

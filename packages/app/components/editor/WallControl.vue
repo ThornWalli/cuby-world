@@ -3,49 +3,48 @@
     <teleport to="#teleports-panel-right">
       <cw-panel-editor-wall-actions v-model="currentAction" />
     </teleport>
-    <teleport to="#teleports-panel-bottom">
-      <cw-panel-editor-door-skin
-        v-if="currentAction.primary === WALL_ACTION.MODE_DOOR"
-        v-model="extension"
-        :app="app"
-        :action="currentAction" />
-      <cw-panel-editor-window-skin
-        v-if="currentAction.primary === WALL_ACTION.MODE_WINDOW"
-        v-model="extension"
-        :app="app"
-        :action="currentAction" />
-      <cw-panel-editor-wall-skin
-        v-if="currentAction.primary === WALL_ACTION.MODE_STYLE"
-        v-model="skin"
-        :app="app"
-        :action="currentAction" />
-    </teleport>
+    <!-- window -->
+    <cw-editor-wall-control-window-controller
+      v-if="isWindowController"
+      :key="currentController ? currentController.id : 'no-controller'"
+      :app="app" />
+    <!-- door -->
+    <cw-editor-wall-control-door-controller
+      v-if="isDoorController"
+      :key="currentController ? currentController.id : 'no-controller'"
+      :app="app" />
+    <!-- painter -->
+    <cw-editor-wall-control-painter-controller
+      v-if="isPainterController"
+      :key="currentController ? currentController.id : 'no-controller'"
+      :app="app" />
+    <!-- mason -->
+    <cw-editor-wall-control-mason-controller
+      v-if="isMasonController"
+      :key="currentController ? currentController.id : 'no-controller'"
+      :app="app" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Subscription } from 'rxjs';
 import CwPanelEditorWallActions, {
   type WallAction
 } from './panel/WallActions.vue';
-import CwPanelEditorWallSkin from './panel/WallSkin.vue';
-import CwPanelEditorDoorSkin from './panel/DoorSelect.vue';
-import CwPanelEditorWindowSkin from './panel/WindowSelect.vue';
+
+import CwEditorWallControlWindowController from './wallControl/WindowController.vue';
+import CwEditorWallControlDoorController from './wallControl/DoorController.vue';
+import CwEditorWallControlMasonController from './wallControl/MasonController.vue';
+import CwEditorWallControlPainterController from './wallControl/PainterController.vue';
 
 import { WALL_ACTION } from '../../lib/types/editor';
 import type { EditorApp } from '../../lib/classes/App';
-import type Wall from '../../lib/classes/Wall';
-import type { FACE_INDEX } from '../../lib/types/wall';
-import { CURSOR_TYPE } from '../../lib/classes/appModule/Cursor';
-
-import type { WallSkinIdentifier } from '@cuby-world/app/lib/types/wall/skins';
-import { catalog, skins } from '@cuby-world/walls';
-import type { CatalogItemIdentifier } from '@cuby-world/app/lib/types/catalog';
-import type { WallExtensionIdentifier } from '@cuby-world/app/lib/types/wall/extension/skins';
-
-const extension = ref<WallExtensionIdentifier>('');
-const skin = ref<WallSkinIdentifier>('');
+import type AppModuleController from '@cuby-world/app/lib/classes/AppModuleController';
+import MasonController from '@cuby-world/app/lib/classes/appModule/editor/wall/MasonController';
+import PainterController from '@cuby-world/app/lib/classes/appModule/editor/wall/PainterController';
+import DoorController from '@cuby-world/app/lib/classes/appModule/editor/wall/DoorController';
+import WindowController from '@cuby-world/app/lib/classes/appModule/editor/wall/WindowController';
 
 const $props = defineProps<{
   app: EditorApp;
@@ -56,24 +55,30 @@ const currentAction = ref<WallAction>({
 });
 
 const subscription = new Subscription();
+const currentController = ref<AppModuleController | null>(null);
 
-const current = ref<{
-  wall: Wall | null;
-  faceIndex: FACE_INDEX;
-} | null>();
 onMounted(() => {
   currentAction.value = {
-    primary: WALL_ACTION.ADD
+    primary: WALL_ACTION.MODE_DOOR
+    // secondary: MASON_MODE.ADD
   };
 
   subscription.add(
-    $props.app.modules.editorWall.observables.current$.subscribe(value => {
-      $props.app.modules.cursor.setCursor(
-        value ? CURSOR_TYPE.POINTER : undefined
-      );
-      current.value = value;
-    })
+    $props.app.modules.editorWall.observables.currentController$.subscribe(
+      controller => {
+        currentController.value = controller ? markRaw(controller) : controller;
+      }
+    )
   );
+
+  // subscription.add(
+  //   $props.app.modules.editorWall.observables.current$.subscribe(value => {
+  //     $props.app.modules.cursor.setCursor(
+  //       value ? CURSOR_TYPE.POINTER : undefined
+  //     );
+  //     current.value = value;
+  //   })
+  // );
 });
 
 onUnmounted(() => {
@@ -82,8 +87,6 @@ onUnmounted(() => {
 });
 
 watch(() => currentAction.value, onChangeAction);
-watch(() => extension.value, onChangeExtension);
-watch(() => skin.value, onChangeStyle);
 
 function onChangeAction(action: WallAction) {
   const app = $props.app;
@@ -91,19 +94,21 @@ function onChangeAction(action: WallAction) {
   app.modules.editorWall.setAction(action);
 }
 
-function onChangeExtension(extensionId: CatalogItemIdentifier) {
-  const item = catalog.get(extensionId);
-  if (item) {
-    $props.app.modules.editorWall.setExtension(item);
-  }
-}
+const isWindowController = computed(
+  () => currentController.value instanceof WindowController
+);
 
-function onChangeStyle(styleId: WallSkinIdentifier) {
-  const item = skins.get(styleId);
-  if (item) {
-    $props.app.modules.editorWall.setStyle(item);
-  }
-}
+const isDoorController = computed(
+  () => currentController.value instanceof DoorController
+);
+
+const isMasonController = computed(
+  () => currentController.value instanceof MasonController
+);
+
+const isPainterController = computed(
+  () => currentController.value instanceof PainterController
+);
 
 //#region Actions
 

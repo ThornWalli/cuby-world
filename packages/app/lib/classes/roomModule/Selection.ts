@@ -16,7 +16,7 @@ import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import type Room from '../Room';
 import { FLOOR_HEIGHT } from '../../utils/ground';
-import { OBJECT_USER_DATA } from '../../utils/objectMeta';
+import { OBJECT_USER_DATA } from '../../utils/object';
 
 interface Observables extends RoomModuleObservables {
   selectionVisible$: ReplaySubject<boolean>;
@@ -54,7 +54,7 @@ export default class SelectionModule extends RoomModule<State, Observables> {
       this.showSelection();
     }
 
-    this.room.mesh.add(this.state.selectionMesh);
+    this.room.addToRoot(this.state.selectionMesh);
   }
 
   //#region getter/setters

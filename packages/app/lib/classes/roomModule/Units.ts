@@ -1,16 +1,11 @@
-import {
-  type Frustum,
-  type Matrix4,
-  type Vector3,
-  Box3,
-  type Camera
-} from 'three';
+import type { Vector3, Camera } from 'three';
 import RoomModule, { type RoomModuleState } from '../RoomModule';
 import type Unit from '../Unit';
 import UnitChunkManager from '../UnitChunkManager';
 import { distinctUntilChanged, map } from 'rxjs';
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { AnimationLoopValue } from '../Renderer';
+import { FLOOR_HEIGHT } from '../../utils/ground';
 
 interface State extends RoomModuleState {
   visibleUnits: Unit[];
@@ -31,10 +26,27 @@ export default class UnitsModule extends RoomModule<State> {
     units: new Map<string, Unit>()
   };
 
+  override setup() {
+    super.setup();
+
+    this.subscription.add(
+      this.room.modules.floor.observables.floor$.subscribe(floorIndex => {
+        this.updateVisiblity(floorIndex);
+      })
+    );
+  }
+
   //#region methods
 
   getUnits() {
     return Array.from(this.state.units.values());
+  }
+
+  /**
+   * TODO: Ggf. muss hier noch eine Map aus performancegründen her
+   */
+  getUnitsByFloor(floor: number) {
+    return this.getUnits().filter(unit => unit.position.y === floor);
   }
 
   async setupUnits(units: Unit[]) {
@@ -61,17 +73,25 @@ export default class UnitsModule extends RoomModule<State> {
         .subscribe(() => {
           this.untiPositionMap.add(unit);
           this.chunkManager.assignToChunk(unit);
+          this.updateVisiblity(this.room.modules.floor.getFloor(), [unit]);
         })
     );
     this.state.units.set(unit.id, unit);
     this.chunkManager.assignToChunk(unit);
-    this.room.mesh.add(unit.root);
+    unit.root.position.set(
+      unit.position.x,
+      unit.position.y * FLOOR_HEIGHT,
+      unit.position.z
+    );
+    this.untiPositionMap.add(unit);
+    this.room.addToRoot(unit.root);
+    this.updateVisiblity(this.room.modules.floor.getFloor(), [unit]);
   }
 
   remove(unit: Unit) {
     this.state.units.delete(unit.id);
     this.chunkManager.removeFromChunk(unit);
-    this.room.mesh.remove(unit.root);
+    this.room.root.remove(unit.root);
   }
 
   getById(id: string): Unit | undefined {
@@ -100,15 +120,26 @@ export default class UnitsModule extends RoomModule<State> {
     this.state.visibleUnits = Array.from(units);
   }
 
-  updateUnitsVisibility(frustum: Frustum, projScreenMatrix: Matrix4) {
-    frustum.setFromProjectionMatrix(projScreenMatrix);
-    return this.state.units.values().reduce((result, unit) => {
-      const box = new Box3().setFromObject(unit.root);
-      unit.root.visible = frustum.intersectsBox(box);
-      result.push(unit);
-      return result;
-    }, [] as Unit[]);
+  updateVisiblity(
+    floorIndex?: number,
+    units: Unit[] = Array.from(this.state.units.values())
+  ) {
+    units.forEach(unit => unit.setVisible(false));
+    floorIndex = floorIndex ?? this.room.modules.floor.getFloor();
+    for (let f = 0; f <= floorIndex; f++) {
+      this.getUnitsByFloor(f).forEach(unit => unit.setVisible(true));
+    }
   }
+
+  // updateVisiblity(frustum: Frustum, projScreenMatrix: Matrix4) {
+  //   frustum.setFromProjectionMatrix(projScreenMatrix);
+  //   return this.state.units.values().reduce((result, unit) => {
+  //     const box = new Box3().setFromObject(unit.root);
+  //     unit.root.visible = frustum.intersectsBox(box);
+  //     result.push(unit);
+  //     return result;
+  //   }, [] as Unit[]);
+  // }
 
   //#endregion
 }

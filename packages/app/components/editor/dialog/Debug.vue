@@ -21,7 +21,7 @@
 <script lang="ts" setup>
 import { markRaw, ref } from 'vue';
 import CwDialog from '../../../components/Dialog.vue';
-import type { RoomDescription } from '../../../lib/classes/RoomDescription';
+import type { RoomDescription } from '../../../lib/types/room';
 import type App from '../../../lib/classes/App';
 
 // import CwObjectPreviewWallExtension from '../../objectPreview/WallExtension.vue';

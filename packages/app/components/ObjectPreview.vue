@@ -32,6 +32,8 @@ import {
   updateOrthoCameraForObject
 } from '../utils/thumbs';
 import type { ROTATION } from '../lib/types';
+import { disposeObject3D } from '@cuby-world/app/lib/utils/object';
+import { SKIN_DEFAULT_GROUND } from '@cuby-world/grounds/skins';
 
 const rootEl = ref<HTMLDivElement | null>(null);
 const previewSrc = ref<string | null>(null);
@@ -49,6 +51,7 @@ const $props = defineProps<{
   root: Object3D;
   zoomRoot?: Object3D;
   hideGround?: boolean;
+  groundScale?: number;
   hydrateWhenVisible?: boolean;
 }>();
 
@@ -99,7 +102,7 @@ async function setup(retry = false) {
   }
   setupRenderer();
   window.setTimeout(async () => {
-    await updatePreview($props.root);
+    await updatePreview($props.root, $props.groundScale ?? 1);
 
     const mode = $props.mode ?? 'static';
     if (mode === 'static') {
@@ -135,7 +138,9 @@ onMounted(async () => {
   }
 });
 
+let aborted = false;
 onUnmounted(() => {
+  aborted = true;
   unregister?.();
 });
 
@@ -177,7 +182,7 @@ async function getDataUrl() {
   if (await hasImageData(src)) {
     return src;
   } else {
-    if (tries < 10) {
+    if (tries < 10 && !aborted) {
       tries++;
       console.log('Retry to render preview image', tries);
       return new Promise<string>(resolve => {
@@ -193,7 +198,7 @@ async function getDataUrl() {
 
 async function renderImage() {
   previewSrc.value = await getDataUrl();
-  if ($props.cacheKey) {
+  if ($props.cacheKey && previewSrc.value !== '') {
     imageCache.set($props.cacheKey, previewSrc.value);
   }
 
@@ -210,6 +215,13 @@ onUnmounted(() => {
   if (renderer) {
     renderer.dispose();
     previewScene.clear();
+    previewScene.remove();
+
+    if (previewMesh) {
+      disposeObject3D(previewMesh);
+      previewMesh.remove();
+    }
+
     const gl = renderer.getContext();
     gl.getExtension('WEBGL_lose_context')?.loseContext();
   }
@@ -222,12 +234,13 @@ let previewCamera: OrthographicCamera;
 let previewMesh: Object3D;
 let ground: Mesh;
 
-async function updatePreview(obj: Object3D) {
+async function updatePreview(obj: Object3D, groundScale = 1) {
   if (previewMesh) {
+    disposeObject3D(previewMesh);
     previewMesh.remove();
   } else if (!$props.hideGround) {
-    ground = await setupGround({
-      assetLoader: $props.app.assetLoader
+    ground = await setupGround(SKIN_DEFAULT_GROUND, $props.app.assetLoader, {
+      scale: groundScale
     });
     ground.position.set(0, -1 / 2, 0);
     previewScene.add(ground);
@@ -251,6 +264,9 @@ async function updatePreview(obj: Object3D) {
 </script>
 
 <script lang="ts">
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ObjectPreview {}
+
 const imageCache = new Map<string, string>();
 const test: CallableFunction[] = [];
 let running = false;
@@ -307,7 +323,7 @@ const next = () => {
 
   &.ready {
     opacity: 1;
-    transition: opacity 0.15s ease-in-out;
+    transition: opacity var(--cw-easing-duration-short) var(--cw-easing-in);
   }
 
   & .image {

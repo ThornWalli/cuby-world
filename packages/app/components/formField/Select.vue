@@ -14,6 +14,7 @@
       <select
         :id="ctx.id"
         ref="inputEl"
+        :name="name"
         :disabled="disabled"
         :value="modelValue"
         @change="onChange">
@@ -38,6 +39,7 @@ const $props = defineProps<{
   modelValue: T;
   resetValue?: T | undefined;
   id?: string;
+  name?: string;
   label?: string;
   mode?: 'compact';
   styleType?: 'dark' | 'light';
@@ -156,6 +158,8 @@ defineExpose<{ reset: () => void }>({
     color: var(--indicator-foreground);
     pointer-events: none;
     background-color: var(--indicator-background);
+    transition: background-color var(--cw-easing-duration-short)
+      var(--cw-easing-base);
 
     & svg {
       position: absolute;

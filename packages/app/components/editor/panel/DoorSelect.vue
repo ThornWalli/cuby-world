@@ -15,18 +15,18 @@
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
 import CwCatalogWallItemSelect, {
-  type WallItem
+  type WallSelectItem
 } from '../catalog/WallItemSelect.vue';
 import { ref } from 'vue';
 import type App from '../../../lib/classes/App';
 import type WallExtension from '../../../lib/classes/WallExtension';
-import { defaultDoors, doorsCatalog } from '@cuby-world/walls';
+import { doorCatalog } from '@cuby-world/walls';
 import type { WallExtensionItem } from '../../../lib/types/wall/extension/catalog';
 import type { WallExtensionIdentifier } from '../../../lib/types/wall/extension/skins';
+import { getWallExtensionMap } from '@cuby-world/app/lib/utils/catalog';
 
-const extensionTypes = new Map(
-  // TODO: Hier kommen dann weiteren door typen rein
-  [...Object.values(defaultDoors)].map(door => [door.KEY, door])
+const extensionTypes = await getWallExtensionMap(
+  Array.from(doorCatalog.values())
 );
 
 function prepareItem(item: WallExtensionItem) {
@@ -40,13 +40,12 @@ function prepareItem(item: WallExtensionItem) {
   };
 }
 
-const items = ref<WallItem<WallExtensionItem>[]>(
-  // TODO: Hier kommen dann weiteren door typen rein
-  [...Array.from(doorsCatalog.values())].map(item => {
+const items = ref<WallSelectItem<WallExtensionItem>[]>(
+  Array.from(doorCatalog.values()).map(item => {
     return {
       item,
       preview: prepareItem(item)
-    } as WallItem<WallExtensionItem>;
+    } as WallSelectItem<WallExtensionItem>;
   })
 );
 

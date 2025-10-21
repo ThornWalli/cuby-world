@@ -45,7 +45,7 @@ import type Renderer from '../lib/classes/Renderer';
 import Player, { type PlayerSettings } from '../lib/classes/Player';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
 import { DEFAULT_ROOM_ID } from '../lib/classes/appModule/Multiplayer';
-import type { RoomDescription } from '../lib/classes/RoomDescription';
+import type { RoomDescription } from '../lib/types/room';
 import type { Cursor } from '../lib/classes/appModule/Cursor';
 
 setupFonts();

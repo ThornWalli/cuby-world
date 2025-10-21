@@ -9,10 +9,11 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 import glbBase from './assets/stair_default_1x1.glb?url';
 import { OBJECT_NAME } from '@cuby-world/app/lib/classes/Unit';
-import skins from '@cuby-world/stairs/skins';
+import type { Default1x1SkinDescription } from './skins';
+import { stairCatalog } from '@cuby-world/stairs/catalog';
 
 export default class Default1x1Stair extends Stair {
-  static override KEY = 'stair_default_1x1';
+  static override KEY = 'default_1x1';
 
   constructor(
     options: Omit<StairConstructorOptions, 'size' | 'entryPositions'>
@@ -20,7 +21,7 @@ export default class Default1x1Stair extends Stair {
     super({
       ...options,
       size: new Vector2(1, 1),
-      entryPositions: { start: new Vector2(1, 0), end: new Vector2(1, 0) }
+      entryPositions: { start: new Vector2(-1, 0), end: new Vector2(-1, 0) }
     });
   }
 
@@ -31,21 +32,26 @@ export default class Default1x1Stair extends Stair {
 
     const { object } = await loadGltf(assetLoader);
 
-    if (skins.has(this.skin)) {
-      const skin = skins.get(this.skin);
-      if (skin?.options.color) {
-        object.traverse(o => {
-          if (o instanceof Mesh) {
-            o.material = new MeshPhongMaterial({
-              color: skin.options.color,
-              side: DoubleSide
-            });
-          }
-        });
+    const skin: Default1x1SkinDescription | undefined = stairCatalog
+      .get(this.key)
+      ?.skins?.find(skin => skin.id === this.skin) as Default1x1SkinDescription;
+
+    if (skin) {
+      if ('color' in skin.options && skin?.options.color) {
+        if (skin?.options.color) {
+          object.traverse(o => {
+            if (o instanceof Mesh) {
+              o.material = new MeshPhongMaterial({
+                color: skin.options.color,
+                side: DoubleSide
+              });
+            }
+          });
+        }
       }
     }
 
-    this.root.add(object);
+    this.addToRoot(object);
   }
 }
 

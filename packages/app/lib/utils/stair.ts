@@ -1,16 +1,22 @@
-import { skins } from '@cuby-world/stairs';
+import { stairCatalog } from '@cuby-world/stairs';
 import type Stair from '../classes/Stair';
-import type { StairDescription } from '../classes/Stair';
+import type { StairDescription } from '../types/stair';
 
 export async function resolveStairs(
   descriptions: StairDescription[]
 ): Promise<Array<[typeof Stair, StairDescription]>> {
-  const { stairs } = await import('@cuby-world/stairs');
-  const extList = [...Object.values(stairs)];
+  const instanceMap = new Map(
+    await Promise.all(
+      stairCatalog.values().map(async stair => {
+        const instance = await stair.instance();
+        return [instance.KEY, instance] as [string, typeof Stair];
+      })
+    )
+  );
+
   return descriptions.map(description => {
-    const { skin } = description;
-    const { type } = skins.get(skin)!;
-    const StairClass = extList.find(e => e.KEY === type);
+    const { type } = description;
+    const StairClass = instanceMap.get(type);
     if (StairClass) {
       return [StairClass, description];
     } else {

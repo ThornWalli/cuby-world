@@ -2,11 +2,11 @@
   <cw-object-preview
     v-if="root"
     :cache-key="modelValue ? JSON.stringify(modelValue) : undefined"
-    hide-ground
     :root="root"
     :app="app"
     :width="width ?? 'auto'"
     :ratio="ratio"
+    :ground-scale="3"
     :hydrate-when-visible="hydrateWhenVisible"
     class="cw-object-preview-stair" />
 </template>
@@ -20,7 +20,7 @@ import type App from '../../lib/classes/App';
 
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 import CwObjectPreview from '../ObjectPreview.vue';
-import { skins } from '@cuby-world/stairs';
+import { catalog } from '@cuby-world/stairs';
 
 import { ROTATION } from '@cuby-world/app/lib/types';
 import { resolveStair } from '@cuby-world/app/lib/utils/stair';
@@ -41,9 +41,12 @@ animationLoop$.next({ time: 0, delta: 0 });
 async function setup(data: StairPreview) {
   const root = new Object3D();
 
+  const skin = catalog.get(data.skin)!;
+
   const [Stair, description] = await resolveStair({
+    type: skin.id,
+    skin: skin.options.skin,
     position: new Vector3(0, 0, 0),
-    skin: skins.get(data.skin)!.skin,
     rotation: ROTATION.EAST
   });
 

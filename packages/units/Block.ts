@@ -39,7 +39,7 @@ export default class Block extends Unit<BlockOptions> {
   override async createMesh() {
     const material = new MeshPhongMaterial({ color: this.options.color });
 
-    const size = this.size;
+    const size = this.getSize();
     const geometry = new BoxGeometry(size.z, size.y, size.x);
 
     const mesh: Object3D = new Mesh(geometry, material);

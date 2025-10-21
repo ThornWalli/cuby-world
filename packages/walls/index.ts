@@ -1,6 +1,5 @@
 export { defaultWindows, defaultDoors } from './extensions';
 export * from './catalog';
-export { default as skins } from './skins';
 
 export {
   image_texture_default as image_wall_default_texture_default,

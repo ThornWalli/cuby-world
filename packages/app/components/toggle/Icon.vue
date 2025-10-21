@@ -45,7 +45,7 @@ const currentIcon = computed(() => {
 .cw-toggle-icon {
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: var(--cw-spacing-medium);
   align-items: center;
   justify-content: center;
   font-family: var(--font-base);
@@ -77,10 +77,11 @@ const currentIcon = computed(() => {
     cursor: pointer;
     background: rgb(0 0 0 / 40%);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--cw-border-radius-medium);
     box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
-    backdrop-filter: blur(5px);
-    transition: background-color 0.2s ease;
+    backdrop-filter: blur(var(--cw-blur-default));
+    transition: background-color var(--cw-easing-duration-short)
+      var(--cw-easing-base);
   }
 
   & span {
@@ -89,32 +90,32 @@ const currentIcon = computed(() => {
     white-space: nowrap;
     opacity: 0;
     transition:
-      opacity 0.2s ease,
-      transform 0.2s ease;
+      opacity var(--cw-easing-duration-short) var(--cw-easing-base),
+      transform var(--cw-easing-duration-short) var(--cw-easing-base);
   }
 
   &.label-top span {
     bottom: 100%;
-    padding-bottom: 8px;
+    padding-bottom: var(--cw-spacing-medium);
     transform: translateY(calc(100% / 3));
   }
 
   &.label-left span {
     right: 100%;
-    padding-right: 8px;
+    padding-right: var(--cw-spacing-medium);
     transform: translateX(calc(100% / 3));
   }
 
   &.label-right span {
     left: 100%;
-    padding-left: 8px;
+    padding-left: var(--cw-spacing-medium);
     transform: translateX(calc(100% / -3));
   }
 
   &.label-bottom span {
     top: 100%;
     left: 50%;
-    transform: translate(-50%, 8px);
+    transform: translate(-50%, var(--cw-spacing-medium));
   }
 
   &.selected,

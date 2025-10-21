@@ -1,14 +1,14 @@
 <template>
   <cw-object-preview
     v-if="root"
+    class="cw-wall-extension-preview"
     :cache-key="description ? JSON.stringify(description) : undefined"
-    hide-ground
+    :hide-ground="hideGround"
     :root="root"
     :app="app"
     :width="width ?? 'auto'"
     :ratio="ratio"
-    :hydrate-when-visible="hydrateWhenVisible"
-    class="cw-wall-extension-preview"></cw-object-preview>
+    :hydrate-when-visible="hydrateWhenVisible"></cw-object-preview>
 </template>
 
 <script lang="ts" setup>
@@ -38,7 +38,7 @@ import type {
   WallExtensionState
 } from '@cuby-world/app/lib/classes/WallExtension';
 
-import CwObjectPreview from '../ObjectPreview.vue';
+import CwObjectPreview, { type ObjectPreview } from '../ObjectPreview.vue';
 import { getDefaultSkin } from '@cuby-world/app/lib/utils/wall/skins';
 
 const $props = defineProps<{
@@ -47,6 +47,7 @@ const $props = defineProps<{
   ratio: number;
   modelValue: WallPreview;
   hydrateWhenVisible?: boolean;
+  hideGround?: boolean;
 }>();
 
 const wallGeometryMap: WallGeometryMap = await loadWallGeometries(wallGlb);
@@ -111,8 +112,6 @@ async function setupWall({
     extensions: preparedExtensions
   } as WallConstructorOptions);
 
-  // wallGeo
-
   wall.update([
     {
       ...getWallDescription({ skins }),
@@ -150,7 +149,7 @@ watch(
 </script>
 
 <script lang="ts">
-export interface WallPreview {
+export interface WallPreview extends ObjectPreview {
   extensions?: {
     extension: typeof WallExtension;
     state: WallExtensionState;

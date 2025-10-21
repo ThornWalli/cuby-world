@@ -38,7 +38,7 @@ export default class Door extends BaseDoor<DoorOptions> {
       placeable: true,
       accessible: true
     });
-    this.size = new Vector3(1, 0, 1);
+    this.setSize(new Vector3(1, 0, 1));
   }
 
   override async createMesh() {

@@ -12,23 +12,18 @@ import {
   MeshBasicMaterial,
   BoxGeometry
 } from 'three';
-import EasyStar from 'easystarjs';
 import UnitModule from '../UnitModule';
 import type Unit from '../Unit';
 import { Subject } from 'rxjs';
 import { getRadByRotation, type UnitOptions } from '../Unit';
 import { easeOutQuad } from '@cuby-world/app/utils/easings';
 import RoomGrid from '../RoomGrid';
-import {
-  getWallDoorExtensionsByPosition,
-  setWallConditions
-} from '../../utils/wall';
 import type { ArrayKeyMap } from '../ArrayKeyMap';
 import type { AnimationLoopValue } from '../Renderer';
 import type DoorWallExtension from '../wallExtension/Door';
 import { WALL_DIRECTION } from '../../types/wall';
 import { FLOOR_HEIGHT } from '../../utils/ground';
-import type { DoorState } from '../wallExtension/Door';
+import { findBestPathByStairs } from '../../utils/pathfindng';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -99,41 +94,51 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     this.observables.moveEnd$ = new Subject<void>();
   }
 
-  async moveTo(position: Vector3, options: { force?: boolean } = {}) {
+  /**
+   * Wenn Bewegung vorhanden, wird die aktuelle Bewegung abgebrochen.
+   * Es wird die nächste Position als Ziel gesetzt.
+   */
+  private abortMovement() {
     if (this.currentMovement) {
-      console.log('Bewegung läuft bereits');
       this.currentMovement.path = this.currentMovement.path.slice(0, 1);
+      return true;
+    }
+    return false;
+  }
 
+  async moveTo(position: Vector3) {
+    if (this.abortMovement()) {
       return;
     }
 
     const grid = createRoomGrid(this.unit);
 
-    console.log('Grid for pathfinding:', grid, grid.toMatrix());
-
-    /**
-     * Temporär die Position als begehbar markieren im Grid, damit die Einheit dort hinlaufen kann.
-     */
-    let isBlocked = false;
-
-    if (grid.get(position.x, position.y, position.z) === 1) {
-      isBlocked = true;
-      grid.set(position.x, position.y, position.z, 0);
-    }
-
     const startPosition = this.unit.getPosition().clone().round();
 
-    this.moveOptions = getDefaultMoveOptions();
-    this.rotateOptions = getDefaultRotateOptions();
-    this.movements = await this.prepareMovement(
-      startPosition,
-      position.clone().round(),
-      grid,
-      isBlocked,
-      options.force
-    );
-    if (this.movements.length) {
-      this.observables.moveStart$.next(position);
+    if (
+      position.x >= 0 &&
+      position.z >= 0 &&
+      position.x < grid.width &&
+      position.z < grid.depth
+    ) {
+      this.moveOptions = getDefaultMoveOptions();
+      this.rotateOptions = getDefaultRotateOptions();
+      this.movements = await this.prepareMovement(
+        startPosition,
+        position.clone().round(),
+        grid
+      );
+      if (this.movements.length) {
+        this.observables.moveStart$.next(position);
+      }
+    } else {
+      console.warn(
+        'Zielposition außerhalb des Raumgrids:',
+        position,
+        grid.width,
+        grid.height
+      );
+      return;
     }
   }
 
@@ -150,134 +155,56 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     }
   }
 
-  // findBestPathByStairs(
-  //   matrixList: { matrix: number[][]; floorIndex: number }[]
-  // ) {
-  //   const paths = [];
-
-  //   return paths;
-  // }
-
   private async prepareMovement(
     startPosition: Vector3,
     endPosition: Vector3,
-    roomGrid: RoomGrid,
-    isBlocked: boolean,
-    force?: boolean
+    roomGrid: RoomGrid
   ): Promise<MovementDescription[]> {
     const room = this.currentRoom;
     if (!room) {
       throw new Error('Unit is not in a room, cannot create grid data');
     }
 
-    const movementOptions = (
-      this.unit as Unit<UnitOptions<MovementModuleOptions>>
-    ).options.movement;
-    const currentFloorIndex = startPosition.y;
-
-    const paths: {
-      path: Vector3[];
-      doorWallByPosition: ArrayKeyMap<
-        [number, number],
-        DoorWallExtension<DoorState>
-      >;
-    }[] = [];
-
-    const floors = endPosition.y - startPosition.y;
-
-    let matrixList = roomGrid.toMatrix().map((matrix, floorIndex) => ({
+    const matrixList = roomGrid.toMatrix().map((matrix, floorIndex) => ({
       matrix,
       floorIndex
     }));
-    if (floors > 0) {
-      // es geht aufwärts
-      matrixList = matrixList.slice(currentFloorIndex, endPosition.y + 1);
-    } else if (floors < 0) {
-      // es geht abwärts
-      matrixList = matrixList
-        .slice(endPosition.y, currentFloorIndex + 1)
-        .reverse();
-    } else {
-      // es geht auf dem selben Stockwerk
-      matrixList = [matrixList[currentFloorIndex]!];
-    }
-    // console.log({ floors, matrixList });
 
-    let nextStartPosition = startPosition;
+    const unit = this.unit;
+    const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
+      .options.movement;
 
-    // const paths = this.findBestPathByStairs(matrixList);
-
-    for (let i = 0; i < matrixList.length; i++) {
-      const { matrix, floorIndex } = matrixList[i]!;
-      const walls = room.modules.wall.getWallsByFloor(floorIndex);
-
-      const needStair = endPosition.y - nextStartPosition.y !== 0;
-      // Wenn Treppe benötigt wird,
-      let floorEndPosition = endPosition;
-
-      let stairs = [];
-      if (needStair) {
-        stairs = room.modules.stair.getStairsByPositions(
-          nextStartPosition,
-          endPosition
-        );
-        if (!stairs.length) {
-          throw new Error('No stair found for movement');
-        }
-
-        const stair = stairs[0]!;
-        floorEndPosition = stair.getEntryPositionByPosition(startPosition);
-        nextStartPosition = stair.getEntryPositionByPosition(endPosition);
+    const paths = await findBestPathByStairs(matrixList, {
+      positions: { start: startPosition, end: endPosition },
+      options: {
+        diagonalMovement: movementOptions.diagonalMovement
+      },
+      functions: {
+        getStairs: room.modules.stair.getStairs.bind(room.modules.stair),
+        getStairsByPositions: room.modules.stair.getStairsByPositions.bind(
+          room.modules.stair
+        ),
+        getWallsByFloor: room.modules.wall.getWallsByFloor.bind(
+          room.modules.wall
+        )
       }
+    });
 
-      const easystar = new EasyStar.js();
-      easystar.setGrid(matrix);
+    const isFailed =
+      paths.some(path => {
+        return !path.success;
+      }) ||
+      (paths.length === 1 &&
+        paths[0]!.path.length === 1 &&
+        paths[0]!.path[0]?.equals(startPosition));
 
-      if (movementOptions.diagonalMovement) {
-        easystar.enableDiagonals();
-      }
+    console.log('paths', paths, isFailed);
 
-      easystar.setAcceptableTiles([0]);
-      console.log({
-        startPosition,
-        floorEndPosition
-      });
-      /**
-       * Übernehme Wand-Daten in das Grid
-       * Beispiel Wände nicht begehbar, Türen begehbar
-       */
-      setWallConditions(walls, easystar);
-      let path = await new Promise<number[][]>(resolve => {
-        easystar.findPath(
-          startPosition.x,
-          startPosition.z,
-          floorEndPosition.x,
-          floorEndPosition.z,
-          path =>
-            resolve(
-              (path ?? []).map(({ x, y }: { x: number; y: number }) => [x, y])
-            )
-        );
-        easystar.calculate();
-      });
-
-      // Wenn kein Pfad gefunden wurde und force true ist, direkten Pfad setzen. (Treppe)
-      if (path.length === 0 && force) {
-        path = [
-          [startPosition.x, startPosition.z],
-          [floorEndPosition.x, floorEndPosition.z]
-        ];
-      }
-      const doorWallByPosition = getWallDoorExtensionsByPosition(walls);
-
-      const preparedPath = path
-        .map(point => new Vector3(point[0], floorIndex, point[1]))
-        .slice(0, path.length - (isBlocked ? 1 : 0));
-
-      if (preparedPath.length) {
-        paths.push({ path: preparedPath, doorWallByPosition });
-      }
-      startPosition = nextStartPosition;
+    /**
+     * Spezialfall: Start- und Endpunkt sind gleich, keine Bewegung notwendig.
+     */
+    if (isFailed) {
+      return [];
     }
 
     this.createPathHelper(
@@ -288,18 +215,6 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         .flat()
     );
 
-    /**
-     * Spezialfall: Start- und Endpunkt sind gleich, keine Bewegung notwendig.
-     */
-    if (
-      paths.length === 1 &&
-      paths[0]!.path.length === 1 &&
-      paths[0]!.path[0]?.equals(startPosition)
-    ) {
-      return [];
-    }
-
-    console.log('All paths:', JSON.parse(JSON.stringify(paths)));
     return paths;
   }
 
@@ -332,7 +247,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
     const room = this.unit.modules.room?.getRoom();
     if (room) {
-      room.mesh.add(instancedMesh);
+      room.addToRoot(instancedMesh);
     }
   }
   lastRotation: Euler | null = null;
@@ -468,7 +383,6 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
           )
         ) {
           // Wenn Tür verschlossen oder nicht geöffnet werden kann, Abbruch der Bewegung
-          debugger;
           moveOptions.nextPosition = null;
         }
         return;
@@ -615,80 +529,9 @@ function createRoomGrid(unit: Unit) {
       )
       .forEach(p => {
         grid.set(p.x, p.y, p.z, 1);
+        grid.set(p.x, p.y + 1, p.z, 1);
       });
   });
 
   return grid;
 }
-
-// function createRoomGrid(unit: Unit, heightMultiplicator = 4) {
-//   const room = unit.modules.room?.getRoom();
-
-//   if (!room) {
-//     throw new Error('Unit is not in a room, cannot create grid data');
-//   }
-
-//   let data: number[] = room.modules.ground.getGrid();
-
-//   const unitY = unit.getPosition().y;
-
-//   data = data.map(v => {
-//     if (
-//       unitY > 0 &&
-//       unitY * heightMultiplicator >= 1 &&
-//       unitY * heightMultiplicator >= -1
-//     ) {
-//       return unitY * heightMultiplicator > 1 ? 0 : 1;
-//     }
-//     return v;
-//   });
-
-//   room.modules.units
-//     .getUnits()
-//     .reduce(
-//       (result, unit_) => {
-//         const unitPosition = unit_.getPosition();
-//         const y_diff = unitPosition.y + unit_.size.y - unit.getPosition().y;
-
-//         if (!unit_.accessible) {
-//           result.push({ unit: unit_, value: 0 });
-//         } else if (
-//           unit_.accessible &&
-//           y_diff * heightMultiplicator > 1 &&
-//           y_diff * heightMultiplicator > -1
-//         ) {
-//           result.push({ unit: unit_, value: 0 });
-//         } else if (
-//           unit_.accessible &&
-//           y_diff * heightMultiplicator <= 1 &&
-//           y_diff * heightMultiplicator >= -1
-//         ) {
-//           result.push({ unit: unit_, value: 1 });
-//         }
-//         return result;
-//       },
-//       [] as { unit: Unit; value: number }[]
-//     )
-//     .forEach(({ unit: otherUnit, value }) => {
-//       if (unit.id !== otherUnit.id) {
-//         otherUnit
-//           .getMatrixPositions()
-//           .filter(
-//             p =>
-//               p.x >= 0 &&
-//               p.x < room.gridSize.x &&
-//               p.z >= 0 &&
-//               p.z < room.gridSize.y
-//           )
-//           .forEach(p => {
-//             data[p.z * room.gridSize.x + p.x] = value;
-//           });
-//       }
-//     });
-//   // console.log('Grid data for pathfinding:', grid.toMatrix());
-
-//   return RoomGrid.fromData(
-//     data.map(value => (value ? 0 : 1)),
-//     room.gridSize.x
-//   );
-// }

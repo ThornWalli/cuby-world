@@ -16,21 +16,27 @@ import { loadGroundGeometries } from '../lib/utils/ground';
 import Ground from '../lib/classes/Ground';
 import {
   default_mesh as groundGlb,
-  groundTextureMap
+  groundTextureMap,
+  skins
 } from '@cuby-world/grounds';
+import type { GroundSkinIdentifier } from '../lib/types/ground/skins';
 
-export async function setupGround({
-  assetLoader
-}: {
-  assetLoader: AssetLoader;
-}) {
+export async function setupGround(
+  skinId: GroundSkinIdentifier,
+  assetLoader: AssetLoader,
+  { scale }: { scale?: number }
+) {
   const geometryMap = await loadGroundGeometries(assetLoader, groundGlb);
 
+  const { color, opacity, texture } = skins.get(skinId)?.skin || {};
   const groundTile = new Ground({
     position: new Vector3(0, 0, 0),
-    texture: groundTextureMap.get('wood_laminate_1')
+    color,
+    opacity,
+    texture
   });
   const geometry = groundTile.createGeometry(geometryMap);
+  geometry.scale(scale ?? 1, 1, scale ?? 1);
   const material = await groundTile.createMaterial({
     assetLoader,
     textureMap: groundTextureMap

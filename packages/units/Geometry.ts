@@ -87,7 +87,7 @@ export default class Geometry extends Unit<GeometryOptions> {
       material = defaultMaterial();
     }
 
-    const size = this.size;
+    const size = this.getSize();
     const geometry = getGeometryByType(this.options.type, size);
 
     const mesh: Object3D = new Mesh(geometry, material);

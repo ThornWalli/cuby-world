@@ -1,7 +1,7 @@
 <template>
   <base-button class="cw-button-wall-view-toggle" aria-label="Wall View Toggle">
     <div>
-      <transition mode="out-in">
+      <transition name="fade">
         <svg-icon-wall-small
           v-if="viewMode === WALL_VIEW_MODE.SMALL"></svg-icon-wall-small>
         <svg-icon-wall-dynamic
@@ -29,6 +29,22 @@ defineProps<{
 
 <style lang="postcss" scoped>
 .cw-button-wall-view-toggle {
+  padding: var(--cw-spacing-small);
+  cursor: pointer;
+  border-radius: var(--cw-border-radius-medium);
+  transition: background-color var(--cw-easing-duration-short)
+    var(--cw-easing-base);
+
+  &:hover {
+    background-color: var(--color-blue-7);
+  }
+
+  @media (hover: none) {
+    &:active {
+      background-color: var(--color-blue-7);
+    }
+  }
+
   & > div {
     position: relative;
     width: 64px;
@@ -48,5 +64,15 @@ defineProps<{
       left: 0;
     }
   }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--cw-easing-duration-short) var(--cw-easing-base);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

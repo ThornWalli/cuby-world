@@ -41,7 +41,10 @@ interface RendererModules {
 
 interface Passes {
   renderPixelated: RenderPixelatedPass;
-  outline: OutlinePass;
+  defaultOutline: OutlinePass;
+  errorOutline: OutlinePass;
+  addOutline: OutlinePass;
+  removeOutline: OutlinePass;
   output: OutputPass;
 }
 
@@ -80,7 +83,7 @@ export default class Renderer<
   pixelated: boolean;
 
   modules: Modules;
-  passes!: Passes;
+  private passes!: Passes;
 
   lights!: {
     ambient: AmbientLight;
@@ -256,8 +259,30 @@ export default class Renderer<
     const renderPass = new RenderPass(this.scene, this.camera);
     composer.addPass(renderPass);
 
-    passes.outline = getOutlinePass(this.dimension, this.scene, this.camera);
-    composer.addPass(passes.outline);
+    passes.defaultOutline = getOutlinePass(0xffffff, {
+      dimension: this.dimension,
+      scene: this.scene,
+      camera: this.camera
+    });
+    composer.addPass(passes.defaultOutline);
+    passes.errorOutline = getOutlinePass(0xff0000, {
+      dimension: this.dimension,
+      scene: this.scene,
+      camera: this.camera
+    });
+    composer.addPass(passes.errorOutline);
+    passes.addOutline = getOutlinePass(0x00ff00, {
+      dimension: this.dimension,
+      scene: this.scene,
+      camera: this.camera
+    });
+    composer.addPass(passes.addOutline);
+    passes.removeOutline = getOutlinePass(0xff0000, {
+      dimension: this.dimension,
+      scene: this.scene,
+      camera: this.camera
+    });
+    composer.addPass(passes.removeOutline);
 
     passes.output = getOutputPass();
     composer.addPass(passes.output);
@@ -396,17 +421,75 @@ export default class Renderer<
     this.lights = { ambient, hemiLight, dirLight };
   }
 
-  setSelectedObjects(objects: Array<Object3D>) {
-    if (this.passes.outline) {
-      this.passes.outline.selectedObjects = objects;
+  registerOutlineObject(
+    object: Object3D,
+    type: OUTLINE_TYPE = OUTLINE_TYPE.DEFAULT
+  ) {
+    const selectedObjects = this.getOutlineObjects(type);
+    if (selectedObjects) {
+      if (!selectedObjects.includes(object)) {
+        this.unregisterAllOutlinesObject(object);
+        console.log('register outline object', object);
+        selectedObjects.push(object);
+      }
+    }
+  }
+
+  unregisterOutlineObject(
+    object: Object3D,
+    type: OUTLINE_TYPE = OUTLINE_TYPE.DEFAULT
+  ) {
+    const selectedObjects = this.getOutlineObjects(type);
+    if (selectedObjects) {
+      const index = selectedObjects.indexOf(object);
+      if (index !== -1) {
+        selectedObjects.splice(index, 1);
+      }
+    }
+  }
+
+  unregisterAllOutlinesObject(object: Object3D) {
+    this.passes.defaultOutline.selectedObjects.splice(
+      this.passes.defaultOutline.selectedObjects.indexOf(object),
+      1
+    );
+    this.passes.errorOutline.selectedObjects.splice(
+      this.passes.errorOutline.selectedObjects.indexOf(object),
+      1
+    );
+  }
+
+  getOutlineObjects(type: OUTLINE_TYPE = OUTLINE_TYPE.DEFAULT) {
+    if (type === OUTLINE_TYPE.DEFAULT) {
+      return this.passes.defaultOutline.selectedObjects;
+    } else if (type === OUTLINE_TYPE.ERROR) {
+      return this.passes.errorOutline.selectedObjects;
+    } else if (type === OUTLINE_TYPE.ADD) {
+      return this.passes.addOutline.selectedObjects;
+    } else if (type === OUTLINE_TYPE.REMOVE) {
+      return this.passes.removeOutline.selectedObjects;
     }
   }
 }
 
+export enum OUTLINE_TYPE {
+  DEFAULT,
+  ERROR,
+  ADD,
+  REMOVE
+}
+
 function getOutlinePass(
-  dimension: Vector2,
-  scene: Scene,
-  camera: OrthographicCamera
+  color: string | number = 0xffffff,
+  {
+    dimension,
+    scene,
+    camera
+  }: {
+    dimension: Vector2;
+    scene: Scene;
+    camera: OrthographicCamera;
+  }
 ) {
   // Erstelle den OutlinePass
   const outlinePass = new OutlinePass(
@@ -417,7 +500,7 @@ function getOutlinePass(
   outlinePass.edgeGlow = 0; // Leuchteffekt
   outlinePass.edgeThickness = 1; // Dicke der Kontur
   outlinePass.edgeStrength = 4; // Stärke des Effekts
-  outlinePass.visibleEdgeColor.set(0xffffff); // Konturfarbe
+  outlinePass.visibleEdgeColor.set(color); // Konturfarbe
   outlinePass.hiddenEdgeColor.set(0x000000); // Farbe für verdeckte Kanten
 
   return outlinePass;

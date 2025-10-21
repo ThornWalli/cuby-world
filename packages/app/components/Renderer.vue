@@ -50,7 +50,7 @@ const canvasEl = ref();
 const subscription = new Subscription();
 
 const defaultRendererOptions: RendererOptions = {
-  pixelated: false,
+  pixelated: true,
   controls: true
 };
 
@@ -59,6 +59,7 @@ onMounted(async () => {
     rootEl.value.offsetWidth,
     rootEl.value.offsetHeight
   );
+
   const { pixelated, controls } = $props.options || defaultRendererOptions;
 
   renderer.value = markRaw(

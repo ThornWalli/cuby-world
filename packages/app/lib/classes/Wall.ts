@@ -41,16 +41,26 @@ import type { AnimationLoopSubject } from './Renderer';
 import assetLoader from '@cuby-world/app/services/assetLoader';
 import type { WallSkinIdentifier, WallSkins } from '../types/wall/skins';
 import { FLOOR_HEIGHT } from '../utils/ground';
-import { skins } from '@cuby-world/walls';
-import { OBJECT_USER_DATA } from '../utils/objectMeta';
 
-declare module '../utils/objectMeta' {
+import { OBJECT_USER_DATA, setMainObjectRecursive } from '../utils/object';
+import { OBJECT_NAME } from './Unit';
+import { skinMap } from '@cuby-world/walls/skins';
+
+declare module '../utils/object' {
   interface ObjectUserData {
     WALL: string;
   }
 }
 
 OBJECT_USER_DATA.WALL = 'wall';
+
+declare module '../../lib/classes/Unit' {
+  interface ObjectName {
+    WALL: string;
+  }
+}
+
+OBJECT_NAME.WALL = 'wall';
 
 enum MESH_WALL_NAME {
   SMALL_WALL = 'small_wall',
@@ -69,6 +79,7 @@ interface WallState {
   skins: WallSkins;
   windowType?: WALL_WINDOW_SIZE;
 }
+export type WallIdentifier = string;
 
 export type WallConstructorOptions = Omit<WallDescription, 'extensions'> & {
   extensions: [typeof WallExtension, WallExtensionState][];
@@ -94,16 +105,17 @@ export default class Wall {
     [WALL_SIZE.LARGE]?: Mesh;
   } = {};
 
-  private id = crypto.randomUUID();
+  id: WallIdentifier = crypto.randomUUID();
   private edges: WallEdge[] = [];
-  public root: Object3D = new Object3D();
-  public extensionRoot: Object3D = new Object3D();
+  public root: Object3D;
+  public extensionRoot: Object3D;
   private center: boolean;
 
-  wallGeometryMap: WallGeometryMap = new Map();
-  wallTextureMap: WallTextureMap = new Map();
+  private wallGeometryMap: WallGeometryMap = new Map();
+  private wallTextureMap: WallTextureMap = new Map();
 
-  tmpBox = new Box3();
+  private tmpBox = new Box3();
+  private size: WALL_SIZE = WALL_SIZE.LARGE;
 
   constructor(options: WallConstructorOptions) {
     const { skins: skins, direction, position, extensions } = options;
@@ -115,6 +127,9 @@ export default class Wall {
     this.extensions = extensions.map(
       ([ExtClass, state]) => new ExtClass({ wall: this, state })
     );
+
+    this.root = this.setupRoot();
+    this.extensionRoot = this.setupExtensionRoot();
   }
 
   destroy() {
@@ -127,7 +142,6 @@ export default class Wall {
       const mesh = this.getMesh();
       if (mesh) {
         this.refreshWallMeshes({
-          root: this.root!,
           wallGeometryMap: this.wallGeometryMap!,
           editMode
         });
@@ -147,10 +161,8 @@ export default class Wall {
   }) {
     this.wallGeometryMap = wallGeometryMap;
     this.wallTextureMap = wallTextureMap;
-    this.setupRoot();
 
     await this.refreshWallMeshes({
-      root: this.root,
       editMode: this.editMode,
       wallGeometryMap
     });
@@ -161,19 +173,8 @@ export default class Wall {
   }
 
   setupRoot() {
-    const root = this.root;
-    root.add(this.extensionRoot);
-
-    if (!this.center) {
-      if (this.direction === WALL_DIRECTION.VERTICAL) {
-        this.extensionRoot.position.x -= 0.5;
-      } else {
-        this.extensionRoot.rotation.y = Math.PI / 2;
-        this.extensionRoot.position.z -= 0.5;
-      }
-    }
-
-    root.userData[OBJECT_USER_DATA.WALL] = this;
+    const root = new Object3D();
+    root.name = OBJECT_NAME.WALL;
 
     root.position.copy(
       new Vector3(
@@ -182,6 +183,38 @@ export default class Wall {
         this.position.z
       )
     );
+
+    root.userData[OBJECT_USER_DATA.WALL] = this.id;
+
+    setMainObjectRecursive(root, root);
+
+    return root;
+  }
+
+  setupExtensionRoot() {
+    const extensionRoot = new Object3D();
+    extensionRoot.name = `WallExtensionRoot`;
+    this.addToRoot(extensionRoot);
+    setMainObjectRecursive(extensionRoot, extensionRoot);
+
+    if (!this.center) {
+      if (this.direction === WALL_DIRECTION.VERTICAL) {
+        extensionRoot.position.x -= 0.5;
+      } else {
+        extensionRoot.rotation.y = Math.PI / 2;
+        extensionRoot.position.z -= 0.5;
+      }
+    }
+    return extensionRoot;
+  }
+
+  addToRoot(object: Object3D) {
+    this.root.add(object);
+    setMainObjectRecursive(object, this.root);
+  }
+
+  addToExtensionRoot(object: Object3D) {
+    this.extensionRoot.add(object);
   }
 
   //#region extension
@@ -219,11 +252,15 @@ export default class Wall {
     );
 
     resolvedExts.forEach(ext => {
-      this.extensionRoot.add(ext.root);
+      this.addToExtensionRoot(ext.root);
     });
   }
 
-  getExtension<T extends WallExtension>(
+  getExtensionById<T extends WallExtension>(id: string) {
+    return this.extensions.find(ext => ext.id === id) as T | undefined;
+  }
+
+  getExtensionByType<T extends WallExtension>(
     type: WALL_EXTENSION_TYPE,
     onlyEnabled = false
   ) {
@@ -233,7 +270,7 @@ export default class Wall {
     ) as T | undefined;
   }
 
-  getExtensionByType<T extends WallExtension>(
+  getExtensionByTypes<T extends WallExtension>(
     types: WALL_EXTENSION_TYPE[],
     onlyEnabled = false
   ) {
@@ -249,7 +286,10 @@ export default class Wall {
   }
 
   getWindowSize() {
-    const windowExtension = this.getExtension(WALL_EXTENSION_TYPE.WINDOW, true);
+    const windowExtension = this.getExtensionByType(
+      WALL_EXTENSION_TYPE.WINDOW,
+      true
+    );
     return windowExtension?.state.size || WALL_WINDOW_SIZE.MEDIUM;
   }
 
@@ -288,20 +328,37 @@ export default class Wall {
     });
   }
 
-  show() {
-    if (!this.visible) {
+  setSize(size: WALL_SIZE) {
+    if (size === WALL_SIZE.LARGE) {
       this.toggleVisibility(true, this.wallMeshes[WALL_SIZE.LARGE]!);
       this.wallMeshes[WALL_SIZE.SMALL]!.visible = false;
-      this.visible = true;
-    }
-  }
-
-  hide() {
-    if (this.visible) {
+    } else {
       this.toggleVisibility(false, this.wallMeshes[WALL_SIZE.LARGE]!);
       this.wallMeshes[WALL_SIZE.SMALL]!.visible = true;
-      this.visible = false;
     }
+    this.size = size;
+  }
+
+  setVisible(visible: boolean) {
+    this.visible = visible;
+    // if (visible) {
+    //   this.wallMeshes[WALL_SIZE.LARGE]!.visible = this.size === WALL_SIZE.LARGE;
+    //   this.wallMeshes[WALL_SIZE.SMALL]!.visible = this.size === WALL_SIZE.SMALL;
+    // } else {
+    //   Object.values(this.wallMeshes).forEach(mesh => {
+    //     mesh.visible = false;
+    //   });
+    // }
+    // this.extensions.forEach(ext => ext.setVisible(visible));
+    this.root.visible = visible;
+  }
+
+  getTmpBox() {
+    return this.tmpBox;
+  }
+
+  getSize() {
+    return this.size;
   }
 
   update(wallDescriptions: WallDescription[]) {
@@ -311,13 +368,14 @@ export default class Wall {
 
   getMesh() {
     return this.root?.getObjectByName(
-      this.visible ? MESH_WALL_NAME.LARGE_WALL : MESH_WALL_NAME.SMALL_WALL
+      this.size === WALL_SIZE.LARGE
+        ? MESH_WALL_NAME.LARGE_WALL
+        : MESH_WALL_NAME.SMALL_WALL
     ) as Mesh;
   }
 
   async refresh() {
     await this.refreshWallMeshes({
-      root: this.root!,
       editMode: this.editMode,
       wallGeometryMap: this.wallGeometryMap!
     });
@@ -325,15 +383,12 @@ export default class Wall {
 
   async refreshWallMeshes(
     {
-      root,
       editMode,
       wallGeometryMap
     }: {
-      root: Object3D;
       editMode: boolean;
       wallGeometryMap: WallGeometryMap;
     } = {
-      root: this.root!,
       editMode: this.editMode,
       wallGeometryMap: this.wallGeometryMap!
     }
@@ -347,34 +402,44 @@ export default class Wall {
         (obj.material as Material).dispose?.();
       }
     });
+    const wireframe = false;
     const materials = [
       new MeshPhongMaterial({
+        wireframe,
         transparent: true,
         color:
-          skins.get(this.state.skins[0] || 'default')?.options.color || 0x333333
+          skinMap.get(this.state.skins[0] || 'default')?.options.color ||
+          0x333333
       }), // Front
       new MeshPhongMaterial({
+        wireframe,
         transparent: true,
         color:
-          skins.get(this.state.skins[1] || 'default')?.options.color || 0x333333
+          skinMap.get(this.state.skins[1] || 'default')?.options.color ||
+          0x333333
       }), // Back
       new MeshPhongMaterial({
+        wireframe,
         transparent: true,
         color: 0x333333
       }),
       new MeshPhongMaterial({
+        wireframe,
         transparent: true,
         color: 0x333333
       }),
       new MeshPhongMaterial({
+        wireframe,
         transparent: true,
         color: 0x333333
       }),
       new MeshPhongMaterial({
+        wireframe,
         transparent: true,
         color: 0x333333
       }),
       new MeshPhongMaterial({
+        wireframe,
         transparent: true,
         color: 0x333333
       })
@@ -398,11 +463,10 @@ export default class Wall {
         }
       );
       largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-      largeWall.userData[OBJECT_USER_DATA.WALL] = this;
-      largeWall.userData[OBJECT_USER_DATA.IGNORE_SELECT] = this;
+      largeWall.visible = this.size === WALL_SIZE.LARGE;
 
       this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
-      root.add(largeWall);
+      this.addToRoot(largeWall);
     } else {
       const { geometry } = createWallGeometry(
         this.direction,
@@ -437,12 +501,10 @@ export default class Wall {
         }
       );
       smallWall.name = MESH_WALL_NAME.SMALL_WALL;
-      smallWall.visible = !this.visible;
-      smallWall.userData[OBJECT_USER_DATA.WALL] = this;
-      smallWall.userData[OBJECT_USER_DATA.IGNORE_SELECT] = this;
+      smallWall.visible = this.size === WALL_SIZE.SMALL;
 
       this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
-      root.add(smallWall);
+      this.addToRoot(smallWall);
     } else {
       const { geometry } = createWallGeometry(
         this.direction,
@@ -463,7 +525,7 @@ export default class Wall {
       await Promise.all(
         this.state.skins.map(async (style, index: number) => {
           let url: string | undefined = undefined;
-          const texture = skins.get(style || 'default')?.options.texture;
+          const texture = skinMap.get(style || 'default')?.options.texture;
           if (texture && 'id' in texture) {
             if (this.wallTextureMap.has(texture.id)) {
               url = this.wallTextureMap.get(texture.id)?.url;

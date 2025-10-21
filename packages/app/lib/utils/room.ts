@@ -25,7 +25,7 @@ export function getYPositionByPosition(
   const topUnit = sortedUnits[sortedUnits.length - 1];
   let y = 0;
   if (topUnit) {
-    y = topUnit.getPosition().y + topUnit.size.y || 0;
+    y = topUnit.getPosition().y + topUnit.getSize().y || 0;
   }
   return y;
 }

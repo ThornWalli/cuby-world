@@ -97,6 +97,8 @@ function onChange(e: Event) {
     width: var(--indicator-width);
     pointer-events: none;
     background-color: var(--indicator-background-unchecked);
+    transition: background-color var(--cw-easing-duration-short)
+      var(--cw-easing-base);
 
     & svg {
       position: absolute;

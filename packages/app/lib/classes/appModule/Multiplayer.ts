@@ -172,10 +172,7 @@ export default class MultiplayerAppModule extends AppModule<
       console.log('Received moveTo from', peerId, data);
       if (player && player.unit) {
         player.unit.modules.movement.moveTo(
-          new Vector3().fromArray(data.position),
-          {
-            force: true
-          }
+          new Vector3().fromArray(data.position)
         );
       }
     });

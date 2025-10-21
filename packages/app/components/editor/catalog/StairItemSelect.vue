@@ -1,38 +1,34 @@
 <template>
-  <div class="cw-panel-catalog-stair-item-select">
-    <slot name="before"></slot>
-    <div class="items">
-      <base-button
-        v-for="{ item, preview } in items"
-        :key="item.id"
-        :class="{ selected: modelValue === item.id }"
-        @click="onClickItem(item.id)">
-        <div>
-          <cw-object-preview-stair
-            class="image"
-            :app="app"
-            :ratio="1"
-            :model-value="preview"
-            hydrate-when-visible />
-        </div>
-        <span>{{ item.name }}</span>
-      </base-button>
-    </div>
-  </div>
+  <cw-editor-catalog-item-select
+    :model-value="modelValue"
+    :items="items"
+    class="cw-panel-catalog-stair-item-select"
+    @update:model-value="onUpdateModelValue">
+    <template #before><slot name="before"></slot></template>
+    <template #preview="{ preview }">
+      <cw-object-preview-stair
+        :app="app"
+        :ratio="1"
+        :model-value="preparedPreview(preview)"
+        hydrate-when-visible />
+    </template>
+  </cw-editor-catalog-item-select>
 </template>
 
 <script lang="ts" setup generic="Item extends CatalogItem">
-import BaseButton from '../../base/Button.vue';
-
+import CwEditorCatalogItemSelect, {
+  type BaseSelectItem
+} from './ItemSelect.vue';
 import CwObjectPreviewStair from '../../objectPreview/Stair.vue';
 
 import type App from '../../../lib/classes/App';
 import type { CatalogItem } from '../../../lib/types/catalog';
 import type { StairPreview } from '../../objectPreview/Stair.vue';
+import type { ObjectPreview } from '../../ObjectPreview.vue';
 
 const $props = defineProps<{
   app: App;
-  items: StairItem<Item>[];
+  items: StairSelectItem<Item>[];
   modelValue: Item['id'] | null;
 }>();
 
@@ -40,13 +36,18 @@ const $emit = defineEmits<{
   (e: 'update:model-value', value: Item['id'] | null): void;
 }>();
 
-function onClickItem(id: Item['id']) {
+function onUpdateModelValue(id: Item['id'] | null) {
   $emit('update:model-value', id === $props.modelValue ? null : id);
+}
+
+function preparedPreview(preview: ObjectPreview) {
+  return preview as StairPreview;
 }
 </script>
 
 <script lang="ts">
-export interface StairItem<Item extends CatalogItem> {
+export interface StairSelectItem<Item extends CatalogItem>
+  extends BaseSelectItem {
   item: Item;
   preview: StairPreview;
 }
@@ -67,9 +68,13 @@ export interface StairItem<Item extends CatalogItem> {
     font-weight: bold;
     text-align: center;
   }
+
+  &.cw-editor-catalog-item-select {
+    --preview-width: 128px;
+  }
 }
 
-.items {
+/* .items {
   display: grid;
   grid-template-rows: repeat(1, 1fr);
   grid-auto-flow: column;
@@ -92,6 +97,12 @@ export interface StairItem<Item extends CatalogItem> {
     background-color: rgb(255 255 255 / 40%);
     border: none;
     border-radius: 12px;
+    transition: background-color var(--cw-easing-duration-short)
+      var(--cw-easing-base);
+
+    &:hover {
+      background-color: white;
+    }
 
     & > div {
       display: flex;
@@ -113,5 +124,5 @@ export interface StairItem<Item extends CatalogItem> {
       min-width: 96px;
     }
   }
-}
+} */
 </style>

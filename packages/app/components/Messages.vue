@@ -47,7 +47,7 @@ function onMessage(message: Message) {
 
   const unitPosition = player.unit?.getPosition();
   const position = unitPosition.clone();
-  position.y += Math.max(player.unit.size.y, 1) + 0.2;
+  position.y += Math.max(player.unit.getSize().y, 1) + 0.2;
 
   const groupId = getGroupKey(position);
   let group: MessageGroup | undefined = getGroupById(groupId);
@@ -101,15 +101,14 @@ onUnmounted(() => {
   subscription.unsubscribe();
 });
 
+const frustum = new Frustum();
+const matrix = new Matrix4();
 function onUpdateMessagePositions() {
   const camera = $props.app.renderer.camera;
 
-  const frustum = new Frustum();
-  const matrix = new Matrix4().multiplyMatrices(
-    camera.projectionMatrix,
-    camera.matrixWorldInverse
+  frustum.setFromProjectionMatrix(
+    matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
   );
-  frustum.setFromProjectionMatrix(matrix);
 
   messageGroups.value.forEach(messageGroup => {
     const position = messageGroup.position.clone();

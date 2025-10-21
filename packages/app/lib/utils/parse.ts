@@ -3,7 +3,7 @@ import { Vector2, Vector3 } from 'three';
 import type {
   JsonRoomDescription,
   RoomDescription
-} from '@cuby-world/app/lib/classes/RoomDescription';
+} from '@cuby-world/app/lib/types/room';
 import type { ROTATION } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,13 +42,12 @@ export function parseRoomDescription(
     gridSize: Array.isArray(room.gridSize)
       ? new Vector2().fromArray(room.gridSize)
       : room.gridSize,
-    start: {
-      ...room.start,
-      position: Array.isArray(room.start.position)
-        ? new Vector3().fromArray(room.start.position)
-        : room.start.position,
-      rotation: room.start.rotation as ROTATION
-    },
+    teleports: room.teleports.map(teleport => ({
+      ...teleport,
+      position: Array.isArray(teleport.position)
+        ? new Vector3().fromArray(teleport.position)
+        : teleport.position
+    })),
     walls: (room.walls ?? []).map(wall => ({
       ...wall,
       position: Array.isArray(wall.position)

@@ -1,7 +1,7 @@
-import type { Observable } from 'rxjs';
+/* eslint-disable complexity */
+import { Subject, type Observable } from 'rxjs';
 import {
   concatMap,
-  filter,
   from,
   ReplaySubject,
   Subscription,
@@ -20,16 +20,19 @@ import {
   preparePosition,
   type PreparedPosition
 } from '../../utils/matrix';
-import { Vector3 } from 'three';
+import { Vector3, type Object3D } from 'three';
 import { getYPositionByPosition } from '../../utils/room';
 import type Player from '../Player';
 
 import allUnits from '@cuby-world/units';
-import type { RoomDescription } from '../RoomDescription';
-import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
+import { TELEPORT_TYPE, type RoomDescription } from '../../types/room';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
+import { OBJECT_NAME } from '../Unit';
 
 interface Observables extends AppModuleObservables {
   room$: Observable<Room | undefined>;
+  select$: Subject<{ preparedPositions: PreparedPosition[]; abort: boolean }>;
+  hover$: Subject<PreparedPosition[]>;
 }
 
 interface State extends AppModuleState {
@@ -50,6 +53,11 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     super(app);
     //#region observables
     this.observables.room$ = this.roomSubject.pipe();
+    this.observables.select$ = new Subject<{
+      preparedPositions: PreparedPosition[];
+      abort: boolean;
+    }>();
+    this.observables.hover$ = new Subject<PreparedPosition[]>();
     //#endregion
   }
 
@@ -99,7 +107,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     //#endregion
 
     await room.modules.units.setupUnits(units);
-    room.mesh.name = roomDescription.info.name;
+    room.root.name = roomDescription.info.name;
     return room;
   }
 
@@ -110,12 +118,18 @@ export default class RoomAppModule extends AppModule<State, Observables> {
   async addPlayerUnit(player: Player) {
     // const { unitFocus: unitFocusModule } = this.app.modules!;
     const room = this.getRoom()!;
+    const teleport = room.modules.teleport.getTeleportsByType(
+      TELEPORT_TYPE.ENTRANCE
+    )[0];
+    if (!teleport) {
+      throw new Error('No entrance teleport found in the room');
+    }
     const cuby = new Cuby({
       options: {
         color: player.state.color
       },
-      position: room.description!.start!.position.clone(),
-      rotation: room.description!.start!.rotation
+      position: teleport.position.clone(),
+      rotation: teleport.rotation
     });
 
     player.setUnit(cuby);
@@ -146,25 +160,23 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       this.roomSubscription.unsubscribe();
       const lastRoom = roomModule.getRoom();
       if (lastRoom) {
-        renderer.scene.remove(lastRoom.mesh);
+        renderer.scene.remove(lastRoom.root);
       }
       lastRoom?.destroy();
       roomModule.setRoom(undefined);
     }
 
     roomModule.setRoom(room);
-    renderer.scene.add(room.mesh);
+    renderer.scene.add(room.root);
 
     this.roomSubscription = this.registerRoomSubscriptions(app);
 
-    if (playerModule && room.description?.start) {
-      playerModule.observables.addPlayer$.subscribe(player => {
-        this.addPlayerUnit(player);
-      });
-      playerModule.getPlayers().forEach(player => {
-        this.addPlayerUnit(player);
-      });
-    }
+    playerModule.observables.addPlayer$.subscribe(player => {
+      this.addPlayerUnit(player);
+    });
+    playerModule.getPlayers().forEach(player => {
+      this.addPlayerUnit(player);
+    });
 
     this.subscription.add(
       renderer.observables.animationLoop$
@@ -241,6 +253,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     Object.values(app.modules).some((module: AppModule) => {
       return module.onSceneHover({ preparedPositions, player });
     });
+    this.observables.hover$.next(preparedPositions);
   }
 
   subscribePlacement() {
@@ -302,16 +315,12 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       // subscription.add(this.subscribeGroundSelection());
 
       const { hoverIntersect$, clickIntersects$ } =
-        renderer.modules.intersection.register(room.mesh);
+        renderer.modules.intersection.register(room.root);
       subscription.add(
         hoverIntersect$
           .pipe(
             concatMap(interactions => {
-              return from(interactions).pipe(
-                filter(Boolean),
-                preparePosition(),
-                toArray()
-              );
+              return from(interactions).pipe(preparePosition(), toArray());
             })
           )
           .subscribe(this.onHover.bind(this))
@@ -323,9 +332,11 @@ export default class RoomAppModule extends AppModule<State, Observables> {
               return from(
                 interactions.filter(interaction => {
                   return (
-                    !interaction.object.userData[
+                    (!interaction.object.userData[
                       OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
-                    ] && interaction.object?.parent?.name === 'ground'
+                    ] &&
+                      interaction.object.name === OBJECT_NAME.GROUND) ||
+                    interaction.object.name !== OBJECT_NAME.GROUND
                   );
                 })
               ).pipe(preparePosition(), toArray());
@@ -348,17 +359,32 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       throw new Error('No player available');
     }
     if (preparedPositions.length > 0) {
-      const { unit, worldPosition } = preparedPositions[0]!;
+      const { unit, worldPosition, object } = preparedPositions[0]!;
 
       const abort = Object.values(app.modules).some((module: AppModule) => {
         return module.onSceneSelect({ preparedPositions, player });
       });
 
+      this.observables.select$.next({
+        preparedPositions,
+        abort
+      });
+
       if (abort) {
         return;
       }
+      if (object && isStair(object)) {
+        const stair = getStairFromObject(app, object);
+        if (stair) {
+          console.log(stair?.getEntryPositions());
+          const position = Object.values(stair?.getEntryPositions()).find(
+            pos => pos.y !== player.unit?.getPosition().y
+          );
+          player.moveTo(position!);
+        }
 
-      if (app.modules.placement.hasPlace()) {
+        // alert('test');
+      } else if (app.modules.placement.hasPlace()) {
         // placing mode
         app.modules.placement.stopPlace();
         app.modules.selection.setSelectedUnit(null);
@@ -378,4 +404,14 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       console.log('No intersected object');
     }
   }
+}
+
+function isStair(object: Object3D): boolean {
+  return !!object.userData[OBJECT_NAME.STAIR];
+}
+
+function getStairFromObject(app: App, object: Object3D) {
+  return app.modules.room
+    .getRoom()
+    ?.modules.stair.getStairById(object.userData[OBJECT_NAME.STAIR]);
 }

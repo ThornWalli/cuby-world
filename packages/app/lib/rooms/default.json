@@ -17,11 +17,26 @@
       "value": [
         0,
         0,
-        2
+        0
       ]
     },
     "rotation": "east"
   },
+  "teleports": [
+    {
+      "id": "default",
+      "type": "entrance",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          0,
+          0,
+          0
+        ]
+      },
+      "rotation": "east"
+    }
+  ],
   "walls": [
     {
       "direction": "horizontal",
@@ -285,13 +300,6 @@
             "skin": "default",
             "size": "medium"
           }
-        },
-        {
-          "key": "window_standard",
-          "state": {
-            "skin": "default",
-            "size": "medium"
-          }
         }
       ]
     },
@@ -645,13 +653,6 @@
             "skin": "default",
             "size": "large"
           }
-        },
-        {
-          "key": "window_standard",
-          "state": {
-            "skin": "default",
-            "size": "large"
-          }
         }
       ]
     },
@@ -668,6 +669,1167 @@
       "skins": [
         "default_color_light_teal",
         "default_texture_brick_1"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          5
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          3
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          2
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          1,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          1,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          1,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          1,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          1,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          1,
+          2
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          1,
+          3
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          1,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          1,
+          5
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          1,
+          6
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          1,
+          7
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          1,
+          8
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          1,
+          1,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          2,
+          1,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          3,
+          1,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          1,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          1,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          1,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          1,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          6
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          1,
+          1,
+          7
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          2,
+          1,
+          7
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          3,
+          1,
+          7
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          1,
+          1,
+          7
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          1,
+          1,
+          8
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          1,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          1,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          1,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          1,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          1,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          3,
+          2,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          2,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          2,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          2,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          2,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          2,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          3,
+          2,
+          2
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": [
+        {
+          "key": "window_standard",
+          "state": {
+            "skin": "default",
+            "size": "large"
+          }
+        }
+      ]
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          3,
+          2,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          3,
+          2,
+          3
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          3,
+          2,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          2,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          2,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          2,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          2,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": [
+        {
+          "key": "door_standard",
+          "state": {
+            "hasDoor": false,
+            "skin": "default",
+            "opened": false
+          }
+        },
+        {
+          "key": "door_standard",
+          "state": {
+            "hasDoor": false,
+            "skin": "default",
+            "opened": false
+          }
+        }
+      ]
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          2,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          2,
+          3
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          2,
+          2
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          2,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          2,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          2,
+          5
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": [
+        {
+          "key": "window_standard",
+          "state": {
+            "skin": "default",
+            "size": "large"
+          }
+        }
+      ]
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          2,
+          6
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          2,
+          7
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": [
+        {
+          "key": "window_standard",
+          "state": {
+            "skin": "default",
+            "size": "large"
+          }
+        }
+      ]
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          2,
+          8
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          2,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          2,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          2,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          2,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          2,
+          9
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          2,
+          8
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          2,
+          7
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          2,
+          6
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          2,
+          5
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          9,
+          2,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
       ],
       "extensions": []
     }
@@ -1588,6 +2750,78 @@
         {
           "type": "Vector3",
           "value": [
+            1,
+            1,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            1,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            1,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            1,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            1,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            1,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
             4,
             1,
             4
@@ -1599,6 +2833,46 @@
             4,
             1,
             6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            1,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            1,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            1,
+            3
           ]
         },
         {
@@ -1624,18 +2898,29 @@
             1,
             6
           ]
-        }
-      ]
-    },
-    {
-      "id": "default_color_red",
-      "positions": [
+        },
         {
           "type": "Vector3",
           "value": [
             5,
             1,
-            2
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            1,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            1,
+            1
           ]
         },
         {
@@ -1649,9 +2934,113 @@
         {
           "type": "Vector3",
           "value": [
+            6,
+            1,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            1,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            1,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            1,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            1,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            1,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
             7,
             1,
             2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            1,
+            8
           ]
         },
         {
@@ -1669,13 +3058,390 @@
             1,
             2
           ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            1,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            2,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            2,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            2,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            2,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            2,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            2,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            2,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            2,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            2,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            2,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            2,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            2,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            2,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            2,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            2,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            2,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            2,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            2,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            2,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            2,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            2,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            2,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            2,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            2,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            2,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            2,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            2,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            2,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            2,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            2,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            2,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            2,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            2,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            2,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            2,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            2,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            2,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            2,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            2,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            2,
+            8
+          ]
         }
       ]
     }
   ],
   "stairs": [
     {
-      "skin": "default_1x3_base",
+      "type": "default_3x1",
+      "skin": "default",
       "position": {
         "type": "Vector3",
         "value": [
@@ -1687,7 +3453,20 @@
       "rotation": "west"
     },
     {
-      "skin": "default_1x1_base",
+      "type": "default_3x1",
+      "skin": "default",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          1,
+          2
+        ]
+      },
+      "rotation": "east"
+    },
+    {
+      "skin": "default_1x1",
       "position": {
         "type": "Vector3",
         "value": [
@@ -1696,7 +3475,7 @@
           5
         ]
       },
-      "rotation": "west"
+      "rotation": "east"
     }
   ]
 }

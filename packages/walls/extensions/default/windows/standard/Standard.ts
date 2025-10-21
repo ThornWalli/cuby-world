@@ -1,4 +1,4 @@
-import { Mesh, Object3D } from 'three';
+import { DoubleSide, Mesh, MeshPhongMaterial, Object3D } from 'three';
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import WindowWallExtension, {
   type WindowState
@@ -10,18 +10,35 @@ import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 import glbBase from './assets/window.glb?url';
 import type { AnimationLoopSubject } from '@cuby-world/app/lib/classes/Renderer';
 import assetLoader from '@cuby-world/app/services/assetLoader';
+import {
+  MATERIAL_NAME,
+  replaceMaterialByName
+} from '@cuby-world/app/lib/utils/material';
 
-export default class Standard extends WindowWallExtension {
+interface StandardState extends WindowState {
+  color: string | number;
+}
+
+export default class Standard extends WindowWallExtension<StandardState> {
   static override KEY = 'window_standard';
 
   override async setup(context: {
     animationLoop$: AnimationLoopSubject;
   }): Promise<void> {
-    super.setup(context);
+    await super.setup(context);
 
     const { object } = await loadGltf(this.wall, this.state, assetLoader);
 
-    this.root.add(object);
+    replaceMaterialByName(
+      object,
+      MATERIAL_NAME.BASE,
+      new MeshPhongMaterial({
+        color: this.state.color || 0xffffff,
+        side: DoubleSide
+      })
+    );
+
+    this.addToRoot(object);
   }
 }
 

@@ -1,284 +1,68 @@
-import type {
-  AppModuleObservables,
-  AppModuleState,
-  SceneSelectContext
-} from '../../AppModule';
-import type { FACE_INDEX } from '@cuby-world/app/lib/types/wall';
-import type Wall from '../../Wall';
+import type { AppModuleObservables, AppModuleState } from '../../AppModule';
 import AppModule from '../../AppModule';
 import { STAIR_ACTION } from '@cuby-world/app/lib/types/editor';
-import { Subscription } from 'rxjs';
-import type { Vector3 } from 'three';
-
+import { ReplaySubject, Subscription } from 'rxjs';
 import type App from '../../App';
-import type GroundStyleMap from '../../GroundStyleMap';
-import type { GrountStyleIdentifier } from '@cuby-world/app/lib/types/ground';
 import type { StairAction } from '@cuby-world/app/components/editor/panel/StairActions.vue';
-import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
+import type AppModuleController from '../../AppModuleController';
+import PlannerController from './stair/PlannerController';
 
 interface Observables extends AppModuleObservables {
-  select$: unknown;
+  currentController$: ReplaySubject<AppModuleController | null>;
 }
 
 interface State extends AppModuleState {
   action: StairAction;
-  skinId: StairSkinIdentifier;
-  selection?: {
-    faceIndex: FACE_INDEX;
-    wall: Wall | null;
-  };
 }
 export default class EditorStairModule extends AppModule<State, Observables> {
   static override TYPE = 'editorStair';
+
+  currentController: AppModuleController | null = null;
 
   interactionSubscription = new Subscription();
 
   state: State = {
     action: {
       primary: STAIR_ACTION.NONE
-    },
-    skinId: 'default_base'
+    }
   };
 
   constructor(app: App) {
     super(app);
     //#region observables
-    this.observables.select$ =
-      this.app.renderer.observables.pointerDown$.pipe();
+    this.observables.currentController$ =
+      new ReplaySubject<AppModuleController | null>(0);
     //#endregion
   }
 
-  private async onClick(_position: Vector3) {
-    // console.log(this.state.action);
-    // if (this.state.action.secondary === GROUND_ACTION.REMOVE_SINGLE_SET) {
-    //   const room = this.app.modules.room.getRoom()!;
-    //   const groundModule = room.modules.ground;
-    //   const groundStyleMap = groundModule.getGroundStyleMap();
-    //   console.log('REMOVE_SINGLE_SET', position);
-    //   groundStyleMap.set(position.x, position.y, position.z);
-    //   this.lastGroundData = [];
-    //   groundModule.refreshGround(room.modules.floor.getFloor());
-    // } else if (
-    //   this.state.action.secondary === GROUND_ACTION.REMOVE_MULTIPLE_SET
-    // ) {
-    //   if (!this.multipleSet?.startPosition) {
-    //     this.multipleSet = { startPosition: position.clone() };
-    //   } else {
-    //     const room = this.app.modules.room.getRoom()!;
-    //     const groundModule = room.modules.ground;
-    //     const groundStyleMap = groundModule.getGroundStyleMap();
-    //     const startX = Math.min(this.multipleSet.startPosition.x, position.x);
-    //     const endX = Math.max(this.multipleSet.startPosition.x, position.x);
-    //     const startZ = Math.min(this.multipleSet.startPosition.z, position.z);
-    //     const endZ = Math.max(this.multipleSet.startPosition.z, position.z);
-    //     for (let x = startX; x <= endX; x++) {
-    //       for (let z = startZ; z <= endZ; z++) {
-    //         groundStyleMap.delete(x, this.multipleSet.startPosition.y, z);
-    //       }
-    //     }
-    //     this.multipleSet = null;
-    //     this.lastGroundData = [];
-    //     groundModule.refreshGround(room.modules.floor.getFloor());
-    //   }
-    // } else if (this.state.action.secondary === GROUND_ACTION.STYLE_SINGLE_SET) {
-    //   const room = this.app.modules.room.getRoom()!;
-    //   const groundModule = room.modules.ground;
-    //   const groundStyleMap = groundModule.getGroundStyleMap();
-    //   groundStyleMap.set(position.x, position.y, position.z, this.state.skinId);
-    //   this.lastGroundData = [];
-    //   groundModule.refreshGround(room.modules.floor.getFloor());
-    // } else if (
-    //   this.state.action.secondary === GROUND_ACTION.STYLE_MULTIPLE_SET
-    // ) {
-    //   if (!this.multipleSet?.startPosition) {
-    //     this.multipleSet = { startPosition: position.clone() };
-    //   } else {
-    //     const room = this.app.modules.room.getRoom()!;
-    //     const groundModule = room.modules.ground;
-    //     const groundStyleMap = groundModule.getGroundStyleMap();
-    //     const startX = Math.min(this.multipleSet.startPosition.x, position.x);
-    //     const endX = Math.max(this.multipleSet.startPosition.x, position.x);
-    //     const startZ = Math.min(this.multipleSet.startPosition.z, position.z);
-    //     const endZ = Math.max(this.multipleSet.startPosition.z, position.z);
-    //     for (let x = startX; x <= endX; x++) {
-    //       for (let z = startZ; z <= endZ; z++) {
-    //         console.log(this.state.skinId);
-    //         groundStyleMap.set(
-    //           x,
-    //           this.multipleSet.startPosition.y,
-    //           z,
-    //           this.state.skinId
-    //         );
-    //       }
-    //     }
-    //     this.multipleSet = null;
-    //     this.lastGroundData = [];
-    //     groundModule.refreshGround(room.modules.floor.getFloor());
-    //   }
-    // }
-  }
-
-  private multipleSet: { startPosition: Vector3 } | null = null;
-
-  private lastGroundData: {
-    position: Vector3;
-    groundStyle?: GrountStyleIdentifier;
-  }[] = [];
-
-  private currentGroundStyleMap: GroundStyleMap | null = null;
-  private async onHover(_position: Vector3) {
-    // const room = this.app.modules.room.getRoom()!;
-    // const groundModule = room.modules.ground;
-    // this.currentGroundStyleMap =
-    //   this.currentGroundStyleMap || groundModule.getGroundStyleMap();
-    // const groundStyleMap = groundModule.getGroundStyleMap();
-    // this.lastGroundData.forEach(data => {
-    //   groundStyleMap.set(
-    //     data?.position.x,
-    //     data?.position.y,
-    //     data?.position.z,
-    //     data?.groundStyle
-    //   );
-    // });
-    // this.lastGroundData = [];
-    // let startPosition = (this.multipleSet?.startPosition || position).clone();
-    // startPosition = startPosition.min(position);
-    // let endPosition = (this.multipleSet?.startPosition || position).clone();
-    // endPosition = endPosition.max(position);
-    // for (let x = startPosition.x; x <= endPosition.x; x++) {
-    //   for (let z = startPosition.z; z <= endPosition.z; z++) {
-    //     this.lastGroundData.push({
-    //       position: new Vector3(x, startPosition.y, z),
-    //       groundStyle: groundStyleMap.get(x, startPosition.y, z)
-    //     });
-    //     groundStyleMap.set(
-    //       x,
-    //       startPosition.y,
-    //       z,
-    //       this.state.action.primary === GROUND_ACTION.REMOVE
-    //         ? 'default_editor_empty'
-    //         : this.state.skinId
-    //     );
-    //   }
-    // }
-    // groundModule.refreshGround(room.modules.floor.getFloor());
-  }
-
-  reset() {
-    if (this.lastGroundData.length) {
-      const room = this.app.modules.room.getRoom()!;
-      const groundModule = room.modules.ground;
-      const groundStyleMap = groundModule.getGroundStyleMap();
-
-      this.lastGroundData.forEach(data => {
-        groundStyleMap.set(
-          data?.position.x,
-          data?.position.y,
-          data?.position.z,
-          data?.groundStyle
-        );
-      });
-
-      this.multipleSet = null;
-      groundModule.refreshGround(room.modules.floor.getFloor());
-      this.lastGroundData = [];
-    }
-
-    this.currentGroundStyleMap = null;
+  override onSceneSelect() {
+    return this.state.action.primary !== STAIR_ACTION.NONE;
   }
 
   setAction(action: StairAction) {
     const { primary } = action;
     const lastAction = this.state.action;
 
-    if (
-      lastAction.primary === primary &&
-      lastAction.secondary === action.secondary
-    ) {
+    if (lastAction.primary === primary) {
       return;
     }
 
     this.state.action = action;
 
-    if (
-      this.state.skinId &&
-      (primary === STAIR_ACTION.ADD || primary === STAIR_ACTION.SELECT)
-    ) {
-      this.registerSubscriptions();
-    } else {
-      this.unregisterSubscriptions();
-      this.reset();
+    // remove current controller if action changed
+    if (lastAction.primary !== action.primary && this.currentController) {
+      this.currentController.destroy();
+      this.currentController = null;
+      this.observables.currentController$.next(this.currentController);
     }
-  }
 
-  setSkin(skinId: GrountStyleIdentifier) {
-    if (!skinId) {
-      this.unregisterSubscriptions();
-      this.reset();
-    } else {
-      this.registerSubscriptions();
+    if (primary !== STAIR_ACTION.NONE) {
+      if (primary === STAIR_ACTION.DEFAULT) {
+        const controller = new PlannerController(this.app);
+        this.currentController = controller;
+        this.observables.currentController$.next(this.currentController);
+      }
+      this.currentController?.setup();
     }
-    this.state.skinId = skinId;
-  }
-
-  unregisterSubscriptions() {
-    this.interactionSubscription.unsubscribe();
-    this.interactionSubscription = new Subscription();
-  }
-
-  registerSubscriptions() {
-    this.unregisterSubscriptions();
-    // const subscription = this.interactionSubscription;
-    // subscription.add(
-    //   fromEvent<KeyboardEvent>(document, 'keydown').subscribe(event => {
-    //     const keyboardEvent = event;
-    //     if (keyboardEvent.key === 'Escape') {
-    //       this.reset();
-    //     }
-    //   })
-    // );
-
-    // subscription.add(
-    //   this.app.modules.room.observables.room$
-    //     .pipe(
-    //       filter(Boolean),
-    //       switchMap(room => room!.modules.ground.observables.click$),
-    //       concatMap(this.onClick.bind(this))
-    //     )
-    //     .subscribe(void 0)
-    // );
-
-    // subscription.add(
-    //   this.app.modules.room.observables.room$
-    //     .pipe(
-    //       filter(Boolean),
-    //       switchMap(room => room!.modules.ground.observables.hover$),
-    //       debounceTime(50),
-    //       distinctUntilChanged((prev, curr) => prev.equals(curr)),
-    //       concatMap(this.onHover.bind(this))
-    //     )
-    //     .subscribe(void 0)
-    // );
-
-    // subscription.add(
-    //   this.app.modules.room.observables.room$
-    //     .pipe(
-    //       filter(Boolean),
-    //       switchMap(room => room!.modules.ground.observables.pointerOut$),
-    //       concatMap(this.onPointerOut.bind(this))
-    //     )
-    //     .subscribe(void 0)
-    // );
-  }
-
-  async onPointerOut() {
-    this.reset();
-  }
-
-  override onSceneSelect(_context: SceneSelectContext): boolean {
-    if (this.state.action.primary === STAIR_ACTION.NONE) {
-      return false;
-    }
-    return true;
   }
 }

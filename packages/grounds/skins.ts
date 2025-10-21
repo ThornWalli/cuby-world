@@ -1,6 +1,8 @@
 import type { GroundSkinItem } from '@cuby-world/app/lib/types/ground/catalog';
 import { CATALOG_TAG } from '@cuby-world/app/lib/utils/catalog';
 
+export const SKIN_DEFAULT_GROUND = 'default_base';
+
 const styles: GroundSkinItem[] = [
   {
     id: 'default_editor_empty',
@@ -45,6 +47,50 @@ const styles: GroundSkinItem[] = [
     skin: {
       color: '#F0CDAC',
       texture: { id: 'wood_laminate_1' }
+    }
+  },
+  {
+    id: 'default_grass_1',
+    skinId: 'grass_1',
+    name: 'Grass 1',
+    tags: [CATALOG_TAG.TEXTURE],
+    type: 'default',
+    skin: {
+      color: '#ffffff',
+      texture: { id: 'grass_1' }
+    }
+  },
+  {
+    id: 'default_grass_2',
+    skinId: 'grass_2',
+    name: 'Grass 2',
+    tags: [CATALOG_TAG.TEXTURE],
+    type: 'default',
+    skin: {
+      color: '#ffffff',
+      texture: { id: 'grass_2' }
+    }
+  },
+  {
+    id: 'default_grass_3',
+    skinId: 'grass_3',
+    name: 'Grass 3',
+    tags: [CATALOG_TAG.TEXTURE],
+    type: 'default',
+    skin: {
+      color: '#ffffff',
+      texture: { id: 'grass_3' }
+    }
+  },
+  {
+    id: 'default_grass_4',
+    skinId: 'grass_4',
+    name: 'Grass 4',
+    tags: [CATALOG_TAG.TEXTURE],
+    type: 'default',
+    skin: {
+      color: '#ffffff',
+      texture: { id: 'grass_4' }
     }
   },
   {

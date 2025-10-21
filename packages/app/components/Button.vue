@@ -74,6 +74,10 @@ defineProps<{
     background-color: var(--color-background);
     border: solid 1px var(--color-border);
     border-radius: 3px;
+    transition:
+      background-color var(--cw-easing-duration-short) var(--cw-easing-base),
+      border-color var(--cw-easing-duration-short) var(--cw-easing-base),
+      color var(--cw-easing-duration-short) var(--cw-easing-base);
 
     & .icon {
       position: absolute;
@@ -88,6 +92,8 @@ defineProps<{
       color: var(--indicator-foreground);
       pointer-events: none;
       background-color: var(--indicator-background);
+      transition: background-color var(--cw-easing-duration-short)
+        var(--cw-easing-base);
 
       & svg,
       & :deep(svg) {
@@ -108,6 +114,10 @@ defineProps<{
     background-color: var(--color-background);
     border: solid 2px var(--color-border);
     border-radius: 3px;
+    transition:
+      background-color var(--cw-easing-duration-short) var(--cw-easing-base),
+      border-color var(--cw-easing-duration-short) var(--cw-easing-base),
+      color var(--cw-easing-duration-short) var(--cw-easing-base);
 
     &.selected,
     &:not([disabled]):hover {

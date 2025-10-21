@@ -51,18 +51,17 @@ import CwCatalogStairItemSelect from '../catalog/StairItemSelect.vue';
 import { computed, ref, useId } from 'vue';
 
 import { CATALOG_TAG } from '../../../lib/utils/catalog';
-import { skins } from '@cuby-world/stairs';
 
 import type App from '../../../lib/classes/App';
 import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
-import type { StairSkinItem } from '@cuby-world/app/lib/types/stair/catalog';
-import type { StairItem } from '../catalog/StairItemSelect.vue';
+import type { StairSelectItem } from '../catalog/StairItemSelect.vue';
+import type { SKIN_TAG, SkinDescription } from '@cuby-world/app/lib/types/skin';
 
 const id = useId();
 
-const tag = ref<CATALOG_TAG | 'all'>('all');
+const tag = ref<SKIN_TAG | 'all'>('all');
 
-function prepareItem(item: StairSkinItem): StairItem<StairSkinItem> {
+function prepareItem(item: SkinDescription): StairSelectItem<SkinDescription> {
   return {
     item,
     preview: {
@@ -71,8 +70,8 @@ function prepareItem(item: StairSkinItem): StairItem<StairSkinItem> {
   };
 }
 
-const items = computed<StairItem<StairSkinItem>[]>(() =>
-  Array.from(skins.values())
+const items = computed<StairSelectItem<SkinDescription>[]>(() =>
+  $props.skins
     .filter(item => {
       return (
         item.tags == null ||
@@ -83,8 +82,9 @@ const items = computed<StairItem<StairSkinItem>[]>(() =>
     .map(skin => prepareItem(skin))
 );
 
-defineProps<{
+const $props = defineProps<{
   app: App;
+  skins: SkinDescription[];
   modelValue: StairSkinIdentifier | null;
 }>();
 

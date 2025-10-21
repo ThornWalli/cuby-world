@@ -12,7 +12,7 @@ import PlacementAppModule from './appModule/Placement';
 import MultiplayerAppModule from './appModule/Multiplayer';
 import EditorWallAppModule from './appModule/editor/Wall';
 import EditorGroundAppModule from './appModule/editor/Ground';
-import type { ImportRoomDescription } from './RoomDescription';
+import type { ImportRoomDescription } from '../types/room';
 import EditorStairModule from './appModule/editor/Stair';
 
 type AppModuleList = (

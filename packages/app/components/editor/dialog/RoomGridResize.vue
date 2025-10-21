@@ -2,6 +2,10 @@
   <cw-dialog ref="dialog" v-bind="$attrs" class="cw-dialog-room-grid-resize">
     <template #header>Resize Grid</template>
     <template #default="ctx">
+      <p>
+        Warning: If the grid size is reduced, elements outside the new size will
+        be removed.
+      </p>
       <form
         ref="formEl"
         class="fields"
@@ -48,8 +52,13 @@ import { ORIGIN } from '@cuby-world/app/types';
 
 type GRID_ORIGIN =
   | ORIGIN.TOP_LEFT
+  | ORIGIN.TOP
   | ORIGIN.TOP_RIGHT
+  | ORIGIN.LEFT
+  | ORIGIN.CENTER
+  | ORIGIN.RIGHT
   | ORIGIN.BOTTOM_LEFT
+  | ORIGIN.BOTTOM
   | ORIGIN.BOTTOM_RIGHT;
 
 const formEl = ref<HTMLFormElement | null>(null);
@@ -64,15 +73,25 @@ const model = ref<{
 
 const originLabels: Record<GRID_ORIGIN, string> = {
   [ORIGIN.TOP_LEFT]: 'Top Left',
+  [ORIGIN.TOP]: 'Top',
   [ORIGIN.TOP_RIGHT]: 'Top Right',
+  [ORIGIN.LEFT]: 'Left',
+  [ORIGIN.CENTER]: 'Center',
+  [ORIGIN.RIGHT]: 'Right',
   [ORIGIN.BOTTOM_LEFT]: 'Bottom Left',
+  [ORIGIN.BOTTOM]: 'Bottom',
   [ORIGIN.BOTTOM_RIGHT]: 'Bottom Right'
 };
 const originOptions = (
   [
     ORIGIN.TOP_LEFT,
+    ORIGIN.TOP,
     ORIGIN.TOP_RIGHT,
+    ORIGIN.LEFT,
+    ORIGIN.CENTER,
+    ORIGIN.RIGHT,
     ORIGIN.BOTTOM_LEFT,
+    ORIGIN.BOTTOM,
     ORIGIN.BOTTOM_RIGHT
   ] as GRID_ORIGIN[]
 ).map(value => ({
@@ -115,8 +134,8 @@ function open(data: Vector2) {
     origin: model.value.origin
   };
   return dialog.value!.dialog!.open<{
-    dimension: Vector2;
-    origin: ORIGIN;
+    dimension?: Vector2;
+    origin?: ORIGIN;
   }>();
 }
 
@@ -127,6 +146,16 @@ defineExpose({
 
 <style lang="postcss" scoped>
 .cw-dialog-room-grid-resize {
+  & :deep(.base-dialog-inner) {
+    width: 320px;
+  }
+
+  & p {
+    margin: var(--cw-spacing-small) 0;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
   .fields {
     display: flex;
     flex-direction: column;

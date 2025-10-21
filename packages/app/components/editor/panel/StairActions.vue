@@ -32,6 +32,7 @@ import { Subscription } from 'rxjs';
 import CwToggleIcon from '../../toggle/Icon.vue';
 import { STAIR_ACTION } from '@cuby-world/app/lib/types/editor';
 import icons from '@cuby-world/app/utils/icons';
+import type { Icon } from '@cuby-world/app/lib/types/icon';
 
 const $emit = defineEmits<{
   (e: 'update:model-value', value: StairAction): void;
@@ -43,12 +44,9 @@ defineProps<{
 
 const actions = ref<
   {
-    icon: typeof icons.add;
+    icon: Icon;
     label: string;
-    value: {
-      primary: STAIR_ACTION;
-      secondary?: string;
-    };
+    value: StairAction;
   }[]
 >([
   {

@@ -5,28 +5,31 @@ import WallModule from './roomModule/Wall';
 import GroundModule from './roomModule/Ground';
 import SelectionMode from './roomModule/Selection';
 import UnitsModule from './roomModule/Units';
-import type { RoomDescription } from './RoomDescription';
+import type { RoomDescription } from '../types/room';
 import type { AnimationLoopValue } from './Renderer';
 import RoofModule from './roomModule/Roof';
 import FloorModule from './roomModule/Floor';
 import StairModule from './roomModule/Stair';
+import TeleportModule from './roomModule/Teleport';
 
 type RoomModuleList = (
-  | typeof WallModule
-  | typeof RoofModule
-  | typeof StairModule
-  | typeof FloorModule
   | typeof GroundModule
+  | typeof TeleportModule
+  | typeof WallModule
+  | typeof StairModule
+  | typeof RoofModule
+  | typeof FloorModule
   | typeof SelectionMode
   | typeof UnitsModule
 )[];
 
 interface RoomModules {
-  wall: WallModule;
-  roof: RoofModule;
-  stair: StairModule;
-  floor: FloorModule;
   ground: GroundModule;
+  teleport: TeleportModule;
+  wall: WallModule;
+  stair: StairModule;
+  roof: RoofModule;
+  floor: FloorModule;
   selection: SelectionMode;
   units: UnitsModule;
 }
@@ -39,7 +42,7 @@ export default class Room<Modules extends RoomModules = RoomModules> {
 
   state: RoomState = {};
   modules: Modules = {} as Modules;
-  mesh = new Object3D();
+  root: Object3D;
   description: RoomDescription;
   gridSize: Vector2;
 
@@ -50,16 +53,17 @@ export default class Room<Modules extends RoomModules = RoomModules> {
   ) {
     this.description = description;
     this.gridSize = description.gridSize.clone();
-    this.mesh = new Object3D();
-    this.mesh.name = 'room';
+    this.root = new Object3D();
+    this.root.name = 'room';
   }
 
   async setupModules() {
     const moduleList = this.moduleList;
+    moduleList.push(GroundModule);
+    moduleList.push(TeleportModule);
     moduleList.push(SelectionMode);
     moduleList.push(WallModule);
     moduleList.push(StairModule);
-    moduleList.push(GroundModule);
     moduleList.push(UnitsModule);
     moduleList.push(FloorModule);
     moduleList.push(RoofModule);
@@ -81,7 +85,11 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     Object.values(this.modules).forEach(module => {
       module.destroy();
     });
-    this.app.renderer.scene.remove(this.mesh);
+    this.app.renderer.scene.remove(this.root);
+  }
+
+  addToRoot(object: Object3D) {
+    this.root.add(object);
   }
 
   update(value: AnimationLoopValue) {
@@ -110,8 +118,6 @@ export default class Room<Modules extends RoomModules = RoomModules> {
 
   toDescription(): RoomDescription {
     const description = this.description!;
-    const start = description.start!;
-
     return {
       id: description.id,
       info: {
@@ -119,7 +125,9 @@ export default class Room<Modules extends RoomModules = RoomModules> {
         description: this.description?.info.description ?? ''
       },
       gridSize: this.gridSize,
-      start,
+      teleports: this.modules.teleport
+        .getTeleports()
+        .map(teleport => teleport.toDescription()),
       walls: this.modules.wall.getWalls().map(wall => wall.toDescription()),
       units: this.modules.units
         .getUnits()

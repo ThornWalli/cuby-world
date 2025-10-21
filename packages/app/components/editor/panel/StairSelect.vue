@@ -6,9 +6,9 @@
     title="Wall Skin">
     <cw-catalog-stair-item-select
       :app="app"
-      :items="items"
+      :items="items.map(prepareItem)"
       :model-value="modelValue"
-      @update:model-value="value => $emit('update:model-value', value)">
+      @update:model-value="item => $emit('update:model-value', item)">
       <template #before>
         <ul>
           <li>
@@ -48,21 +48,19 @@
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
 import CwCatalogStairItemSelect from '../catalog/StairItemSelect.vue';
-import { computed, ref, useId } from 'vue';
-
+import { ref, useId } from 'vue';
 import { CATALOG_TAG } from '../../../lib/utils/catalog';
-import { skins } from '@cuby-world/stairs';
-
 import type App from '../../../lib/classes/App';
 import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
-import type { StairSkinItem } from '@cuby-world/app/lib/types/stair/catalog';
-import type { StairItem } from '../catalog/StairItemSelect.vue';
+import type { StairSelectItem } from '../catalog/StairItemSelect.vue';
+import type { StairItem } from '@cuby-world/app/lib/types/stair/catalog';
+import type { StairIdentifier } from '@cuby-world/app/lib/types/stair';
 
 const id = useId();
 
 const tag = ref<CATALOG_TAG | 'all'>('all');
 
-function prepareItem(item: StairSkinItem): StairItem<StairSkinItem> {
+function prepareItem(item: StairItem): StairSelectItem<StairItem> {
   return {
     item,
     preview: {
@@ -71,21 +69,10 @@ function prepareItem(item: StairSkinItem): StairItem<StairSkinItem> {
   };
 }
 
-const items = computed<StairItem<StairSkinItem>[]>(() =>
-  Array.from(skins.values())
-    .filter(item => {
-      return (
-        item.tags == null ||
-        tag.value === 'all' ||
-        item.tags.includes(tag.value)
-      );
-    })
-    .map(skin => prepareItem(skin))
-);
-
 defineProps<{
   app: App;
-  modelValue: StairSkinIdentifier | null;
+  items: StairItem[];
+  modelValue: StairIdentifier | null;
 }>();
 
 const $emit = defineEmits<{
@@ -97,11 +84,12 @@ const $emit = defineEmits<{
 .cw-panel-editor-stair-select {
   align-items: center;
   align-self: center;
-  width: 90%;
+
+  /* width: 90%;
 
   & :deep(.cw-panel-catalog-select-item-select) {
     width: 100%;
-  }
+  } */
 }
 
 ul {

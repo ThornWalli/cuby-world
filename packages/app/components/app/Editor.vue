@@ -104,7 +104,7 @@ const controlComponent = computed(() => {
 
 function onClickSettings() {
   dialogRoomSettings.value?.open(
-    $props.app.modules.room.getRoom()!.description
+    $props.app.modules.room.getRoom()!.toDescription()
   );
 }
 
@@ -112,17 +112,17 @@ const subscription = new Subscription();
 
 const actions = ref([
   {
-    icon: icons.wall_mode,
+    icon: icons.mode_wall,
     label: 'Wall',
     value: EDITOR_ACTION.WALL
   },
   {
-    icon: icons.ground_mode,
+    icon: icons.mode_ground,
     label: 'Ground',
     value: EDITOR_ACTION.GROUND
   },
   {
-    icon: icons.stair_mode,
+    icon: icons.mode_stair,
     label: 'Stair',
     value: EDITOR_ACTION.STAIR
   }

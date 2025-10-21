@@ -1,18 +1,20 @@
 import { map, type Observable } from 'rxjs';
-import type { Object3D, Intersection, Object3DEventMap } from 'three';
+import type { Object3D } from 'three';
 import { Vector3 } from 'three';
 import type Unit from '../classes/Unit';
 
 import type * as THREE from 'three';
 import type { FACE_INDEX } from '../types/wall';
 import { FLOOR_HEIGHT } from './ground';
-import { OBJECT_USER_DATA } from './objectMeta';
+import { OBJECT_USER_DATA } from './object';
+import type { Intersection } from '../classes/rendererModule/Intersection';
 
 export function positionToMatrixPosition(
   position: THREE.Vector3
 ): THREE.Vector3 {
   return new Vector3(
     Math.round(position.x),
+    // Math.floor(position.y / FLOOR_HEIGHT),
     Math.round(position.y / FLOOR_HEIGHT),
     Math.round(position.z)
   );
@@ -36,7 +38,7 @@ export interface PreparedPosition {
 }
 
 export function preparePosition(onlyTopFace = false) {
-  return (source: Observable<Intersection<Object3D<Object3DEventMap>>>) =>
+  return (source: Observable<Intersection>) =>
     source.pipe(
       map(intersection => {
         const point = intersection.point;

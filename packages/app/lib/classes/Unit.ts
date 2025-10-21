@@ -19,10 +19,14 @@ import RoomUnitModule from './unitModule/Room';
 import type { UnitChunking } from './UnitChunkManager';
 import type { UnitModuleState } from './UnitModule';
 import type { AnimationLoopValue } from './Renderer';
-import { ROTATION, ROTATION_TYPE } from '../types';
-import { OBJECT_USER_DATA } from '../../lib/utils/objectMeta';
+import { ROTATION, ROTATION_TYPE, rotationDirections } from '../types';
+import {
+  disposeObject3D,
+  OBJECT_USER_DATA,
+  setMainObjectRecursive
+} from '../utils/object';
 
-declare module '../../lib/utils/objectMeta' {
+declare module '../../lib/utils/object' {
   interface ObjectUserData {
     UNIT: string;
   }
@@ -82,25 +86,6 @@ export interface UnitConstructorOptions<
   moduleState?: { [key: string]: UnitModuleState };
 }
 
-export const rotationDirections = {
-  [ROTATION_TYPE.BASIC]: [
-    ROTATION.WEST,
-    ROTATION.NORTH,
-    ROTATION.EAST,
-    ROTATION.SOUTH
-  ],
-  [ROTATION_TYPE.EXTENDED]: [
-    ROTATION.WEST,
-    ROTATION.WEST_UP,
-    ROTATION.WEST_DOWN,
-    ROTATION.NORTH,
-    ROTATION.EAST,
-    ROTATION.EAST_UP,
-    ROTATION.EAST_DOWN,
-    ROTATION.SOUTH
-  ]
-};
-
 export function getRotationByEuler(euler: Euler): ROTATION | null {
   if (euler.x === 0 && euler.y === 0 && euler.z === 0) {
     return null;
@@ -122,15 +107,15 @@ export function getRadByRotation(rotation: ROTATION): number {
   switch (rotation) {
     case ROTATION.WEST:
       return Math.PI;
-    case ROTATION.WEST_UP:
+    case ROTATION.NORTH_WEST:
       return (3 * Math.PI) / 4;
-    case ROTATION.WEST_DOWN:
+    case ROTATION.SOUTH_WEST:
       return -(3 * Math.PI) / 4;
     case ROTATION.EAST:
       return 0;
-    case ROTATION.EAST_UP:
+    case ROTATION.NORTH_EAST:
       return Math.PI / 4;
-    case ROTATION.EAST_DOWN:
+    case ROTATION.SOUTH_EAST:
       return -Math.PI / 4;
     case ROTATION.NORTH:
       return Math.PI / 2;
@@ -202,7 +187,9 @@ export default class Unit<
   }
   rotation: ROTATION = ROTATION.SOUTH;
 
-  size: Vector3 = new Vector3(1, 1, 1);
+  private size: Vector3 = new Vector3(1, 1, 1);
+  private visible = true;
+  private chunkVisible = true;
 
   get key(): string {
     return (this.constructor as typeof Unit).KEY;
@@ -277,7 +264,7 @@ export default class Unit<
 
     //#endregion
 
-    this.root = this.createRoot(name);
+    this.root = this.setupRoot(name);
 
     this.setPosition(position ?? this._position);
     this.setRotation(
@@ -289,11 +276,18 @@ export default class Unit<
     return this.id === unit.id;
   }
 
-  createRoot(name: string) {
+  setupRoot(name: string) {
     const root = new Object3D();
     root.name = name;
+    root.userData[OBJECT_USER_DATA.MAIN_OBJECT] = root.id;
     root.userData[OBJECT_USER_DATA.UNIT] = this;
+    setMainObjectRecursive(root, root);
     return root;
+  }
+
+  addToRoot(object: Object3D) {
+    this.root.add(object);
+    setMainObjectRecursive(object, this.root);
   }
 
   destroy() {
@@ -303,7 +297,7 @@ export default class Unit<
     this.materialReady$.unsubscribe();
     this.subscription.unsubscribe();
     findAllMeshes(this.root).forEach(mesh => {
-      mesh.geometry?.dispose();
+      disposeObject3D(mesh);
     });
     this.root.removeFromParent();
     this.root.remove();
@@ -367,16 +361,16 @@ export default class Unit<
       case ROTATION.EAST:
         this.setRootRotation(new Euler(0, 0, 0));
         break;
-      case ROTATION.WEST_UP:
+      case ROTATION.NORTH_WEST:
         this.setRootRotation(new Euler(0, (3 * Math.PI) / 4, 0));
         break;
-      case ROTATION.WEST_DOWN:
+      case ROTATION.SOUTH_WEST:
         this.setRootRotation(new Euler(0, -(3 * Math.PI) / 4, 0));
         break;
-      case ROTATION.EAST_UP:
+      case ROTATION.NORTH_EAST:
         this.setRootRotation(new Euler(0, Math.PI / 4, 0));
         break;
-      case ROTATION.EAST_DOWN:
+      case ROTATION.SOUTH_EAST:
         this.setRootRotation(new Euler(0, -Math.PI / 4, 0));
         break;
       case ROTATION.NORTH:
@@ -436,6 +430,14 @@ export default class Unit<
     return position.add(offset);
   }
 
+  getSize() {
+    return this.size.clone();
+  }
+
+  setSize(size: Vector3) {
+    this.size = size.clone();
+  }
+
   getMatrixPositions(): Vector3[] {
     const positions: Vector3[] = [];
     const pos = positionToMatrixPosition(this.getPosition());
@@ -475,8 +477,7 @@ export default class Unit<
     mesh = await modules.reduce((result, module) => {
       return result.then(mesh => module.setup({ mesh, ...context }));
     }, Promise.resolve(mesh));
-
-    this.root.add(mesh);
+    this.addToRoot(mesh);
 
     // center unit in tile
     const position = this.centerInTile(
@@ -509,10 +510,19 @@ export default class Unit<
   }
 
   //#region visible
-  getVisible() {
-    return this.root.visible;
+  isVisible() {
+    return this.visible;
   }
   setVisible(visible: boolean) {
+    this.visible = visible;
+    this.setRootVisible();
+  }
+  setChunkVisible(visible: boolean) {
+    this.chunkVisible = visible;
+    this.setRootVisible();
+  }
+
+  private setRootVisible(visible = this.visible && this.chunkVisible) {
     this.root.visible = visible;
   }
   //#endregion
@@ -531,12 +541,29 @@ export default class Unit<
     return `${(this.constructor as typeof Unit).NAME}(${this.name})(${this.id})`;
   }
 }
-export enum OBJECT_NAME {
-  MESH = 'Mesh',
-  MESH_OUTLINE = 'MeshOutline',
-  MESH_ANIMATION = 'MeshAnimation',
-  RAYCASTER = 'Raycaster'
+
+export interface ObjectName {
+  UNIT: 'Unit';
+  MESH: 'Mesh';
+  MESH_OUTLINE: 'MeshOutline';
+  MESH_ANIMATION: 'MeshAnimation';
+  RAYCASTER: 'Raycaster';
 }
+
+export const OBJECT_NAME: ObjectName = {
+  UNIT: 'Unit',
+  MESH: 'Mesh',
+  MESH_OUTLINE: 'MeshOutline',
+  MESH_ANIMATION: 'MeshAnimation',
+  RAYCASTER: 'Raycaster'
+} as ObjectName;
+
+// export enum OBJECT_NAME {
+//   MESH = 'Mesh',
+//   MESH_OUTLINE = 'MeshOutline',
+//   MESH_ANIMATION = 'MeshAnimation',
+//   RAYCASTER = 'Raycaster'
+// }
 
 function getRotationFromVector(direction: Vector3, diagonal = true) {
   const isHorizontal = Math.abs(direction.x) > Math.abs(direction.z);
@@ -545,10 +572,10 @@ function getRotationFromVector(direction: Vector3, diagonal = true) {
   if (diagonal && direction.x !== 0 && direction.z !== 0) {
     if (direction.x > 0) {
       // Right
-      return direction.z > 0 ? ROTATION.EAST_DOWN : ROTATION.EAST_UP;
+      return direction.z > 0 ? ROTATION.SOUTH_EAST : ROTATION.NORTH_EAST;
     } else {
       // Left
-      return direction.z > 0 ? ROTATION.WEST_DOWN : ROTATION.WEST_UP;
+      return direction.z > 0 ? ROTATION.SOUTH_WEST : ROTATION.NORTH_WEST;
     }
   }
 

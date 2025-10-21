@@ -1,4 +1,4 @@
-import type { RoomDescription } from '@cuby-world/app/lib/classes/RoomDescription';
+import type { RoomDescription } from '@cuby-world/app/lib/types/room';
 import { jsonParse, jsonStringify } from './parse';
 
 /**

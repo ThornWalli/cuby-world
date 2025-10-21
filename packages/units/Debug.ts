@@ -29,7 +29,7 @@ export default class Debug extends Unit<DebugOptions> {
     const texture = checkerboardTexture(64, 32, '#ffffff', '#000000');
     const material = new MeshPhongMaterial({ map: texture });
 
-    const size = this.size;
+    const size = this.getSize();
     const ratio = 19 / 20;
     const geometry = new BoxGeometry(size.x * 1, size.y * ratio, size.z * 1);
 

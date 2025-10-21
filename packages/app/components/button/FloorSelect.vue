@@ -56,12 +56,26 @@ function onClickFloorDown() {
   align-items: center;
 
   & button {
+    padding: var(--cw-spacing-small);
     color: white;
     cursor: pointer;
+    border-radius: var(--cw-border-radius-small);
+    transition: background-color var(--cw-easing-duration-short)
+      var(--cw-easing-base);
 
     &[disabled] {
       cursor: not-allowed;
       opacity: 0.5;
+    }
+
+    &:hover {
+      background-color: var(--color-blue-7);
+    }
+
+    @media (hover: none) {
+      &:active {
+        background-color: var(--color-blue-7);
+      }
     }
   }
 

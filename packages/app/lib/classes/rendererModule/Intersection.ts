@@ -1,11 +1,16 @@
 import { fromEvent, ReplaySubject } from 'rxjs';
-import type { Object3D, Intersection, Object3DEventMap } from 'three';
+import type { Object3D, Intersection as ThreeIntersection } from 'three';
 import { Raycaster, Vector2 } from 'three';
 import type Renderer from '../Renderer';
 import RendererModule, { type RendererModuleState } from '../RendererModule';
-import { OBJECT_USER_DATA } from '../../utils/objectMeta';
+import { OBJECT_USER_DATA } from '../../utils/object';
 
-declare module '../../utils/objectMeta' {
+export interface Intersection
+  extends Pick<ThreeIntersection, 'point' | 'face' | 'faceIndex'> {
+  object: Object3D;
+}
+
+declare module '../../utils/object' {
   interface ObjectUserData {
     IGNORE_SELECT: string;
   }
@@ -24,9 +29,9 @@ export default class IntersectionRendererModule extends RendererModule<State> {
 
   listeners: {
     mesh: Object3D;
-    clickIntersect$: ReplaySubject<Intersection<Object3D<Object3DEventMap>>>;
-    clickIntersects$: ReplaySubject<Intersection<Object3D<Object3DEventMap>>[]>;
-    hoverIntersect$: ReplaySubject<Intersection<Object3D<Object3DEventMap>>[]>;
+    clickIntersect$: ReplaySubject<Intersection>;
+    clickIntersects$: ReplaySubject<Intersection[]>;
+    hoverIntersect$: ReplaySubject<Intersection[]>;
     //
     pointerdown$: ReplaySubject<PointerEvent>;
     pointerup$: ReplaySubject<PointerEvent>;
@@ -70,14 +75,16 @@ export default class IntersectionRendererModule extends RendererModule<State> {
         const y = -((e.clientY - offset.y) / dimension.y) * 2 + 1;
         this.raycaster.setFromCamera(new Vector2(x, y), this.renderer.camera);
         this.listeners.forEach(listener => {
-          let intersects = this.raycaster.intersectObject(listener.mesh, true);
-          // console.log('intersects', [...intersects]);
-          intersects = intersects.filter(
-            i => !i.object.userData?.[OBJECT_USER_DATA.IGNORE_SELECT]
+          const intersects = this.raycaster.intersectObject(
+            listener.mesh,
+            true
           );
-          if (intersects.length > 0 && intersects[0]) {
-            listener.clickIntersect$.next(intersects[0]);
-            listener.clickIntersects$.next(intersects);
+
+          const result = prepareIntersections(this.renderer, intersects);
+
+          if (result.length > 0 && result[0]) {
+            listener.clickIntersect$.next(result[0]);
+            listener.clickIntersects$.next(result);
           }
         });
         this.listeners.forEach(listener => {
@@ -111,7 +118,8 @@ export default class IntersectionRendererModule extends RendererModule<State> {
               listener.mesh,
               true
             );
-            listener.hoverIntersect$.next(intersects);
+            const result = prepareIntersections(this.renderer, intersects);
+            listener.hoverIntersect$.next(result);
           });
         });
       })
@@ -119,15 +127,9 @@ export default class IntersectionRendererModule extends RendererModule<State> {
   }
 
   register(mesh: Object3D) {
-    const hoverIntersect$ = new ReplaySubject<
-      Intersection<Object3D<Object3DEventMap>>[]
-    >(0);
-    const clickIntersect$ = new ReplaySubject<
-      Intersection<Object3D<Object3DEventMap>>
-    >(0);
-    const clickIntersects$ = new ReplaySubject<
-      Intersection<Object3D<Object3DEventMap>>[]
-    >(0);
+    const hoverIntersect$ = new ReplaySubject<Intersection[]>(0);
+    const clickIntersect$ = new ReplaySubject<Intersection>(0);
+    const clickIntersects$ = new ReplaySubject<Intersection[]>(0);
 
     // pointer events
     const pointerdown$ = new ReplaySubject<PointerEvent>(0);
@@ -174,4 +176,29 @@ export default class IntersectionRendererModule extends RendererModule<State> {
 function getOffset(el: HTMLElement) {
   const { left: offsetX, top: offsetY } = el.getBoundingClientRect();
   return new Vector2(offsetX, offsetY);
+}
+
+function prepareIntersections(
+  renderer: Renderer,
+  intersects: ThreeIntersection[]
+): Intersection[] {
+  return Array.from(
+    new Set(
+      intersects
+        .map(intersect => {
+          return {
+            point: intersect.point,
+            face: intersect.face,
+            faceIndex: intersect.faceIndex,
+            object: renderer.scene.getObjectById(
+              intersect.object.userData[OBJECT_USER_DATA.MAIN_OBJECT]
+            )
+          } as Intersection;
+        })
+        .filter(o => o?.object?.visible)
+        .filter(
+          i => i?.object && !i.object.userData[OBJECT_USER_DATA.IGNORE_SELECT]
+        )
+    )
+  ) as Intersection[];
 }

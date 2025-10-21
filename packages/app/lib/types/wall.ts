@@ -167,12 +167,23 @@ export enum WALL_EDGE_TYPE {
   CROSS = 'cross',
   T_CROSS_LEFT = 't_cross_left',
   T_CROSS_I_LEFT = 't_cross_left_i', // Nur für innere ecken
+  T_CROSS_LEFT_LEFT = 't_cross_left_left',
+  T_CROSS_LEFT_RIGHT = 't_cross_left_right',
+
   T_CROSS_RIGHT = 't_cross_right',
   T_CROSS_I_RIGHT = 't_cross_right_i', // Nur für innere ecken
+  T_CROSS_RIGHT_LEFT = 't_cross_right_left',
+  T_CROSS_RIGHT_RIGHT = 't_cross_right_right',
+
   T_CROSS_TOP = 't_cross_top',
   T_CROSS_I_TOP = 't_cross_top_i', // Nur für innere ecken
+  T_CROSS_LEFT_TOP = 't_cross_left_top',
+  T_CROSS_RIGHT_TOP = 't_cross_right_top',
+
   T_CROSS_BOTTOM = 't_cross_bottom',
-  T_CROSS_I_BOTTOM = 't_cross_i_bottom' // Nur für innere ecken
+  T_CROSS_I_BOTTOM = 't_cross_i_bottom', // Nur für innere ecken
+  T_CROSS_LEFT_BOTTOM = 't_cross_left_bottom',
+  T_CROSS_RIGHT_BOTTOM = 't_cross_right_bottom'
 }
 
 export enum WALL_SIZE {
@@ -238,4 +249,11 @@ export enum WALL_TYPE {
   DEFAULT = 'default',
   DOOR = 'door',
   WINDOW = 'window'
+}
+
+export enum WALL_ACCESIBLE_DIRECTIONS {
+  NORTH = 'north',
+  SOUTH = 'south',
+  WEST = 'west',
+  EAST = 'east'
 }

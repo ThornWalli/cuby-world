@@ -1,5 +1,4 @@
 import { defineAsyncComponent, markRaw } from 'vue';
-
 export default {
   wall: markRaw(
     defineAsyncComponent(
@@ -31,9 +30,9 @@ export default {
       () => import('../assets/icons/editor/actions/remove_2.svg?component')
     )
   ),
-  ground_mode: markRaw(
+  mode_ground: markRaw(
     defineAsyncComponent(
-      () => import('../assets/icons/editor/actions/ground_mode.svg?component')
+      () => import('../assets/icons/editor/actions/mode_ground.svg?component')
     )
   ),
   ground_single_set: markRaw(
@@ -47,19 +46,27 @@ export default {
         import('../assets/icons/editor/actions/ground_multiple.svg?component')
     )
   ),
-  wall_mode: markRaw(
+  mode_wall: markRaw(
     defineAsyncComponent(
-      () => import('../assets/icons/editor/actions/wall_mode.svg?component')
+      () => import('../assets/icons/editor/actions/mode_wall.svg?component')
     )
   ),
-  door_mode: markRaw(
+  mode_wall_mason: markRaw(
     defineAsyncComponent(
-      () => import('../assets/icons/editor/actions/door_mode.svg?component')
+      () =>
+        import('../assets/icons/editor/actions/mode_wall_mason.svg?component')
     )
   ),
-  window_mode: markRaw(
+  mode_wall_door: markRaw(
     defineAsyncComponent(
-      () => import('../assets/icons/editor/actions/window_mode.svg?component')
+      () =>
+        import('../assets/icons/editor/actions/mode_wall_door.svg?component')
+    )
+  ),
+  mode_wall_window: markRaw(
+    defineAsyncComponent(
+      () =>
+        import('../assets/icons/editor/actions/mode_wall_window.svg?component')
     )
   ),
   color: markRaw(
@@ -110,9 +117,56 @@ export default {
     )
   ),
 
-  stair_mode: markRaw(
+  mode_stair: markRaw(
     defineAsyncComponent(
-      () => import('../assets/icons/editor/actions/stair_mode.svg?component')
+      () => import('../assets/icons/editor/actions/mode_stair.svg?component')
+    )
+  ),
+
+  check: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/check.svg?component')
+    )
+  ),
+
+  apply: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/check.svg?component')
+    )
+  ),
+
+  cancel: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/cancel.svg?component')
+    )
+  ),
+  abort: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/cancel.svg?component')
+    )
+  ),
+
+  rotate: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/rotate.svg?component')
+    )
+  ),
+
+  move: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/move.svg?component')
+    )
+  ),
+
+  trash: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/trash.svg?component')
+    )
+  ),
+
+  edit: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/editor/actions/edit.svg?component')
     )
   )
 };

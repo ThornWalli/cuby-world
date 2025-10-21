@@ -30,9 +30,12 @@ import {
   loadGroundGeometries,
   type GroundChunk
 } from '../../utils/ground';
-import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
+import {
+  disposeObject3D,
+  OBJECT_USER_DATA
+} from '@cuby-world/app/lib/utils/object';
 
-declare module '../../../lib/utils/objectMeta' {
+declare module '../../../lib/utils/object' {
   interface ObjectUserData {
     IGNORE_GROUND_INTERSECTION: string;
   }
@@ -64,6 +67,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
     groundChunks: [],
     groundMesh: null
   };
+  private groundGeometryMap: GroundGeometryMap = new Map();
 
   constructor(room: Room, debug: boolean = false) {
     super(room, debug);
@@ -87,22 +91,15 @@ export default class GroundModule extends RoomModule<State, Observables> {
 
   override destroy() {
     this.state.groundChunks.forEach(({ mesh }) => {
-      const { geometry, material } = mesh;
-      geometry.dispose();
-      if (Array.isArray(material)) {
-        material.forEach(mat => mat.dispose());
-      } else {
-        material.dispose();
-      }
+      disposeObject3D(mesh);
     });
     if (this.state.groundMesh) {
-      this.room.mesh.remove(this.state.groundMesh);
+      this.room.root.remove(this.state.groundMesh);
       this.state.groundMesh = null;
     }
     super.destroy();
   }
 
-  groundGeometryMap: GroundGeometryMap = new Map();
   override async setup() {
     this.groundGeometryMap = await loadGroundGeometries(
       this.room.app.assetLoader,
@@ -116,7 +113,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
     const room = this.room;
 
     const groundIntersectionListener = intersection.register(
-      room.mesh.getObjectByName('ground')!
+      room.root.getObjectByName('ground')!
     );
 
     this.subscription.add(
@@ -124,7 +121,6 @@ export default class GroundModule extends RoomModule<State, Observables> {
         this.refreshGround();
       })
     );
-
     this.subscription.add(
       groundIntersectionListener.clickIntersect$
         .pipe(
@@ -132,7 +128,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
             return (
               !intersection.object.userData[
                 OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
-              ] && intersection.object?.parent?.name === 'ground'
+              ] && intersection.object?.name === 'ground'
             );
           }),
           preparePosition(),
@@ -146,7 +142,6 @@ export default class GroundModule extends RoomModule<State, Observables> {
         )
         .subscribe(this.onClick.bind(this))
     );
-
     this.subscription.add(
       groundIntersectionListener.hoverIntersect$
         .pipe(
@@ -156,7 +151,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
                 return (
                   !intersection.object.userData[
                     OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
-                  ] && intersection.object?.parent?.name === 'ground'
+                  ] && intersection.object?.name === 'ground'
                 );
               })[0]!
           ),
@@ -173,7 +168,6 @@ export default class GroundModule extends RoomModule<State, Observables> {
         )
         .subscribe(void 0)
     );
-
     this.subscription.add(
       groundIntersectionListener.hoverIntersect$
         .pipe(
@@ -184,7 +178,6 @@ export default class GroundModule extends RoomModule<State, Observables> {
           this.room.modules.selection.hideSelection();
         })
     );
-
     this.subscription.add(
       groundIntersectionListener.pointerdown$.subscribe(e =>
         this.observables.pointerDown$.next(e)
@@ -205,7 +198,6 @@ export default class GroundModule extends RoomModule<State, Observables> {
         this.onPointerEnter.bind(this)
       )
     );
-
     this.subscription.add(
       groundIntersectionListener.pointerout$.subscribe(
         this.onPointerOut.bind(this)
@@ -262,7 +254,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
     groundMesh.name = 'ground';
 
     this.state.groundMesh = groundMesh;
-    this.room.mesh.add(groundMesh);
+    this.room.addToRoot(groundMesh);
 
     this.refreshGround();
   }
@@ -270,9 +262,9 @@ export default class GroundModule extends RoomModule<State, Observables> {
   getGridByFloor(foorIndex: number = 0) {
     const groundStyleMap = this.state.groundStyleMap;
     const values = [];
-    for (let x = 0; x < this.room.gridSize.x; x++) {
-      for (let y = 0; y < this.room.gridSize.y; y++) {
-        const skinId = groundStyleMap.get(y, foorIndex, x);
+    for (let y = 0; y < this.room.gridSize.y; y++) {
+      for (let x = 0; x < this.room.gridSize.x; x++) {
+        const skinId = groundStyleMap.get(x, foorIndex, y);
         if (skinId && (skins.get(skinId)?.skin.accessible ?? true)) {
           values.push(0);
         } else {
@@ -282,6 +274,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
     }
     return values;
   }
+
   getGrids() {
     const groundStyleMap = this.room.modules.ground.getGroundStyleMap();
 
@@ -320,13 +313,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
     this.state.groundChunks = chunks;
 
     removes.forEach(({ mesh }) => {
-      const { geometry, material } = mesh;
-      geometry.dispose();
-      if (Array.isArray(material)) {
-        material.forEach(mat => mat.dispose());
-      } else {
-        material.dispose();
-      }
+      disposeObject3D(mesh);
       this.state.groundMesh?.remove(mesh);
     });
   }

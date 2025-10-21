@@ -49,15 +49,15 @@ export enum PANEL_POSITION {
 
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--cw-spacing-medium);
   max-width: 100%;
-  padding: 8px;
+  padding: var(--cw-spacing-medium);
 
   &.style-type-default {
     align-items: center;
     color: white;
     background: rgb(0 0 0 / 40%);
-    border-radius: 8px;
+    border-radius: var(--cw-border-radius-large);
     box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
 
     /* backdrop-filter: blur(5px); */
@@ -67,14 +67,14 @@ export enum PANEL_POSITION {
     color: white;
     background: rgb(0 0 0 / 80%);
     border: solid 2px rgb(255 255 255 / 80%);
-    border-radius: 6px;
+    border-radius: var(--cw-border-radius-medium);
     box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
 
     /* backdrop-filter: blur(5px); */
   }
 
   &.has-title {
-    padding-top: 8px;
+    padding-top: var(--cw-spacing-medium);
   }
 
   & .title {
@@ -87,7 +87,7 @@ export enum PANEL_POSITION {
   & .content {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--cw-spacing-medium);
     width: 100%;
   }
 

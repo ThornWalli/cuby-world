@@ -18,7 +18,16 @@ import { LOADER } from '../classes/AssetLoader';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type GroundStyleMap from '../classes/GroundStyleMap';
 import { groundTextureMap, skins } from '@cuby-world/grounds';
-import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
+import { OBJECT_NAME } from '../classes/Unit';
+
+declare module '../classes/Unit' {
+  interface ObjectName {
+    GROUND: string;
+  }
+}
+
+OBJECT_NAME.GROUND = 'ground';
 
 export interface GroundChunk {
   mesh: InstancedMesh;
@@ -50,7 +59,7 @@ export function createGroundChunks(
     mesh: InstancedMesh;
     floor: number;
   }[] = [];
-  console.log('createGroundChunks', { floor });
+
   const y = floor;
   const helper = new Object3D();
   const positionHelper = new Vector2();
@@ -99,8 +108,10 @@ export function createGroundChunks(
           positionsByType.get(type)!.length
         );
 
+        instancedMesh.name = OBJECT_NAME.GROUND;
+        instancedMesh.userData[OBJECT_USER_DATA.MAIN_OBJECT] = instancedMesh.id;
         instancedMesh.userData[OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION] =
-          !editMode;
+          editMode ? false : !tile.accessible;
 
         tile
           .createMaterial({

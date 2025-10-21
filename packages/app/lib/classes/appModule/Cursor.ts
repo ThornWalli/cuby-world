@@ -64,8 +64,7 @@ function getDefaultCursor(type: CURSOR_TYPE = CURSOR_TYPE.DEFAULT): Cursor {
       };
     case CURSOR_TYPE.MOVE:
       return {
-        type: CURSOR_TYPE.MOVE,
-        src: 'move'
+        type: CURSOR_TYPE.MOVE
       };
     default:
       return {

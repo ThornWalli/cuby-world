@@ -48,21 +48,22 @@
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
 import CwCatalogWallItemSelect, {
-  type WallItem
+  type WallSelectItem
 } from '../catalog/WallItemSelect.vue';
 import { computed, ref, useId } from 'vue';
-
 import type App from '../../../lib/classes/App';
 import { CATALOG_TAG } from '../../../lib/utils/catalog';
 import type { WallSkinIdentifier } from '../../../lib/types/wall/skins';
-import { skins } from '@cuby-world/walls';
-import type { WallSkinItem } from '../../../lib/types/wall/catalog';
+import type { WallSkinDescription } from '@cuby-world/walls/skins';
+import type { SKIN_TAG } from '@cuby-world/app/lib/types/skin';
 
 const id = useId();
 
-const tag = ref<CATALOG_TAG | 'all'>('all');
+const tag = ref<SKIN_TAG | 'all'>('all');
 
-function prepareItem(item: WallSkinItem): WallItem<WallSkinItem> {
+function prepareItem(
+  item: WallSkinDescription
+): WallSelectItem<WallSkinDescription> {
   return {
     item,
     preview: {
@@ -71,8 +72,8 @@ function prepareItem(item: WallSkinItem): WallItem<WallSkinItem> {
   };
 }
 
-const items = computed<WallItem<WallSkinItem>[]>(() =>
-  Array.from(skins.values())
+const items = computed<WallSelectItem<WallSkinDescription>[]>(() =>
+  Array.from($props.skins.values())
     .filter(item => {
       return (
         item.tags == null ||
@@ -83,9 +84,10 @@ const items = computed<WallItem<WallSkinItem>[]>(() =>
     .map(prepareItem)
 );
 
-defineProps<{
+const $props = defineProps<{
   app: App;
   modelValue: WallSkinIdentifier | null;
+  skins: WallSkinDescription[];
 }>();
 
 const $emit = defineEmits<{

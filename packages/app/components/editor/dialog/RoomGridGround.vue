@@ -65,10 +65,7 @@ import BaseButton from '../../../components/base/Button.vue';
 import CwFormFieldSelect from '../../../components/formField/Select.vue';
 import CwFormFieldSelectOption from '../../../components/formField/select/Option.vue';
 
-import type {
-  Grid,
-  StartPosition
-} from '@cuby-world/app/lib/classes/RoomDescription';
+import type { Grid, StartPosition } from '@cuby-world/app/lib/types/room';
 
 enum MODE {
   GRID = 'grid',

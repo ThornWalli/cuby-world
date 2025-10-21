@@ -5,7 +5,9 @@
     style-type="none"
     title="Wall Actions">
     <div>
-      <div v-for="{ icon, label, value: { primary } } in actions" :key="label">
+      <div
+        v-for="{ icon, label, value: { primary, secondary } } in actions"
+        :key="label">
         <cw-toggle-icon
           hide-label
           :icon="icon"
@@ -15,7 +17,8 @@
           @update:model-value="
             val =>
               onUpdateModelValue({
-                primary: val ? primary : WALL_ACTION.NONE
+                primary: val ? primary : WALL_ACTION.NONE,
+                secondary
               })
           " />
         <div class="subs">
@@ -51,6 +54,8 @@ import CwToggleIcon from '../../toggle/Icon.vue';
 import { WALL_ACTION } from '@cuby-world/app/lib/types/editor';
 import icons from '@cuby-world/app/utils/icons';
 import type { WALL_WINDOW_SIZE } from '@cuby-world/app/lib/types/wall';
+import type { Icon } from '@cuby-world/app/lib/types/icon';
+import { MASON_MODE } from '@cuby-world/app/lib/classes/appModule/editor/wall/MasonController';
 
 const $emit = defineEmits<{
   (e: 'update:model-value', value: WallAction): void;
@@ -61,49 +66,58 @@ defineProps<{
 }>();
 
 interface Item {
-  icon: typeof icons.add;
+  icon: Icon;
   label: string;
-  value: {
-    primary: WALL_ACTION;
-    secondary?: WALL_WINDOW_SIZE;
-  };
+  value: WallAction;
   items?: Item[];
 }
 
 const actions = ref<Item[]>([
   {
-    icon: icons.add,
-    label: 'Add',
+    icon: icons.mode_wall_mason,
+    label: 'Mason',
     value: {
-      primary: WALL_ACTION.ADD
+      primary: WALL_ACTION.MODE_MASON,
+      secondary: MASON_MODE.ADD
+    },
+    items: [
+      {
+        icon: icons.add,
+        label: 'Add',
+        value: {
+          primary: WALL_ACTION.MODE_MASON,
+          secondary: MASON_MODE.ADD
+        }
+      },
+      {
+        icon: icons.remove,
+        label: 'Remove',
+        value: {
+          primary: WALL_ACTION.MODE_MASON,
+          secondary: MASON_MODE.REMOVE
+        }
+      }
+    ]
+  },
+  {
+    icon: icons.color,
+    label: 'Color',
+    value: {
+      primary: WALL_ACTION.MODE_PAINTER
     }
   },
   {
-    icon: icons.remove,
-    label: 'Remove',
-    value: {
-      primary: WALL_ACTION.REMOVE
-    }
-  },
-  {
-    icon: icons.door_mode,
+    icon: icons.mode_wall_door,
     label: 'Door',
     value: {
       primary: WALL_ACTION.MODE_DOOR
     }
   },
   {
-    icon: icons.window_mode,
+    icon: icons.mode_wall_window,
     label: 'Window',
     value: {
       primary: WALL_ACTION.MODE_WINDOW
-    }
-  },
-  {
-    icon: icons.color,
-    label: 'Color',
-    value: {
-      primary: WALL_ACTION.MODE_STYLE
     }
   }
 ]);
@@ -122,7 +136,7 @@ onUnmounted(() => {
 <script lang="ts">
 export interface WallAction {
   primary: WALL_ACTION;
-  secondary?: WALL_WINDOW_SIZE;
+  secondary?: WALL_WINDOW_SIZE | MASON_MODE | string;
 }
 </script>
 

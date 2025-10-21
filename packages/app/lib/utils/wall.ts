@@ -9,12 +9,12 @@ import {
   MeshPhongMaterial
 } from 'three';
 import EasyStar from 'easystarjs';
-import Wall from '../classes/Wall';
+import Wall, { type WallIdentifier } from '../classes/Wall';
 
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LOADER } from '../classes/AssetLoader';
-import type { PreparedPosition } from './matrix';
 import {
+  WALL_ACCESIBLE_DIRECTIONS,
   WALL_DIRECTION,
   WALL_EDGE_TYPE,
   WALL_GEOMETRY,
@@ -38,8 +38,23 @@ import {
 import type { AnimationLoopSubject } from '../classes/Renderer';
 import type DoorWallExtension from '../classes/wallExtension/Door';
 import assetLoader from '@cuby-world/app/services/assetLoader';
-import { FLOOR_HEIGHT } from './ground';
 import { textureMap as wallTextureMap } from '@cuby-world/walls/textures';
+import type { FloorIndex } from '../types/floor';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
+
+export function getWallIdentifierFromObject(
+  object?: Object3D | null
+): WallIdentifier | null {
+  if (object?.userData[OBJECT_USER_DATA.WALL_EXTENSION_WALL]) {
+    return object.userData[
+      OBJECT_USER_DATA.WALL_EXTENSION_WALL
+    ] as WallIdentifier;
+  }
+  if (object?.userData[OBJECT_USER_DATA.WALL]) {
+    return object.userData[OBJECT_USER_DATA.WALL] as WallIdentifier;
+  }
+  return null;
+}
 
 function getDefaultDirections() {
   return [
@@ -56,13 +71,6 @@ function getDefaultDirections() {
 
 const defaultDirections = getDefaultDirections();
 
-enum WALL_ACCESIBLE_DIRECTIONS {
-  NORTH = 'north',
-  SOUTH = 'south',
-  WEST = 'west',
-  EAST = 'east'
-}
-
 //#region wall pathfinding
 
 /**
@@ -75,7 +83,7 @@ export function getWallDoorExtensionsByPosition(walls: Wall[]) {
   );
 
   return doorWalls.reduce((result, { wall, directions, position }) => {
-    const extension = wall.getExtension<DoorWallExtension>(
+    const extension = wall.getExtensionByType<DoorWallExtension>(
       WALL_EXTENSION_TYPE.DOOR
     );
 
@@ -99,15 +107,6 @@ export function getWallDoorExtensionsByPosition(walls: Wall[]) {
     }
     return result;
   }, new ArrayKeyMap<[number, number], DoorWallExtension>());
-
-  // return walls
-  //   .map(w => w.getDoorUnits().map(d => ({ wall: w, door: d })))
-  //   .flat()
-  //   .reduce((result, { wall, door }) => {
-  //     const position = door.getPosition();
-  //     result.set([position.x, position.z], wall);
-  //     return result;
-  //   }, new ArrayKeyMap<[number, number], Wall>());
 }
 
 /**
@@ -260,7 +259,7 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
   });
 }
 
-function prepareWalls(walls: Wall[]) {
+export function prepareWalls(walls: Wall[]) {
   const wallMap = walls.reduce((result, wall) => {
     const key: [number, number] = [wall.position.x, wall.position.z];
 
@@ -338,9 +337,18 @@ function prepareWalls(walls: Wall[]) {
       result.set([wall.position.x, wall.position.z, wall.direction], data);
     });
     return result;
-  }, new ArrayKeyMap<[number, number, WALL_DIRECTION], { wall: Wall; type: WALL_TYPE; originDirection: WALL_DIRECTION; directions: Set<WALL_ACCESIBLE_DIRECTIONS>; position: Vector3 }>());
+  }, new ArrayKeyMap<DirectionWallDescriptionKey, DirectionWallDescription>());
 
   return preparedWalls;
+}
+
+export type DirectionWallDescriptionKey = [number, number, WALL_DIRECTION];
+export interface DirectionWallDescription {
+  wall: Wall;
+  type: WALL_TYPE;
+  originDirection: WALL_DIRECTION;
+  directions: Set<WALL_ACCESIBLE_DIRECTIONS>;
+  position: Vector3;
 }
 
 function setDirectionalCondition(
@@ -453,22 +461,6 @@ export function findNeighborWallEdges(
     //#region T-Left
 
     [
-      WALL_DIRECTION.VERTICAL,
-      [
-        [0, 1, WALL_DIRECTION.VERTICAL],
-        [-1, 1, WALL_DIRECTION.HORIZONTAL]
-      ],
-      WALL_EDGE_TYPE.T_CROSS_LEFT
-    ],
-    [
-      WALL_DIRECTION.VERTICAL,
-      [
-        [0, -1, WALL_DIRECTION.VERTICAL],
-        [-1, 0, WALL_DIRECTION.HORIZONTAL]
-      ],
-      WALL_EDGE_TYPE.T_CROSS_LEFT
-    ],
-    [
       WALL_DIRECTION.HORIZONTAL,
       [
         [1, -1, WALL_DIRECTION.VERTICAL],
@@ -476,26 +468,26 @@ export function findNeighborWallEdges(
       ],
       WALL_EDGE_TYPE.T_CROSS_I_LEFT
     ],
-
-    //#endregion
-
-    //#region T-Right
     [
       WALL_DIRECTION.VERTICAL,
       [
         [0, 1, WALL_DIRECTION.VERTICAL],
-        [0, 1, WALL_DIRECTION.HORIZONTAL]
+        [-1, 1, WALL_DIRECTION.HORIZONTAL]
       ],
-      WALL_EDGE_TYPE.T_CROSS_RIGHT
+      WALL_EDGE_TYPE.T_CROSS_RIGHT_LEFT
     ],
     [
       WALL_DIRECTION.VERTICAL,
       [
         [0, -1, WALL_DIRECTION.VERTICAL],
-        [0, 0, WALL_DIRECTION.HORIZONTAL]
+        [-1, 0, WALL_DIRECTION.HORIZONTAL]
       ],
-      WALL_EDGE_TYPE.T_CROSS_RIGHT
+      WALL_EDGE_TYPE.T_CROSS_LEFT_LEFT
     ],
+
+    //#endregion
+
+    //#region T-Right (east),
     [
       WALL_DIRECTION.HORIZONTAL,
       [
@@ -504,10 +496,26 @@ export function findNeighborWallEdges(
       ],
       WALL_EDGE_TYPE.T_CROSS_I_RIGHT
     ],
+    [
+      WALL_DIRECTION.VERTICAL,
+      [
+        [0, 1, WALL_DIRECTION.VERTICAL],
+        [0, 1, WALL_DIRECTION.HORIZONTAL]
+      ],
+      WALL_EDGE_TYPE.T_CROSS_RIGHT_RIGHT
+    ],
+    [
+      WALL_DIRECTION.VERTICAL,
+      [
+        [0, -1, WALL_DIRECTION.VERTICAL],
+        [0, 0, WALL_DIRECTION.HORIZONTAL]
+      ],
+      WALL_EDGE_TYPE.T_CROSS_LEFT_RIGHT
+    ],
 
     //#endregion
 
-    //#region T-Top
+    //#region T-Top (north)
 
     [
       WALL_DIRECTION.VERTICAL,
@@ -523,7 +531,7 @@ export function findNeighborWallEdges(
         [0, -1, WALL_DIRECTION.VERTICAL],
         [-1, 0, WALL_DIRECTION.HORIZONTAL]
       ],
-      WALL_EDGE_TYPE.T_CROSS_TOP
+      WALL_EDGE_TYPE.T_CROSS_RIGHT_TOP
     ],
     [
       WALL_DIRECTION.HORIZONTAL,
@@ -531,12 +539,12 @@ export function findNeighborWallEdges(
         [1, -1, WALL_DIRECTION.VERTICAL],
         [1, 0, WALL_DIRECTION.HORIZONTAL]
       ],
-      WALL_EDGE_TYPE.T_CROSS_TOP
+      WALL_EDGE_TYPE.T_CROSS_LEFT_TOP
     ],
 
     //#endregion
 
-    //#region T-Bottom
+    //#region T-Bottom (south)
 
     [
       WALL_DIRECTION.VERTICAL,
@@ -552,7 +560,7 @@ export function findNeighborWallEdges(
         [0, 0, WALL_DIRECTION.VERTICAL],
         [-1, 0, WALL_DIRECTION.HORIZONTAL]
       ],
-      WALL_EDGE_TYPE.T_CROSS_BOTTOM
+      WALL_EDGE_TYPE.T_CROSS_RIGHT_BOTTOM
     ],
     [
       WALL_DIRECTION.HORIZONTAL,
@@ -560,7 +568,7 @@ export function findNeighborWallEdges(
         [1, 0, WALL_DIRECTION.HORIZONTAL],
         [1, 0, WALL_DIRECTION.VERTICAL]
       ],
-      WALL_EDGE_TYPE.T_CROSS_BOTTOM
+      WALL_EDGE_TYPE.T_CROSS_LEFT_BOTTOM
     ],
 
     //#endregion
@@ -693,8 +701,7 @@ export async function resolveWallExtensions(
 
 function buildWallSet(walls: Wall[]) {
   const set = new Set();
-  const key = (a: Vector3, b: Vector3) =>
-    `${a.x},${a.y},${a.z}-${b.x},${b.y},${b.z}`;
+  const key = (a: Vector3, b: Vector3) => `${a.toArray()}-${b.toArray()}`;
 
   walls.forEach(w => {
     const endPosition = getEndPositionFromStartPosition(
@@ -715,37 +722,38 @@ function buildWallSet(walls: Wall[]) {
 
 function canMoveBetweenTiles(
   tx: number,
-  ty: number,
+  tz: number,
   nx: number,
   ny: number,
   wallSet: {
     has: (a: Vector3, b: Vector3) => boolean;
-  }
+  },
+  floorIndex: FloorIndex
 ) {
   const dx = nx - tx;
-  const dy = ny - ty;
+  const dy = ny - tz;
 
   if (Math.abs(dx) + Math.abs(dy) !== 1) return false;
 
   if (dx === 1 && dy === 0) {
-    const a = new Vector3(tx + 1, 0, ty);
-    const b = new Vector3(tx + 1, 0, ty + 1);
+    const a = new Vector3(tx + 1, floorIndex, tz);
+    const b = new Vector3(tx + 1, floorIndex, tz + 1);
     return !wallSet.has(a, b);
   }
   if (dx === -1 && dy === 0) {
-    const a = new Vector3(tx, 0, ty);
-    const b = new Vector3(tx, 0, ty + 1);
+    const a = new Vector3(tx, floorIndex, tz);
+    const b = new Vector3(tx, floorIndex, tz + 1);
     return !wallSet.has(a, b);
   }
 
   if (dx === 0 && dy === 1) {
-    const a = new Vector3(tx, 0, ty + 1);
-    const b = new Vector3(tx + 1, 0, ty + 1);
+    const a = new Vector3(tx, floorIndex, tz + 1);
+    const b = new Vector3(tx + 1, floorIndex, tz + 1);
     return !wallSet.has(a, b);
   }
   if (dx === 0 && dy === -1) {
-    const a = new Vector3(tx, 0, ty);
-    const b = new Vector3(tx + 1, 0, ty);
+    const a = new Vector3(tx, floorIndex, tz);
+    const b = new Vector3(tx + 1, floorIndex, tz);
     return !wallSet.has(a, b);
   }
 
@@ -765,7 +773,7 @@ function getEndPositionFromStartPosition(
 
 function splitWallsByFloors(walls: Wall[]) {
   const map = walls.reduce((result, wall) => {
-    const floor = Math.floor(wall.position!.y / FLOOR_HEIGHT);
+    const floor = Math.floor(wall.position!.y);
     const test = result.get(floor) ?? [];
     test.push(wall);
     if (!result.has(floor)) {
@@ -842,7 +850,17 @@ export function getWallRoomDescriptions(walls: Wall[]) {
               const nKey = `${n.x},${n.y}`;
               if (!inBounds(n.x, n.y)) return;
               if (visited.has(nKey)) return;
-              if (!canMoveBetweenTiles(cur.x, cur.y, n.x, n.y, wallSet)) return;
+              if (
+                !canMoveBetweenTiles(
+                  cur.x,
+                  cur.y,
+                  n.x,
+                  n.y,
+                  wallSet,
+                  floorIndex
+                )
+              )
+                return;
               visited.add(nKey);
               queue.push(n);
             });
@@ -974,6 +992,13 @@ function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
   const isSpecial =
     types.has(WALL_EDGE_TYPE.CROSS) ||
     types.has(WALL_EDGE_TYPE.T_CROSS_LEFT) ||
+    types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_LEFT) ||
+    types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_LEFT) ||
+    types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_RIGHT) ||
+    types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_BOTTOM) ||
+    types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_BOTTOM) ||
+    types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_TOP) ||
+    types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_TOP) ||
     types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT) ||
     types.has(WALL_EDGE_TYPE.T_CROSS_TOP) ||
     types.has(WALL_EDGE_TYPE.T_CROSS_BOTTOM) ||
@@ -983,21 +1008,74 @@ function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
     types.has(WALL_EDGE_TYPE.T_CROSS_I_TOP);
 
   if (isSpecial) {
-    options = {
-      ...options
-      // left: WALL_GEOMETRY_TYPE.NONE,
-      // right: WALL_GEOMETRY_TYPE.NONE
-    };
-    if (
-      types.has(WALL_EDGE_TYPE.CROSS) ||
-      (!types.has(WALL_EDGE_TYPE.T_CROSS_I_BOTTOM) &&
-        !types.has(WALL_EDGE_TYPE.T_CROSS_I_TOP) &&
-        !types.has(WALL_EDGE_TYPE.T_CROSS_I_LEFT) &&
-        !types.has(WALL_EDGE_TYPE.T_CROSS_I_RIGHT))
-    ) {
-      options.left = WALL_GEOMETRY_TYPE.LINE;
-      options.right = WALL_GEOMETRY_TYPE.LINE;
+    let left = options.left ?? WALL_GEOMETRY_TYPE.NONE;
+    let right = options.right ?? WALL_GEOMETRY_TYPE.NONE;
+
+    //#region t-cross top
+
+    if (types.has(WALL_EDGE_TYPE.T_CROSS_I_TOP)) {
+      left = WALL_GEOMETRY_TYPE.NONE;
+    } else if (types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_TOP)) {
+      right = WALL_GEOMETRY_TYPE.LINE;
     }
+    if (types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_TOP)) {
+      left = WALL_GEOMETRY_TYPE.LINE;
+    }
+    //#endregion
+
+    //#region t-cross left
+
+    if (types.has(WALL_EDGE_TYPE.T_CROSS_I_LEFT)) {
+      left = WALL_GEOMETRY_TYPE.NONE;
+    } else if (types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_LEFT)) {
+      right = WALL_GEOMETRY_TYPE.LINE;
+    }
+    if (types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_LEFT)) {
+      left = WALL_GEOMETRY_TYPE.LINE;
+    }
+    //#endregion
+
+    //#region t-cross right
+
+    if (types.has(WALL_EDGE_TYPE.T_CROSS_I_RIGHT)) {
+      right = WALL_GEOMETRY_TYPE.NONE;
+    } else if (types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_RIGHT)) {
+      left = WALL_GEOMETRY_TYPE.LINE;
+    }
+    if (types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_RIGHT)) {
+      right = WALL_GEOMETRY_TYPE.LINE;
+    }
+    //#endregion
+
+    //#region t-cross bottom
+
+    if (types.has(WALL_EDGE_TYPE.T_CROSS_I_BOTTOM)) {
+      right = WALL_GEOMETRY_TYPE.NONE;
+    } else if (types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_BOTTOM)) {
+      right = WALL_GEOMETRY_TYPE.LINE;
+    }
+    if (types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_BOTTOM)) {
+      left = WALL_GEOMETRY_TYPE.LINE;
+    }
+    //#endregion
+
+    options = {
+      ...options,
+      left,
+      right
+    };
+    // if (
+    //   types.has(WALL_EDGE_TYPE.CROSS)
+    //   //  ||
+    //   // (!types.has(WALL_EDGE_TYPE.T_CROSS_I_BOTTOM) &&
+    //   //   !types.has(WALL_EDGE_TYPE.T_CROSS_I_TOP) &&
+    //   //   !types.has(WALL_EDGE_TYPE.T_CROSS_I_LEFT) &&
+    //   //   !types.has(WALL_EDGE_TYPE.T_CROSS_I_RIGHT))
+    // ) {
+    //   debugger;
+    //   options.left = WALL_GEOMETRY_TYPE.LINE;
+    //   options.right = WALL_GEOMETRY_TYPE.LINE;
+    // }
   }
 
   let type = options.type ?? WALL_TYPE.DEFAULT;
@@ -1178,8 +1256,10 @@ export function createWallMesh(
   return mesh;
 }
 
-export function getFaceGroupIndex(preparedPosition: PreparedPosition): number {
-  const object = preparedPosition.object!;
+export function getFaceGroupIndex(
+  object: Object3D,
+  faceIndex?: number | null
+): number {
   let groups: BufferGeometry['groups'] = [];
 
   object.traverse((node: Object3D) => {
@@ -1188,12 +1268,12 @@ export function getFaceGroupIndex(preparedPosition: PreparedPosition): number {
     }
   });
 
-  if (!(preparedPosition.faceIndex !== null && groups.length > 0)) {
+  if (!(faceIndex !== null && groups.length > 0)) {
     return -1;
   }
 
   // faceIndex bezieht sich auf ein Dreieck → 3 Indizes pro Face
-  const firstIndex = preparedPosition.faceIndex! * 3;
+  const firstIndex = faceIndex! * 3;
 
   // überprüfen, zu welchem Group-Bereich dieses Dreieck gehört
   for (let i = 0; i < groups.length; i++) {

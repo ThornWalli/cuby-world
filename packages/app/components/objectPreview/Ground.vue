@@ -19,7 +19,7 @@ import { ReplaySubject } from 'rxjs';
 import type App from '../../lib/classes/App';
 
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
-import CwObjectPreview from '../ObjectPreview.vue';
+import CwObjectPreview, { type ObjectPreview } from '../ObjectPreview.vue';
 import Ground from '@cuby-world/app/lib/classes/Ground';
 import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
 import assetLoader from '@cuby-world/app/services/assetLoader';
@@ -78,7 +78,7 @@ watch(
 </script>
 
 <script lang="ts">
-export interface GroundPreview {
+export interface GroundPreview extends ObjectPreview {
   skin: string;
 }
 </script>

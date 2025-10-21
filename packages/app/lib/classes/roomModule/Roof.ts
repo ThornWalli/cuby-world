@@ -5,21 +5,28 @@ import {
   Shape,
   Vector2,
   Vector3,
-  type Material
+  Object3D,
+  DoubleSide
 } from 'three';
-import { Object3D, DoubleSide } from 'three';
 import type { RoomModuleObservables, RoomModuleState } from '../RoomModule';
 import RoomModule from '../RoomModule';
-import { WALL_VIEW_MODE, type WallRoom } from './Wall';
+import type { WallRoom } from './Wall';
+import { WALL_VIEW_MODE } from './Wall';
 
 import { FLOOR_HEIGHT } from '../../utils/ground';
-import { OBJECT_USER_DATA } from '../../utils/objectMeta';
+import { disposeObject3D, OBJECT_USER_DATA } from '../../utils/object';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
 
 interface State extends RoomModuleState {
   visible: boolean;
+}
+
+interface WallRoomDescription {
+  floor: number;
+  root: Object3D;
+  room: WallRoom;
 }
 
 export default class RoofModule extends RoomModule<State, Observables> {
@@ -30,12 +37,18 @@ export default class RoofModule extends RoomModule<State, Observables> {
   };
 
   root?: Object3D = new Object3D();
-  meshes: Mesh[] = [];
+  descriptions: WallRoomDescription[] = [];
 
   override setup(): void {
     super.setup();
 
     this.setupRoot();
+
+    this.subscription.add(
+      this.room.modules.floor.observables.floor$.subscribe(floorIndex => {
+        this.updateVisiblity(floorIndex);
+      })
+    );
 
     this.subscription.add(
       this.room.modules.wall.observables.activeWallRooms$.subscribe(
@@ -44,19 +57,39 @@ export default class RoofModule extends RoomModule<State, Observables> {
     );
 
     this.subscription.add(
-      this.room.modules.wall.observables.viewMode$.subscribe(viewMode => {
-        this.toggle(viewMode === WALL_VIEW_MODE.LARGE);
+      this.room.modules.stair.observables.refresh$.subscribe(
+        this.onRefresh.bind(this)
+      )
+    );
+
+    this.subscription.add(
+      this.room.modules.wall.observables.viewMode$.subscribe(() => {
+        this.updateVisiblity();
       })
     );
   }
 
+  isRoofNeeded() {
+    return this.room.modules.wall.state.viewMode === WALL_VIEW_MODE.LARGE;
+  }
+
   //#region methods
+  onRefresh() {
+    this.updateDescriptions(this.room.modules.wall.getWallRooms());
+  }
 
-  createMesh(wallRooms: Set<WallRoom>): Mesh[] {
+  //#region descriptions
+  createDescriptions(wallRooms: Set<WallRoom>): WallRoomDescription[] {
     const depth = 0.11;
-    const meshes: Mesh[] = [];
+    const descriptions = [];
 
-    for (const room of wallRooms) {
+    for (const room of Array.from(wallRooms)) {
+      const description = {
+        floor: room.floor,
+        root: new Object3D(),
+        room
+      };
+
       const stairPositions = new Set(
         room.tiles
           .filter(t =>
@@ -86,26 +119,45 @@ export default class RoofModule extends RoomModule<State, Observables> {
           geom,
           new MeshPhongMaterial({
             color: 0x9e9e9e,
-            side: DoubleSide,
-            transparent: true
+            side: DoubleSide
           })
         );
 
-        if (this.room.modules.wall.state.viewMode !== WALL_VIEW_MODE.LARGE) {
-          mesh.material.opacity = 0;
-          (mesh.material as Material).depthWrite = false;
-        }
+        // if (this.room.modules.wall.state.viewMode !== WALL_VIEW_MODE.LARGE) {
+        //   mesh.material.opacity = 0;
+        //   (mesh.material as Material).depthWrite = false;
+        // }
 
         mesh.receiveShadow = true;
         mesh.rotateX(Math.PI / 2);
         mesh.position.set(-0.5, depth, -0.5);
 
-        meshes.push(mesh);
+        description.root.visible =
+          description.floor < this.room.modules.floor.getFloor();
+        description.root.add(mesh);
       }
+      descriptions.push(description);
     }
 
-    return meshes;
+    return descriptions;
   }
+
+  updateDescriptions(wallRooms: Set<WallRoom>) {
+    if (this.descriptions) {
+      this.descriptions.forEach(d => {
+        this.root?.remove(d.root);
+        disposeObject3D(d.root);
+      });
+    }
+    this.descriptions = this.createDescriptions(wallRooms);
+    this.descriptions.forEach(description => {
+      this.root!.add(description.root);
+      description.root.position.y =
+        (description.floor + 1) * FLOOR_HEIGHT - 0.2;
+    });
+  }
+
+  //#endregion
 
   setupRoot() {
     this.subscription.add(
@@ -114,38 +166,29 @@ export default class RoofModule extends RoomModule<State, Observables> {
           this.room.app.renderer.scene.remove(this.root);
         }
         this.root = new Object3D();
-        this.meshes = this.createMesh(wallRooms);
-        this.meshes.forEach(mesh => this.root!.add(mesh));
-        this.root.position.y = 1 * FLOOR_HEIGHT - 0.2;
+
+        this.updateDescriptions(wallRooms);
+
         this.root.raycast = () => void 0;
         this.room.app.renderer.scene.add(this.root);
       })
     );
   }
 
-  show(meshes = this.meshes) {
-    meshes.forEach(mesh => {
-      const material = mesh.material as Material;
-      material.opacity = 1;
-      material.depthWrite = true;
+  setVisible(visible: boolean, descriptions = this.descriptions) {
+    this.state.visible = visible;
+    descriptions.forEach(({ root }) => {
+      root.visible = visible;
+      // console.log('roof mesh', root, root.visible);
+      // const material = mesh.material as Material;
+      // if (visible) {
+      //   material.opacity = 1;
+      //   material.depthWrite = true;
+      // } else {
+      //   material.opacity = 0;
+      //   material.depthWrite = false;
+      // }
     });
-  }
-
-  hide(meshes = this.meshes) {
-    meshes.forEach(mesh => {
-      const material = mesh.material as Material;
-      material.opacity = 0;
-      material.depthWrite = false;
-    });
-  }
-
-  toggle(value: boolean, meshes = this.meshes) {
-    console.log('toggle roof');
-    if (value) {
-      this.show(meshes);
-    } else {
-      this.hide(meshes);
-    }
   }
 
   //#endregion
@@ -153,20 +196,37 @@ export default class RoofModule extends RoomModule<State, Observables> {
   //#region events
 
   onChangeActiveWallRooms(wallRooms: Map<string, WallRoom>) {
-    this.meshes.forEach(mesh => {
-      this.toggle(
-        !wallRooms.get(
-          (mesh.userData[OBJECT_USER_DATA.WALL_ROOM] as WallRoom).id
-        ),
-        [mesh]
-      );
-    });
+    const descriptions = this.descriptions.filter(description =>
+      wallRooms.has(description.room.id)
+    );
+    this.setVisible(false, descriptions);
+  }
+
+  getRoofs() {
+    return this.descriptions;
+  }
+  getRoofsByFloor(floor?: number) {
+    floor = floor ?? this.room.modules.floor.getFloor();
+    return this.descriptions.filter(d => d.floor === floor);
+  }
+
+  updateVisiblity(floorIndex?: number) {
+    floorIndex = floorIndex ?? this.room.modules.floor.getFloor();
+
+    const roofs = this.getRoofs();
+    this.setVisible(false, roofs);
+
+    for (let f = 0; f <= floorIndex; f++) {
+      const roofs = this.getRoofsByFloor(f);
+      if (f === floorIndex && !this.isRoofNeeded()) continue;
+      this.setVisible(true, roofs);
+    }
   }
 
   //#endregion
 }
 
-declare module '../../utils/objectMeta' {
+declare module '../../utils/object' {
   interface ObjectUserData {
     WALL_ROOM: string;
   }

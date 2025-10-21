@@ -31,9 +31,9 @@ import {
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
-import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/objectMeta';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 
-declare module '@cuby-world/app/lib/utils/objectMeta' {
+declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
     INTERVAL: string;
   }

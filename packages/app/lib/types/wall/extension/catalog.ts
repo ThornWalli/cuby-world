@@ -1,3 +1,4 @@
+import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
 import type { CatalogItem } from '../../catalog';
 import type { WALL_WINDOW_SIZE } from '../../wall';
 import type {
@@ -8,6 +9,7 @@ import type {
 export interface WallExtensionItem extends CatalogItem {
   targetTypes: string[];
   extension: WallExtensionIdentifier;
+  instance: () => Promise<typeof WallExtension>;
   options: {
     skin: WallExtensionSkinIdentifier;
     size?:

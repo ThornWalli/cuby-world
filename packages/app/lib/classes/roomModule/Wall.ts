@@ -22,6 +22,7 @@ import RoomModule, {
 import type Wall from '../Wall';
 
 import createWalls, {
+  getWallIdentifierFromObject,
   getWallRoomDescriptions,
   loadWallGeometries
 } from '../../utils/wall';
@@ -38,16 +39,19 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type Room from '../Room';
 import { OBJECT_NAME } from '../Unit';
 
-import type {
-  WALL_DIRECTION,
-  WallDescription,
-  WallGeometryMap,
-  WallRoomDescription
+import {
+  WALL_SIZE,
+  type WALL_DIRECTION,
+  type WallDescription,
+  type WallGeometryMap,
+  type WallRoomDescription
 } from '../../types/wall';
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { FloorIndex } from '../../types/floor';
 import { default_mesh as MeshWall } from '@cuby-world/walls';
-import { OBJECT_USER_DATA } from '../../utils/objectMeta';
+import { OBJECT_USER_DATA } from '../../utils/object';
+import { FLOOR_HEIGHT } from '../../utils/ground';
+import type { WallIdentifier } from '../Wall';
 
 interface WallRoomTile {
   mesh: Mesh;
@@ -62,6 +66,7 @@ export class WallRoom implements Omit<WallRoomDescription, 'tiles'> {
   centroid: Vector2;
   size: number;
   meshes: Mesh[] = [];
+  visible: boolean = true;
 
   private colors: {
     default: number;
@@ -98,6 +103,13 @@ export class WallRoom implements Omit<WallRoomDescription, 'tiles'> {
     });
     this.tiles = [];
     this.meshes = [];
+  }
+
+  setVisible(visible: boolean) {
+    this.visible = visible;
+    this.tiles.forEach(({ mesh }) => {
+      mesh.visible = visible;
+    });
   }
 
   destroy() {
@@ -215,8 +227,6 @@ export default class WallModule extends RoomModule<
     frustum: new Frustum()
   };
 
-  private lastViewMode?: WALL_VIEW_MODE;
-
   constructor(room: Room, debug: boolean = false) {
     super(room, debug);
     this.observables.viewMode$ = new ReplaySubject<WALL_VIEW_MODE>(0);
@@ -265,12 +275,23 @@ export default class WallModule extends RoomModule<
   //#endregion
 
   selectionPosition: Vector3 = new Vector3();
+
   override async setup(): Promise<void> {
     const description = this.room.description;
 
     this.state.baseWallGeometryMap = await loadWallGeometries(MeshWall);
 
     await this.addWalls(description.walls);
+
+    this.subscription.add(
+      this.room.modules.floor.observables.floor$.subscribe(floorIndex => {
+        this.updateVisibility(
+          this.room.app.renderer.camera,
+          getFloorDescendingList(floorIndex)
+        );
+        // this.updateActiveWallRooms();
+      })
+    );
 
     this.subscription.add(
       this.room.app.modules.player.observables.currentPlayer$
@@ -358,16 +379,21 @@ export default class WallModule extends RoomModule<
     return this.state.walls.map(wall => wall);
   }
 
-  getWallsByPosition(position: Vector2, direction?: WALL_DIRECTION) {
+  getWallById(id: WallIdentifier) {
+    return this.state.walls.find(wall => wall.id === id);
+  }
+
+  getWallsByPosition(position: Vector3, direction?: WALL_DIRECTION) {
     return this.state.walls.filter(
       wall =>
         wall.position.x === position.x &&
-        wall.position.z === position.y &&
+        wall.position.y === position.y &&
+        wall.position.z === position.z &&
         (!direction || wall.direction === direction)
     );
   }
 
-  async addWalls(wallDescriptions: WallDescription[]) {
+  async addWalls(wallDescriptions: WallDescription[], refresh = true) {
     wallDescriptions = wallDescriptions.filter(
       ({ position, direction }) =>
         !this.state.wallMap.has([position.x, position.y, position.z, direction])
@@ -395,24 +421,29 @@ export default class WallModule extends RoomModule<
     });
 
     walls.forEach(wall => {
-      this.room.mesh.add(wall.root!);
+      this.room.addToRoot(wall.root!);
     });
 
-    this.refreshWallRooms(this.state.walls);
-
-    const descriptions = this.state.walls.map(wall => wall.toDescription());
-
-    this.state.walls.forEach(wall => {
-      wall.update(descriptions);
-      wall.refreshWallMeshes();
-    });
-
-    this.updateVisibility(this.room.app.renderer.camera);
+    if (refresh) {
+      const floors = Array.from(new Set(walls.map(wall => wall.position.y)));
+      this.refreshWallRooms(floors);
+      const descriptions = this.getWallsByFloor(floors).map(wall =>
+        wall.toDescription()
+      );
+      for (const wall of this.state.walls) {
+        wall.update(descriptions);
+        await wall.refreshWallMeshes();
+      }
+      this.updateVisibility(this.room.app.renderer.camera, floors);
+    }
 
     return walls;
   }
 
-  removeWallsByDescriptions(wallDescriptions: WallDescription[]) {
+  removeWallsByDescriptions(
+    wallDescriptions: WallDescription[],
+    refresh = true
+  ) {
     const wallsToRemove = this.state.walls.filter(wall =>
       wallDescriptions.some(desc => {
         return (
@@ -423,10 +454,10 @@ export default class WallModule extends RoomModule<
         );
       })
     );
-    this.removeWalls(wallsToRemove);
+    this.removeWalls(wallsToRemove, refresh);
   }
 
-  removeWalls(walls: Wall[]) {
+  async removeWalls(walls: Wall[], refresh = true) {
     walls = walls || this.state.walls;
 
     walls.forEach(wall => {
@@ -449,127 +480,165 @@ export default class WallModule extends RoomModule<
       );
     });
 
-    this.refreshWallRooms();
-    const descriptions = this.state.walls.map(wall => wall.toDescription());
-    this.state.walls.forEach(wall => {
-      wall.update(descriptions);
-      wall.refreshWallMeshes();
-    });
-
-    this.updateVisibility(this.room.app.renderer.camera);
+    if (refresh) {
+      this.refreshWallRooms();
+      const descriptions = this.state.walls.map(wall => wall.toDescription());
+      for (const wall of this.state.walls) {
+        wall.update(descriptions);
+        await wall.refreshWallMeshes();
+      }
+      this.updateVisibility(this.room.app.renderer.camera);
+    }
   }
 
   //#endregion
 
   wallsByFloorMap: Map<FloorIndex, Wall[]> = new Map();
-  getWallsByFloor(floorIndex?: FloorIndex) {
-    if (floorIndex === undefined) {
+  getWallsByFloor(floors?: FloorIndex[]) {
+    if (floors === undefined) {
       return this.state.walls;
     }
-    return this.wallsByFloorMap.get(floorIndex) || [];
-    // return this.state.walls.filter(wall =>
-    //   floorIndex !== undefined ? wall.position.y === floorIndex : true
-    // );
+
+    return floors.map(index => this.wallsByFloorMap.get(index) || []).flat();
   }
 
-  updateVisibility(camera: Camera, floorIndex?: FloorIndex) {
-    console.log('Update wall visibility', this.state.viewMode);
-    if (this.lastViewMode !== this.state.viewMode) {
-      this.state.walls.forEach(wall => wall.show());
-    }
+  updateVisibility(camera: Camera, floors?: FloorIndex[]) {
+    floors =
+      floors ?? getFloorDescendingList(this.room.modules.floor.getFloor());
 
-    if (this.state.viewMode === WALL_VIEW_MODE.SMALL) {
-      this.state.walls.forEach(wall => wall.hide());
-      return;
-    } else if (this.state.viewMode === WALL_VIEW_MODE.LARGE) {
-      this.state.walls.forEach(wall => wall.show());
-      return;
-    } else if (this.state.viewMode === WALL_VIEW_MODE.DYNAMIC) {
-      this.state.walls.forEach(wall => wall.show());
-    }
-
-    const objectsToKeepVisible = Array<Mesh>().concat(
-      this.state.targets,
-      this.state.wallRoomTargets
-    );
-
-    const { targetBox, direction, raycaster, matrix, frustum, wallsToHide } =
-      this.wallState;
-
-    wallsToHide.forEach(wall => {
-      wall.show();
+    this.state.walls.forEach(wall => {
+      wall.setVisible(false);
     });
 
-    wallsToHide.clear();
+    function getSizeByViewMode(viewMode: WALL_VIEW_MODE): WALL_SIZE {
+      if (viewMode === WALL_VIEW_MODE.SMALL) {
+        return WALL_SIZE.SMALL;
+      } else if (viewMode === WALL_VIEW_MODE.LARGE) {
+        return WALL_SIZE.LARGE;
+      } else if (viewMode === WALL_VIEW_MODE.DYNAMIC) {
+        return WALL_SIZE.LARGE;
+      }
+      return WALL_SIZE.LARGE;
+    }
 
-    matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-    frustum.setFromProjectionMatrix(matrix);
+    this.getWallRooms().forEach(wallRoom => {
+      wallRoom.setVisible(false);
+    });
 
-    const visibleWalls = this.getWallsByFloor(floorIndex).reduce(
-      (result, wall) => {
-        if (frustum.intersectsBox(wall.tmpBox)) {
-          result.push(wall.root!);
-        }
-        return result;
-      },
-      [] as Object3D[]
-    );
+    const maxFloorIndex = Math.max(...floors);
+    console.log('Updating wall visibility for floors', floors, maxFloorIndex);
+    this.getWallsByFloor(floors).forEach(wall => {
+      wall.setSize(
+        getSizeByViewMode(
+          wall.position.y < maxFloorIndex
+            ? WALL_VIEW_MODE.LARGE
+            : this.state.viewMode
+        )
+      );
+      wall.setVisible(true);
+    });
 
-    objectsToKeepVisible.forEach(target => {
-      targetBox.setFromObject(target);
+    this.getWallRoomsByFloor(floors).forEach(wallRoom => {
+      wallRoom.setVisible(true);
+    });
 
-      const min = targetBox.min;
-      const max = targetBox.max;
+    if (this.getViewMode() === WALL_VIEW_MODE.DYNAMIC) {
+      const objectsToKeepVisible = Array<Mesh>().concat(
+        this.state.targets,
+        this.state.wallRoomTargets
+      );
 
-      const corners = [
-        { x: min.x, y: min.y, z: min.z },
-        { x: max.x, y: min.y, z: min.z },
-        { x: min.x, y: max.y, z: min.z },
-        { x: min.x, y: min.y, z: max.z },
-        { x: max.x, y: max.y, z: min.z },
-        { x: max.x, y: min.y, z: max.z },
-        { x: min.x, y: max.y, z: max.z },
-        { x: max.x, y: max.y, z: max.z }
-      ];
-      corners.forEach(corner => {
-        this.wallState.direction
-          .subVectors(corner, camera.position)
-          .normalize();
-        raycaster.set(camera.position, direction);
+      const { targetBox, direction, raycaster, matrix, frustum, wallsToHide } =
+        this.wallState;
 
-        const intersects = raycaster.intersectObjects(visibleWalls);
-        // console.log(intersects);
-
-        if (intersects.length > 0) {
-          const distanceToCorner = camera.position.distanceTo(corner);
-          if (intersects[0] && intersects[0].distance < distanceToCorner) {
-            const wall = getWallFromParent(intersects[0].object);
-            if (!wall) {
-              throw new Error('Wall not found in object parent chain');
-            }
-            wallsToHide.add(wall);
-          }
-        }
-
-        if (this.debug) {
-          createDebugRayLines(
-            this.room,
-            camera.position,
-            direction,
-            50,
-            0x00ff00
-          );
-        }
+      wallsToHide.forEach(wall => {
+        wall.setSize(getSizeByViewMode(this.state.viewMode));
       });
-    });
-    wallsToHide.forEach(wall => {
-      wall.hide();
-    });
+
+      wallsToHide.clear();
+
+      matrix.multiplyMatrices(
+        camera.projectionMatrix,
+        camera.matrixWorldInverse
+      );
+      frustum.setFromProjectionMatrix(matrix);
+
+      const visibleWalls = this.getWallsByFloor(floors.slice(-1)).reduce(
+        (result, wall) => {
+          if (frustum.intersectsBox(wall.getTmpBox())) {
+            result.push(wall.root!);
+          }
+          return result;
+        },
+        [] as Object3D[]
+      );
+
+      objectsToKeepVisible.forEach(target => {
+        targetBox.setFromObject(target);
+
+        const min = targetBox.min;
+        const max = targetBox.max;
+
+        const corners = [
+          { x: min.x, y: min.y, z: min.z },
+          { x: max.x, y: min.y, z: min.z },
+          { x: min.x, y: max.y, z: min.z },
+          { x: min.x, y: min.y, z: max.z },
+          { x: max.x, y: max.y, z: min.z },
+          { x: max.x, y: min.y, z: max.z },
+          { x: min.x, y: max.y, z: max.z },
+          { x: max.x, y: max.y, z: max.z }
+        ];
+        corners.forEach(corner => {
+          this.wallState.direction
+            .subVectors(corner, camera.position)
+            .normalize();
+          raycaster.set(camera.position, direction);
+
+          const intersects = raycaster.intersectObjects(visibleWalls);
+          // console.log(intersects);
+
+          if (intersects.length > 0) {
+            const distanceToCorner = camera.position.distanceTo(corner);
+            if (intersects[0] && intersects[0].distance < distanceToCorner) {
+              const wallObj = this.room.app.renderer.scene.getObjectById(
+                intersects[0].object.userData[OBJECT_USER_DATA.MAIN_OBJECT]
+              );
+              const wallId = getWallIdentifierFromObject(wallObj);
+              const wall = this.getWallById(wallId!);
+              if (!wall) {
+                throw new Error('Wall not found in object parent chain');
+              }
+              wallsToHide.add(wall);
+            }
+          }
+
+          if (this.debug) {
+            createDebugRayLines(
+              this.room,
+              camera.position,
+              direction,
+              50,
+              0x00ff00
+            );
+          }
+        });
+      });
+      wallsToHide.forEach(wall => {
+        wall.setSize(WALL_SIZE.SMALL);
+      });
+    }
   }
   //#region wallRooms
 
   getWallRooms() {
     return this.state.wallRooms;
+  }
+
+  getWallRoomsByFloor(floorIndex: FloorIndex[]) {
+    return Array.from(this.state.wallRooms).filter(wallRoom =>
+      floorIndex.includes(wallRoom.floor)
+    );
   }
 
   updateActiveWallRooms() {
@@ -584,7 +653,7 @@ export default class WallModule extends RoomModule<
       )
       .forEach(position => {
         const wallRoom = this.state.wallRoomTiles.get(
-          `${position.x},${position.y},${position.z}`
+          position.toArray().toString()
         );
         if (wallRoom) {
           activeWallRooms.add(wallRoom);
@@ -620,18 +689,18 @@ export default class WallModule extends RoomModule<
     return true;
   }
 
-  removeWallRooms(floorIndex?: number) {
-    if (floorIndex === undefined) {
+  removeWallRooms(floors?: FloorIndex[]) {
+    if (floors === undefined) {
       this.state.wallRooms.forEach(wallRoom => wallRoom.destroy());
       this.state.wallRooms.clear();
       this.state.wallRoomTiles.clear();
     } else {
       this.state.wallRooms.forEach(wallRoom => {
-        if (wallRoom.floor >= floorIndex) {
+        if (floors.includes(wallRoom.floor)) {
           this.state.wallRooms.delete(wallRoom);
           wallRoom.tiles.forEach(tile => {
             this.state.wallRoomTiles.get(
-              `${tile.position.x},${floorIndex},${tile.position.y}`
+              `${tile.position.x},${floors},${tile.position.y}`
             );
           });
           wallRoom.destroy();
@@ -640,9 +709,9 @@ export default class WallModule extends RoomModule<
     }
   }
 
-  refreshWallRooms(walls: Wall[] = this.state.walls, floorIndex?: FloorIndex) {
+  refreshWallRooms(floors?: FloorIndex[], walls: Wall[] = this.state.walls) {
     if (this.state.wallRooms.size) {
-      this.removeWallRooms(floorIndex);
+      this.removeWallRooms(floors);
     }
 
     const roomsDescriptions = getWallRoomDescriptions(walls);
@@ -652,7 +721,8 @@ export default class WallModule extends RoomModule<
 
     rooms.forEach(room => {
       room.tiles.forEach(tile => {
-        this.room.mesh.add(tile.mesh);
+        tile.mesh.position.y = room.floor * FLOOR_HEIGHT;
+        this.room.addToRoot(tile.mesh);
       });
     });
 
@@ -664,7 +734,7 @@ export default class WallModule extends RoomModule<
     this.state.wallRoomTiles = rooms.reduce((result, room) => {
       room.tiles.forEach(tile => {
         result.set(
-          [tile.position.x, floorIndex, tile.position.y].toString(),
+          [tile.position.x, room.floor, tile.position.y].toString(),
           room
         );
       });
@@ -700,21 +770,27 @@ function createDebugRayLines(
   color = 0x00ff00
 ) {
   const line = createRayLine(cameraPosition, direction, length, color);
-  room.mesh.add(line);
+  room.addToRoot(line);
 
   setTimeout(() => {
-    room.mesh.remove(line);
+    room.root.remove(line);
     line.geometry.dispose();
     (line.material as Material).dispose();
   }, 1000);
 }
 
-function getWallFromParent(object: Object3D | null): Wall | null {
-  if (!object) {
-    return null;
-  }
-  if (object.userData[OBJECT_USER_DATA.WALL]) {
-    return object.userData[OBJECT_USER_DATA.WALL];
-  }
-  return getWallFromParent(object.parent);
+// function getWallFromParent(object: Object3D | null): Wall | null {
+//   if (!object) {
+//     return null;
+//   }
+//   if (object.userData[OBJECT_USER_DATA.WALL]) {
+//     return object.userData[OBJECT_USER_DATA.WALL];
+//   }
+//   return getWallFromParent(object.parent);
+// }
+
+function getFloorDescendingList(floorIndex: FloorIndex): FloorIndex[] {
+  return Array(floorIndex + 1)
+    .fill(0)
+    .map((_, index) => index);
 }

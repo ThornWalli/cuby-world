@@ -75,7 +75,7 @@ const debugInfo = ref();
 function refreshDebugInfo(unit: Unit) {
   const position = unit.getPosition();
   const rotation = unit.rotation;
-  const size = unit.size;
+  const size = unit.getSize();
 
   const info = {
     Pos: `${position.x}x${position.y}x${position.z}`,
