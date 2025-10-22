@@ -20,7 +20,7 @@
       </form>
     </template>
     <template #actions>
-      <cw-button style-type="light" @click="onClickSave()"> Save </cw-button>
+      <cw-button @click="onClickSave()"> Save </cw-button>
     </template>
   </cw-dialog>
 </template>

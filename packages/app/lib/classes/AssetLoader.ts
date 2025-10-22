@@ -1,19 +1,22 @@
 import type { Observable } from 'rxjs';
 import { concatMap, ReplaySubject, Subscription } from 'rxjs';
+import type { Vector2 } from 'three';
 import {
   CubeTexture,
   Texture,
   CubeTextureLoader,
   NearestFilter,
   SRGBColorSpace,
-  TextureLoader
+  TextureLoader,
+  CanvasTexture
 } from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 
 export enum LOADER {
   CUBE_TEXTURE = 'CubeTextureLoader',
   TEXTURE = 'TextureLoader',
-  GLTF = 'GLTFLoader'
+  GLTF = 'GLTFLoader',
+  SPRITE = 'loadSpriteFromAtlas'
 }
 
 interface Loaders {
@@ -24,8 +27,17 @@ interface Loaders {
 
 export interface LoadDescription {
   loader: LOADER;
-  url: string | string[];
+  parse?: boolean;
+  value: string | string[] | ArrayBuffer;
   id?: string;
+  options?: Record<string, unknown>;
+}
+export interface SpriteLoadDescription extends LoadDescription {
+  options: {
+    density?: number;
+    position: Vector2;
+    dimension: Vector2;
+  };
 }
 
 export default class AssetLoader {
@@ -38,11 +50,16 @@ export default class AssetLoader {
     description: LoadDescription;
   }>(0);
 
-  private textures: Map<string, Texture | CubeTexture> = new Map();
+  private textures: Map<string, Promise<Texture | CubeTexture | GLTF>> =
+    new Map();
 
-  getTexture(id: string) {
-    return this.textures.get(id);
-  }
+  // has(id: LOADER | string) {
+  //   return this.textures.has(id);
+  // }
+
+  // get<T = Texture | CubeTexture | GLTF>(id: string) {
+  //   return this.textures.get(id) as Promise<T>;
+  // }
 
   constructor() {
     this.loaders = {
@@ -52,19 +69,47 @@ export default class AssetLoader {
     };
 
     this.subscription.add(
-      this.addDescription$
-        .pipe(loadTexture(this.loaders))
-        .subscribe(([id, texture]) => {
-          this.textures.set(id, texture);
-        })
+      this.addDescription$.pipe(loadTexture(this.loaders)).subscribe(void 0)
     );
   }
 
-  add<T = Texture | CubeTexture | GLTF>(description: LoadDescription) {
-    return new Promise<T>((resolve, reject) => {
-      this.addDescription$.next({ resolve, reject, description });
-    });
+  add<
+    T = Texture | CubeTexture | GLTF,
+    L extends LoadDescription = LoadDescription
+  >(description: L) {
+    const cacheKey = JSON.stringify(description);
+    if (this.textures.has(cacheKey)) {
+      return this.textures.get(cacheKey) as Promise<T>;
+    }
+    const { promise, resolve, reject } = Promise.withResolvers<T>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.textures.set(cacheKey, promise as any);
+    this.addDescription$.next({ resolve, reject, description });
+
+    return promise;
   }
+}
+async function loadSpriteFromAtlas(
+  url: string,
+  sx: number,
+  sy: number,
+  sw: number,
+  sh: number
+) {
+  const img = await new Promise<HTMLImageElement>(resolve => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.src = url;
+  });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = sw;
+  canvas.height = sh;
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+  const texture = new CanvasTexture(canvas);
+  return texture;
 }
 
 function loadTexture(loaders: Loaders) {
@@ -79,28 +124,59 @@ function loadTexture(loaders: Loaders) {
       concatMap(
         async ({
           resolve,
-          description: { id, url, loader }
+          description
         }: {
           resolve: CallableFunction;
           reject: CallableFunction;
           description: LoadDescription;
         }) => {
+          const { loader, value, id } = description;
           let result: Texture | CubeTexture | GLTF;
           switch (loader) {
+            case LOADER.SPRITE:
+              {
+                const loadDescription: SpriteLoadDescription =
+                  description as SpriteLoadDescription;
+                result = await loadSpriteFromAtlas(
+                  description.value as string,
+                  ...loadDescription.options.position
+                    .clone()
+                    .multiplyScalar(loadDescription.options.density ?? 1)
+                    .toArray(),
+                  ...loadDescription.options.dimension
+                    .clone()
+                    .multiplyScalar(loadDescription.options.density ?? 1)
+                    .toArray()
+                );
+              }
+              break;
             case LOADER.GLTF:
               {
-                result = await loaders[LOADER.GLTF].loadAsync(url as string);
+                if (description.parse) {
+                  if (value instanceof ArrayBuffer) {
+                    result = await loaders[LOADER.GLTF].parseAsync(
+                      value as ArrayBuffer,
+                      ''
+                    );
+                  } else {
+                    throw new Error('GLTF parse requires ArrayBuffer as value');
+                  }
+                } else {
+                  result = await loaders[LOADER.GLTF].loadAsync(
+                    value as string
+                  );
+                }
               }
               break;
             case LOADER.CUBE_TEXTURE:
               {
                 result = await loaders[LOADER.CUBE_TEXTURE].loadAsync(
-                  url as string[]
+                  value as string[]
                 );
               }
               break;
             default: {
-              result = await loaders[LOADER.TEXTURE].loadAsync(url as string);
+              result = await loaders[LOADER.TEXTURE].loadAsync(value as string);
             }
           }
 

@@ -1,245 +1,140 @@
-import type { Vector3, Camera, InstancedMesh } from 'three';
-import {
-  Box3,
-  Frustum,
-  Matrix4,
-  Mesh,
-  MeshBasicMaterial,
-  Object3D,
-  Path,
-  Shape,
-  ShapeGeometry,
-  Vector2
-} from 'three';
-import type Unit from './Unit';
-import { createGroundChunks } from '../utils/ground';
-import type RoomDescription from './RoomDescription';
+import type { Vector2 } from 'three';
+import { Object3D } from 'three';
 import type App from './App';
-import RoomGrid from './RoomGrid';
-import { distinctUntilChanged, map } from 'rxjs';
-import UnitChunkManager from './UnitChunkManager';
+import WallModule from './roomModule/Wall';
+import GroundModule from './roomModule/Ground';
+import SelectionMode from './roomModule/Selection';
+import UnitsModule from './roomModule/Units';
+import type { RoomDescription } from '../types/room';
+import type { AnimationLoopValue } from './Renderer';
+import RoofModule from './roomModule/Roof';
+import FloorModule from './roomModule/Floor';
+import StairModule from './roomModule/Stair';
+import TeleportModule from './roomModule/Teleport';
 
-class PositionMap {
-  data = new Map<string, Unit[]>();
-  listsByUnits = new Map<string, Unit[][]>();
+type RoomModuleList = (
+  | typeof GroundModule
+  | typeof TeleportModule
+  | typeof WallModule
+  | typeof StairModule
+  | typeof RoofModule
+  | typeof FloorModule
+  | typeof SelectionMode
+  | typeof UnitsModule
+)[];
 
-  getKey(position: Vector3) {
-    return position.clone().floor().toArray().toString();
-  }
-
-  getByPosition(position: Vector3) {
-    const key = this.getKey(position);
-    return this.data.get(key) || [];
-  }
-
-  remove(unit: Unit) {
-    if (this.listsByUnits.has(unit.id)) {
-      const lists = this.listsByUnits.get(unit.id)!;
-      lists.forEach(list => {
-        const index = list.indexOf(unit);
-        if (index !== -1) {
-          list.splice(index, 1);
-        }
-      });
-    }
-  }
-
-  add(unit: Unit) {
-    // Entferne die Unit aus allen vorherigen Positionen
-    this.remove(unit);
-
-    unit.getMatrixPositions().forEach(pos => {
-      const key = this.getKey(pos);
-      const list = this.data.get(key) || [];
-      list.push(unit);
-      if (!this.listsByUnits.has(unit.id)) {
-        this.listsByUnits.set(unit.id, []);
-      }
-      this.listsByUnits.get(unit.id)?.push(list);
-
-      this.data.set(key, list);
-    });
-  }
+interface RoomModules {
+  ground: GroundModule;
+  teleport: TeleportModule;
+  wall: WallModule;
+  stair: StairModule;
+  roof: RoofModule;
+  floor: FloorModule;
+  selection: SelectionMode;
+  units: UnitsModule;
 }
 
-export default class Room {
-  mesh = new Object3D();
-  groundMesh?: Object3D;
-  selectionMesh?: Object3D;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface RoomState {}
 
-  units = new Map<string, Unit>();
+export default class Room<Modules extends RoomModules = RoomModules> {
+  debug = false;
 
-  /**
-   * Gibt eine Liste an Units zurück die auf der Position liegen.
-   */
-  untiPositionMap = new PositionMap();
-  chunkManager: UnitChunkManager = new UnitChunkManager();
-
-  private _grid: RoomGrid;
-  get grid() {
-    return this._grid;
-  }
-
-  description?: RoomDescription;
+  state: RoomState = {};
+  modules: Modules = {} as Modules;
+  root: Object3D;
+  description: RoomDescription;
+  gridSize: Vector2;
 
   constructor(
     public app: App,
-    grid: RoomGrid = new RoomGrid([], 0, 0)
+    description: RoomDescription,
+    protected moduleList: RoomModuleList = []
   ) {
-    this._grid = grid;
-    this.mesh = new Object3D();
-    this.mesh.name = 'room';
-
-    this.setupSelection();
+    this.description = description;
+    this.gridSize = description.gridSize.clone();
+    this.root = new Object3D();
+    this.root.name = 'room';
   }
 
-  get gridSize() {
-    return new Vector2(this.grid.width, this.grid.height);
-  }
-  async add(unit: Unit) {
-    await unit.setup({
-      unit,
-      assetLoader: this.app.texturePreloader,
-      room: this
+  async setupModules() {
+    const moduleList = this.moduleList;
+    moduleList.push(GroundModule);
+    moduleList.push(TeleportModule);
+    moduleList.push(SelectionMode);
+    moduleList.push(WallModule);
+    moduleList.push(StairModule);
+    moduleList.push(UnitsModule);
+    moduleList.push(FloorModule);
+    moduleList.push(RoofModule);
+
+    //#region editor
+
+    //#endregion
+
+    //#region Modules
+    const preparedModules = moduleList.map(ModuleClass => {
+      const moduleInstance = new ModuleClass(this, this.debug);
+      return [ModuleClass.TYPE, moduleInstance];
     });
-
-    unit.subscription.add(
-      unit.position$
-        .pipe(
-          map(pos => pos.clone().floor()),
-          distinctUntilChanged((prev, next) => prev.equals(next))
-        )
-        .subscribe(() => {
-          this.untiPositionMap.add(unit);
-          this.chunkManager.assignToChunk(unit);
-        })
-    );
-    this.units.set(unit.id, unit);
-    this.chunkManager.assignToChunk(unit);
-    this.mesh.add(unit.root);
+    this.modules = Object.fromEntries(preparedModules);
+    //#endregion
   }
 
-  remove(unit: Unit) {
-    this.units.delete(unit.id);
-    this.chunkManager.removeFromChunk(unit);
-    this.mesh.remove(unit.root);
+  destroy() {
+    Object.values(this.modules).forEach(module => {
+      module.destroy();
+    });
+    this.app.renderer.scene.remove(this.root);
   }
 
-  getById(id: string): Unit | undefined {
-    return this.units.get(id);
+  addToRoot(object: Object3D) {
+    this.root.add(object);
   }
 
-  isPositionFree(position: Vector3, ignoredUnits?: Unit[]) {
-    return (
-      this.untiPositionMap
-        .getByPosition(position)
-        .filter(
-          unit =>
-            !unit.accessible && (!ignoredUnits || !ignoredUnits.includes(unit))
-        ).length === 0
-    );
-  }
-
-  setupSelection() {
-    const size = 0.9;
-    const outerShape = new Shape();
-    const outerSize = size;
-    outerShape.moveTo(-outerSize / 2, -outerSize / 2);
-    outerShape.lineTo(outerSize / 2, -outerSize / 2);
-    outerShape.lineTo(outerSize / 2, outerSize / 2);
-    outerShape.lineTo(-outerSize / 2, outerSize / 2);
-    outerShape.lineTo(-outerSize / 2, -outerSize / 2);
-
-    const innerShape = new Path();
-    const innerSize = size * (4 / 5);
-    innerShape.moveTo(-innerSize / 2, -innerSize / 2);
-    innerShape.lineTo(innerSize / 2, -innerSize / 2);
-    innerShape.lineTo(innerSize / 2, innerSize / 2);
-    innerShape.lineTo(-innerSize / 2, innerSize / 2);
-    innerShape.lineTo(-innerSize / 2, -innerSize / 2);
-
-    outerShape.holes.push(innerShape);
-
-    const geometry = new ShapeGeometry(outerShape);
-    geometry.translate(0, 0, 0.1);
-    geometry.rotateX(-Math.PI / 2);
-    const material = new MeshBasicMaterial({ color: 0xffffff });
-    const selectionMesh = new Mesh(geometry, material);
-    selectionMesh.position.set(0, 0, 0);
-
-    this.mesh.add(selectionMesh);
-    this.selectionMesh = selectionMesh;
-  }
-
-  groundChunks: InstancedMesh[] = [];
-  setupGround(roomGrid: RoomGrid) {
-    const groundMesh = new Object3D();
-    groundMesh.name = 'ground';
-
-    this.groundChunks = createGroundChunks(roomGrid, 16);
-    this.groundChunks.forEach(chunk => groundMesh.add(chunk));
-
-    this.groundMesh = groundMesh;
-    this.mesh.add(groundMesh);
-  }
-
-  updateVisibility(camera: Camera) {
-    const frustum = new Frustum();
-    const projScreenMatrix = new Matrix4();
-    projScreenMatrix.multiplyMatrices(
-      camera.projectionMatrix,
-      camera.matrixWorldInverse
-    );
-
-    const units = this.chunkManager.updateVisibility(camera);
-    this.updateChunksVisibility(frustum, projScreenMatrix);
-    return { units };
-  }
-
-  updateUnitsVisibility(frustum: Frustum, projScreenMatrix: Matrix4) {
-    frustum.setFromProjectionMatrix(projScreenMatrix);
-    return this.units.values().reduce((result, unit) => {
-      const box = new Box3().setFromObject(unit.root);
-      unit.root.visible = frustum.intersectsBox(box);
-      result.push(unit);
-      return result;
-    }, [] as Unit[]);
-  }
-  updateChunksVisibility(frustum: Frustum, projScreenMatrix: Matrix4) {
-    frustum.setFromProjectionMatrix(projScreenMatrix);
-    this.groundChunks.forEach(chunk => {
-      const box = new Box3().setFromObject(chunk);
-      chunk.visible = frustum.intersectsBox(box);
+  update(value: AnimationLoopValue) {
+    Object.values(this.modules).forEach(module => {
+      module.update(value);
     });
   }
 
-  async setupUnits(units: Unit[]) {
-    await Promise.all(
-      units.map(unit => {
-        this.add(unit);
-      })
-    );
-  }
-
-  getSize() {
-    return new Vector2(this.grid.width, this.grid.height);
-  }
-
-  update(time: number) {
-    this.visibleUnits.forEach(unit => {
-      unit.update(time);
+  updateThrottle(value: AnimationLoopValue) {
+    Object.values(this.modules).forEach(module => {
+      module.updateThrottle(value, { camera: this.app.renderer.camera });
     });
   }
 
-  visibleUnits: Unit[] = [];
-  updateThrottle(_time: number) {
-    const { units: visibleUnits } = this.updateVisibility(
-      this.app.renderer.camera
-    );
-    this.visibleUnits = visibleUnits;
+  updateThrottle500ms(value: AnimationLoopValue) {
+    Object.values(this.modules).forEach(module => {
+      module.updateThrottle500ms(value, { camera: this.app.renderer.camera });
+    });
   }
 
-  setSelectionPosition(position: Vector3) {
-    this.selectionMesh!.position.copy(position);
+  updateThrottle1Sec(value: AnimationLoopValue) {
+    Object.values(this.modules).forEach(module => {
+      module.updateThrottle1Sec(value, { camera: this.app.renderer.camera });
+    });
+  }
+
+  toDescription(): RoomDescription {
+    const description = this.description!;
+    return {
+      id: description.id,
+      info: {
+        name: this.description?.info.name ?? '',
+        description: this.description?.info.description ?? ''
+      },
+      gridSize: this.gridSize,
+      teleports: this.modules.teleport
+        .getTeleports()
+        .map(teleport => teleport.toDescription()),
+      walls: this.modules.wall.getWalls().map(wall => wall.toDescription()),
+      units: this.modules.units
+        .getUnits()
+        .filter(unit => !unit.modules.player.player)
+        .map(unit => unit.toJSON()),
+      groundStyles: this.modules.ground.getGroundStyleMap().toGroundStyles(),
+      stairs: this.modules.stair.getStairs().map(stair => stair.toDescription())
+    };
   }
 }

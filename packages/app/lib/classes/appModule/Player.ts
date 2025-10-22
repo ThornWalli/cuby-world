@@ -1,26 +1,38 @@
 import { ReplaySubject, Subject } from 'rxjs';
-import AppModule, { type AppModuleState } from '../AppModule';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
 import type Player from '../Player';
+import type App from '../App';
+
+interface Observables extends AppModuleObservables {
+  currentPlayer$: ReplaySubject<Player>;
+  addPlayer$: Subject<Player>;
+  removePlayer$: Subject<Player>;
+}
 
 interface State extends AppModuleState {
   currentPlayer?: Player;
   players: Player[];
 }
-export default class PlayerAppModule extends AppModule<State> {
+export default class PlayerAppModule extends AppModule<State, Observables> {
   static override TYPE = 'player';
   state: State = {
     players: []
   };
 
-  currentPlayer$ = new ReplaySubject<Player>(0);
-  addPlayer$ = new Subject<Player>();
-  removePlayer$ = new Subject<Player>();
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.currentPlayer$ = new ReplaySubject<Player>(0);
+    this.observables.addPlayer$ = new Subject<Player>();
+    this.observables.removePlayer$ = new Subject<Player>();
+    //#endregion
+  }
 
   override destroy(): void {
     super.destroy();
-    this.currentPlayer$.unsubscribe();
-    this.addPlayer$.unsubscribe();
-    this.removePlayer$.unsubscribe();
     this.state.players.forEach(player => player.destroy());
   }
 
@@ -37,7 +49,7 @@ export default class PlayerAppModule extends AppModule<State> {
 
   setCurrentPlayer(player: Player) {
     this.state.currentPlayer = player;
-    this.currentPlayer$.next(player);
+    this.observables.currentPlayer$.next(player);
   }
 
   getPlayers() {
@@ -46,7 +58,7 @@ export default class PlayerAppModule extends AppModule<State> {
 
   addPlayer(player: Player) {
     this.state.players.push(player);
-    this.addPlayer$.next(player);
+    this.observables.addPlayer$.next(player);
     if (player.client) {
       this.setCurrentPlayer(player);
     }
@@ -54,7 +66,7 @@ export default class PlayerAppModule extends AppModule<State> {
 
   removePlayer(player: Player) {
     this.state.players = this.state.players.filter(p => p.id !== player.id);
-    this.removePlayer$.next(player);
+    this.observables.removePlayer$.next(player);
     player.destroy();
   }
 }

@@ -15,11 +15,11 @@ import {
   Vector3
 } from 'three';
 
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import Unit, {
-  OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 import { defaultMaterial } from './utils/material';
 
 export enum GEOMETRY_TYPE {
@@ -61,7 +61,7 @@ export default class Geometry extends Unit<GeometryOptions> {
       }
     });
   }
-  override createMesh() {
+  override async createMesh() {
     // const material = new MeshPhysicalMaterial({
     //   color: 0xffd700,
     //   metalness: 1.0,
@@ -87,7 +87,7 @@ export default class Geometry extends Unit<GeometryOptions> {
       material = defaultMaterial();
     }
 
-    const size = this.size;
+    const size = this.getSize();
     const geometry = getGeometryByType(this.options.type, size);
 
     const mesh: Object3D = new Mesh(geometry, material);

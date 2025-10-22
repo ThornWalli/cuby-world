@@ -3,77 +3,99 @@ import type { Subscription } from 'rxjs';
 import type Renderer from './Renderer';
 
 import AssetLoader from './AssetLoader';
+import CursorAppModule from './appModule/Cursor';
 import UnitFocusAppModule from './appModule/UnitFocus';
 import RoomAppModule from './appModule/Room';
 import PlayerAppModule from './appModule/Player';
 import SelectionAppModule from './appModule/Selection';
 import PlacementAppModule from './appModule/Placement';
 import MultiplayerAppModule from './appModule/Multiplayer';
+import EditorWallAppModule from './appModule/editor/Wall';
+import EditorGroundAppModule from './appModule/editor/Ground';
+import type { ImportRoomDescription } from '../types/room';
+import EditorStairModule from './appModule/editor/Stair';
+import InventoryAppModule from './appModule/Inventory';
+import CatalogAppModule from './appModule/Catalog';
 
 type AppModuleList = (
+  | typeof CursorAppModule
   | typeof UnitFocusAppModule
   | typeof PlayerAppModule
   | typeof RoomAppModule
   | typeof SelectionAppModule
   | typeof PlacementAppModule
   | typeof MultiplayerAppModule
+  | typeof CatalogAppModule
+  | typeof InventoryAppModule
 )[];
 interface AppModules {
+  cursor: CursorAppModule;
   room: RoomAppModule;
   player: PlayerAppModule;
   unitFocus: UnitFocusAppModule;
   selection: SelectionAppModule;
   placement: PlacementAppModule;
-  multiplayer?: MultiplayerAppModule;
+  catalog: CatalogAppModule;
+  inventory: InventoryAppModule;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface AppState {}
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface AppConfig {}
+export enum APP_MODE {
+  PLAYGROUND = 'playground',
+  EDITOR = 'editor'
+}
 
-export default class App {
-  texturePreloader = new AssetLoader();
+export interface AppConfig {
+  mode?: APP_MODE;
+}
+
+export class BaseApp<
+  Modules extends AppModules = AppModules,
+  ModuleList extends AppModuleList = AppModuleList
+> {
+  assetLoader = new AssetLoader();
 
   state: AppState = {};
 
-  // #region room
+  //#region room
   roomSubscription?: Subscription;
-  // #endregion
+  //#endregion
 
-  modules: AppModules;
+  modules: Modules = {} as Modules;
+  moduleList: ModuleList;
 
   ready = false;
 
   constructor(
     public config: AppConfig,
     public renderer: Renderer,
-    modules: AppModuleList = []
+    moduleList: ModuleList = [] as unknown as ModuleList
   ) {
-    modules.push(
+    moduleList.push(
+      CursorAppModule,
       RoomAppModule,
       PlayerAppModule,
       UnitFocusAppModule,
       SelectionAppModule,
-      PlacementAppModule
+      PlacementAppModule,
+      CatalogAppModule,
+      InventoryAppModule
     );
-
-    if (config.multiplayer?.enabled) {
-      modules.push(MultiplayerAppModule);
-    }
-
-    // #region Modules
-    const preparedModules = modules.map(ModuleClass => {
-      const moduleInstance = new ModuleClass(this);
-      return [ModuleClass.TYPE, moduleInstance];
-    });
-    this.modules = Object.fromEntries(preparedModules);
-    // #endregion
+    this.moduleList = moduleList;
   }
 
   async setup() {
     if (this.ready) return;
+
+    //#region Modules
+    const preparedModules = this.moduleList.map(ModuleClass => {
+      const moduleInstance = new ModuleClass(this);
+      return [ModuleClass.TYPE, moduleInstance];
+    });
+    this.modules = Object.fromEntries(preparedModules);
+    //#endregion
 
     await Promise.all(
       Object.values(this.modules).map(module => module.setup())
@@ -84,9 +106,73 @@ export default class App {
 
   destroy() {
     this.roomSubscription?.unsubscribe();
+    Object.values(this.modules).forEach(module => {
+      module.destroy();
+    });
+    this.renderer.destroy();
   }
 
   resetCamera() {
     this.renderer.resetCamera();
+  }
+
+  loadRoom(roomDescription: ImportRoomDescription) {
+    return this.modules.room.fromDescription(roomDescription);
+  }
+
+  isEditMode() {
+    return this.config.mode === APP_MODE.EDITOR;
+  }
+}
+
+interface AppPlaygroundModules extends AppModules {
+  player: PlayerAppModule;
+  multiplayer?: MultiplayerAppModule;
+}
+
+export default class App extends BaseApp<AppPlaygroundModules> {
+  constructor(
+    config: AppConfig,
+    renderer: Renderer,
+    modules: AppModuleList = []
+  ) {
+    if (config.multiplayer?.enabled) {
+      modules.push(MultiplayerAppModule);
+    }
+
+    super(config, renderer, modules);
+  }
+}
+
+interface AppEditorModules extends AppModules {
+  editorWall: EditorWallAppModule;
+  editorGround: EditorGroundAppModule;
+  editorStair: EditorStairModule;
+}
+
+export class EditorApp extends BaseApp<
+  AppEditorModules,
+  (
+    | typeof EditorWallAppModule
+    | typeof EditorGroundAppModule
+    | typeof EditorStairModule
+  )[] &
+    AppModuleList
+> {
+  constructor(
+    config: AppConfig,
+    renderer: Renderer,
+    moduleList: (
+      | typeof EditorWallAppModule
+      | typeof EditorGroundAppModule
+      | typeof EditorStairModule
+    )[] &
+      AppModuleList = []
+  ) {
+    moduleList.push(EditorWallAppModule);
+    moduleList.push(EditorGroundAppModule);
+    moduleList.push(EditorStairModule);
+
+    super(config, renderer, moduleList);
   }
 }

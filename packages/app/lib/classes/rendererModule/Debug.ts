@@ -35,7 +35,7 @@ export default class DebugRendererModule extends RendererModule<DebugState> {
   override setup(): void {
     const scene = this.renderer.scene;
 
-    // #region Axes Helper
+    //#region Axes Helper
     if (this.axisHelper) {
       scene.remove(this.axisHelper);
       this.axisHelper = undefined;
@@ -44,9 +44,9 @@ export default class DebugRendererModule extends RendererModule<DebugState> {
       this.axisHelper = new AxesHelper(5);
       scene.add(this.axisHelper);
     }
-    // #endregion
+    //#endregion
 
-    // #region GUI
+    //#region GUI
     if (this.gui) {
       this.gui.destroy();
       this.gui = undefined;
@@ -55,7 +55,7 @@ export default class DebugRendererModule extends RendererModule<DebugState> {
     if (this.state.gui) {
       this.gui = debugGui(this.renderer);
     }
-    // #endregion
+    //#endregion
   }
 }
 

@@ -33,3 +33,4 @@ packages/frontend/.certs/*
 dist
 .secrets
 /target
+*.blend1

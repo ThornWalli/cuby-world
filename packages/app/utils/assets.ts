@@ -16,7 +16,8 @@ export enum ASSET {
   CUBY_RIGHT = 'cubyRight',
   CUBY_FRONT = 'cubyFront',
   CUBY_BACK = 'cubyBack',
-  SKY_BOX_1 = 'skyBox1'
+  SKY_BOX_1 = 'skyBox1',
+  WALL_DEFAULT = 'wallDefault'
 }
 
 export const assets: AssetDescription[] = [];

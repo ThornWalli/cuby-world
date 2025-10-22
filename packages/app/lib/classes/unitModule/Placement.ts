@@ -1,25 +1,36 @@
 import { ReplaySubject } from 'rxjs';
-import UnitModule, { type UnitModuleState } from '../UnitModule';
+import UnitModule, {
+  type UnitModuleObservables,
+  type UnitModuleState
+} from '../UnitModule';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
 import { normalizeMaterialList } from '../../utils/material';
+import type Unit from '../Unit';
 
 interface TransparentDescription {
   transparent: boolean;
   opacity: number;
 }
 
+interface Observables extends UnitModuleObservables {
+  startPlace$: ReplaySubject<void>;
+  stopPlace$: ReplaySubject<void>;
+  abortPlace$: ReplaySubject<void>;
+}
+
 type State = UnitModuleState;
 
-export class PlacementUnitModule extends UnitModule {
+export class PlacementUnitModule extends UnitModule<State, Observables> {
   static override TYPE = 'placement';
 
-  state: State = {};
-
-  startPlace$ = new ReplaySubject<void>(1);
-  stopPlace$ = new ReplaySubject<void>(1);
-  abortPlace$ = new ReplaySubject<void>(1);
-
   lastMaterial = new Map<string, TransparentDescription>();
+
+  constructor(unit: Unit, state: State, debug: boolean) {
+    super(unit, state, debug);
+    this.observables.startPlace$ = new ReplaySubject<void>(1);
+    this.observables.stopPlace$ = new ReplaySubject<void>(1);
+    this.observables.abortPlace$ = new ReplaySubject<void>(1);
+  }
 
   startPlace() {
     this.lastMaterial.clear();
@@ -33,7 +44,7 @@ export class PlacementUnitModule extends UnitModule {
         material.opacity = 0.5;
       });
     });
-    this.startPlace$.next();
+    this.observables.startPlace$.next();
   }
 
   stopPlace() {
@@ -47,10 +58,10 @@ export class PlacementUnitModule extends UnitModule {
         }
       });
     });
-    this.stopPlace$.next();
+    this.observables.stopPlace$.next();
   }
 
   abortPlace() {
-    this.abortPlace$.next();
+    this.observables.abortPlace$.next();
   }
 }

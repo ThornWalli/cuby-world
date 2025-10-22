@@ -21,6 +21,8 @@
     "start": "npx serve .output/public"
   },
   "dependencies": {
+  },
+  "devDependencies": {
     "@fullhuman/postcss-purgecss": "catalog:",
     "@nuxtjs/critters": "catalog:",
     "@nuxtjs/robots": "catalog:",
@@ -36,7 +38,7 @@
     "postcss-url": "catalog:",
     "read-pkg": "catalog:",
     "rucksack-css": "catalog:",
-    "stats.js": "^0.17.0",
+    "stats.js": "0.17.0",
     "tsx": "catalog:",
     "ufo": "catalog:",
     "vite-plugin-checker": "catalog:",
@@ -44,6 +46,7 @@
     "vite-plugin-markdown": "catalog:",
     "vite-plugin-mkcert": "catalog:",
     "vite-plugin-node-polyfills": "catalog:",
-    "vite-svg-loader": "catalog:"
+    "vite-svg-loader": "catalog:",
+    "svgo": "catalog:"
   }
 }

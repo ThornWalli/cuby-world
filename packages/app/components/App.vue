@@ -1,12 +1,19 @@
 <template>
-  <div ref="rootEl" class="cw-app">
+  <div
+    ref="rootEl"
+    class="cw-app"
+    :style="{
+      '--cursor': currentCursor?.src
+        ? `url(${currentCursor?.src}) 0 0, auto`
+        : currentCursor?.type
+    }">
     <cw-renderer
       ref="rendererEl"
       debug
       :options="rendererOptions"
       :modules="[IntersectionRendererModule]" />
     <transition name="fade">
-      <cw-app-playground v-if="ready && hasPlayer" :app="app!" />
+      <component :is="currentComponent" v-if="ready && hasPlayer" :app="app!" />
     </transition>
     <!-- Dialogs -->
     <teleport to="#teleports">
@@ -16,48 +23,66 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, markRaw, nextTick, onMounted, onUnmounted } from 'vue';
-import App, { type AppConfig } from '../lib/classes/App';
+import {
+  ref,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  computed,
+  defineAsyncComponent,
+  markRaw
+} from 'vue';
+import App, { APP_MODE, EditorApp, type AppConfig } from '../lib/classes/App';
 import CwRenderer from './Renderer.vue';
-import CwAppPlayground from './app/Playground.vue';
 import CwDialogCreateUser from './dialogs/CreateUser.vue';
 
 import setupFonts from './../utils/fonts';
 import type { RendererOptions } from '../types';
 import IntersectionRendererModule from '../lib/classes/rendererModule/Intersection';
-import UnitFocusAppModule from '../lib/classes/appModule/UnitFocus';
 import { fromEvent, Subscription } from 'rxjs';
 import { Vector2 } from 'three';
 import type Renderer from '../lib/classes/Renderer';
 import Player, { type PlayerSettings } from '../lib/classes/Player';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
-import DefaultRoom from '../lib/rooms/Default';
 import { DEFAULT_ROOM_ID } from '../lib/classes/appModule/Multiplayer';
+import type { RoomDescription } from '../lib/types/room';
+import type { Cursor } from '../lib/classes/appModule/Cursor';
 
 setupFonts();
 const $props = defineProps<{
+  roomDescription: RoomDescription;
   config: AppConfig;
   rendererOptions?: RendererOptions;
 }>();
+
+const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
+const dialogCreateUser = ref<InstanceType<typeof CwDialogCreateUser> | null>(
+  null
+);
 
 const rootEl = ref<HTMLElement>();
 const dimension = ref<Vector2>();
 const subscription = new Subscription();
 const app = ref<App>();
-const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 const ready = ref(false);
-const dialogCreateUser = ref<InstanceType<typeof CwDialogCreateUser> | null>(
-  null
-);
+const hasPlayer = ref(false);
+
+const currentComponent = computed(() => {
+  if ($props.config.mode === APP_MODE.EDITOR) {
+    return defineAsyncComponent(() => import('./app/Editor.vue'));
+  }
+  return defineAsyncComponent(() => import('./app/Playground.vue'));
+});
 
 onMounted(async () => {
   nextTick(() => {
     setup();
+    app.value!.loadRoom($props.roomDescription);
   });
 });
 
 onUnmounted(() => {
-  app.value?.destroy();
+  // app.value?.destroy();
   subscription.unsubscribe();
 });
 
@@ -74,15 +99,43 @@ async function setup() {
   await setupPlayer(app);
   await app.modules.multiplayer?.joinRoom(DEFAULT_ROOM_ID);
 
-  // ####
-  // TODO: Raum muss noch aus der db kommen.
-  app.modules.room.fromDescription(new DefaultRoom());
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).cubyWorld = app;
 }
 
 const STORAGE_PLAYER_KEY = 'cuby-world:player';
+
+const currentCursor = ref<Cursor>();
+
+async function setupApp(renderer: Renderer) {
+  app.value = markRaw(
+    getAppByMode(
+      $props.config.mode ?? APP_MODE.PLAYGROUND,
+      $props.config,
+      renderer
+    )
+  );
+
+  await app.value.setup();
+  ready.value = true;
+
+  subscription.add(
+    app.value.modules.cursor.observables.current$.subscribe(cursor => {
+      console.log('Cursor changed', cursor);
+      currentCursor.value = cursor;
+    })
+  );
+
+  subscription.add(
+    fromEvent(window, 'resize', {
+      passive: true
+    }).subscribe(() => {
+      onResize();
+    })
+  );
+
+  return app.value;
+}
 
 async function getPlayerSettings() {
   let playerSettings: PlayerSettings | undefined = undefined;
@@ -105,23 +158,6 @@ async function getPlayerSettings() {
   return playerSettings;
 }
 
-async function setupApp(renderer: Renderer) {
-  app.value = markRaw(new App($props.config, renderer, [UnitFocusAppModule]));
-  await app.value.setup();
-  ready.value = true;
-
-  subscription.add(
-    fromEvent(window, 'resize', {
-      passive: true
-    }).subscribe(() => {
-      onResize();
-    })
-  );
-
-  return app.value;
-}
-
-const hasPlayer = ref(false);
 async function setupPlayer(app: App) {
   const playerSettings = await getPlayerSettings();
 
@@ -145,6 +181,14 @@ async function setupPlayer(app: App) {
   hasPlayer.value = true;
 }
 
+function getAppByMode(mode: APP_MODE, config: AppConfig, renderer: Renderer) {
+  if (mode === APP_MODE.EDITOR) {
+    return new EditorApp(config, renderer);
+  } else {
+    return new App(config, renderer);
+  }
+}
+
 function onResize() {
   const { width, height } = rootEl.value!.getBoundingClientRect();
   dimension.value = new Vector2(width, height);
@@ -165,17 +209,8 @@ function onResize() {
     left: 50%;
     width: 100%;
     height: 100%;
+    cursor: var(--cursor);
     transform: translate(-50%, -50%);
   }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>

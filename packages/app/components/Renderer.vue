@@ -30,7 +30,19 @@ const $props = defineProps<{
   modules?: RendererModuleList;
 }>();
 
-const $emit = defineEmits(['ready', 'click']);
+const $emit = defineEmits<{
+  (e: 'ready'): void;
+  (
+    e:
+      | 'pointerdown'
+      | 'pointerup'
+      | 'pointermove'
+      | 'pointerup'
+      | 'pointerenter'
+      | 'pointerout',
+    event: PointerEvent
+  ): void;
+}>();
 
 const rootEl = ref();
 const canvasEl = ref();
@@ -38,7 +50,7 @@ const canvasEl = ref();
 const subscription = new Subscription();
 
 const defaultRendererOptions: RendererOptions = {
-  pixelated: false,
+  pixelated: true,
   controls: true
 };
 
@@ -47,6 +59,7 @@ onMounted(async () => {
     rootEl.value.offsetWidth,
     rootEl.value.offsetHeight
   );
+
   const { pixelated, controls } = $props.options || defaultRendererOptions;
 
   renderer.value = markRaw(
@@ -67,8 +80,35 @@ onMounted(async () => {
   );
 
   subscription.add(
-    fromEvent<PointerEvent>(canvasEl.value, 'pointerdown').subscribe(event => {
-      $emit('click', event);
+    fromEvent<PointerEvent>(canvasEl.value, 'pointerdown').subscribe(e => {
+      const sub = fromEvent<PointerEvent>(document, 'pointerup').subscribe(
+        e => {
+          sub.unsubscribe();
+          $emit('pointerup', e);
+        }
+      );
+      $emit('pointerdown', e);
+    })
+  );
+
+  subscription.add(
+    fromEvent<PointerEvent>(canvasEl.value, 'pointermove').subscribe(e => {
+      $emit('pointermove', e);
+      // renderer.value?.modules.intersection?.onMove();
+    })
+  );
+
+  subscription.add(
+    fromEvent<PointerEvent>(canvasEl.value, 'pointerenter').subscribe(e => {
+      $emit('pointerenter', e);
+      // renderer.value?.modules.intersection?.onEnter();
+    })
+  );
+
+  subscription.add(
+    fromEvent<PointerEvent>(canvasEl.value, 'pointerout').subscribe(e => {
+      $emit('pointerout', e);
+      // renderer.value?.modules.intersection?.onOut();
     })
   );
 

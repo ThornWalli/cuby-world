@@ -1,13 +1,23 @@
 import type { Subscription } from 'rxjs';
-import { ReplaySubject } from 'rxjs';
-import AppModule, { type AppModuleState } from '../AppModule';
+import { Subject } from 'rxjs';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
 import type Unit from '../Unit';
 import type { Vector3 } from 'three';
+import type App from '../App';
+
+interface Observables extends AppModuleObservables {
+  abortPlace$: Subject<Unit>;
+  startPlace$: Subject<Unit>;
+  stopPlace$: Subject<Vector3>;
+}
 
 interface State extends AppModuleState {
   placedUnit: Unit | null;
 }
-export default class PlacementAppModule extends AppModule<State> {
+export default class PlacementAppModule extends AppModule<State, Observables> {
   static override TYPE = 'placement';
   state: State = {
     placedUnit: null
@@ -15,9 +25,14 @@ export default class PlacementAppModule extends AppModule<State> {
 
   unitSubscription?: Subscription;
 
-  abortPlace$ = new ReplaySubject<Unit>(1);
-  startPlace$ = new ReplaySubject<Unit>(1);
-  stopPlace$ = new ReplaySubject<Vector3>(1);
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.abortPlace$ = new Subject<Unit>();
+    this.observables.startPlace$ = new Subject<Unit>();
+    this.observables.stopPlace$ = new Subject<Vector3>();
+    //#endregion
+  }
 
   getPlaceUnit() {
     return this.state.placedUnit;
@@ -38,7 +53,7 @@ export default class PlacementAppModule extends AppModule<State> {
     }
 
     this.state.placedUnit = null;
-    this.abortPlace$.next(unit);
+    this.observables.abortPlace$.next(unit);
     unit.modules.placement.abortPlace();
   }
 
@@ -48,7 +63,7 @@ export default class PlacementAppModule extends AppModule<State> {
     }
 
     this.state.placedUnit = unit;
-    this.startPlace$.next(unit);
+    this.observables.startPlace$.next(unit);
     unit.modules.placement.startPlace();
   }
 
@@ -62,7 +77,7 @@ export default class PlacementAppModule extends AppModule<State> {
     }
     const position = this.state.placedUnit.getPosition();
     this.state.placedUnit = null;
-    this.stopPlace$.next(position);
+    this.observables.stopPlace$.next(position);
     unit.modules.placement.stopPlace();
   }
 }

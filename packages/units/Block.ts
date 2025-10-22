@@ -2,17 +2,18 @@ import type { Color, Object3D } from 'three';
 import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
 
 import Unit, {
-  OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 
 export interface BlockOptions extends UnitOptions {
   color: string | number | Color;
+  size: Vector3;
 }
 export default class Block extends Unit<BlockOptions> {
-  static override KEY = 'box';
-  static override NAME = 'Box';
+  static override KEY = 'block';
+  static override NAME = 'Block';
 
   constructor(
     options: Omit<
@@ -20,23 +21,25 @@ export default class Block extends Unit<BlockOptions> {
       'name' | 'selectable'
     > = {}
   ) {
+    const size = options.options?.size ?? new Vector3(1, 1 / 3, 1);
     super({
-      size: new Vector3(1, 1 / 3, 1),
+      size,
       ...options,
       name: 'Block',
       selectable: true,
       placeable: true,
       options: {
         color: 0xd70000,
-        ...options.options
+        size,
+        ...(options.options ?? {})
       }
     });
   }
 
-  override createMesh() {
+  override async createMesh() {
     const material = new MeshPhongMaterial({ color: this.options.color });
 
-    const size = this.size;
+    const size = this.getSize();
     const geometry = new BoxGeometry(size.z, size.y, size.x);
 
     const mesh: Object3D = new Mesh(geometry, material);

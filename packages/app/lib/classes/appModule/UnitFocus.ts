@@ -1,16 +1,29 @@
 import { ReplaySubject } from 'rxjs';
-import AppModule, { type AppModuleState } from '../AppModule';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
 import type Unit from '../Unit';
+import type App from '../App';
+
+interface Observables extends AppModuleObservables {
+  focusedUnit$: ReplaySubject<Unit | undefined>;
+}
 
 interface State extends AppModuleState {
   focusedUnit?: Unit;
 }
-export default class UnitFocusAppModule extends AppModule<State> {
+export default class UnitFocusAppModule extends AppModule<State, Observables> {
   static override TYPE = 'unitFocus';
 
   state: State = {};
 
-  focusedUnit$ = new ReplaySubject<Unit | undefined>(1);
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.focusedUnit$ = new ReplaySubject<Unit | undefined>(1);
+    //#endregion
+  }
 
   get focusedUnit() {
     return this.state.focusedUnit;
@@ -29,17 +42,17 @@ export default class UnitFocusAppModule extends AppModule<State> {
     this.state.focusedUnit = unit;
     const controls = this.app.renderer.controls;
     if (!unit) {
-      controls.enabled = true;
+      this.app.renderer.enableControls();
       if (lastFocusedUnit) {
         controls.object.position.copy(this.app.renderer.camera.position);
         controls.target.copy(lastFocusedUnit.root.position);
         controls.update();
       }
     } else {
-      controls.enabled = false;
+      this.app.renderer.disableControls();
       controls.update();
     }
-    this.focusedUnit$.next(unit);
+    this.observables.focusedUnit$.next(unit);
   }
 
   unfocusUnit() {

@@ -29,9 +29,6 @@
     "@nuxt/eslint": "catalog:",
     "@types/node": "catalog:",
     "@types/web": "catalog:",
-    "@cuby-world/frontend": "workspace:*",
-    "@cuby-world/app": "workspace:*",
-    "@cuby-world/units": "workspace:*",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
@@ -49,6 +46,7 @@
     "typescript-eslint": "catalog:",
     "vitest": "catalog:",
     "vue": "catalog:",
+    "vue-component-type-helpers": "^3.0.6",
     "vue-eslint-parser": "catalog:",
     "vue-tsc": "catalog:"
   },

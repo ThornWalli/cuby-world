@@ -1,5 +1,5 @@
 <template>
-  <div class="base-dialog" :class="{ visible }">
+  <div class="base-dialog" :class="{ visible, fullscreen }">
     <div>
       <div class="trigger" @click="onClickTrigger"></div>
       <transition name="fade" mode="out-in">
@@ -23,6 +23,7 @@ const $emit = defineEmits<{
 }>();
 
 const visible = ref($props.forceOpen ?? false);
+const fullscreen = ref(false);
 
 function close<Result = unknown>(value?: Result) {
   visible.value = false;
@@ -44,10 +45,16 @@ function onClickTrigger() {
   }
 }
 
+function toggleFullscreen() {
+  fullscreen.value = !fullscreen.value;
+}
+
 defineExpose({
   open,
   close,
-  visible
+  visible,
+  fullscreen,
+  toggleFullscreen
 });
 </script>
 
@@ -73,15 +80,17 @@ defineExpose({
     pointer-events: auto;
     opacity: 1;
   }
-}
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+  &.fullscreen {
+    & .base-dialog-inner {
+      width: 100vw;
+      width: 100svw;
+      max-width: none;
+      height: 100vh;
+      height: 100svh;
+      max-height: none;
+      border-radius: 0;
+    }
+  }
 }
 </style>

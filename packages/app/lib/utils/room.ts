@@ -9,12 +9,12 @@ export function getYPositionByPosition(
   ignoreUnits: Unit[] = []
 ) {
   const ignoreIds = ignoreUnits.map(u => u.id);
-  const intersectedUnits = room.units.values().filter(u => {
+  const intersectedUnits = room.modules.units.getUnits().filter(u => {
     return (
       !ignoreIds.includes(u.id) &&
       u
         .getMatrixPositions()
-        .find(p => p.equals(positionToMatrixPosition(position)))
+        .some(p => p.equals(positionToMatrixPosition(position)))
     );
   });
 
@@ -25,7 +25,7 @@ export function getYPositionByPosition(
   const topUnit = sortedUnits[sortedUnits.length - 1];
   let y = 0;
   if (topUnit) {
-    y = topUnit.getPosition().y + topUnit.size.y || 0;
+    y = topUnit.getPosition().y + topUnit.getSize().y || 0;
   }
   return y;
 }

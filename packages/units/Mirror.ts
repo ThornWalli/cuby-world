@@ -8,11 +8,11 @@ import {
 } from 'three';
 
 import Unit, {
-  OBJECT_NAME,
   type SetupContext,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 
 export type MirrorOptions = UnitOptions;
 export default class Mirror extends Unit<MirrorOptions> {
@@ -32,10 +32,10 @@ export default class Mirror extends Unit<MirrorOptions> {
       placeable: true,
       accessible: true
     });
-    this.size = new Vector3(1, 0, 1);
+    this.setSize(new Vector3(1, 0, 1));
   }
 
-  override createMesh(_context: SetupContext) {
+  override async createMesh(_context: SetupContext) {
     const geometry = new PlaneGeometry(0.8, 1);
     const material = new MeshBasicMaterial({ color: 0x777777 });
     const mesh = new Mesh(geometry, material);

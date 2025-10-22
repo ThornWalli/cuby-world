@@ -4,8 +4,10 @@ import { joinURL, withHttps } from 'ufo';
 import { readPackage } from 'read-pkg';
 import { config } from 'dotenv-mono';
 import svgLoader from 'vite-svg-loader';
+
 // import viteMkcert from 'vite-plugin-mkcert';
 import { existsSync } from 'fs';
+import svgoConfig from './svgo.config';
 
 config();
 
@@ -17,8 +19,10 @@ function getAliases() {
   return Object.fromEntries(
     Object.entries({
       ['@cuby-world/app']: 'app',
-      ['@cuby-world/frontend']: 'frontend',
-      ['@cuby-world/units']: 'units'
+      ['@cuby-world/units']: 'units',
+      ['@cuby-world/walls']: 'walls',
+      ['@cuby-world/grounds']: 'grounds',
+      ['@cuby-world/stairs']: 'stairs'
     })
       .map(([name, packageName]) => {
         return [
@@ -38,7 +42,11 @@ export default defineNuxtConfig({
 
   srcDir: './src',
 
-  css: ['@/assets/css/base.pcss', '@/assets/css/vars.pcss'],
+  css: [
+    '@/assets/css/base.pcss',
+    '@cuby-world/app/assets/css/vars.pcss',
+    '@cuby-world/app/assets/css/transitions.pcss'
+  ],
 
   imports: {
     autoImport: false
@@ -86,14 +94,6 @@ export default defineNuxtConfig({
   },
 
   vite: {
-    server: {
-      headers: !hasCOIWorker()
-        ? {
-            'Cross-Origin-Opener-Policy': 'same-origin',
-            'Cross-Origin-Embedder-Policy': 'require-corp'
-          }
-        : {}
-    },
     assetsInclude: ['**/*.md'],
     plugins: [
       // viteMkcert({
@@ -101,7 +101,9 @@ export default defineNuxtConfig({
       //   force: !getHttps()
       // }),
       svgLoader({
-        defaultImport: 'component'
+        defaultImport: 'component',
+        svgo: true,
+        svgoConfig: svgoConfig
       })
     ]
   },
@@ -283,10 +285,4 @@ function getHttps() {
     };
   }
   return false;
-}
-
-function hasCOIWorker() {
-  return (
-    !!process.env.npm_config_coi_worker || process.env.COI_WORKER === 'true'
-  );
 }

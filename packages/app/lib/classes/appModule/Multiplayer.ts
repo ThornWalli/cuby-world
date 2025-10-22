@@ -1,7 +1,10 @@
 import firebase, {
   type FirebaseFullConfig
 } from '@cuby-world/app/services/firebase';
-import AppModule, { type AppModuleState } from '../AppModule';
+import AppModule, {
+  type AppModuleObservables,
+  type AppModuleState
+} from '../AppModule';
 import { selfId, type DataPayload, type Room as TrysteroRoom } from 'trystero';
 
 import type { FirebaseApp } from 'firebase/app';
@@ -17,6 +20,7 @@ import { Vector3 } from 'three';
 // } from './multiplayer/database';
 import CurrentPlayer from '../player/Current';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
+import type App from '../App';
 
 export interface Message {
   id: string;
@@ -24,6 +28,16 @@ export interface Message {
   name?: string;
   message: string;
   playerId: string;
+}
+
+interface Observables extends AppModuleObservables {
+  peerJoin$: Subject<string>;
+  peerLeave$: Subject<string>;
+  moveTo$: Subject<{
+    data: MoveToPayload;
+    peerId: string;
+  }>;
+  message$: Subject<{ data: MessagePayload; peerId: string }>;
 }
 
 interface State extends AppModuleState {
@@ -57,7 +71,10 @@ interface PlayerInfo {
   color: PLAYER_COLOR;
   position: [number, number, number];
 }
-export default class MultiplayerAppModule extends AppModule<State> {
+export default class MultiplayerAppModule extends AppModule<
+  State,
+  Observables
+> {
   static override TYPE = 'multiplayer';
 
   players = new Map<string, Player>();
@@ -67,21 +84,26 @@ export default class MultiplayerAppModule extends AppModule<State> {
     playerId: selfId
   };
 
-  // #region firebase
+  //#region firebase
   firebaseAppId?: string;
   firebaseApp?: FirebaseApp;
-  // #endregion
+  //#endregion
 
-  observables = {
-    // userInfo: Observable<PlayerInfo>;
-    peerJoin$: new Subject<string>(),
-    peerLeave$: new Subject<string>(),
-    moveTo$: new Subject<{
+  constructor(app: App) {
+    super(app);
+    //#region observables
+    this.observables.peerJoin$ = new Subject<string>();
+    this.observables.peerLeave$ = new Subject<string>();
+    this.observables.moveTo$ = new Subject<{
       data: MoveToPayload;
       peerId: string;
-    }>(),
-    message$: new Subject<{ data: MessagePayload; peerId: string }>()
-  };
+    }>();
+    this.observables.message$ = new Subject<{
+      data: MessagePayload;
+      peerId: string;
+    }>();
+    //#endregion
+  }
 
   actions: {
     setMoveTo?: (data: MoveToPayload, targetPeers?: string[]) => void;
@@ -99,14 +121,6 @@ export default class MultiplayerAppModule extends AppModule<State> {
     return this.state.playerId;
   }
 
-  override destroy(): void {
-    super.destroy();
-    this.observables.message$.unsubscribe();
-    this.observables.moveTo$.unsubscribe();
-    this.observables.peerJoin$.unsubscribe();
-    this.observables.peerLeave$.unsubscribe();
-  }
-
   override async setup() {
     super.setup();
 
@@ -122,24 +136,26 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
     let playerSubscription = new Subscription();
     this.subscription.add(
-      this.app.modules.player.currentPlayer$.subscribe(player => {
+      this.app.modules.player.observables.currentPlayer$.subscribe(player => {
         playerSubscription?.unsubscribe();
         playerSubscription = new Subscription();
         playerSubscription.add(
           player.unit$.subscribe(unit => {
             playerSubscription.add(
-              unit.modules.movement.moveStart$.subscribe(position => {
-                console.log('Player started moving');
-                if (!this.actions?.setMoveTo) {
-                  throw new Error('No setMoveTo action available');
+              unit.modules.movement.observables.moveStart$.subscribe(
+                position => {
+                  console.log('Player started moving');
+                  if (!this.actions?.setMoveTo) {
+                    throw new Error('No setMoveTo action available');
+                  }
+                  this.actions.setMoveTo(
+                    {
+                      position: position.toArray()
+                    },
+                    this.getOtherPlayers()
+                  );
                 }
-                this.actions.setMoveTo(
-                  {
-                    position: position.toArray()
-                  },
-                  this.getOtherPlayers()
-                );
-              })
+              )
             );
           })
         );
@@ -156,22 +172,18 @@ export default class MultiplayerAppModule extends AppModule<State> {
       console.log('Received moveTo from', peerId, data);
       if (player && player.unit) {
         player.unit.modules.movement.moveTo(
-          new Vector3().fromArray(data.position),
-          {
-            force: true
-          }
+          new Vector3().fromArray(data.position)
         );
       }
     });
 
-    // #region room event handlers
+    //#region room event handlers
 
     this.subscription.add(
       this.observables?.peerJoin$?.subscribe(peerId => {
         const player = new Player({ id: peerId, name: peerId });
         const currentPlayer = this.app.modules.player.getCurrentPlayer();
         if (currentPlayer && this.actions.sendPlayerInfo) {
-          debugger;
           this.actions.sendPlayerInfo(
             {
               name: currentPlayer.state.name,
@@ -199,7 +211,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
       })
     );
 
-    // #endregion
+    //#endregion
   }
 
   async setupFirebase() {
@@ -315,7 +327,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
       throw new Error('Observables not registered');
     }
 
-    // #region player moveTo action
+    //#region player moveTo action
 
     const [setMoveTo, getMoveTo] =
       room.makeAction<MoveToPayload>('playerMoveTo');
@@ -326,9 +338,9 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
     this.actions.setMoveTo = setMoveTo;
 
-    // #endregion
+    //#endregion
 
-    // #region send message action
+    //#region send message action
 
     const [sendMessage, getMessage] = room.makeAction<Message & DataPayload>(
       'messaging'
@@ -340,9 +352,9 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
     this.actions.sendMessage = sendMessage;
 
-    // #endregion
+    //#endregion
 
-    // #region send player info action
+    //#region send player info action
 
     const [sendPlayerInfo, getPlayerInfo] =
       room.makeAction<PlayerInfoPayload>('playerInfo');
@@ -356,7 +368,7 @@ export default class MultiplayerAppModule extends AppModule<State> {
 
     this.actions.sendPlayerInfo = sendPlayerInfo;
 
-    // #endregion
+    //#endregion
   }
 
   setPlayerInfo(player: Player, info: PlayerInfo) {

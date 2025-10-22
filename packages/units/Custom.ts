@@ -4,7 +4,7 @@ import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 
 export type CustomOptions = UnitOptions;
 export default class Custom extends Unit<CustomOptions> {
@@ -25,7 +25,7 @@ export default class Custom extends Unit<CustomOptions> {
     });
   }
 
-  override createMesh(_context: SetupContext) {
+  override async createMesh(_context: SetupContext) {
     const object = new Object3D();
     return object;
   }

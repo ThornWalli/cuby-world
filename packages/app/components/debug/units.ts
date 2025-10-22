@@ -5,6 +5,5 @@ import Custom from '@cuby-world/units/Custom';
 import Lamp from '@cuby-world/units/lamp/Lamp';
 import Mirror from '@cuby-world/units/Mirror';
 import Door from '@cuby-world/units/Door';
-import Wall from '@cuby-world/units/Wall';
 
-export default [Cuby, Lamp, Box, Mirror, Chair, Custom, Door, Wall];
+export default [Cuby, Lamp, Box, Mirror, Chair, Custom, Door];

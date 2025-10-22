@@ -1,0 +1,22 @@
+{
+  "name": "@cuby-world/grounds",
+  "version": "0.0.0",
+  "author": "Thorn-Welf Walli",
+  "contributors": [
+    {
+      "name": "Thorn-Welf Walli",
+      "email": "lammpee@gmail.com"
+    }
+  ],
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "rxjs": "catalog:",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@types/three": "catalog:"
+  }
+}

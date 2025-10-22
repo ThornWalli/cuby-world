@@ -19,6 +19,9 @@
         :required="required"
         :autocomplete="autocomplete || 'off'"
         :placeholder="placeholder"
+        :min="min"
+        :max="max"
+        :step="step"
         @input="onInput" />
     </div>
   </cw-form-field>
@@ -28,7 +31,7 @@
 import CwFormField from '../base/FormField.vue';
 
 defineProps<{
-  modelValue: string;
+  modelValue: string | number;
   id?: string;
   label?: string;
   hideLabel?: boolean;
@@ -41,6 +44,9 @@ defineProps<{
   type?: string;
   styleType?: 'dark' | 'light';
   autocomplete?: AutoFill;
+  min?: number;
+  max?: number;
+  step?: number;
 }>();
 
 const $emit = defineEmits<{
@@ -54,24 +60,35 @@ function onInput(e: Event) {
 </script>
 
 <style lang="postcss" scoped>
-.input {
+.cw-form-field-textfield {
   --color-border: var(--color-black);
   --color-background: var(--color-white);
+  --color-foreground: var(--color-black);
 
-  flex: 1;
-  padding: 2px;
-  overflow: hidden;
-  background: var(--color-background);
-  border: solid 3px var(--color-border);
-  border-radius: 3px;
+  &.style-dark {
+    --color-border: var(--color-white);
+    --color-background: var(--color-black);
+    --color-foreground: var(--color-white);
+  }
 
-  & input {
-    display: block;
-    font-family: var(--font-base);
-    appearance: none;
-    outline: none;
-    background: none;
-    border: none;
+  & .input {
+    flex: 1;
+    padding: 2px;
+    overflow: hidden;
+    background: var(--color-background);
+    border: solid 3px var(--color-border);
+    border-radius: 3px;
+
+    & input {
+      display: block;
+      width: 100%;
+      font-family: var(--font-base);
+      color: var(--color-foreground);
+      appearance: none;
+      outline: none;
+      background: none;
+      border: none;
+    }
   }
 }
 </style>

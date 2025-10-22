@@ -3,12 +3,11 @@ import UnitModule, { type UnitModuleState } from '../UnitModule';
 
 type State = UnitModuleState;
 
-export default class PlayerUnitModule extends UnitModule {
+export default class PlayerUnitModule extends UnitModule<State> {
   static override TYPE = 'player';
 
-  state: State = {};
-
   player?: Player;
+
   setPlayer(player: Player) {
     this.player = player;
   }

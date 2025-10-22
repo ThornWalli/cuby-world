@@ -1,11 +1,11 @@
 import type { Object3D } from 'three';
 import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
 
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import Unit, {
-  OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
-} from '../app/lib/classes/Unit';
+} from '@cuby-world/app/lib/classes/Unit';
 
 export type BoxOptions = UnitOptions;
 export default class Box extends Unit<BoxOptions> {
@@ -27,10 +27,10 @@ export default class Box extends Unit<BoxOptions> {
     });
   }
 
-  override createMesh() {
+  override async createMesh() {
     const material = new MeshPhongMaterial({ color: 0xff0000 });
 
-    const size = this.size;
+    const size = this.getSize();
     const ratio = 14 / 20;
     const geometry = new BoxGeometry(size.x * 1, size.y * ratio, size.z * 1);
 

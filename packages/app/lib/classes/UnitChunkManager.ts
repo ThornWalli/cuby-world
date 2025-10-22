@@ -2,6 +2,10 @@ import type { Camera } from 'three';
 import { Box3, Frustum, Matrix4, Vector3 } from 'three';
 import type Unit from './Unit';
 
+export interface UnitChunking {
+  currentChunkKeys: string[];
+}
+
 class Chunk {
   visible = false;
   constructor(
@@ -17,7 +21,7 @@ class Chunk {
 export default class UnitChunkManager {
   size: number;
   chunks: Map<string, Chunk> = new Map();
-  visibleUnitsCount = 0;
+  worldChunks: Map<string, Vector3> = new Map();
 
   constructor(size: number = 2) {
     this.size = size;
@@ -45,7 +49,11 @@ export default class UnitChunkManager {
       }
       this.chunks.get(key)!.units.add(unit);
     });
-    unit.currentChunkKeys = keys;
+    if ('currentChunkKeys' in unit) {
+      unit.currentChunkKeys = keys;
+    } else {
+      throw new Error('Unit does not implement UnitChunking interface');
+    }
   }
 
   removeFromChunk(unit: Unit) {
@@ -69,7 +77,7 @@ export default class UnitChunkManager {
       chunk.units
         .values()
         .filter(unit => !unit.modules.player.player?.client)
-        .forEach(unit => unit.setVisible(false));
+        .forEach(unit => unit.setChunkVisible(false));
     });
 
     const visibleUnits = new Set<Unit>();
@@ -78,15 +86,14 @@ export default class UnitChunkManager {
         const chunk = this.chunks.get(key)!;
         chunk.visible = true;
         chunk.units.forEach(unit => {
-          unit.setVisible(true);
+          unit.setChunkVisible(true);
           visibleUnits.add(unit);
         });
       }
     });
-    this.visibleUnitsCount = visibleUnits.size;
-    return Array.from(visibleUnits);
+    return visibleUnits;
   }
-  worldChunks: Map<string, Vector3> = new Map(); // Beispielhafte Chunk-Datenstruktur
+
   getChunkPositions() {
     const positions = [];
     for (const key of this.worldChunks.keys()) {

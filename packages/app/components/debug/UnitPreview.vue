@@ -7,13 +7,17 @@
         gui: false
       }"
       :modules="[DebugRendererModule]" />
-    <cw-panel-controls
-      :model-value="options"
-      :units="preparedUnits"
-      @select-unit="onSelectUnit"
-      @rotate-unit="onRotateUnit"
-      @update:model-value="onUpdateModelValueControls" />
-    <cw-panel-unit-manager v-if="isUpload" @file="onFile" />
+    <cw-panel-group position="top-left">
+      <cw-panel-controls
+        :model-value="options"
+        :units="preparedUnits"
+        @select-unit="onSelectUnit"
+        @rotate-unit="onRotateUnit"
+        @update:model-value="onUpdateModelValueControls" />
+    </cw-panel-group>
+    <cw-panel-group position="bottom-left">
+      <cw-panel-unit-manager v-if="isUpload" @file="onFile" />
+    </cw-panel-group>
   </div>
 </template>
 
@@ -30,6 +34,7 @@ import {
 import CwRenderer from '../Renderer.vue';
 import CwPanelControls from './panel/Controls.vue';
 import CwPanelUnitManager from './panel/UnitManager.vue';
+import CwPanelGroup from '../PanelGroup.vue';
 import {
   BoxGeometry,
   DoubleSide,
@@ -41,34 +46,38 @@ import {
 } from 'three';
 import { fromEvent, Subscription } from 'rxjs';
 import { useRouter } from '#imports';
-import type Renderer from '@cuby-world/app/lib/classes/Renderer';
+import type Renderer from '../../lib/classes/Renderer';
 
-import GroundTile from '@cuby-world/app/lib/classes/GroundTile';
-import type Unit from '@cuby-world/app/lib/classes/Unit';
+import type Unit from '../../lib/classes/Unit';
+import Ground from '../../lib/classes/Ground';
 
-import AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import units from './units';
 
-import DebugRendererModule from '@cuby-world/app/lib/classes/rendererModule/Debug';
-import { getGltfObjectFromFile } from '@cuby-world/app/utils/file';
+import DebugRendererModule from '../../lib/classes/rendererModule/Debug';
+import { getGltfObjectFromFile } from '../../utils/file';
 import Custom from '@cuby-world/units/Custom';
-import { UNIT_ROTATION } from '@cuby-world/app/lib/classes/Unit';
+import { groundTextureMap } from '@cuby-world/grounds';
+
+import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
+
+import MeshGround from '@cuby-world/grounds/grounds/default/default_ground.glb?url';
+import { ROTATION } from '@cuby-world/app/lib/types';
+import assetLoader from '@cuby-world/app/services/assetLoader';
 
 let unitWrapper: Object3D;
 const subscription = new Subscription();
 const dimension = ref<Vector2>();
 const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 
-const assetLoader = new AssetLoader();
 const currentUnit = ref<Unit>();
-const currentRotation = ref<UNIT_ROTATION>(UNIT_ROTATION.DOWN);
+const currentRotation = ref<ROTATION>(ROTATION.SOUTH);
 const $router = useRouter();
 
 const options = ref<Options>({
   unit: String($router.currentRoute.value.query.unit || ''),
   rotation: String(
-    $router.currentRoute.value.query.rotation || UNIT_ROTATION.DOWN
-  ) as UNIT_ROTATION,
+    $router.currentRoute.value.query.rotation || ROTATION.SOUTH
+  ) as ROTATION,
   axes: $router.currentRoute.value.query.axes === 'true',
   ghost: $router.currentRoute.value.query.ghost === 'true'
 });
@@ -130,7 +139,7 @@ const preparedUnits = ref(
 
 onMounted(() => {
   nextTick(async () => {
-    setup();
+    await setup();
     if (options.value.unit) {
       onSelectUnit(options.value.unit);
     }
@@ -141,22 +150,26 @@ onUnmounted(() => {
   subscription.unsubscribe();
 });
 
-// #region setup
+//#region setup
 
-function setup() {
+async function setup() {
   const { $el, renderer } = rendererEl.value!;
 
   if (!renderer) {
     throw new Error('Renderer not ready');
   }
 
-  setupScene(renderer);
+  await setupScene(renderer);
   const onResize = () => {
     dimension.value = new Vector2($el.offsetWidth, $el.offsetHeight);
     renderer!.resize(dimension.value);
   };
 
-  subscription.add(fromEvent(window, 'resize').subscribe(onResize));
+  subscription.add(
+    fromEvent(window, 'resize', {
+      passive: true
+    }).subscribe(onResize)
+  );
   onResize();
 }
 
@@ -164,20 +177,30 @@ let ghostWrapper: Object3D;
 async function setupScene(renderer: Renderer) {
   const scene = renderer.scene;
 
-  // #region ground
-  const groundTile = new GroundTile(new Vector3(0, 0, 0)).box;
-  const groundMesh = new Mesh(groundTile.geometry, groundTile.material);
+  const geometryMap = await loadGroundGeometries(assetLoader, MeshGround);
+
+  //#region ground
+  const groundTile = new Ground({
+    position: new Vector3(0, 0, 0),
+    texture: groundTextureMap.get('default_base')
+  });
+  const geometry = groundTile.createGeometry(geometryMap);
+  const material = await groundTile.createMaterial({
+    assetLoader,
+    textureMap: groundTextureMap
+  });
+  const groundMesh = new Mesh(geometry, material);
   groundMesh.material.side = DoubleSide;
   groundMesh.receiveShadow = true;
   groundMesh.material.side = DoubleSide;
   scene.add(groundMesh);
-  // #endregion
+  //#endregion
 
   unitWrapper = new Object3D();
   unitWrapper.position.set(0, 0, 0);
   scene.add(unitWrapper);
 
-  // #region ghost
+  //#region ghost
 
   ghostWrapper = new Object3D();
   ghostWrapper.visible = options.value.ghost ?? false;
@@ -197,17 +220,17 @@ async function setupScene(renderer: Renderer) {
   ghostMesh.position.set(0, (size * ratio) / 2 + 0.2, 0);
 
   ghostWrapper.add(ghostMesh);
-  // #endregion
+  //#endregion
 
   subscription.add(
-    renderer.animationLoop$.subscribe(time => {
+    renderer.observables.animationLoop$.subscribe(v => {
       if (currentUnit.value) {
-        currentUnit.value.update(time);
+        currentUnit.value.update(v);
       }
     })
   );
 }
-// #endregion
+//#endregion
 
 const currentSelectedUnit = ref<string>('');
 const isUpload = computed(() => currentSelectedUnit.value === 'custom');
@@ -221,7 +244,7 @@ function onSelectUnit(key: string) {
   }
 }
 
-function onRotateUnit(rotation: UNIT_ROTATION) {
+function onRotateUnit(rotation: ROTATION) {
   currentRotation.value = rotation;
   if (currentUnit.value) {
     currentUnit.value.setRotation(rotation);
@@ -230,6 +253,9 @@ function onRotateUnit(rotation: UNIT_ROTATION) {
 
 async function setUnit(unit?: Unit) {
   const existingUnit = currentUnit.value;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).unit = unit;
+
   if (existingUnit) {
     unitWrapper.remove(existingUnit.root);
     existingUnit.destroy();
@@ -258,7 +284,7 @@ async function onFile(file: File | undefined) {
       if (customObject) {
         customObject.removeFromParent();
       }
-      customObject = await getGltfObjectFromFile(assetLoader, file);
+      customObject = (await getGltfObjectFromFile(file)).object;
       currentUnit.value.root.add(customObject);
     }
   }
@@ -268,7 +294,7 @@ async function onFile(file: File | undefined) {
 <script lang="ts">
 export interface Options {
   unit: string;
-  rotation: UNIT_ROTATION;
+  rotation: ROTATION;
   axes?: boolean;
   ghost?: boolean;
   ground?: boolean;
@@ -281,7 +307,8 @@ export interface Options {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100svh;
 
   & > * {
     flex: 1;
@@ -294,18 +321,6 @@ export interface Options {
     width: 100%;
     height: 100%;
     transform: translate(-50%, -50%);
-  }
-
-  & .cw-debug-panel-controls {
-    position: absolute;
-    top: 1em;
-    left: 1em;
-  }
-
-  & .cw-debug-panel-unit-manager {
-    position: absolute;
-    bottom: 1em;
-    left: 1em;
   }
 }
 </style>

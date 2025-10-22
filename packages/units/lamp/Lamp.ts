@@ -8,16 +8,16 @@ import {
   SphereGeometry
 } from 'three';
 
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import Unit, {
-  OBJECT_NAME,
   type SetupContext,
   type UnitConstructorOptions,
   type UnitModules,
   type UnitOptions
-} from '../../app/lib/classes/Unit';
-import { getHoverClip } from '../../app/lib/utils/animation';
-import type { UnitModuleSetupContext } from '../../app/lib/classes/UnitModule';
-import { AnimationUnitModule } from '../../app/lib/classes/unitModule/Animation';
+} from '@cuby-world/app/lib/classes/Unit';
+import { getHoverClip } from '@cuby-world/app/lib/utils/animation';
+import type { UnitModuleSetupContext } from '@cuby-world/app/lib/classes/UnitModule';
+import { AnimationUnitModule } from '@cuby-world/app/lib/classes/unitModule/Animation';
 
 import image_sky_box_1_nx from './assets/sky_box_1/nx.png';
 import image_sky_box_1_ny from './assets/sky_box_1/ny.png';
@@ -28,6 +28,7 @@ import image_sky_box_1_pz from './assets/sky_box_1/pz.png';
 import { defaultMaterial } from '../utils/material';
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
+import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 
 export interface LampOptions extends UnitOptions {
   size: number;
@@ -61,15 +62,11 @@ export default class Lamp extends Unit<
     );
   }
 
-  override createMesh({ assetLoader }: SetupContext) {
+  override async createMesh({ assetLoader }: SetupContext) {
     const geometry = new SphereGeometry(0.3, 32, 16);
     // const material = new MeshBasicMaterial({ color: 0xffff00 });
 
     const mesh = new Mesh(geometry, defaultMaterial());
-
-    setupMaterials(assetLoader, mesh, () => {
-      this.materialReady$.next();
-    });
 
     const lampGeometry = new SphereGeometry(0.1, 32, 16);
     const lampMaterial = new MeshBasicMaterial({ color: 0xffff00 });
@@ -78,6 +75,10 @@ export default class Lamp extends Unit<
     mesh.add(innerMesh);
     mesh.name = OBJECT_NAME.MESH;
     mesh.position.set(0, 0.5, 0);
+
+    setupMaterials(assetLoader, mesh, () => {
+      this.materialReady$.next();
+    });
 
     const light = new PointLight(0xffffff, 1, 8);
     light.position.set(0, 0, 0);
@@ -91,20 +92,19 @@ export default class Lamp extends Unit<
 
     mesh.add(light);
 
-    this.materialReady$.next();
     return mesh;
   }
 }
 
-function setupMaterials(
+async function setupMaterials(
   assetLoader: AssetLoader,
   mesh: Mesh,
   cb?: CallableFunction
 ) {
-  assetLoader
+  await assetLoader
     .add<CubeTexture>({
       loader: LOADER.CUBE_TEXTURE,
-      url: [
+      value: [
         image_sky_box_1_px,
         image_sky_box_1_nx,
         image_sky_box_1_py,
@@ -143,7 +143,7 @@ class UnitAnimation extends AnimationUnitModule {
 
     return mesh;
   }
-  override update(_deltaTime: number) {
-    this.mixer?.update(this.clock.getDelta());
+  override update({ delta }: AnimationLoopValue) {
+    this.mixer?.update(delta);
   }
 }

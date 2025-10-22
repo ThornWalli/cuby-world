@@ -14,11 +14,11 @@
 //   type UnitConstructorOptions,
 //   type UnitModules,
 //   type UnitOptions
-// } from '../app/lib/classes/Unit';
-// import { getHoverClip } from '../app/lib/utils/animation';
-// import type { UnitModuleSetupContext } from '../app/lib/classes/UnitModule';
-// import { AnimationUnitModule } from '../app/lib/classes/unitModule/Animation';
-// import { ASSET } from '../app/utils/assets';
+// } from '@cuby-world/app/lib/classes/Unit';
+// import { getHoverClip } from '@cuby-world/app/lib/utils/animation';
+// import type { UnitModuleSetupContext } from '@cuby-world/app/lib/classes/UnitModule';
+// import { AnimationUnitModule } from '@cuby-world/app/lib/classes/unitModule/Animation';
+// import { ASSET } from '@cuby-world/app/utils/assets';
 
 // export type LampOptions = UnitOptions;
 // export default class Lamp
