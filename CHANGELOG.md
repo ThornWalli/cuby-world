@@ -1,5 +1,25 @@
 # Project Changelog
 
+# [1.0.0-beta.12](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2025-10-22)
+
+
+### Bug Fixes
+
+* **update:** added room-editor; added wall support ([353980d](https://github.com/ThornWalli/cuby-world/commit/353980dbae596432f4579679f501d2011acff967))
+* **update:** many updates ([57ced29](https://github.com/ThornWalli/cuby-world/commit/57ced29fc25e92354a911fec71474bf257311e82))
+* **update:** many updates ([84091f0](https://github.com/ThornWalli/cuby-world/commit/84091f085b5e20eabf95883b807150a577a51aef))
+* **update:** many updates ([4343b48](https://github.com/ThornWalli/cuby-world/commit/4343b48a544607d9c49e0b37aeda58dae910ff7f))
+* **update:** many updates ([2f80feb](https://github.com/ThornWalli/cuby-world/commit/2f80feb5d3a61a60f76ac7d627cf457c4ffd6f3a))
+* **update:** many updates ([ee6f610](https://github.com/ThornWalli/cuby-world/commit/ee6f6103b0e42eda713014d20680558936c53b90))
+* **update:** many updates ([4b1ed5b](https://github.com/ThornWalli/cuby-world/commit/4b1ed5b207ba27e68259339baee00e3c5de3c10b))
+* **update:** many updates ([4792e33](https://github.com/ThornWalli/cuby-world/commit/4792e33142064eec1a96a951969c2a0f74a6e448))
+* **update:** many updates ([d1d8ef7](https://github.com/ThornWalli/cuby-world/commit/d1d8ef798ed707f05213239aac769a0fd761e64c))
+* **update:** many updates ([26d9f25](https://github.com/ThornWalli/cuby-world/commit/26d9f25474a07fc5f33fc64497effa37b6d13d55))
+* **update:** many updates ([f65d1ea](https://github.com/ThornWalli/cuby-world/commit/f65d1eac65641b3faab01e096289a3f8b7a724fc))
+* **update:** many updates ([cf089f0](https://github.com/ThornWalli/cuby-world/commit/cf089f0d6beee8758bb13c52d832ac279dceb231))
+* **update:** many updates ([5531e54](https://github.com/ThornWalli/cuby-world/commit/5531e54b4116a01553396ee8fe3b4c80c9311779))
+* **update:** many updates ([63d4f22](https://github.com/ThornWalli/cuby-world/commit/63d4f229fa338e94a0afc6567097023e9375e79a))
+
 # [1.0.0-beta.11](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2025-09-06)
 
 
