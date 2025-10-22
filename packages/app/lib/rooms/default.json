@@ -11,27 +11,15 @@
       10
     ]
   },
-  "start": {
-    "position": {
-      "type": "Vector3",
-      "value": [
-        0,
-        0,
-        0
-      ]
-    },
-    "rotation": "east"
-  },
   "teleports": [
     {
-      "id": "default",
       "type": "entrance",
       "position": {
         "type": "Vector3",
         "value": [
           0,
           0,
-          0
+          3
         ]
       },
       "rotation": "east"
@@ -104,7 +92,7 @@
         {
           "key": "window_standard",
           "state": {
-            "type": "default",
+            "skin": "white",
             "size": "small"
           }
         }
@@ -273,7 +261,7 @@
           "key": "door_standard",
           "state": {
             "hasDoor": true,
-            "open": false,
+            "skin": "white",
             "opened": false
           }
         }
@@ -297,7 +285,7 @@
         {
           "key": "window_standard",
           "state": {
-            "skin": "default",
+            "skin": "white",
             "size": "medium"
           }
         }
@@ -514,7 +502,7 @@
           "key": "door_standard",
           "state": {
             "hasDoor": true,
-            "open": false,
+            "skin": "white",
             "opened": false
           }
         }
@@ -650,7 +638,7 @@
         {
           "key": "window_standard",
           "state": {
-            "skin": "default",
+            "skin": "white",
             "size": "large"
           }
         }
@@ -1499,7 +1487,7 @@
           "key": "door_standard",
           "state": {
             "hasDoor": false,
-            "skin": "default",
+            "skin": "white",
             "opened": false
           }
         },
@@ -1507,7 +1495,7 @@
           "key": "door_standard",
           "state": {
             "hasDoor": false,
-            "skin": "default",
+            "skin": "white",
             "opened": false
           }
         }
@@ -1611,7 +1599,7 @@
         {
           "key": "window_standard",
           "state": {
-            "skin": "default",
+            "skin": "white",
             "size": "large"
           }
         }
@@ -1651,7 +1639,7 @@
         {
           "key": "window_standard",
           "state": {
-            "skin": "default",
+            "skin": "white",
             "size": "large"
           }
         }
@@ -1834,10 +1822,37 @@
       "extensions": []
     }
   ],
-  "units": [],
+  "units": [
+    {
+      "unit": "doormate_1",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            3
+          ]
+        },
+        "rotation": "west",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    }
+  ],
   "groundStyles": [
     {
-      "id": "default_color_green",
+      "type": "default",
+      "skinId": "default_color_green",
       "positions": [
         {
           "type": "Vector3",
@@ -2274,7 +2289,8 @@
       ]
     },
     {
-      "id": "default_color_light_light_brown",
+      "type": "default",
+      "skinId": "default_color_light_light_brown",
       "positions": [
         {
           "type": "Vector3",
@@ -2311,7 +2327,8 @@
       ]
     },
     {
-      "id": "default_wood_laminate_1",
+      "type": "default",
+      "skinId": "default_wood_laminate_1",
       "positions": [
         {
           "type": "Vector3",
@@ -2684,7 +2701,8 @@
       ]
     },
     {
-      "id": "default",
+      "type": "default",
+      "skinId": "default",
       "positions": [
         {
           "type": "Vector3",
@@ -2745,7 +2763,8 @@
       ]
     },
     {
-      "id": "default_base",
+      "type": "default",
+      "skinId": "default_base",
       "positions": [
         {
           "type": "Vector3",
@@ -3466,7 +3485,8 @@
       "rotation": "east"
     },
     {
-      "skin": "default_1x1",
+      "type": "default_1x1",
+      "skin": "default",
       "position": {
         "type": "Vector3",
         "value": [

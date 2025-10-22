@@ -13,13 +13,15 @@ import type { FACE_INDEX } from '@cuby-world/app/lib/types/wall';
 import { ReplaySubject, type Observable } from 'rxjs';
 import { concatMap, map } from 'rxjs';
 
-import { OBJECT_NAME } from '../../../Unit';
+import { OBJECT_NAME } from '../../../../utils/object';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 import type { PreparedPosition } from '@cuby-world/app/lib/utils/matrix';
-import type { WallSkins } from '@cuby-world/app/lib/types/wall/skins';
+import type {
+  WallSkinDescription,
+  WallSkins
+} from '@cuby-world/app/lib/types/wall/skins';
 
 import type Wall from '../../../Wall';
-import type { WallSkinDescription } from '@cuby-world/walls/skins';
 
 interface Observables extends AppModuleControllerObservables {
   currentWall$: ReplaySubject<{ wall: Wall; faceIndex: FACE_INDEX }>;

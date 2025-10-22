@@ -2,7 +2,7 @@ export type SkinIdentifier = string;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SkinOptions {}
-export interface SkinDescription<Id = SkinIdentifier, Options = SkinOptions> {
+export interface SkinDescription<Options = SkinOptions, Id = SkinIdentifier> {
   id: Id;
   name: string;
   description?: string;
@@ -12,5 +12,6 @@ export interface SkinDescription<Id = SkinIdentifier, Options = SkinOptions> {
 
 export enum SKIN_TAG {
   COLOR = 'color',
-  TEXTURE = 'texture'
+  TEXTURE = 'texture',
+  HIDE = 'hide'
 }

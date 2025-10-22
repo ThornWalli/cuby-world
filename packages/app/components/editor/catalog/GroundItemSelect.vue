@@ -4,7 +4,11 @@
     :items="items"
     class="cw-panel-catalog-ground-item-select"
     @update:model-value="onUpdateModelValue">
-    <template #before><slot name="before"></slot></template>
+    <template #before>
+      <div class="controls">
+        <slot name="controls"></slot>
+      </div>
+    </template>
     <template #preview="{ preview }">
       <cw-object-preview-ground
         :app="app"
@@ -68,51 +72,10 @@ export interface GroundItem<Item extends CatalogItem> extends BaseSelectItem {
     font-weight: bold;
     text-align: center;
   }
-}
 
-.items {
-  display: grid;
-  grid-template-rows: repeat(1, 1fr);
-  grid-auto-flow: column;
-  gap: 5px;
-  justify-items: start;
-  max-width: 100%;
-  overflow: auto;
-
-  & button {
+  & .controls {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-end;
-    padding: 8px 16px;
-    font-family: var(--font-base);
-    font-size: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    background: var(--color);
-    background-color: rgb(255 255 255 / 40%);
-    border: none;
-    border-radius: 12px;
-
-    & > div {
-      display: flex;
-      flex: 1;
-      justify-content: center;
-      width: 100%;
-    }
-
-    &.selected {
-      background-color: white;
-    }
-
-    & .image {
-      width: 48px;
-    }
-
-    & span {
-      display: none;
-      min-width: 96px;
-    }
+    align-items: center;
   }
 }
 </style>

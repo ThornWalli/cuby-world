@@ -2,8 +2,8 @@ import { Object3D, Mesh } from 'three';
 
 import glbBase from './assets/base.glb?url';
 
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import Unit, {
-  OBJECT_NAME,
   type SetupContext,
   type UnitConstructorOptions,
   type UnitOptions
@@ -32,7 +32,7 @@ export default class Chair extends Unit<ChairOptions> {
 
   override async createMesh({ assetLoader }: SetupContext) {
     const object = new Object3D();
-    assetLoader.add<GLTF>({ loader: LOADER.GLTF, url: glbBase }).then(
+    assetLoader.add<GLTF>({ loader: LOADER.GLTF, value: glbBase }).then(
       // Callback bei erfolgreichem Laden
       gltf => {
         // Die geladene Szene ist im .scene-Property verfügbar

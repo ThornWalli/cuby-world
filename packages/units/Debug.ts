@@ -2,10 +2,10 @@ import type { Object3D } from 'three';
 import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
 
 import Unit, {
-  OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import { checkerboardTexture } from '@cuby-world/app/lib/utils/texture';
 
 export type DebugOptions = UnitOptions;

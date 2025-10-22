@@ -93,14 +93,4 @@ defineExpose({
     }
   }
 }
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 </style>

@@ -9,7 +9,7 @@
       <cw-panel-floor-control :app="app" />
     </cw-panel-group>
     <cw-panel-group position="top-right">
-      <cw-panel-general :app="app" />
+      <cw-panel-export-import :app="app" />
     </cw-panel-group>
     <cw-panel-group position="left">
       <cw-panel-editor-actions
@@ -61,11 +61,10 @@ import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelWallControl from '../panel/WallControl.vue';
 import CwPanelFloorControl from '../panel/FloorControl.vue';
 
-import CwPanelGeneral from '../editor/panel/General.vue';
+import CwPanelExportImport from '../editor/panel/ExportImport.vue';
 import CwPanelGroup from '../PanelGroup.vue';
 import CwPanelEditorActions from '../editor/panel/Actions.vue';
 import CwRoomEditorDialogRoomSettings from '../editor/dialog/RoomSettings.vue';
-import type CwRoomEditorDialogDebug from '../editor/dialog/Debug.vue';
 
 import { EDITOR_ACTION } from '../../lib/types/editor';
 import icons from '../../utils/icons';
@@ -76,9 +75,6 @@ import CwButtonIcon from '../button/IconButton.vue';
 const dialogRoomSettings = ref<InstanceType<
   typeof CwRoomEditorDialogRoomSettings
 > | null>(null);
-const dialogDebug = ref<InstanceType<typeof CwRoomEditorDialogDebug> | null>(
-  null
-);
 
 const controlComponent = computed(() => {
   switch (currentAction.value) {
@@ -142,10 +138,8 @@ onMounted(async () => {
   nextTick(() => {
     setup();
 
-    currentAction.value = EDITOR_ACTION.STAIR;
+    // currentAction.value = EDITOR_ACTION.WALL;
     // onClickSettings();
-
-    dialogDebug.value?.open();
   });
 });
 

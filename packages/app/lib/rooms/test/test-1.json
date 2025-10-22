@@ -157,7 +157,8 @@
   "units": [],
   "groundStyles": [
     {
-      "id": "default_grass_3",
+      "type": "default",
+      "skinId": "default_grass_3",
       "positions": [
         {
           "type": "Vector3",

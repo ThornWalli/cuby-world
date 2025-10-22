@@ -13,7 +13,7 @@ import type { Object3D } from 'three';
 import type { FACE_INDEX } from '../../../../types/wall';
 import { ReplaySubject, type Observable } from 'rxjs';
 import { concatMap, map } from 'rxjs';
-import { OBJECT_NAME } from '../../../Unit';
+import { OBJECT_NAME } from '../../../../utils/object';
 import { OBJECT_USER_DATA } from '../../../../../lib/utils/object';
 import type { PreparedPosition } from '../../../../utils/matrix';
 import type Wall from '../../../Wall';
@@ -21,6 +21,7 @@ import type WallExtension from '../../../WallExtension';
 import { WALL_EXTENSION_TYPE } from '../../../WallExtension';
 import type { WallExtensionItem } from '../../../../types/wall/extension/catalog';
 import { OUTLINE_TYPE } from '../../../Renderer';
+import type { WallExtensionSkinIdentifier } from '@cuby-world/app/lib/types/wall/extension/skins';
 
 export interface Observables extends AppModuleControllerObservables {
   currentWall$: ReplaySubject<{ wall: Wall; faceIndex: FACE_INDEX }>;
@@ -30,6 +31,7 @@ export interface Observables extends AppModuleControllerObservables {
 export interface State extends AppModuleControllerState {
   current: WallExtension | null;
   extension?: WallExtensionItem | null;
+  skin?: WallExtensionSkinIdentifier | null;
   last?: {
     wall: Wall;
     newExtension?: WallExtension;
@@ -77,7 +79,7 @@ export default class ExtensionController<
     );
 
     const room = this.app.modules.room.getRoom()!;
-    room.modules.selection.hideSelection();
+    room?.modules.selection.hideSelection();
   }
 
   override destroy(): void {
@@ -212,6 +214,15 @@ export default class ExtensionController<
 
   setExtension(extension?: WallExtensionItem | null) {
     this.state.extension = extension;
+  }
+
+  async setSkin(skin: WallExtensionSkinIdentifier | null) {
+    this.state.skin = skin;
+    // if (this.state.current && this.state.skin) {
+    //   // await this.createTmpObject(this.state.item, this.state.skin, {
+    //   //   rotation: this.state.rotation
+    //   // });
+    // }
   }
 
   //#endregion

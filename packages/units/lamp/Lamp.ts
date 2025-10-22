@@ -8,8 +8,8 @@ import {
   SphereGeometry
 } from 'three';
 
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import Unit, {
-  OBJECT_NAME,
   type SetupContext,
   type UnitConstructorOptions,
   type UnitModules,
@@ -68,10 +68,6 @@ export default class Lamp extends Unit<
 
     const mesh = new Mesh(geometry, defaultMaterial());
 
-    setupMaterials(assetLoader, mesh, () => {
-      this.materialReady$.next();
-    });
-
     const lampGeometry = new SphereGeometry(0.1, 32, 16);
     const lampMaterial = new MeshBasicMaterial({ color: 0xffff00 });
     const innerMesh = new Mesh(lampGeometry, lampMaterial);
@@ -79,6 +75,10 @@ export default class Lamp extends Unit<
     mesh.add(innerMesh);
     mesh.name = OBJECT_NAME.MESH;
     mesh.position.set(0, 0.5, 0);
+
+    setupMaterials(assetLoader, mesh, () => {
+      this.materialReady$.next();
+    });
 
     const light = new PointLight(0xffffff, 1, 8);
     light.position.set(0, 0, 0);
@@ -92,20 +92,19 @@ export default class Lamp extends Unit<
 
     mesh.add(light);
 
-    this.materialReady$.next();
     return mesh;
   }
 }
 
-function setupMaterials(
+async function setupMaterials(
   assetLoader: AssetLoader,
   mesh: Mesh,
   cb?: CallableFunction
 ) {
-  assetLoader
+  await assetLoader
     .add<CubeTexture>({
       loader: LOADER.CUBE_TEXTURE,
-      url: [
+      value: [
         image_sky_box_1_px,
         image_sky_box_1_nx,
         image_sky_box_1_py,

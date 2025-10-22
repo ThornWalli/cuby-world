@@ -48,10 +48,9 @@ import { fromEvent, Subscription } from 'rxjs';
 import { useRouter } from '#imports';
 import type Renderer from '../../lib/classes/Renderer';
 
-import Ground from '../../lib/classes/Ground';
 import type Unit from '../../lib/classes/Unit';
+import Ground from '../../lib/classes/Ground';
 
-import AssetLoader from '../../lib/classes/AssetLoader';
 import units from './units';
 
 import DebugRendererModule from '../../lib/classes/rendererModule/Debug';
@@ -61,15 +60,15 @@ import { groundTextureMap } from '@cuby-world/grounds';
 
 import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
 
-import MeshGround from '@cuby-world/app/assets/ground/ground.glb?url';
+import MeshGround from '@cuby-world/grounds/grounds/default/default_ground.glb?url';
 import { ROTATION } from '@cuby-world/app/lib/types';
+import assetLoader from '@cuby-world/app/services/assetLoader';
 
 let unitWrapper: Object3D;
 const subscription = new Subscription();
 const dimension = ref<Vector2>();
 const rendererEl = ref<InstanceType<typeof CwRenderer> | null>(null);
 
-const assetLoader = new AssetLoader();
 const currentUnit = ref<Unit>();
 const currentRotation = ref<ROTATION>(ROTATION.SOUTH);
 const $router = useRouter();
@@ -166,7 +165,11 @@ async function setup() {
     renderer!.resize(dimension.value);
   };
 
-  subscription.add(fromEvent(window, 'resize').subscribe(onResize));
+  subscription.add(
+    fromEvent(window, 'resize', {
+      passive: true
+    }).subscribe(onResize)
+  );
   onResize();
 }
 
@@ -179,7 +182,7 @@ async function setupScene(renderer: Renderer) {
   //#region ground
   const groundTile = new Ground({
     position: new Vector3(0, 0, 0),
-    texture: groundTextureMap.get('wood_laminate_1')
+    texture: groundTextureMap.get('default_base')
   });
   const geometry = groundTile.createGeometry(geometryMap);
   const material = await groundTile.createMaterial({
@@ -281,7 +284,7 @@ async function onFile(file: File | undefined) {
       if (customObject) {
         customObject.removeFromParent();
       }
-      customObject = await getGltfObjectFromFile(assetLoader, file);
+      customObject = (await getGltfObjectFromFile(file)).object;
       currentUnit.value.root.add(customObject);
     }
   }
@@ -304,7 +307,8 @@ export interface Options {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100svh;
 
   & > * {
     flex: 1;

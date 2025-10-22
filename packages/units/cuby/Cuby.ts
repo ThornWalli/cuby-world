@@ -9,8 +9,11 @@ import {
   Vector2
 } from 'three';
 
-import Unit, {
+import {
   OBJECT_NAME,
+  OBJECT_USER_DATA
+} from '@cuby-world/app/lib/utils/object';
+import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
   type UnitModules,
@@ -31,7 +34,6 @@ import {
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
-import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 
 declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
@@ -271,7 +273,7 @@ async function setupSleepMaterials(assetLoader: AssetLoader) {
     frames.map(async options => {
       const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
         loader: LOADER.SPRITE,
-        url: image_spritesheet_sleep,
+        value: image_spritesheet_sleep,
         options: { density: 2, ...options }
       });
 
@@ -332,7 +334,7 @@ async function setupBodyMaterials(
     frames.map(async options => {
       const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
         loader: LOADER.SPRITE,
-        url: image_spritesheet_cuby,
+        value: image_spritesheet_cuby,
         options: { density: 10, ...options }
       });
 
@@ -352,7 +354,7 @@ async function setupBodyMaterials(
       faces.map(async (key, index) => {
         const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
           loader: LOADER.SPRITE,
-          url: image_spritesheet_cuby,
+          value: image_spritesheet_cuby,
           options: {
             density: 10,
             position: new Vector2(index * 20, 0),

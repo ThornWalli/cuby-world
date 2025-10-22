@@ -11,12 +11,11 @@ import RoomModule, {
   type RoomModuleObservables,
   type RoomModuleState
 } from '../RoomModule';
-import { OBJECT_NAME } from '../Unit';
+import { OBJECT_NAME, OBJECT_USER_DATA } from '../../utils/object';
 import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import type Room from '../Room';
 import { FLOOR_HEIGHT } from '../../utils/ground';
-import { OBJECT_USER_DATA } from '../../utils/object';
 
 interface Observables extends RoomModuleObservables {
   selectionVisible$: ReplaySubject<boolean>;

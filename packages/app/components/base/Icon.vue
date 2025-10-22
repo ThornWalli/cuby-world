@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import type { Icon } from '@cuby-world/app/lib/types/icon';
+import { IconSize } from '@cuby-world/app/lib/types/icon';
 import icons from '../../utils/icons';
 import { computed } from 'vue';
 
@@ -23,19 +24,11 @@ const icon = computed(() => {
 });
 </script>
 
-<script lang="ts">
-export enum IconSize {
-  SMALL = 'small',
-  MEDIUM = 'medium',
-  LARGE = 'large',
-  VERY_LARGE = 'very-large'
-}
-</script>
-
 <style lang="postcss" scoped>
 .base-icon {
-  /* size-very-small */
-  --size: 16;
+  &.size-very-small {
+    --size: 16;
+  }
 
   &.size-small {
     --size: 24;
@@ -53,10 +46,14 @@ export enum IconSize {
     --size: 39;
   }
 
+  display: inline-block;
+  width: calc(var(--size) * 1px);
+  height: calc(var(--size) * 1px);
+
   & svg {
     display: block;
-    width: calc(var(--size) * 1px);
-    height: calc(var(--size) * 1px);
+    width: 100%;
+    height: 100%;
     fill: currentColor;
   }
 }

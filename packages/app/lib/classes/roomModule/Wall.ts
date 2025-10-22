@@ -37,7 +37,7 @@ import {
 import type Unit from '../Unit';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type Room from '../Room';
-import { OBJECT_NAME } from '../Unit';
+import { OBJECT_NAME, OBJECT_USER_DATA } from '../../utils/object';
 
 import {
   WALL_SIZE,
@@ -49,7 +49,6 @@ import {
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { FloorIndex } from '../../types/floor';
 import { default_mesh as MeshWall } from '@cuby-world/walls';
-import { OBJECT_USER_DATA } from '../../utils/object';
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import type { WallIdentifier } from '../Wall';
 
@@ -526,7 +525,7 @@ export default class WallModule extends RoomModule<
     });
 
     const maxFloorIndex = Math.max(...floors);
-    console.log('Updating wall visibility for floors', floors, maxFloorIndex);
+    // console.log('Updating wall visibility for floors', floors, maxFloorIndex);
     this.getWallsByFloor(floors).forEach(wall => {
       wall.setSize(
         getSizeByViewMode(

@@ -8,9 +8,11 @@
     </cw-panel-group>
     <cw-panel-group position="top-right">
       <cw-panel-general :app="app" />
+      <cw-panel-export-import :app="app" />
     </cw-panel-group>
     <cw-panel-group position="bottom-left">
-      <cw-debug-panel-unit-settings v-if="selectedUnit" :unit="selectedUnit" />
+      <!-- <cw-debug-panel-unit-settings v-if="selectedUnit" :unit="selectedUnit" /> -->
+      <cw-panel-catalog :app="app" />
     </cw-panel-group>
     <cw-panel-group position="bottom-right">
       <cw-panel-unit-preview v-if="selectedUnit" :unit="selectedUnit">
@@ -51,7 +53,9 @@ import CwPanelFloorControl from '../panel/FloorControl.vue';
 import CwPanelUnitPreview from '../panel/UnitPreview.vue';
 import CwPanelGeneral from '../panel/General.vue';
 import CwPanelGroup from '../PanelGroup.vue';
-import CwDebugPanelUnitSettings from '../debug/panel/UnitSettings.vue';
+import CwPanelCatalog from '../panel/Catalog.vue';
+import CwPanelExportImport from '../editor/panel/ExportImport.vue';
+// import CwDebugPanelUnitSettings from '../debug/panel/UnitSettings.vue';
 import CwButton from '../Button.vue';
 
 const subscription = new Subscription();

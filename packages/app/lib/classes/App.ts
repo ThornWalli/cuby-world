@@ -14,6 +14,8 @@ import EditorWallAppModule from './appModule/editor/Wall';
 import EditorGroundAppModule from './appModule/editor/Ground';
 import type { ImportRoomDescription } from '../types/room';
 import EditorStairModule from './appModule/editor/Stair';
+import InventoryAppModule from './appModule/Inventory';
+import CatalogAppModule from './appModule/Catalog';
 
 type AppModuleList = (
   | typeof CursorAppModule
@@ -23,6 +25,8 @@ type AppModuleList = (
   | typeof SelectionAppModule
   | typeof PlacementAppModule
   | typeof MultiplayerAppModule
+  | typeof CatalogAppModule
+  | typeof InventoryAppModule
 )[];
 interface AppModules {
   cursor: CursorAppModule;
@@ -31,6 +35,8 @@ interface AppModules {
   unitFocus: UnitFocusAppModule;
   selection: SelectionAppModule;
   placement: PlacementAppModule;
+  catalog: CatalogAppModule;
+  inventory: InventoryAppModule;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -73,7 +79,9 @@ export class BaseApp<
       PlayerAppModule,
       UnitFocusAppModule,
       SelectionAppModule,
-      PlacementAppModule
+      PlacementAppModule,
+      CatalogAppModule,
+      InventoryAppModule
     );
     this.moduleList = moduleList;
   }
@@ -110,6 +118,10 @@ export class BaseApp<
 
   loadRoom(roomDescription: ImportRoomDescription) {
     return this.modules.room.fromDescription(roomDescription);
+  }
+
+  isEditMode() {
+    return this.config.mode === APP_MODE.EDITOR;
   }
 }
 

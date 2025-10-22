@@ -100,12 +100,11 @@ export default class UnitsModule extends RoomModule<State> {
 
   isPositionFree(position: Vector3, ignoredUnits?: Unit[]) {
     return (
-      this.untiPositionMap
-        .getByPosition(position)
-        .filter(
-          unit =>
-            !unit.accessible && (!ignoredUnits || !ignoredUnits.includes(unit))
-        ).length === 0
+      this.untiPositionMap.getByPosition(position).filter(unit => {
+        return (
+          !unit.accessible && (!ignoredUnits || !ignoredUnits.includes(unit))
+        );
+      }).length === 0
     );
   }
 

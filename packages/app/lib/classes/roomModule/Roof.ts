@@ -15,6 +15,7 @@ import { WALL_VIEW_MODE } from './Wall';
 
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import { disposeObject3D, OBJECT_USER_DATA } from '../../utils/object';
+import { debounceTime, merge } from 'rxjs';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
@@ -45,9 +46,14 @@ export default class RoofModule extends RoomModule<State, Observables> {
     this.setupRoot();
 
     this.subscription.add(
-      this.room.modules.floor.observables.floor$.subscribe(floorIndex => {
-        this.updateVisiblity(floorIndex);
-      })
+      merge(
+        this.room.modules.floor.observables.floor$,
+        this.room.modules.wall.observables.viewMode$
+      )
+        .pipe(debounceTime(100))
+        .subscribe(() => {
+          this.updateVisiblity();
+        })
     );
 
     this.subscription.add(
@@ -60,12 +66,6 @@ export default class RoofModule extends RoomModule<State, Observables> {
       this.room.modules.stair.observables.refresh$.subscribe(
         this.onRefresh.bind(this)
       )
-    );
-
-    this.subscription.add(
-      this.room.modules.wall.observables.viewMode$.subscribe(() => {
-        this.updateVisiblity();
-      })
     );
   }
 
@@ -123,12 +123,16 @@ export default class RoofModule extends RoomModule<State, Observables> {
           })
         );
 
+        mesh.userData[OBJECT_USER_DATA.IGNORE_SELECT] = true;
+
         // if (this.room.modules.wall.state.viewMode !== WALL_VIEW_MODE.LARGE) {
         //   mesh.material.opacity = 0;
         //   (mesh.material as Material).depthWrite = false;
         // }
 
-        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+        mesh.receiveShadow = false;
+        // mesh.receiveShadow = true;
         mesh.rotateX(Math.PI / 2);
         mesh.position.set(-0.5, depth, -0.5);
 
@@ -155,6 +159,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
       description.root.position.y =
         (description.floor + 1) * FLOOR_HEIGHT - 0.2;
     });
+    this.refreshCurrentRoofs();
   }
 
   //#endregion
@@ -166,6 +171,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
           this.room.app.renderer.scene.remove(this.root);
         }
         this.root = new Object3D();
+        this.root.userData[OBJECT_USER_DATA.IGNORE_SELECT] = true;
 
         this.updateDescriptions(wallRooms);
 
@@ -175,19 +181,31 @@ export default class RoofModule extends RoomModule<State, Observables> {
     );
   }
 
-  setVisible(visible: boolean, descriptions = this.descriptions) {
+  setVisible(
+    visible: boolean,
+    descriptions = this.descriptions,
+    hide: boolean = false
+  ) {
     this.state.visible = visible;
     descriptions.forEach(({ root }) => {
       root.visible = visible;
-      // console.log('roof mesh', root, root.visible);
-      // const material = mesh.material as Material;
-      // if (visible) {
-      //   material.opacity = 1;
-      //   material.depthWrite = true;
-      // } else {
-      //   material.opacity = 0;
-      //   material.depthWrite = false;
-      // }
+      if (hide) {
+        root.traverse(child => {
+          if (child instanceof Mesh) {
+            const material = child.material as MeshPhongMaterial;
+            // Ausblenden für Kamera und dunkle Räume.
+            if (visible) {
+              material.colorWrite = false;
+              material.depthWrite = false;
+              material.transparent = false;
+            } else {
+              material.colorWrite = true;
+              material.depthWrite = true;
+              material.transparent = false;
+            }
+          }
+        });
+      }
     });
   }
 
@@ -195,11 +213,14 @@ export default class RoofModule extends RoomModule<State, Observables> {
 
   //#region events
 
-  onChangeActiveWallRooms(wallRooms: Map<string, WallRoom>) {
-    const descriptions = this.descriptions.filter(description =>
-      wallRooms.has(description.room.id)
-    );
-    this.setVisible(false, descriptions);
+  /**
+   * TODO: Wird das noch gebraucht?
+   */
+  onChangeActiveWallRooms(_wallRooms: Map<string, WallRoom>) {
+    // const descriptions = this.descriptions.filter(description =>
+    //   wallRooms.has(description.room.id)
+    // );
+    // this.setVisible(false, descriptions);
   }
 
   getRoofs() {
@@ -221,6 +242,16 @@ export default class RoofModule extends RoomModule<State, Observables> {
       if (f === floorIndex && !this.isRoofNeeded()) continue;
       this.setVisible(true, roofs);
     }
+
+    this.refreshCurrentRoofs(floorIndex);
+  }
+
+  /**
+   * Damit Raum abgedunkelt wird, muss aktuelle Decke unsichtbar anzeigt werden.
+   */
+  refreshCurrentRoofs(floorIndex?: number) {
+    floorIndex = floorIndex ?? this.room.modules.floor.getFloor();
+    this.setVisible(true, this.getRoofsByFloor(floorIndex), true);
   }
 
   //#endregion

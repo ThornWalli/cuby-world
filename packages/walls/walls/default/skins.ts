@@ -1,9 +1,5 @@
-import type { WallSkinIdentifier } from './../../../app/lib/types/wall/skins';
-import {
-  SKIN_TAG,
-  type SkinDescription,
-  type SkinOptions
-} from '@cuby-world/app/lib/types/skin';
+import type { WallSkinDescription } from './../../../app/lib/types/wall/skins';
+import { SKIN_TAG, type SkinOptions } from '@cuby-world/app/lib/types/skin';
 import type {
   ExternalWallStyleTexture,
   InternalWallStyleTexture
@@ -21,12 +17,10 @@ interface DefaultSkinOptions extends SkinOptions {
   texture?: ExternalWallStyleTexture | InternalWallStyleTexture;
   color: string | number;
 }
-export type WallSkinDescription = SkinDescription<
-  WallSkinIdentifier,
-  DefaultSkinOptions
->;
+export type DefaultWallSkinDescription =
+  WallSkinDescription<DefaultSkinOptions>;
 
-const skins: WallSkinDescription[] = [
+const skins: DefaultWallSkinDescription[] = [
   {
     id: 'default_base',
     name: 'Default',

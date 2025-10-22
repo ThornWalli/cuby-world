@@ -56,19 +56,19 @@ export enum PANEL_POSITION {
   &.style-type-default {
     align-items: center;
     color: white;
-    background: rgb(0 0 0 / 40%);
-    border-radius: var(--cw-border-radius-large);
-    box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
+    background: var(--cw-overlay-background);
+    border-radius: var(--cw-overlay-border-radius);
+    box-shadow: var(--cw-overlay-box-shadow);
 
     /* backdrop-filter: blur(5px); */
   }
 
   &.style-type-outlined {
     color: white;
-    background: rgb(0 0 0 / 80%);
+    background: var(--cw-overlay-background);
     border: solid 2px rgb(255 255 255 / 80%);
-    border-radius: var(--cw-border-radius-medium);
-    box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
+    border-radius: var(--cw-overlay-border-radius);
+    box-shadow: var(--cw-overlay-box-shadow);
 
     /* backdrop-filter: blur(5px); */
   }

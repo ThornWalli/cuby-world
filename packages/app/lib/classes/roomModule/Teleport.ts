@@ -14,7 +14,6 @@ import {
 import { loadGltf } from '../../utils/gltf';
 
 import defaultTeleport from '../../../assets/objects/teleports/default.glb?url';
-import assetLoader from '@cuby-world/app/services/assetLoader';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
@@ -72,7 +71,7 @@ export default class TeleportModule extends RoomModule<State, Observables> {
   }
 
   async createMesh(teleporter: Teleport) {
-    const { object } = await loadGltf(defaultTeleport, assetLoader);
+    const { object } = await loadGltf(defaultTeleport);
     object.position.copy(
       teleporter.position.clone().multiply(new Vector3(1, FLOOR_HEIGHT, 1))
     );

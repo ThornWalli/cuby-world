@@ -8,11 +8,11 @@ import {
 } from 'three';
 
 import Unit, {
-  OBJECT_NAME,
   type SetupContext,
   type UnitConstructorOptions,
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 
 export type MirrorOptions = UnitOptions;
 export default class Mirror extends Unit<MirrorOptions> {

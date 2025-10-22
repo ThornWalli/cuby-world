@@ -437,10 +437,62 @@
       "extensions": []
     }
   ],
-  "units": [],
+  "units": [
+    {
+      "unit": "doormate_1",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            6
+          ]
+        },
+        "rotation": "west",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "unit": "doormate_1",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            3
+          ]
+        },
+        "rotation": "west",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    }
+  ],
   "groundStyles": [
     {
-      "id": "default_base",
+      "type": "default",
+      "skinId": "default_base",
       "positions": [
         {
           "type": "Vector3",
@@ -717,7 +769,8 @@
       ]
     },
     {
-      "id": "default_grass_3",
+      "type": "default",
+      "skinId": "default_grass_3",
       "positions": [
         {
           "type": "Vector3",
@@ -1346,7 +1399,8 @@
       ]
     },
     {
-      "id": "default_wood_laminate_1",
+      "type": "default",
+      "skinId": "default_wood_laminate_1",
       "positions": [
         {
           "type": "Vector3",

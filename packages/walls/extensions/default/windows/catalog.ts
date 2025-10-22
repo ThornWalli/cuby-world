@@ -1,9 +1,9 @@
 import { WALL_WINDOW_SIZE } from '@cuby-world/app/lib/types/wall';
-import type { WallExtensionItem } from '@cuby-world/app/lib/types/wall/extension/catalog';
+import type { WindowWallExtensionItem } from '@cuby-world/app/lib/types/wall/extension/catalog';
 import skins_standard from './standard/skins';
 import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
 
-const extensions: WallExtensionItem[] = [
+const items: WindowWallExtensionItem[] = [
   {
     id: 'window_standard_small',
     targetTypes: ['default'],
@@ -56,4 +56,4 @@ const extensions: WallExtensionItem[] = [
     }
   }
 ];
-export const catalog = new Map(extensions.map(w => [w.id, w]));
+export const catalog = new Map(items.map(w => [w.id, w]));

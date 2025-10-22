@@ -31,14 +31,14 @@ import type { PreparedPosition } from '../../../../utils/matrix';
 import {
   disposeObject3D,
   OBJECT_USER_DATA,
-  setMainObjectRecursive
+  setMainObjectRecursive,
+  OBJECT_NAME
 } from '../../../../utils/object';
-import { OBJECT_NAME } from '../../../Unit';
 import type Wall from '../../../Wall';
 import AppModuleController from '../../../AppModuleController';
 import { OUTLINE_TYPE } from '../../../Renderer';
 
-declare module '../../../Unit' {
+declare module '../../../../utils/object' {
   interface ObjectName {
     EDITOR_WALL_INDICATOR: 'EditorWallIndicator';
   }

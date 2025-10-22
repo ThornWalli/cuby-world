@@ -1,11 +1,13 @@
+import type { GroundSkinIdentifier } from './../types/ground/skins';
 import { Vector3 } from 'three';
-import type {
-  GroundStyleDescription,
-  GrountStyleIdentifier
-} from '../types/ground';
+import type { GroundStyleDescription } from '../types/ground';
 
 const IGNORED_GROUND_STYLES = ['default_empty', 'default_editor_empty'];
 
+interface Value {
+  skinId: GroundSkinIdentifier;
+  type: string;
+}
 export default class GroundStyleMap {
   getPositions() {
     return this.map
@@ -20,12 +22,12 @@ export default class GroundStyleMap {
       .flat();
   }
 
-  map: (GrountStyleIdentifier | undefined)[][][];
+  map: (Value | undefined)[][][];
 
   constructor({
     map: map
   }: {
-    map?: GrountStyleIdentifier[][][];
+    map?: Value[][][];
   } = {}) {
     this.map = map ?? [];
   }
@@ -37,7 +39,7 @@ export default class GroundStyleMap {
     // return 'default_empty';
   }
 
-  set(x: number, y: number, z: number, styleId?: GrountStyleIdentifier) {
+  set(x: number, y: number, z: number, value?: Value) {
     if (!this.map[y]) {
       this.map[y] = [];
     }
@@ -45,7 +47,7 @@ export default class GroundStyleMap {
       this.map[y][x] = [];
     }
 
-    this.map[y][x]![z] = styleId;
+    this.map[y][x]![z] = value;
   }
 
   delete(x: number, y: number, z: number) {
@@ -65,12 +67,15 @@ export default class GroundStyleMap {
           (result, map_, y) => {
             map_.forEach((map__, x) => {
               map__.forEach((styleId, z) => {
-                if (!styleId || IGNORED_GROUND_STYLES.includes(styleId)) return;
+                if (!styleId || IGNORED_GROUND_STYLES.includes(styleId.skinId))
+                  return;
+
+                const key = `${styleId.type}_${styleId.skinId}`;
                 result.set(
-                  styleId,
-                  result.get(styleId) ?? { id: styleId, positions: [] }
+                  key,
+                  result.get(key) ?? { ...styleId, positions: [] }
                 );
-                result.get(styleId)!.positions.push(new Vector3(x, y, z));
+                result.get(key)!.positions.push(new Vector3(x, y, z));
               });
             });
             return result;
@@ -87,11 +92,21 @@ export default class GroundStyleMap {
     };
   }
 
+  values() {
+    return this.map
+      .flat()
+      .flat()
+      .filter(v => v !== undefined) as Value[];
+  }
+
   static fromGroundsStyles(groundstyles: GroundStyleDescription[]) {
     const groundStyleMap = new GroundStyleMap();
-    groundstyles.forEach(({ id: styleId, positions }) => {
+    groundstyles.forEach(({ type, skinId, positions }) => {
       positions.forEach(position => {
-        groundStyleMap.set(position.x, position.y, position.z, styleId);
+        groundStyleMap.set(position.x, position.y, position.z, {
+          type,
+          skinId
+        });
       });
     });
     return groundStyleMap;

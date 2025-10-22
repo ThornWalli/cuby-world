@@ -157,24 +157,19 @@ function onClickFullscreen() {
   & .close-button {
     padding: 4px;
     cursor: pointer;
-    background: none;
-    background: var(--color-red-6);
+    background: var(--color-red-7);
     border: solid 2px var(--color-black);
     border-radius: 3px;
+    transition: background var(--cw-easing-duration-short) var(--cw-easing-in);
 
-    &:active {
-      background: var(--color-red-7);
+    &:hover {
+      background: var(--color-red-8);
     }
 
     & svg {
       display: block;
       width: 10px;
-      fill: #666;
-      transition: fill 0.2s;
-
-      &:hover {
-        fill: #000;
-      }
+      fill: #fff;
     }
   }
 }

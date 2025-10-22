@@ -1,19 +1,19 @@
-<svg width="154" height="154" viewBox="0 0 154 154" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M54 83H54.25V87H50V82.75H54V83Z" fill="white"/>
-<path d="M71.25 87H62.75V83H71.25V87Z" fill="white"/>
-<path d="M88.25 87H79.75V83H88.25V87Z" fill="white"/>
-<path d="M105.25 87H96.75V83H105.25V87Z" fill="white"/>
-<path d="M118 87H113.75V83H114V82.75H118V87Z" fill="white"/>
-<path d="M54 74.25H50V65.75H54V74.25Z" fill="white"/>
-<path d="M118 74.25H114V65.75H118V74.25Z" fill="white"/>
-<path d="M54 57.25H50V48.75H54V57.25Z" fill="white"/>
-<path d="M118 57.25H114V48.75H118V57.25Z" fill="white"/>
-<path d="M54 40.25H50V31.75H54V40.25Z" fill="white"/>
-<path d="M118 40.25H114V31.75H118V40.25Z" fill="white"/>
-<path d="M54.25 23H54V23.25H50V19H54.25V23Z" fill="white"/>
-<path d="M118 23.25H114V23H113.75V19H118V23.25Z" fill="white"/>
-<path d="M71.25 23H62.75V19H71.25V23Z" fill="white"/>
-<path d="M88.25 23H79.75V19H88.25V23Z" fill="white"/>
-<path d="M105.25 23H96.75V19H105.25V23Z" fill="white"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M130 154H38V0H130V154ZM42 150H126V4H42V150Z" fill="white"/>
+<svg width="154" height="154" viewBox="0 0 154 154"  xmlns="http://www.w3.org/2000/svg">
+<path d="M54 83H54.25V87H50V82.75H54V83Z" />
+<path d="M71.25 87H62.75V83H71.25V87Z" />
+<path d="M88.25 87H79.75V83H88.25V87Z" />
+<path d="M105.25 87H96.75V83H105.25V87Z" />
+<path d="M118 87H113.75V83H114V82.75H118V87Z" />
+<path d="M54 74.25H50V65.75H54V74.25Z" />
+<path d="M118 74.25H114V65.75H118V74.25Z" />
+<path d="M54 57.25H50V48.75H54V57.25Z" />
+<path d="M118 57.25H114V48.75H118V57.25Z" />
+<path d="M54 40.25H50V31.75H54V40.25Z" />
+<path d="M118 40.25H114V31.75H118V40.25Z" />
+<path d="M54.25 23H54V23.25H50V19H54.25V23Z" />
+<path d="M118 23.25H114V23H113.75V19H118V23.25Z" />
+<path d="M71.25 23H62.75V19H71.25V23Z" />
+<path d="M88.25 23H79.75V19H88.25V23Z" />
+<path d="M105.25 23H96.75V19H105.25V23Z" />
+<path fill-rule="evenodd" clip-rule="evenodd" d="M130 154H38V0H130V154ZM42 150H126V4H42V150Z" />
 </svg>

@@ -10,15 +10,20 @@
     @click="$emit('update:model-value', !modelValue)">
     <span v-if="label && !hideLabel">{{ label }}</span>
     <div>
-      <component :is="currentIcon" class="icon" />
+      <base-icon
+        :name="currentIcon"
+        :size="iconSize ?? 'very-large'"
+        class="icon" />
     </div>
   </base-button>
 </template>
 
 <script setup lang="ts">
-import { computed, type FunctionalComponent } from 'vue';
+import { computed } from 'vue';
 import BaseButton from '../base/Button.vue';
+import BaseIcon from '../base/Icon.vue';
 import icons from '../../utils/icons';
+import type { Icon, IconSize } from '@cuby-world/app/lib/types/icon';
 
 defineEmits<{
   (e: 'update:model-value', value: boolean): void;
@@ -28,7 +33,8 @@ const $props = defineProps<{
   hideLabel?: boolean;
   label?: string;
   labelDirection?: 'right' | 'left' | 'top' | 'bottom';
-  icon: keyof typeof icons | FunctionalComponent;
+  icon: Icon;
+  iconSize?: IconSize | `${IconSize}`;
   modelValue: boolean;
   color?: 'default' | 'red';
 }>();
@@ -64,7 +70,8 @@ const currentIcon = computed(() => {
 
   & .icon {
     display: block;
-    width: 32px;
+
+    /* width: 32px; */
   }
 
   & > div {
@@ -75,10 +82,10 @@ const currentIcon = computed(() => {
     width: 48px;
     height: 48px;
     cursor: pointer;
-    background: rgb(0 0 0 / 40%);
+    background: var(--cw-overlay-background);
     border: none;
-    border-radius: var(--cw-border-radius-medium);
-    box-shadow: 0 0 2px 0 rgb(0 0 0 / 80%);
+    border-radius: var(--cw-border-radius-large);
+    box-shadow: var(--cw-overlay-box-shadow);
     backdrop-filter: blur(var(--cw-blur-default));
     transition: background-color var(--cw-easing-duration-short)
       var(--cw-easing-base);

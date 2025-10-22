@@ -42,8 +42,11 @@ import assetLoader from '@cuby-world/app/services/assetLoader';
 import type { WallSkinIdentifier, WallSkins } from '../types/wall/skins';
 import { FLOOR_HEIGHT } from '../utils/ground';
 
-import { OBJECT_USER_DATA, setMainObjectRecursive } from '../utils/object';
-import { OBJECT_NAME } from './Unit';
+import {
+  OBJECT_USER_DATA,
+  setMainObjectRecursive,
+  OBJECT_NAME
+} from '../utils/object';
 import { skinMap } from '@cuby-world/walls/skins';
 
 declare module '../utils/object' {
@@ -54,7 +57,7 @@ declare module '../utils/object' {
 
 OBJECT_USER_DATA.WALL = 'wall';
 
-declare module '../../lib/classes/Unit' {
+declare module '../../lib/utils/object' {
   interface ObjectName {
     WALL: string;
   }
@@ -639,7 +642,7 @@ async function setupMaterial(
   if (!materialsMap.has(key)) {
     const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
       loader: LOADER.SPRITE,
-      url,
+      value: url,
       options: { density: 2, ...options }
     });
 

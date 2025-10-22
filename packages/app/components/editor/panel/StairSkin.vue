@@ -3,43 +3,19 @@
     hide-title
     style-type="none"
     class="cw-panel-editor-stair-skin"
-    title="Wall Skin">
+    title="Stair Skin">
     <cw-catalog-stair-item-select
       :app="app"
       :items="items"
       :model-value="modelValue"
       @update:model-value="value => $emit('update:model-value', value)">
-      <template #before>
-        <ul>
-          <li>
-            <input
-              id="tag_all"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              value="all"
-              checked />
-            <label for="tag_all">All</label>
-          </li>
-          <li>
-            <input
-              id="tag_color"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              :value="CATALOG_TAG.COLOR" />
-            <label for="tag_color">Color</label>
-          </li>
-          <li>
-            <input
-              id="tag_texture"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              :value="CATALOG_TAG.TEXTURE" />
-            <label for="tag_texture">Texture</label>
-          </li>
-        </ul>
+      <template #controls>
+        <icon-button
+          icon-size="very-small"
+          style-type="round"
+          icon="arrow_navigation_default_left"
+          @click="onClickBack" />
+        <cw-editor-skin-filter v-model="tag" :skins="skins" />
       </template>
     </cw-catalog-stair-item-select>
   </cw-panel>
@@ -48,16 +24,15 @@
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
 import CwCatalogStairItemSelect from '../catalog/StairItemSelect.vue';
-import { computed, ref, useId } from 'vue';
+import CwEditorSkinFilter from '../SkinFilter.vue';
+import IconButton from '../../button/IconButton.vue';
 
-import { CATALOG_TAG } from '../../../lib/utils/catalog';
-
+import { computed, ref } from 'vue';
 import type App from '../../../lib/classes/App';
 import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
 import type { StairSelectItem } from '../catalog/StairItemSelect.vue';
 import type { SKIN_TAG, SkinDescription } from '@cuby-world/app/lib/types/skin';
-
-const id = useId();
+import type { StairIdentifier } from '@cuby-world/app/lib/types/stair';
 
 const tag = ref<SKIN_TAG | 'all'>('all');
 
@@ -65,9 +40,14 @@ function prepareItem(item: SkinDescription): StairSelectItem<SkinDescription> {
   return {
     item,
     preview: {
+      type: $props.type,
       skin: item.id
     }
   };
+}
+
+function onClickBack() {
+  $emit('update:model-value', null);
 }
 
 const items = computed<StairSelectItem<SkinDescription>[]>(() =>
@@ -84,6 +64,7 @@ const items = computed<StairSelectItem<SkinDescription>[]>(() =>
 
 const $props = defineProps<{
   app: App;
+  type: StairIdentifier;
   skins: SkinDescription[];
   modelValue: StairSkinIdentifier | null;
 }>();
@@ -101,32 +82,6 @@ const $emit = defineEmits<{
 
   & :deep(.cw-panel-catalog-stair-item-select) {
     width: 100%;
-  }
-}
-
-ul {
-  display: flex;
-  gap: 10px;
-  padding: 0 10px;
-  font-size: 12px;
-  color: white;
-  list-style: none;
-
-  & li {
-    position: relative;
-
-    & input {
-      position: absolute;
-      opacity: 0;
-    }
-
-    & label {
-      cursor: pointer;
-    }
-
-    & input:checked + label {
-      font-weight: bold;
-    }
   }
 }
 </style>

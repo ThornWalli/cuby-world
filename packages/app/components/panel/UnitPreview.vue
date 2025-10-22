@@ -17,7 +17,7 @@ import type { Mesh, OrthographicCamera, Scene } from 'three';
 import { Vector2, WebGLRenderer } from 'three';
 import type Unit from '../../lib/classes/Unit';
 import { computed, onMounted, ref, watch } from 'vue';
-import { OBJECT_NAME } from '../../lib/classes/Unit';
+import { OBJECT_NAME } from '../../lib/utils/object';
 import { Subscription } from 'rxjs';
 
 import CwPanel from '../Panel.vue';

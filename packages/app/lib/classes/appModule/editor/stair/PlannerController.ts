@@ -25,12 +25,14 @@ import {
   type DirectionWallDescriptionKey
 } from '@cuby-world/app/lib/utils/wall';
 import type { PreparedPosition } from '@cuby-world/app/lib/utils/matrix';
-import { OBJECT_NAME } from '../../../Unit';
+import { OBJECT_NAME } from '../../../../utils/object';
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 import { OUTLINE_TYPE, type AnimationLoopValue } from '../../../Renderer';
 import { resolveStair } from '@cuby-world/app/lib/utils/stair';
 import { canWalkBetweenPositions } from '@cuby-world/app/lib/utils/pathfindng';
 import type { StairItem } from '@cuby-world/app/lib/types/stair/catalog';
+import type { StairIdentifier } from '@cuby-world/app/lib/types/stair';
+import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
 
 export interface Observables extends AppModuleControllerObservables {
   currentStair$: ReplaySubject<Stair | undefined>;
@@ -56,7 +58,8 @@ interface TempState {
 }
 
 export interface State extends AppModuleControllerState {
-  item?: StairItem | null;
+  item: StairIdentifier | null;
+  skin: StairSkinIdentifier | null;
   rotation: ROTATION;
   currentStair?: Stair;
   temp: TempState;
@@ -69,6 +72,8 @@ export default class PlannerController<
   O extends Observables = Observables
 > extends AppModuleController<S, O> {
   override state: S = {
+    item: null,
+    skin: null,
     rotation: ROTATION.EAST,
     temp: {},
     placeable: true,
@@ -202,13 +207,16 @@ export default class PlannerController<
      */
     if (!stair?.room) {
       if (!this.state.item) {
+        throw new Error('No item selected');
+      }
+      if (!this.state.skin) {
         throw new Error('No skin selected');
       }
       stair = (
         await room.modules.stair.addStairs([
           {
-            type: this.state.item.id,
-            skin: this.state.item.options.skin,
+            type: this.state.item,
+            skin: this.state.skin,
             position: this.state.temp.position!,
             rotation: this.state.temp.rotation || ROTATION.EAST
           }
@@ -255,23 +263,25 @@ export default class PlannerController<
   reset() {
     this.removeTmp();
     this.setCurrentStair(undefined);
-    this.state.item = undefined;
+    this.state.item = null;
   }
 
   private async createTmpObject(
-    skin: StairItem,
+    item: StairIdentifier,
+    skin: StairSkinIdentifier,
     { rotation }: { rotation: ROTATION }
   ) {
     const room = this.app.modules.room.getRoom()!;
 
     if (this.state.temp.object) {
-      room.root.remove(this.state.temp.object);
+      this.state.temp.object.removeFromParent();
+      this.state.temp.object.remove();
       this.state.temp.object = undefined;
     }
 
     const [Stair, description] = await resolveStair({
-      type: skin.id,
-      skin: skin.options.skin,
+      type: item,
+      skin: skin,
       position: new Vector3(0, 0, 0),
       rotation
     });
@@ -283,14 +293,15 @@ export default class PlannerController<
     room.addToRoot(stair.root);
     this.state.temp.object = stair.root;
     this.setCurrentStair(stair);
+
     this.move();
   }
 
   private removeTmp() {
-    const room = this.app.modules.room.getRoom()!;
     this.setTmpPosition(undefined);
     if (this.state.temp.object) {
-      room.root.remove(this.state.temp.object);
+      this.state.temp.object.removeFromParent();
+      this.state.temp.object.remove();
       this.state.temp.object = null;
     }
   }
@@ -380,15 +391,29 @@ export default class PlannerController<
     return this.state.currentStair?.root || this.state.temp.object;
   }
 
-  async setSkin(skin?: StairItem | null) {
-    this.state.item = skin;
-    if (skin) {
-      await this.createTmpObject(skin, {
+  getItem() {
+    return this.state.item;
+  }
+
+  async setItem(item: StairItem | null) {
+    this.state.item = item?.id ?? null;
+    this.state.skin = item?.options.skin ?? null;
+    if (item) {
+      await this.createTmpObject(item.id, item.options.skin, {
         rotation: this.state.rotation
       });
       this.observables.moveStart$.next();
     } else {
       this.reset();
+    }
+  }
+
+  async setSkin(skin: StairSkinIdentifier | null) {
+    this.state.skin = skin;
+    if (this.state.item && this.state.skin) {
+      await this.createTmpObject(this.state.item, this.state.skin, {
+        rotation: this.state.rotation
+      });
     }
   }
 

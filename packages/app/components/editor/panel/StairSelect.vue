@@ -3,44 +3,12 @@
     hide-title
     style-type="none"
     class="cw-panel-editor-stair-select"
-    title="Wall Skin">
+    title="Stair Select">
     <cw-catalog-stair-item-select
       :app="app"
       :items="items.map(prepareItem)"
       :model-value="modelValue"
-      @update:model-value="item => $emit('update:model-value', item)">
-      <template #before>
-        <ul>
-          <li>
-            <input
-              id="tag_all"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              value="all"
-              checked />
-            <label for="tag_all">All</label>
-          </li>
-          <li>
-            <input
-              id="tag_color"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              :value="CATALOG_TAG.COLOR" />
-            <label for="tag_color">Color</label>
-          </li>
-          <li>
-            <input
-              id="tag_texture"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              :value="CATALOG_TAG.TEXTURE" />
-            <label for="tag_texture">Texture</label>
-          </li>
-        </ul>
-      </template>
+      @update:model-value="value => $emit('update:model-value', value)">
     </cw-catalog-stair-item-select>
   </cw-panel>
 </template>
@@ -48,23 +16,18 @@
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
 import CwCatalogStairItemSelect from '../catalog/StairItemSelect.vue';
-import { ref, useId } from 'vue';
-import { CATALOG_TAG } from '../../../lib/utils/catalog';
 import type App from '../../../lib/classes/App';
 import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
 import type { StairSelectItem } from '../catalog/StairItemSelect.vue';
 import type { StairItem } from '@cuby-world/app/lib/types/stair/catalog';
 import type { StairIdentifier } from '@cuby-world/app/lib/types/stair';
 
-const id = useId();
-
-const tag = ref<CATALOG_TAG | 'all'>('all');
-
 function prepareItem(item: StairItem): StairSelectItem<StairItem> {
   return {
     item,
     preview: {
-      skin: item.id
+      type: item.id,
+      skin: item.options.skin
     }
   };
 }
@@ -84,37 +47,10 @@ const $emit = defineEmits<{
 .cw-panel-editor-stair-select {
   align-items: center;
   align-self: center;
-
-  /* width: 90%;
+  width: 90%;
 
   & :deep(.cw-panel-catalog-select-item-select) {
     width: 100%;
-  } */
-}
-
-ul {
-  display: flex;
-  gap: 10px;
-  padding: 0 10px;
-  font-size: 12px;
-  color: white;
-  list-style: none;
-
-  & li {
-    position: relative;
-
-    & input {
-      position: absolute;
-      opacity: 0;
-    }
-
-    & label {
-      cursor: pointer;
-    }
-
-    & input:checked + label {
-      font-weight: bold;
-    }
   }
 }
 </style>

@@ -1,0 +1,14 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="2048" height="2048" viewBox="0 0 2048 2048"
+     xmlns="http://www.w3.org/2000/svg" version="1.1">
+<desc>doormate_1.blend, (Blender 4.5.2 LTS)</desc>
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="1832.421,754.526 1724.631,754.526 1724.631,2048.000 1832.421,2048.000 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="2048.000,1185.684 1940.210,1185.684 1940.211,2048.000 2048.000,2048.000 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="1940.210,754.526 1832.421,754.526 1832.421,2048.000 1940.210,2048.000 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="2048.000,323.369 1940.211,323.369 1940.211,1185.684 2048.000,1185.684 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="862.316,754.526 0.000,754.526 0.000,2048.000 862.316,2048.000 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="1724.631,754.526 862.316,754.526 862.316,2048.000 1724.631,2048.000 " />
+
+</svg>

@@ -1,82 +1,92 @@
 <template>
   <cw-object-preview
     v-if="root"
+    :hide-ground="hideGround"
+    :cache-key="modelValue ? JSON.stringify(modelValue) : undefined"
     :root="root"
     :app="app"
-    :width="width"
+    :width="width ?? 'auto'"
     :ratio="ratio"
-    class="cw-wall-extension-preview" />
+    :hydrate-when-visible="hydrateWhenVisible"
+    class="cw-object-preview-unit" />
 </template>
 
 <script lang="ts" setup>
 import { Object3D } from 'three';
 import { markRaw, onUnmounted, ref, watch } from 'vue';
-import { ReplaySubject, Subscription } from 'rxjs';
+import { Subscription, ReplaySubject } from 'rxjs';
 
 import type App from '../../lib/classes/App';
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 
 import CwObjectPreview from '../ObjectPreview.vue';
-import type Unit from '@cuby-world/app/lib/classes/Unit';
+
+import { catalog } from '@cuby-world/units';
 
 const $props = defineProps<{
   app: App;
   width?: number | 'auto';
   ratio: number;
-  modelValue: {
-    unit: typeof Unit;
-  };
+  modelValue: UnitPreview;
+  hideGround?: boolean;
+  hydrateWhenVisible?: boolean;
 }>();
 
-const root = ref<Object3D>();
+const root = ref<Object3D>(new Object3D());
 
 const animationLoop$ = new ReplaySubject<AnimationLoopValue>(1);
 animationLoop$.next({ time: 0, delta: 0 });
 
 onUnmounted(() => {
   animationLoop$.complete();
+  animationLoop$.unsubscribe();
   unitSubscriptions?.unsubscribe();
 });
 
 let unitSubscriptions: Subscription;
 
-async function setupUnit(unit: typeof Unit) {
-  unitSubscriptions?.unsubscribe();
-  unitSubscriptions = new Subscription();
-  const instance = new unit();
+async function setup(data: UnitPreview) {
+  const unitItem = catalog.get(data.type);
+  const UnitClass = await unitItem!.instance();
+  const instance = new UnitClass({
+    name: UnitClass.NAME,
+    preview: true
+  });
   await instance.setup({
     assetLoader: $props.app.assetLoader,
     unit: instance
   });
-  const mesh = instance.mesh;
 
-  const root = new Object3D();
-  root.add(mesh);
-  root.position.set(0, -0.5, 0);
-
+  unitSubscriptions?.unsubscribe();
+  unitSubscriptions = new Subscription();
   return new Promise<Object3D>(resolve => {
     unitSubscriptions.add(
       instance.materialReady$.subscribe(() => {
         unitSubscriptions?.unsubscribe();
-        resolve(root);
+        resolve(instance.root);
       })
     );
   });
 }
 
+root.value = markRaw(await setup($props.modelValue));
+
 watch(
   () => $props.modelValue,
-  async ({ unit }) => {
-    root.value = markRaw(await setupUnit(unit));
-  },
-  {
-    immediate: true
+  async data => {
+    root.value = markRaw(await setup(data));
   }
 );
 </script>
 
+<script lang="ts">
+export interface UnitPreview {
+  type: string;
+}
+</script>
+
 <style lang="postcss" scoped>
-.cw-wall-extension-preview {
+.cw-object-preview-unit {
   /* empty */
 }
 </style>

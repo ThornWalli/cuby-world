@@ -4,7 +4,11 @@
     :items="items"
     class="cw-panel-catalog-stair-item-select"
     @update:model-value="onUpdateModelValue">
-    <template #before><slot name="before"></slot></template>
+    <template #before>
+      <div class="controls">
+        <slot name="controls"></slot>
+      </div>
+    </template>
     <template #preview="{ preview }">
       <cw-object-preview-stair
         :app="app"
@@ -71,6 +75,11 @@ export interface StairSelectItem<Item extends CatalogItem>
 
   &.cw-editor-catalog-item-select {
     --preview-width: 128px;
+  }
+
+  & .controls {
+    display: flex;
+    align-items: center;
   }
 }
 

@@ -899,20 +899,22 @@ export function getWallRoomDescriptions(walls: Wall[]) {
 //#endregion
 
 export function loadWallGeometries(url: string) {
-  return assetLoader.add<GLTF>({ loader: LOADER.GLTF, url }).then(gltf => {
-    return Object.values(WALL_GEOMETRY).reduce((result, value: string) => {
-      const mesh = gltf.scene.getObjectByName(value) as Mesh;
-      if (!mesh) {
-        console.warn(`Wall geometry ${value} not found in gltf`);
-        result.set(value as WALL_GEOMETRY, null);
-      } else {
-        const geometry = mesh?.geometry.clone();
-        geometry.rotateY(-Math.PI / 2);
-        result.set(value as WALL_GEOMETRY, geometry);
-      }
-      return result;
-    }, new Map<WALL_GEOMETRY, BufferGeometry | null>());
-  });
+  return assetLoader
+    .add<GLTF>({ loader: LOADER.GLTF, value: url })
+    .then(gltf => {
+      return Object.values(WALL_GEOMETRY).reduce((result, value: string) => {
+        const mesh = gltf.scene.getObjectByName(value) as Mesh;
+        if (!mesh) {
+          console.warn(`Wall geometry ${value} not found in gltf`);
+          result.set(value as WALL_GEOMETRY, null);
+        } else {
+          const geometry = mesh?.geometry.clone();
+          geometry.rotateY(-Math.PI / 2);
+          result.set(value as WALL_GEOMETRY, geometry);
+        }
+        return result;
+      }, new Map<WALL_GEOMETRY, BufferGeometry | null>());
+    });
 }
 
 export function getWallGeometry(

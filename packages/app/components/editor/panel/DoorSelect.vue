@@ -21,38 +21,42 @@ import { ref } from 'vue';
 import type App from '../../../lib/classes/App';
 import type WallExtension from '../../../lib/classes/WallExtension';
 import { doorCatalog } from '@cuby-world/walls';
-import type { WallExtensionItem } from '../../../lib/types/wall/extension/catalog';
+import type { DoorWallExtensionItem } from '../../../lib/types/wall/extension/catalog';
 import type { WallExtensionIdentifier } from '../../../lib/types/wall/extension/skins';
 import { getWallExtensionMap } from '@cuby-world/app/lib/utils/catalog';
+import type { WallType } from '@cuby-world/app/lib/types/wall/catalog';
 
-const extensionTypes = await getWallExtensionMap(
+const extensionTypes = await getWallExtensionMap<DoorWallExtensionItem>(
   Array.from(doorCatalog.values())
 );
 
-function prepareItem(item: WallExtensionItem) {
+const $props = defineProps<{
+  app: App;
+  type: WallType;
+  modelValue: WallExtensionIdentifier | null;
+}>();
+
+function prepareItem(
+  item: DoorWallExtensionItem
+): WallSelectItem<DoorWallExtensionItem> {
   return {
-    extensions: [
-      {
-        extension: extensionTypes.get(item.extension) as typeof WallExtension,
-        state: { type: 'default', ...item.options }
-      }
-    ]
+    item,
+    preview: {
+      type: $props.type,
+      extensions: [
+        {
+          extension: extensionTypes.get(item.extension) as typeof WallExtension,
+          skin: item.options.skin,
+          state: { type: 'default', ...item.options }
+        }
+      ]
+    }
   };
 }
 
-const items = ref<WallSelectItem<WallExtensionItem>[]>(
-  Array.from(doorCatalog.values()).map(item => {
-    return {
-      item,
-      preview: prepareItem(item)
-    } as WallSelectItem<WallExtensionItem>;
-  })
+const items = ref<WallSelectItem<DoorWallExtensionItem>[]>(
+  Array.from(doorCatalog.values()).map(prepareItem)
 );
-
-defineProps<{
-  app: App;
-  modelValue: WallExtensionIdentifier | null;
-}>();
 
 const $emit = defineEmits<{
   (e: 'update:model-value', value: WallExtensionIdentifier | null): void;
@@ -62,9 +66,11 @@ const $emit = defineEmits<{
 <style lang="postcss" scoped>
 .cw-panel-editor-wall-door-select {
   align-items: center;
+  align-self: center;
+  width: 90%;
 
-  & :deep(> div) {
-    width: 90%;
+  & :deep(.cw-panel-catalog-select-item-select) {
+    width: 100%;
   }
 }
 </style>

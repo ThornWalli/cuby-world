@@ -27,7 +27,8 @@ interface Loaders {
 
 export interface LoadDescription {
   loader: LOADER;
-  url: string | string[];
+  parse?: boolean;
+  value: string | string[] | ArrayBuffer;
   id?: string;
   options?: Record<string, unknown>;
 }
@@ -129,7 +130,7 @@ function loadTexture(loaders: Loaders) {
           reject: CallableFunction;
           description: LoadDescription;
         }) => {
-          const { loader, url, id } = description;
+          const { loader, value, id } = description;
           let result: Texture | CubeTexture | GLTF;
           switch (loader) {
             case LOADER.SPRITE:
@@ -137,7 +138,7 @@ function loadTexture(loaders: Loaders) {
                 const loadDescription: SpriteLoadDescription =
                   description as SpriteLoadDescription;
                 result = await loadSpriteFromAtlas(
-                  description.url as string,
+                  description.value as string,
                   ...loadDescription.options.position
                     .clone()
                     .multiplyScalar(loadDescription.options.density ?? 1)
@@ -151,18 +152,31 @@ function loadTexture(loaders: Loaders) {
               break;
             case LOADER.GLTF:
               {
-                result = await loaders[LOADER.GLTF].loadAsync(url as string);
+                if (description.parse) {
+                  if (value instanceof ArrayBuffer) {
+                    result = await loaders[LOADER.GLTF].parseAsync(
+                      value as ArrayBuffer,
+                      ''
+                    );
+                  } else {
+                    throw new Error('GLTF parse requires ArrayBuffer as value');
+                  }
+                } else {
+                  result = await loaders[LOADER.GLTF].loadAsync(
+                    value as string
+                  );
+                }
               }
               break;
             case LOADER.CUBE_TEXTURE:
               {
                 result = await loaders[LOADER.CUBE_TEXTURE].loadAsync(
-                  url as string[]
+                  value as string[]
                 );
               }
               break;
             default: {
-              result = await loaders[LOADER.TEXTURE].loadAsync(url as string);
+              result = await loaders[LOADER.TEXTURE].loadAsync(value as string);
             }
           }
 

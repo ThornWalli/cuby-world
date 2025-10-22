@@ -8,7 +8,7 @@ import assetLoader from '@cuby-world/app/services/assetLoader';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 import glbBase from './assets/stair_default_1x3.glb?url';
-import { OBJECT_NAME } from '@cuby-world/app/lib/classes/Unit';
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import { stairCatalog } from '@cuby-world/stairs/catalog';
 import type { Default3x1SkinDescription } from './skins';
 
@@ -59,7 +59,7 @@ async function loadGltf(assetLoader: AssetLoader): Promise<{
 
   const gltf: GLTF = await assetLoader.add<GLTF>({
     loader: LOADER.GLTF,
-    url: glbBase
+    value: glbBase
   });
 
   const model = gltf.scene.clone();

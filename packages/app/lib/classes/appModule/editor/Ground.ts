@@ -95,7 +95,10 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
       const groundModule = room.modules.ground;
       const groundStyleMap = groundModule.getGroundStyleMap();
 
-      groundStyleMap.set(position.x, position.y, position.z, this.state.skinId);
+      groundStyleMap.set(position.x, position.y, position.z, {
+        type: 'default',
+        skinId: this.state.skinId
+      });
       this.lastGroundData = [];
       groundModule.refreshGround(room.modules.floor.getFloor());
     } else if (
@@ -115,12 +118,10 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
         for (let x = startX; x <= endX; x++) {
           for (let z = startZ; z <= endZ; z++) {
             console.log(this.state.skinId);
-            groundStyleMap.set(
-              x,
-              this.multipleSet.startPosition.y,
-              z,
-              this.state.skinId
-            );
+            groundStyleMap.set(x, this.multipleSet.startPosition.y, z, {
+              type: 'default',
+              skinId: this.state.skinId
+            });
           }
         }
         this.multipleSet = null;
@@ -151,6 +152,11 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
         data?.position.y,
         data?.position.z,
         data?.groundStyle
+          ? {
+              type: 'default',
+              skinId: data.groundStyle
+            }
+          : undefined
       );
     });
     this.lastGroundData = [];
@@ -164,16 +170,15 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
       for (let z = startPosition.z; z <= endPosition.z; z++) {
         this.lastGroundData.push({
           position: new Vector3(x, startPosition.y, z),
-          groundStyle: groundStyleMap.get(x, startPosition.y, z)
+          ...groundStyleMap.get(x, startPosition.y, z)
         });
-        groundStyleMap.set(
-          x,
-          startPosition.y,
-          z,
-          this.state.action.primary === GROUND_ACTION.REMOVE
-            ? 'default_editor_empty'
-            : this.state.skinId
-        );
+        groundStyleMap.set(x, startPosition.y, z, {
+          type: 'default',
+          skinId:
+            this.state.action.primary === GROUND_ACTION.REMOVE
+              ? 'default_editor_empty'
+              : this.state.skinId
+        });
       }
     }
     groundModule.refreshGround(room.modules.floor.getFloor());
@@ -190,7 +195,12 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
           data?.position.x,
           data?.position.y,
           data?.position.z,
-          data?.groundStyle
+          data.groundStyle
+            ? {
+                type: 'default',
+                skinId: data.groundStyle
+              }
+            : undefined
         );
       });
 

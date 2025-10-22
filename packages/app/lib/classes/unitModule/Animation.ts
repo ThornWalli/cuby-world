@@ -3,7 +3,7 @@ import UnitModule, {
   type UnitModuleSetupContext,
   type UnitModuleState
 } from '../UnitModule';
-import { OBJECT_NAME } from '../Unit';
+import { OBJECT_NAME } from '../../utils/object';
 
 type State = UnitModuleState;
 

@@ -1,13 +1,5 @@
-import type { WallSkinIdentifier } from './../app/lib/types/wall/skins';
-import {
-  SKIN_TAG,
-  type SkinDescription,
-  type SkinOptions
-} from '@cuby-world/app/lib/types/skin';
-import type {
-  ExternalWallStyleTexture,
-  InternalWallStyleTexture
-} from '@cuby-world/app/lib/types/wall/skins';
+import { SKIN_TAG } from '@cuby-world/app/lib/types/skin';
+import type { WallSkinDescription } from '@cuby-world/app/lib/types/wall/skins';
 
 const colors = {
   very_light: '#F5F5F5',
@@ -17,14 +9,6 @@ const colors = {
   raw_plaster: '#DADADA',
   concrete: '#9E9E9E'
 };
-interface WallSkinOptions extends SkinOptions {
-  texture?: ExternalWallStyleTexture | InternalWallStyleTexture;
-  color: string | number;
-}
-export type WallSkinDescription = SkinDescription<
-  WallSkinIdentifier,
-  WallSkinOptions
->;
 
 const skins: WallSkinDescription[] = [
   {

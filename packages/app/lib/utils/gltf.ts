@@ -1,13 +1,13 @@
 import type { Texture } from 'three';
 import { ClampToEdgeWrapping, LinearFilter, Mesh, Object3D } from 'three';
-import type AssetLoader from '../classes/AssetLoader';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LOADER } from '../classes/AssetLoader';
-import { OBJECT_NAME } from '../classes/Unit';
+import { OBJECT_NAME } from '../utils/object';
+import assetLoader from '@cuby-world/app/services/assetLoader';
 
 export async function loadGltf(
-  url: string,
-  assetLoader: AssetLoader
+  value: string | ArrayBuffer,
+  parse?: boolean
 ): Promise<{
   object: Object3D;
   animations: GLTF['animations'];
@@ -16,7 +16,8 @@ export async function loadGltf(
 
   const gltf: GLTF = await assetLoader.add<GLTF>({
     loader: LOADER.GLTF,
-    url
+    value,
+    parse
   });
 
   const model = gltf.scene.clone();

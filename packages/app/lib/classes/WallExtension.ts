@@ -6,6 +6,7 @@ import {
   OBJECT_USER_DATA,
   setMainObjectRecursive
 } from '@cuby-world/app/lib/utils/object';
+import type { WallExtensionSkinIdentifier } from '../types/wall/extension/skins';
 
 declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
@@ -30,13 +31,17 @@ export interface WallExtensionDescription<
   state?: State;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type WallExtensionState = Record<string, any>;
+export type WallExtensionState = {
+  skin: WallExtensionSkinIdentifier;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+};
 
 export default class WallExtension<
   State extends WallExtensionState = WallExtensionState
 > {
   id: string = crypto.randomUUID();
+
   /**
    * Der Typ muss eindeutig sein und dem Muster "<Kategorie>_<Name>" folgen, z.B. "door_default"
    */

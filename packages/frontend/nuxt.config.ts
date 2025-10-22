@@ -42,7 +42,11 @@ export default defineNuxtConfig({
 
   srcDir: './src',
 
-  css: ['@/assets/css/base.pcss', '@cuby-world/app/assets/css/vars.pcss'],
+  css: [
+    '@/assets/css/base.pcss',
+    '@cuby-world/app/assets/css/vars.pcss',
+    '@cuby-world/app/assets/css/transitions.pcss'
+  ],
 
   imports: {
     autoImport: false

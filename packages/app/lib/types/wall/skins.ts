@@ -1,7 +1,17 @@
 import type { Vector2 } from 'three';
-import type { SkinIdentifier } from '../skin';
+import type { SkinDescription, SkinIdentifier, SkinOptions } from '../skin';
 
 export type WallSkinIdentifier = SkinIdentifier;
+
+export interface WallSkinOptions extends SkinOptions {
+  texture?: ExternalWallStyleTexture | InternalWallStyleTexture;
+  color: string | number;
+}
+
+export type WallSkinDescription<
+  Options = WallSkinOptions,
+  Id = WallSkinIdentifier
+> = SkinDescription<Options, Id>;
 
 export type WallSkins = [WallSkinIdentifier, WallSkinIdentifier];
 

@@ -2,10 +2,13 @@ import type { SkinDescription } from './skin';
 
 export type CatalogItemIdentifier = string;
 
-export interface CatalogItem<Id = CatalogItemIdentifier> {
+export interface CatalogItem<
+  Skin = SkinDescription,
+  Id = CatalogItemIdentifier
+> {
   id: Id;
   name: string;
   description?: string;
-  skins?: SkinDescription[];
+  skins?: Skin[];
   tags?: string[];
 }

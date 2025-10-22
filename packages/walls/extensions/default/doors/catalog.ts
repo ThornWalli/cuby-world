@@ -1,9 +1,9 @@
-import type { WallExtensionItem } from '@cuby-world/app/lib/types/wall/extension/catalog';
+import type { DoorWallExtensionItem } from '@cuby-world/app/lib/types/wall/extension/catalog';
 
 import skins_standard from './standard/skins';
 import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
 
-const extensions: WallExtensionItem[] = [
+const items: DoorWallExtensionItem[] = [
   {
     id: 'default_door_standard',
     targetTypes: ['default'],
@@ -38,4 +38,4 @@ const extensions: WallExtensionItem[] = [
   }
 ];
 
-export const catalog = new Map(extensions.map(w => [w.id, w]));
+export const catalog = new Map(items.map(w => [w.id, w]));

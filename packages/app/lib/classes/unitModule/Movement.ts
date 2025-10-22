@@ -24,6 +24,7 @@ import type DoorWallExtension from '../wallExtension/Door';
 import { WALL_DIRECTION } from '../../types/wall';
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import { findBestPathByStairs } from '../../utils/pathfindng';
+import { GRID_BLOCKED } from '../roomModule/Ground';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -169,14 +170,18 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       matrix,
       floorIndex
     }));
+    console.log('matrixList', matrixList);
 
     const unit = this.unit;
     const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
       .options.movement;
 
+    const tileCostsMap = this.currentRoom.modules.ground.getTileCostMap();
+    debugger;
     const paths = await findBestPathByStairs(matrixList, {
       positions: { start: startPosition, end: endPosition },
       options: {
+        tileDescriptions: Array.from(tileCostsMap.values()),
         diagonalMovement: movementOptions.diagonalMovement
       },
       functions: {
@@ -207,13 +212,15 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       return [];
     }
 
-    this.createPathHelper(
-      paths
-        .map(({ path }) => {
-          return path;
-        })
-        .flat()
-    );
+    if (this.debug) {
+      this.createPathHelper(
+        paths
+          .map(({ path }) => {
+            return path;
+          })
+          .flat()
+      );
+    }
 
     return paths;
   }
@@ -274,6 +281,14 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
       .options.movement;
 
+    const abort = () => {
+      this.currentMovement = null;
+      this.moveOptions = null;
+      this.rotateOptions = null;
+      this.observables.moveEnd$.next();
+      return;
+    };
+
     if (this.currentMovement?.path.length || moveOptions.nextPosition) {
       const { startDuration } = moveOptions;
       const nextPosition = moveOptions.nextPosition;
@@ -316,11 +331,17 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
         //#endregion
 
+        if (!moveOptions.nextPosition) {
+          debugger;
+          moveOptions.nextPosition = null;
+          this.currentMovement = null;
+          return;
+        }
+
         if (
-          !moveOptions.nextPosition ||
           !room?.modules.units?.isPositionFree(moveOptions.nextPosition, [unit])
         ) {
-          moveOptions.nextPosition = null;
+          abort();
           return;
         }
 
@@ -528,8 +549,8 @@ function createRoomGrid(unit: Unit) {
           p.x >= 0 && p.x < room.gridSize.x && p.z >= 0 && p.z < room.gridSize.y
       )
       .forEach(p => {
-        grid.set(p.x, p.y, p.z, 1);
-        grid.set(p.x, p.y + 1, p.z, 1);
+        grid.set(p.x, p.y, p.z, GRID_BLOCKED);
+        grid.set(p.x, p.y + 1, p.z, GRID_BLOCKED);
       });
   });
 

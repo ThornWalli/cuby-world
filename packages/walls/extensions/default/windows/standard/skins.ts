@@ -9,8 +9,8 @@ interface StandardSkinOptions extends SkinOptions {
 }
 
 export type StandardSkinDescription = SkinDescription<
-  WallExtensionSkinIdentifier,
-  StandardSkinOptions
+  StandardSkinOptions,
+  WallExtensionSkinIdentifier
 >;
 
 const skins: StandardSkinDescription[] = [

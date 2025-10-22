@@ -1,7 +1,19 @@
 import type { Vector2 } from 'three';
-import type { SkinIdentifier } from '../skin';
+import type { SkinDescription, SkinIdentifier, SkinOptions } from '../skin';
 
 export type GroundSkinIdentifier = SkinIdentifier;
+export interface GroundSkinOptions extends SkinOptions {
+  cost: number;
+  color?: string;
+  accessible?: boolean;
+  opacity?: number;
+  texture?: ExternalGroundSkinTexture | InternalGroundSkinTexture;
+}
+
+export type GroundSkinDescription<
+  Options = GroundSkinOptions,
+  Id = SkinIdentifier
+> = SkinDescription<Options, Id>;
 export type GroundStyleType = string;
 
 export interface GroundSkinTexture {

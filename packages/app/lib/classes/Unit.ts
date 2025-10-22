@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 import { ReplaySubject, Subscription } from 'rxjs';
 import { Box3, Euler, Vector3, type Mesh } from 'three';
@@ -22,6 +23,7 @@ import type { AnimationLoopValue } from './Renderer';
 import { ROTATION, ROTATION_TYPE, rotationDirections } from '../types';
 import {
   disposeObject3D,
+  OBJECT_NAME,
   OBJECT_USER_DATA,
   setMainObjectRecursive
 } from '../utils/object';
@@ -83,7 +85,8 @@ export interface UnitConstructorOptions<
   size?: Vector3;
   rotation?: ROTATION;
   options?: Options;
-  moduleState?: { [key: string]: UnitModuleState };
+  preview?: boolean;
+  moduleStates?: { [key: string]: UnitModuleState };
 }
 
 export function getRotationByEuler(euler: Euler): ROTATION | null {
@@ -154,6 +157,7 @@ export default class Unit<
 > implements UnitChunking
 {
   debug = false;
+  private preview = false;
 
   currentChunkKeys: string[] = [];
 
@@ -227,14 +231,16 @@ export default class Unit<
       size,
       rotation,
       options,
-      moduleState
+      preview,
+      moduleStates
     }: UnitConstructorOptions<Options> & { debug?: boolean } = {
       name: 'Unit',
-      moduleState: {}
+      moduleStates: {}
     },
     moduleList: ModuleList = [] as unknown as ModuleList
   ) {
     this.debug = debug ?? false;
+    this.preview = preview ?? false;
     this.options = {
       ...this.options,
       ...(options || {})
@@ -254,9 +260,9 @@ export default class Unit<
     }
 
     this.moduleList = moduleList;
-    console.log(moduleState);
+
     const preparedModules = moduleList.map(ModuleClass => {
-      const state = moduleState?.[ModuleClass.TYPE] ?? {};
+      const state = moduleStates?.[ModuleClass.TYPE] ?? {};
       const moduleInstance = new ModuleClass(this, state, this.debug);
       return [ModuleClass.TYPE, moduleInstance];
     });
@@ -309,6 +315,10 @@ export default class Unit<
 
   get id() {
     return this.root.uuid;
+  }
+
+  isPreview() {
+    return this.preview;
   }
 
   getScenePosition(): Vector3 {
@@ -541,29 +551,6 @@ export default class Unit<
     return `${(this.constructor as typeof Unit).NAME}(${this.name})(${this.id})`;
   }
 }
-
-export interface ObjectName {
-  UNIT: 'Unit';
-  MESH: 'Mesh';
-  MESH_OUTLINE: 'MeshOutline';
-  MESH_ANIMATION: 'MeshAnimation';
-  RAYCASTER: 'Raycaster';
-}
-
-export const OBJECT_NAME: ObjectName = {
-  UNIT: 'Unit',
-  MESH: 'Mesh',
-  MESH_OUTLINE: 'MeshOutline',
-  MESH_ANIMATION: 'MeshAnimation',
-  RAYCASTER: 'Raycaster'
-} as ObjectName;
-
-// export enum OBJECT_NAME {
-//   MESH = 'Mesh',
-//   MESH_OUTLINE = 'MeshOutline',
-//   MESH_ANIMATION = 'MeshAnimation',
-//   RAYCASTER = 'Raycaster'
-// }
 
 function getRotationFromVector(direction: Vector3, diagonal = true) {
   const isHorizontal = Math.abs(direction.x) > Math.abs(direction.z);

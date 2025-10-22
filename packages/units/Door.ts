@@ -8,10 +8,10 @@ import {
 } from 'three';
 
 import Unit, {
-  OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 
 export interface BaseDoorOptions extends UnitOptions {
   open: boolean;

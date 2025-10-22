@@ -4,12 +4,16 @@
     :items="items"
     class="cw-panel-catalog-wall-item-select"
     @update:model-value="onUpdateModelValue">
-    <template #before><slot name="before"></slot></template>
+    <template #before>
+      <div class="controls">
+        <slot name="controls"></slot>
+      </div>
+    </template>
     <template #preview="{ preview }">
       <cw-object-preview-wall
         :app="app"
         :ratio="8 / 4"
-        :model-value="preview"
+        :model-value="preparedPreview(preview)"
         hydrate-when-visible />
     </template>
   </cw-editor-catalog-item-select>
@@ -25,6 +29,11 @@ import CwObjectPreviewWall, {
 
 import type App from '../../../lib/classes/App';
 import type { CatalogItem } from '../../../lib/types/catalog';
+import type { ObjectPreview } from '../../ObjectPreview.vue';
+
+function preparedPreview(preview: ObjectPreview) {
+  return preview as WallPreview;
+}
 
 const $props = defineProps<{
   app: App;
@@ -58,5 +67,10 @@ export interface WallSelectItem<Item extends CatalogItem>
   padding: var(--cw-spacing-medium);
   background: rgb(var(--rgb-blue-7) / 80%);
   border-radius: var(--cw-border-radius-medium);
+
+  & .controls {
+    display: flex;
+    align-items: center;
+  }
 }
 </style>

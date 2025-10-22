@@ -2,16 +2,12 @@ import type {
   SkinDescription,
   SkinOptions
 } from '@cuby-world/app/lib/types/skin';
-import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
 
 interface DefaultSkinOptions extends SkinOptions {
   color: string;
 }
 
-export type Default1x1SkinDescription = SkinDescription<
-  StairSkinIdentifier,
-  DefaultSkinOptions
->;
+export type Default1x1SkinDescription = SkinDescription<DefaultSkinOptions>;
 
 const skins: Default1x1SkinDescription[] = [
   {

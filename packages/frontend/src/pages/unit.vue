@@ -1,6 +1,8 @@
 <template>
   <div>
-    <debug-unit-preview />
+    <client-only>
+      <debug-unit-preview />
+    </client-only>
   </div>
 </template>
 

@@ -11,7 +11,7 @@ import DoorWallExtension, {
   type DoorState
 } from '@cuby-world/app/lib/classes/wallExtension/Door';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OBJECT_NAME } from '@cuby-world/app/lib/classes/Unit';
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import type Wall from '@cuby-world/app/lib/classes/Wall';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 import glbBase from './assets/door.glb?url';
@@ -24,10 +24,9 @@ import {
   MATERIAL_NAME,
   replaceMaterialByName
 } from '@cuby-world/app/lib/utils/material';
+import skins from './skins';
 
-interface StandardState extends DoorState {
-  color: string | number;
-}
+type StandardState = DoorState;
 export default class Standard extends DoorWallExtension<StandardState> {
   static override KEY = 'door_standard';
 
@@ -36,13 +35,15 @@ export default class Standard extends DoorWallExtension<StandardState> {
   }): Promise<void> {
     await super.setup(context);
 
+    const skin = skins.find(skin => skin.id === this.state.skin);
+
     const { object, animations } = await loadGltf(this.wall, assetLoader);
 
     replaceMaterialByName(
       object,
       MATERIAL_NAME.BASE,
       new MeshPhongMaterial({
-        color: this.state.color || 0xffffff,
+        color: skin?.options.color || 0xffffff,
         side: DoubleSide
       })
     );
@@ -154,7 +155,7 @@ async function loadGltf(
 
   const gltf: GLTF = await assetLoader.add<GLTF>({
     loader: LOADER.GLTF,
-    url: glbBase
+    value: glbBase
   });
 
   const model = gltf.scene.clone();

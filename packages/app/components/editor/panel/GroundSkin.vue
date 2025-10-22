@@ -9,37 +9,8 @@
       :items="items"
       :model-value="modelValue"
       @update:model-value="value => $emit('update:model-value', value)">
-      <template #before>
-        <ul>
-          <li>
-            <input
-              id="tag_all"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              value="all"
-              checked />
-            <label for="tag_all">All</label>
-          </li>
-          <li>
-            <input
-              id="tag_color"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              :value="CATALOG_TAG.COLOR" />
-            <label for="tag_color">Color</label>
-          </li>
-          <li>
-            <input
-              id="tag_texture"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              :value="CATALOG_TAG.TEXTURE" />
-            <label for="tag_texture">Texture</label>
-          </li>
-        </ul>
+      <template #controls>
+        <cw-editor-skin-filter v-model="tag" :skins="skins" />
       </template>
     </cw-catalog-ground-item-select>
   </cw-panel>
@@ -50,19 +21,22 @@ import CwPanel from '../../Panel.vue';
 import CwCatalogGroundItemSelect, {
   type GroundItem
 } from '../catalog/GroundItemSelect.vue';
-import { computed, ref, useId } from 'vue';
+import CwEditorSkinFilter from '../SkinFilter.vue';
+import { computed, ref } from 'vue';
 
 import type App from '../../../lib/classes/App';
-import { CATALOG_TAG } from '../../../lib/utils/catalog';
-import type { GroundSkinIdentifier } from '../../../lib/types/ground/skins';
-import { skins } from '@cuby-world/grounds';
-import type { GroundSkinItem } from '../../../lib/types/ground/catalog';
+import type {
+  GroundSkinDescription,
+  GroundSkinIdentifier
+} from '../../../lib/types/ground/skins';
+import type { SKIN_TAG } from '@cuby-world/app/lib/types/skin';
+import { catalog as groundCatalog } from '@cuby-world/grounds/grounds/catalog';
 
-const id = useId();
+const tag = ref<SKIN_TAG | 'all'>('all');
 
-const tag = ref<CATALOG_TAG | 'all'>('all');
-
-function prepareItem(item: GroundSkinItem): GroundItem<GroundSkinItem> {
+function prepareItem(
+  item: GroundSkinDescription
+): GroundItem<GroundSkinDescription> {
   return {
     item,
     preview: {
@@ -71,16 +45,18 @@ function prepareItem(item: GroundSkinItem): GroundItem<GroundSkinItem> {
   };
 }
 
-const items = computed<GroundItem<GroundSkinItem>[]>(() =>
-  Array.from(skins.values())
-    .filter(item => {
-      return (
-        item.tags == null ||
-        tag.value === 'all' ||
-        item.tags.includes(tag.value)
-      );
-    })
-    .map(skin => prepareItem(skin))
+const skins = groundCatalog.get('default')?.skins || [];
+
+const items = computed<GroundItem<GroundSkinDescription>[]>(() =>
+  filteredSkins.value.map(skin => prepareItem(skin))
+);
+
+const filteredSkins = computed(() =>
+  skins.filter(item => {
+    return (
+      item.tags == null || tag.value === 'all' || item.tags.includes(tag.value)
+    );
+  })
 );
 
 defineProps<{

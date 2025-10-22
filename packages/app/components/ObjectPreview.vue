@@ -33,13 +33,14 @@ import {
 } from '../utils/thumbs';
 import type { ROTATION } from '../lib/types';
 import { disposeObject3D } from '@cuby-world/app/lib/utils/object';
-import { SKIN_DEFAULT_GROUND } from '@cuby-world/grounds/skins';
+import { SKIN_DEFAULT_GROUND } from '@cuby-world/grounds';
 
 const rootEl = ref<HTMLDivElement | null>(null);
 const previewSrc = ref<string | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
 const dimension = ref<Vector2>(new Vector2(0, 0));
+const currentWidth = ref<number>(0);
 
 const $props = defineProps<{
   cacheKey?: string;
@@ -58,8 +59,9 @@ const $props = defineProps<{
 const ready = ref(false);
 let renderer: WebGLRenderer;
 
-if (imageCache.has($props.cacheKey ?? '')) {
-  previewSrc.value = imageCache.get($props.cacheKey ?? '') ?? null;
+if (imageCache.has($props.cacheKey + '_' + currentWidth.value)) {
+  previewSrc.value =
+    imageCache.get($props.cacheKey + '_' + currentWidth.value) ?? null;
   ready.value = true;
 }
 
@@ -144,8 +146,6 @@ onUnmounted(() => {
   unregister?.();
 });
 
-const currentWidth = ref<number>(0);
-
 function refreshDimension() {
   const width = $props.width ?? 'auto';
   if (typeof width === 'string' && width === 'auto') {
@@ -199,7 +199,10 @@ async function getDataUrl() {
 async function renderImage() {
   previewSrc.value = await getDataUrl();
   if ($props.cacheKey && previewSrc.value !== '') {
-    imageCache.set($props.cacheKey, previewSrc.value);
+    imageCache.set(
+      $props.cacheKey + '_' + currentWidth.value,
+      previewSrc.value
+    );
   }
 
   window.setTimeout(() => {
@@ -300,7 +303,7 @@ const next = () => {
 
 <style lang="postcss" scoped>
 .cw-object-preview {
-  --width: 96px;
+  --width: 96;
   --ratio: calc(6 / 4);
 
   opacity: 0;

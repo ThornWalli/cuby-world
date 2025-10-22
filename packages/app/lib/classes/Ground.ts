@@ -78,7 +78,8 @@ export default class Ground {
       }
       texture = await assetLoader.add<Texture>({
         loader: LOADER.TEXTURE,
-        url: this.type === GROUND_GEOMETRY.SMALL ? asset?.small : asset?.medium,
+        value:
+          this.type === GROUND_GEOMETRY.SMALL ? asset?.small : asset?.medium,
         options: { density: 1 }
       });
       texture.flipY = false;

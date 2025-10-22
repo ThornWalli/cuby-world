@@ -24,10 +24,11 @@ import { Vector3, type Object3D } from 'three';
 import { getYPositionByPosition } from '../../utils/room';
 import type Player from '../Player';
 
-import allUnits from '@cuby-world/units';
+import { catalog } from '@cuby-world/units';
 import { TELEPORT_TYPE, type RoomDescription } from '../../types/room';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
-import { OBJECT_NAME } from '../Unit';
+import type Unit from '../Unit';
+import { OBJECT_NAME } from '../../utils/object';
 
 interface Observables extends AppModuleObservables {
   room$: Observable<Room | undefined>;
@@ -80,30 +81,41 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     );
 
     //#region units
-    const unitClasses = allUnits.reduce(
-      (result, unitClass) => {
-        result[unitClass.KEY] = unitClass as (typeof allUnits)[0];
-        return result;
-      },
-      {} as Record<string, (typeof allUnits)[0]>
-    );
+    // const unitClasses = catalog.values().reduce(
+    //   (result, unitClass) => {
+    //     result[unitClass.KEY] = unitClass as (typeof allUnits)[0];
+    //     return result;
+    //   },
+    //   {} as Record<string, (typeof allUnits)[0]>
+    // );
 
-    const units = roomDescription.units.map(
-      ({
-        unit: key,
-        options: { position, rotation, options, moduleStates }
-      }) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const Class = unitClasses[key]! as any;
-        const unit = new Class({
-          position,
-          rotation,
-          options,
-          moduleStates
-        });
-        return unit;
+    const units = [];
+    for (const {
+      unit: key,
+      options: { position, rotation, options, moduleStates }
+    } of roomDescription.units) {
+      // }
+      // const units = roomDescription.units.map(
+      //   async ({
+      //     unit: key,
+      //     options: { position, rotation, options, moduleStates }
+      //   }) => {
+      const UnitClass = await catalog.get(key)!.instance();
+      if (!UnitClass) {
+        throw new Error(`Unit class with key ${key} not found in catalog`);
       }
-    );
+      const unit = new UnitClass({
+        name: UnitClass.NAME,
+        position,
+        rotation,
+        options,
+        moduleStates
+      });
+
+      units.push(unit);
+      //   }
+      // );
+    }
     //#endregion
 
     await room.modules.units.setupUnits(units);
@@ -140,6 +152,17 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       this.app.modules.selection.setSelectedUnit(cuby);
       // unitFocusModule?.setFocusedUnit(cuby);
     }
+  }
+
+  async addUnit(unit: Unit) {
+    const room = this.getRoom();
+    if (!room) {
+      throw new Error('No room available to add unit');
+    }
+    await room.modules.units.add(unit);
+
+    this.app.modules.selection.setSelectedUnit(unit);
+    this.app.modules.placement.startPlace(unit);
   }
 
   /**
@@ -250,6 +273,14 @@ export default class RoomAppModule extends AppModule<State, Observables> {
   onHover(preparedPositions: PreparedPosition[]) {
     const app = this.app;
     const player = app.modules.player.getCurrentPlayer();
+    /**
+     * Wenn nicht im Edit Mode, dann Wände ignorieren
+     */
+    if (!this.app.isEditMode()) {
+      preparedPositions = preparedPositions.filter(
+        pos => !pos.object?.userData[OBJECT_NAME.WALL]
+      );
+    }
     Object.values(app.modules).some((module: AppModule) => {
       return module.onSceneHover({ preparedPositions, player });
     });
@@ -358,6 +389,16 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     if (!player) {
       throw new Error('No player available');
     }
+
+    /**
+     * Wenn nicht im Edit Mode, dann Wände ignorieren
+     */
+    if (!this.app.isEditMode()) {
+      preparedPositions = preparedPositions.filter(
+        pos => !pos.object?.userData[OBJECT_NAME.WALL]
+      );
+    }
+
     if (preparedPositions.length > 0) {
       const { unit, worldPosition, object } = preparedPositions[0]!;
 
@@ -373,6 +414,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       if (abort) {
         return;
       }
+
       if (object && isStair(object)) {
         const stair = getStairFromObject(app, object);
         if (stair) {

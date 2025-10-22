@@ -15,8 +15,8 @@ import {
   Vector3
 } from 'three';
 
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import Unit, {
-  OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';

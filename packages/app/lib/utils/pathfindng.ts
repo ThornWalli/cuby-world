@@ -13,6 +13,7 @@ import {
   type DirectionWallDescriptionKey
 } from './wall';
 import { WALL_DIRECTION } from '../types/wall';
+import type { TileCostDescription } from '../types/ground';
 
 interface MatrixDescription {
   matrix: number[][];
@@ -59,6 +60,7 @@ export async function findBestPathByStairs(
     };
     options: {
       diagonalMovement: boolean;
+      tileDescriptions: TileCostDescription[];
     };
     functions: {
       getStairs: () => Stair[];
@@ -82,6 +84,7 @@ export async function findBestPathByStairs(
     findPath_(matrix, {
       positions,
       options: {
+        tileDescriptions: options.tileDescriptions,
         walls: functions.getWallsByFloor([floorIndex]),
         diagonalMovement: options.diagonalMovement
       }
@@ -99,6 +102,7 @@ export async function findBestPathByStairs(
         endPosition: positions.end
       },
       options: {
+        tileDescriptions: options.tileDescriptions,
         walls: functions.getWallsByFloor([positions.start.y])
       }
     });
@@ -189,6 +193,7 @@ export async function findBestPathByStairs(
     const result = await findPath_(matrixList[endPosition.y]!.matrix, {
       positions: positions_,
       options: {
+        tileDescriptions: options.tileDescriptions,
         walls: functions.getWallsByFloor([endPosition.y])
       }
     });
@@ -204,6 +209,7 @@ export async function findBestPathByStairs(
       endPosition: positions.end
     },
     options: {
+      tileDescriptions: options.tileDescriptions,
       walls: functions.getWallsByFloor([positions.end.y])
     }
   });
@@ -350,11 +356,12 @@ async function findPath_(
   matrix: number[][],
   {
     positions: { startPosition, endPosition },
-    options: { walls, diagonalMovement }
+    options: { walls, tileDescriptions, diagonalMovement }
   }: {
     positions: { startPosition: Vector3; endPosition: Vector3 };
     options: {
       walls: Wall[];
+      tileDescriptions: TileCostDescription[];
       diagonalMovement?: boolean;
     };
   }
@@ -377,7 +384,11 @@ async function findPath_(
     easystar.enableDiagonals();
   }
 
-  easystar.setAcceptableTiles([0]);
+  easystar.setAcceptableTiles(tileDescriptions.map(({ index }) => index));
+  tileDescriptions.forEach(({ index, cost }) => {
+    console.log('Set tile cost', index, cost);
+    easystar.setTileCost(index, cost);
+  });
 
   /**
    * Übernehme Wand-Daten in das Grid

@@ -16,10 +16,10 @@ import { loadGroundGeometries } from '../lib/utils/ground';
 import Ground from '../lib/classes/Ground';
 import {
   default_mesh as groundGlb,
-  groundTextureMap,
-  skins
+  groundTextureMap
 } from '@cuby-world/grounds';
 import type { GroundSkinIdentifier } from '../lib/types/ground/skins';
+import { catalog as groundCatalog } from '@cuby-world/grounds/grounds/catalog';
 
 export async function setupGround(
   skinId: GroundSkinIdentifier,
@@ -28,7 +28,8 @@ export async function setupGround(
 ) {
   const geometryMap = await loadGroundGeometries(assetLoader, groundGlb);
 
-  const { color, opacity, texture } = skins.get(skinId)?.skin || {};
+  const skin = groundCatalog.get(skinId)?.skins?.find(s => s.id === skinId);
+  const { color, opacity, texture } = skin?.options || {};
   const groundTile = new Ground({
     position: new Vector3(0, 0, 0),
     color,

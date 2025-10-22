@@ -4,14 +4,18 @@
     :app="app"
     :value="value">
     <div v-for="[groupKey, groupItems] in itemsGroups" :key="groupKey">
-      <base-button
+      <cw-icon-button
         v-for="item in groupItems"
         :key="item.label"
+        :color="item.color"
         :disabled="item.disabled"
+        :icon="item.icon"
+        icon-size="small"
+        style-type="round"
+        label-direction="right"
+        :label="item.label"
         @click="item.action">
-        <base-icon :name="item.icon" size="small" />
-        <span>{{ item.label }}</span>
-      </base-button>
+      </cw-icon-button>
     </div>
   </base-sticky-wrapper>
 </template>
@@ -21,10 +25,9 @@ import type { Icon } from '@cuby-world/app/lib/types/icon';
 import BaseStickyWrapper, {
   type StickyWrapperValue
 } from '../base/StickyWrapper.vue';
-import BaseIcon from '../base/Icon.vue';
-import BaseButton from '../base/Button.vue';
 import { computed } from 'vue';
 import type App from '@cuby-world/app/lib/classes/App';
+import CwIconButton from '../button/IconButton.vue';
 
 const $props = defineProps<{
   app: App;
@@ -51,6 +54,7 @@ const itemsGroups = computed(() => {
 
 <script lang="ts">
 export interface StickyControlItem {
+  color?: 'default' | 'red' | 'green';
   disabled?: boolean;
   group?: string | 'default';
   label: string;
@@ -71,7 +75,11 @@ export interface StickyControlItem {
     gap: var(--cw-spacing-medium);
   }
 
-  & button {
+  & .cw-button-icon-button {
+    pointer-events: auto;
+  }
+
+  /* & button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -105,6 +113,6 @@ export interface StickyControlItem {
       display: block;
       width: 24px;
     }
-  }
+  } */
 }
 </style>

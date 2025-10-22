@@ -9,37 +9,8 @@
       :items="items"
       :model-value="modelValue"
       @update:model-value="value => $emit('update:model-value', value)">
-      <template #before>
-        <ul>
-          <li>
-            <input
-              id="tag_all"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              value="all"
-              checked />
-            <label for="tag_all">All</label>
-          </li>
-          <li>
-            <input
-              id="tag_color"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              :value="CATALOG_TAG.COLOR" />
-            <label for="tag_color">Color</label>
-          </li>
-          <li>
-            <input
-              id="tag_texture"
-              v-model="tag"
-              :name="`tag-${id}`"
-              type="radio"
-              :value="CATALOG_TAG.TEXTURE" />
-            <label for="tag_texture">Texture</label>
-          </li>
-        </ul>
+      <template #controls>
+        <cw-editor-skin-filter v-model="tag" :skins="skins" />
       </template>
     </cw-catalog-wall-item-select>
   </cw-panel>
@@ -50,16 +21,23 @@ import CwPanel from '../../Panel.vue';
 import CwCatalogWallItemSelect, {
   type WallSelectItem
 } from '../catalog/WallItemSelect.vue';
-import { computed, ref, useId } from 'vue';
+import CwEditorSkinFilter from '../SkinFilter.vue';
+import { computed, ref } from 'vue';
 import type App from '../../../lib/classes/App';
-import { CATALOG_TAG } from '../../../lib/utils/catalog';
-import type { WallSkinIdentifier } from '../../../lib/types/wall/skins';
-import type { WallSkinDescription } from '@cuby-world/walls/skins';
+import type {
+  WallSkinDescription,
+  WallSkinIdentifier
+} from '../../../lib/types/wall/skins';
+
 import type { SKIN_TAG } from '@cuby-world/app/lib/types/skin';
 
-const id = useId();
-
 const tag = ref<SKIN_TAG | 'all'>('all');
+
+const $props = defineProps<{
+  app: App;
+  modelValue: WallSkinIdentifier | null;
+  skins: WallSkinDescription[];
+}>();
 
 function prepareItem(
   item: WallSkinDescription
@@ -67,28 +45,23 @@ function prepareItem(
   return {
     item,
     preview: {
+      type: 'default',
       skins: [item.id, item.id]
     }
   };
 }
 
 const items = computed<WallSelectItem<WallSkinDescription>[]>(() =>
-  Array.from($props.skins.values())
-    .filter(item => {
-      return (
-        item.tags == null ||
-        tag.value === 'all' ||
-        item.tags.includes(tag.value)
-      );
-    })
-    .map(prepareItem)
+  filteredSkins.value.map(skin => prepareItem(skin))
 );
 
-const $props = defineProps<{
-  app: App;
-  modelValue: WallSkinIdentifier | null;
-  skins: WallSkinDescription[];
-}>();
+const filteredSkins = computed(() =>
+  $props.skins.filter(item => {
+    return (
+      item.tags == null || tag.value === 'all' || item.tags.includes(tag.value)
+    );
+  })
+);
 
 const $emit = defineEmits<{
   (e: 'update:model-value', value: WallSkinIdentifier | null): void;

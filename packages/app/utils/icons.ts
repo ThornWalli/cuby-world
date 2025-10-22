@@ -168,5 +168,61 @@ export default {
     defineAsyncComponent(
       () => import('../assets/icons/editor/actions/edit.svg?component')
     )
+  ),
+
+  arrow_navigation_default_bottom: markRaw(
+    defineAsyncComponent(
+      () =>
+        import('../assets/icons/arrow-navigation/default_bottom.svg?component')
+    )
+  ),
+  arrow_navigation_default_left: markRaw(
+    defineAsyncComponent(
+      () =>
+        import('../assets/icons/arrow-navigation/default_left.svg?component')
+    )
+  ),
+  arrow_navigation_default_right: markRaw(
+    defineAsyncComponent(
+      () =>
+        import('../assets/icons/arrow-navigation/default_right.svg?component')
+    )
+  ),
+  arrow_navigation_default_top: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/arrow-navigation/default_top.svg?component')
+    )
+  ),
+  arrow_navigation_slim_bottom: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/arrow-navigation/slim_bottom.svg?component')
+    )
+  ),
+  arrow_navigation_slim_left: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/arrow-navigation/slim_left.svg?component')
+    )
+  ),
+  arrow_navigation_slim_right: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/arrow-navigation/slim_right.svg?component')
+    )
+  ),
+  arrow_navigation_slim_top: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/arrow-navigation/slim_top.svg?component')
+    )
+  ),
+  inventory_open: markRaw(
+    defineAsyncComponent(
+      () =>
+        import('../assets/icons/editor/actions/inventory_open.svg?component')
+    )
+  ),
+  inventory_close: markRaw(
+    defineAsyncComponent(
+      () =>
+        import('../assets/icons/editor/actions/inventory_close.svg?component')
+    )
   )
 };

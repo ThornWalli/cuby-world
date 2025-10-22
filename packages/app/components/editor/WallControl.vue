@@ -58,10 +58,10 @@ const subscription = new Subscription();
 const currentController = ref<AppModuleController | null>(null);
 
 onMounted(() => {
-  currentAction.value = {
-    primary: WALL_ACTION.MODE_DOOR
-    // secondary: MASON_MODE.ADD
-  };
+  // currentAction.value = {
+  //   primary: WALL_ACTION.MODE_DOOR
+  //   // secondary: MASON_MODE.ADD
+  // };
 
   subscription.add(
     $props.app.modules.editorWall.observables.currentController$.subscribe(

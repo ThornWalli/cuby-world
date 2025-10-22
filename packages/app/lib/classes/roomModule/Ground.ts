@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import {
   type Vector2,
   Box3,
@@ -21,9 +22,12 @@ import {
   Subject
 } from 'rxjs';
 import { preparePosition, type PreparedPosition } from '../../utils/matrix';
-import type { GroundGeometryMap } from '../../types/ground';
+import type {
+  GroundGeometryMap,
+  TileCostDescription
+} from '../../types/ground';
 
-import { default_mesh as MeshGround, skins } from '@cuby-world/grounds';
+import { default_mesh as MeshGround } from '@cuby-world/grounds';
 import GroundStyleMap from '../GroundStyleMap';
 import {
   createGroundChunks,
@@ -34,6 +38,8 @@ import {
   disposeObject3D,
   OBJECT_USER_DATA
 } from '@cuby-world/app/lib/utils/object';
+import { catalog as groundCatalog } from '@cuby-world/grounds/grounds/catalog';
+import type { GroundSkinIdentifier } from '../../types/ground/skins';
 
 declare module '../../../lib/utils/object' {
   interface ObjectUserData {
@@ -41,6 +47,8 @@ declare module '../../../lib/utils/object' {
   }
 }
 OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION = 'ignoreGroundIntersection';
+
+export const GRID_BLOCKED = 0;
 
 interface Observables extends RoomModuleObservables {
   hover$: Subject<Vector3>;
@@ -259,16 +267,37 @@ export default class GroundModule extends RoomModule<State, Observables> {
     this.refreshGround();
   }
 
-  getGridByFloor(foorIndex: number = 0) {
+  getGridByFloor(
+    foorIndex: number = 0,
+    tileCostMap?: Map<string, TileCostDescription>
+  ) {
     const groundStyleMap = this.state.groundStyleMap;
     const values = [];
     for (let y = 0; y < this.room.gridSize.y; y++) {
       for (let x = 0; x < this.room.gridSize.x; x++) {
-        const skinId = groundStyleMap.get(x, foorIndex, y);
-        if (skinId && (skins.get(skinId)?.skin.accessible ?? true)) {
-          values.push(0);
+        const groundStyle = groundStyleMap.get(x, foorIndex, y);
+        console.log(groundStyle);
+        if (groundStyle) {
+          const skin = groundCatalog
+            .get(groundStyle.type)
+            ?.skins?.find(s => s.id === groundStyle.skinId);
+          if (groundStyle && (skin?.options.accessible ?? true)) {
+            console.log(
+              this.getTileCostKey(groundStyle.type, groundStyle.skinId),
+              tileCostMap?.get(
+                this.getTileCostKey(groundStyle.type, groundStyle.skinId)
+              )
+            );
+            values.push(
+              tileCostMap?.get(
+                this.getTileCostKey(groundStyle.type, groundStyle.skinId)
+              )?.index ?? 1
+            );
+          } else {
+            values.push(GRID_BLOCKED);
+          }
         } else {
-          values.push(1);
+          values.push(GRID_BLOCKED);
         }
       }
     }
@@ -277,13 +306,14 @@ export default class GroundModule extends RoomModule<State, Observables> {
 
   getGrids() {
     const groundStyleMap = this.room.modules.ground.getGroundStyleMap();
+    const tileCostMap = this.getTileCostMap();
 
     // Etagen Anzahl wird vom Boden definiert.
     const floorCount = Array.from(groundStyleMap.map.values()).length;
 
     return Array(floorCount)
       .fill(null)
-      .map((_, floor) => this.getGridByFloor(floor));
+      .map((_, floor) => this.getGridByFloor(floor, tileCostMap));
   }
 
   getGroundChunks(floorIndex?: number) {
@@ -356,6 +386,28 @@ export default class GroundModule extends RoomModule<State, Observables> {
       this.state.groundMesh!.add(chunk.mesh)
     );
     this.observables.refreshGround$.next(this.state.groundStyleMap);
+  }
+
+  getTileCostKey(type: string, skinId: GroundSkinIdentifier) {
+    return `${type}:${skinId}`;
+  }
+
+  getTileCostMap() {
+    return this.room.modules.ground
+      .getGroundStyleMap()
+      .values()
+      .reduce((result, { type, skinId }, index) => {
+        const key = this.getTileCostKey(type, skinId);
+        if (!result.has(key)) {
+          const ground = groundCatalog.get(type);
+          const skin = ground?.skins?.find(s => s.id === skinId);
+          result.set(key, {
+            index: index + 1,
+            cost: skin?.options.cost ?? 0
+          });
+        }
+        return result;
+      }, new Map<string, TileCostDescription>());
   }
 
   private updateVisibility(camera: Camera) {

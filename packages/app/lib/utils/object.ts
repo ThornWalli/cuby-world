@@ -1,5 +1,21 @@
 import type { Material, Mesh, Object3D, Texture } from 'three';
 
+export interface ObjectName {
+  UNIT: 'Unit';
+  MESH: 'Mesh';
+  MESH_OUTLINE: 'MeshOutline';
+  MESH_ANIMATION: 'MeshAnimation';
+  RAYCASTER: 'Raycaster';
+}
+
+export const OBJECT_NAME: ObjectName = {
+  UNIT: 'Unit',
+  MESH: 'Mesh',
+  MESH_OUTLINE: 'MeshOutline',
+  MESH_ANIMATION: 'MeshAnimation',
+  RAYCASTER: 'Raycaster'
+} as ObjectName;
+
 export interface ObjectUserData {
   MAIN_OBJECT: string;
 }

@@ -25,9 +25,9 @@ import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
 import assetLoader from '@cuby-world/app/services/assetLoader';
 import {
   default_mesh as groundGlb,
-  groundTextureMap,
-  skins
+  groundTextureMap
 } from '@cuby-world/grounds';
+import { catalog as groundCatalog } from '@cuby-world/grounds/grounds/catalog';
 
 const $props = defineProps<{
   app: App;
@@ -44,7 +44,14 @@ animationLoop$.next({ time: 0, delta: 0 });
 
 async function setup(data: GroundPreview) {
   const geometryMap = await loadGroundGeometries(assetLoader, groundGlb);
-  const { skin } = skins.get(data.skin)!;
+  const skin = groundCatalog
+    .get('default')
+    ?.skins?.find(skin => skin.id === data.skin)?.options;
+
+  if (!skin) {
+    throw new Error(`Ground skin ${data.skin} not found in catalog`);
+  }
+
   const ground = new Ground({
     position: new Vector3(0, 0, 0),
     color: skin.color,

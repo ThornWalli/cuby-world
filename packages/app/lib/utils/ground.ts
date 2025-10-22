@@ -17,11 +17,14 @@ import {
 import { LOADER } from '../classes/AssetLoader';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type GroundStyleMap from '../classes/GroundStyleMap';
-import { groundTextureMap, skins } from '@cuby-world/grounds';
-import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
-import { OBJECT_NAME } from '../classes/Unit';
+import { groundTextureMap } from '@cuby-world/grounds';
+import {
+  OBJECT_NAME,
+  OBJECT_USER_DATA
+} from '@cuby-world/app/lib/utils/object';
+import { catalog } from '@cuby-world/grounds/grounds/catalog';
 
-declare module '../classes/Unit' {
+declare module './object' {
   interface ObjectName {
     GROUND: string;
   }
@@ -69,7 +72,7 @@ export function createGroundChunks(
       const positionsByType = new Map<GrountStyleIdentifier, Vector3[]>();
       for (let r = z; r < z + chunkSize && r < cols; r++) {
         for (let c = x; c < x + chunkSize && c < rows; c++) {
-          let skinId = groundStyleMap.get(c, y, r);
+          let skinId = (groundStyleMap.get(c, y, r) ?? {}).skinId;
           if (!skinId) {
             if (editMode) {
               skinId = 'default_editor_empty';
@@ -91,8 +94,9 @@ export function createGroundChunks(
       const instanceMap: [string, InstancedMesh][] = Array.from(
         groundTypes
       ).map(type => {
-        const { accessible, color, opacity, texture } =
-          skins.get(type)?.skin || {};
+        const skin = catalog.get('default')?.skins?.find(s => s.id === type);
+
+        const { accessible, color, opacity, texture } = skin!.options;
         const tile = new Ground({
           accessible,
           color,
@@ -157,37 +161,39 @@ export function createGroundChunks(
 }
 
 export function loadGroundGeometries(assetLoader: AssetLoader, url: string) {
-  return assetLoader.add<GLTF>({ loader: LOADER.GLTF, url }).then(gltf => {
-    return Object.values(GROUND_GEOMETRY).reduce((result, value: string) => {
-      const mesh = gltf.scene.getObjectByName(value) as Mesh;
-      if (!mesh) {
-        console.warn(`Ground geometry "${value}" not found in glTF`);
-        result.set(value as GROUND_GEOMETRY, null);
-      } else {
-        const geometry = mesh?.geometry.clone();
+  return assetLoader
+    .add<GLTF>({ loader: LOADER.GLTF, value: url })
+    .then(gltf => {
+      return Object.values(GROUND_GEOMETRY).reduce((result, value: string) => {
+        const mesh = gltf.scene.getObjectByName(value) as Mesh;
+        if (!mesh) {
+          console.warn(`Ground geometry "${value}" not found in glTF`);
+          result.set(value as GROUND_GEOMETRY, null);
+        } else {
+          const geometry = mesh?.geometry.clone();
 
-        geometry.applyMatrix4(mesh.matrixWorld);
+          geometry.applyMatrix4(mesh.matrixWorld);
 
-        geometry.computeBoundingBox();
-        const box = geometry.boundingBox!.clone();
+          geometry.computeBoundingBox();
+          const box = geometry.boundingBox!.clone();
 
-        // Scale berücksichtigen
-        box.min.multiply(mesh.scale);
-        box.max.multiply(mesh.scale);
+          // Scale berücksichtigen
+          box.min.multiply(mesh.scale);
+          box.max.multiply(mesh.scale);
 
-        const offset = new Vector3();
+          const offset = new Vector3();
 
-        box.getCenter(offset);
-        offset.y = box.min.y; // Pivot auf Boden statt Mitte
+          box.getCenter(offset);
+          offset.y = box.min.y; // Pivot auf Boden statt Mitte
 
-        // Pivot in die Mitte setzen
-        geometry.translate(-offset.x, -offset.y, -offset.z);
-        geometry.rotateY(-Math.PI / 2);
-        geometry.rotateX(Math.PI);
+          // Pivot in die Mitte setzen
+          geometry.translate(-offset.x, -offset.y, -offset.z);
+          geometry.rotateY(-Math.PI / 2);
+          geometry.rotateX(Math.PI);
 
-        result.set(value as GROUND_GEOMETRY, geometry);
-      }
-      return result;
-    }, new Map<GROUND_GEOMETRY, BufferGeometry | null>());
-  });
+          result.set(value as GROUND_GEOMETRY, geometry);
+        }
+        return result;
+      }, new Map<GROUND_GEOMETRY, BufferGeometry | null>());
+    });
 }

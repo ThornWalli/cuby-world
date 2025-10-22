@@ -6,16 +6,30 @@ import type {
   WallExtensionSkinIdentifier
 } from './skins';
 
-export interface WallExtensionItem extends CatalogItem {
+export interface WallExtensionItemOptions {
+  skin: WallExtensionSkinIdentifier;
+}
+export interface WallExtensionItem<
+  Options extends WallExtensionItemOptions = WallExtensionItemOptions
+> extends CatalogItem {
   targetTypes: string[];
   extension: WallExtensionIdentifier;
   instance: () => Promise<typeof WallExtension>;
-  options: {
-    skin: WallExtensionSkinIdentifier;
+  options: Options;
+}
+// hasDoor?: boolean;
+
+export type DoorWallExtensionItem = WallExtensionItem<
+  {
+    hasDoor?: boolean;
+  } & WallExtensionItemOptions
+>;
+
+export type WindowWallExtensionItem = WallExtensionItem<
+  {
     size?:
       | WALL_WINDOW_SIZE.SMALL
       | WALL_WINDOW_SIZE.MEDIUM
       | WALL_WINDOW_SIZE.LARGE;
-    hasDoor?: boolean;
-  };
-}
+  } & WallExtensionItemOptions
+>;

@@ -2,10 +2,10 @@ import type { Color, Object3D } from 'three';
 import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
 
 import Unit, {
-  OBJECT_NAME,
   type UnitConstructorOptions,
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
+import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 
 export interface BlockOptions extends UnitOptions {
   color: string | number | Color;

@@ -1,14 +1,14 @@
 <template>
   <cw-object-preview
     v-if="root"
-    class="cw-wall-extension-preview"
     :cache-key="description ? JSON.stringify(description) : undefined"
     :hide-ground="hideGround"
     :root="root"
     :app="app"
     :width="width ?? 'auto'"
     :ratio="ratio"
-    :hydrate-when-visible="hydrateWhenVisible"></cw-object-preview>
+    :hydrate-when-visible="hydrateWhenVisible"
+    class="cw-object-preview-wall" />
 </template>
 
 <script lang="ts" setup>
@@ -40,6 +40,7 @@ import type {
 
 import CwObjectPreview, { type ObjectPreview } from '../ObjectPreview.vue';
 import { getDefaultSkin } from '@cuby-world/app/lib/utils/wall/skins';
+import type { WallType } from '@cuby-world/app/lib/types/wall/catalog';
 
 const $props = defineProps<{
   app: App;
@@ -150,16 +151,18 @@ watch(
 
 <script lang="ts">
 export interface WallPreview extends ObjectPreview {
+  type: WallType;
   extensions?: {
     extension: typeof WallExtension;
     state: WallExtensionState;
+    skin: string;
   }[];
   skins?: [string, string];
 }
 </script>
 
 <style lang="postcss" scoped>
-.cw-wall-extension-preview {
+.cw-object-preview-wall {
   /* empty */
 }
 </style>

@@ -1,9 +1,10 @@
 <template>
   <teleport to="#teleports-panel-bottom">
     <cw-panel-editor-stair-skin
-      v-if="skins"
+      v-if="stair && skins && skin"
       v-model="skin"
       :skins="skins"
+      :type="stair"
       :app="app" />
     <cw-panel-editor-stair-select
       v-else
@@ -42,8 +43,8 @@ const subscription = new Subscription();
 
 const skins = computed(() => {
   if (stair.value) {
-    const stairItem = stairCatalog.get(stair.value);
-    return stairItem ? stairItem.skins : null;
+    const item = stairCatalog.get(stair.value);
+    return item ? item.skins : null;
   }
   return null;
 });
@@ -52,8 +53,22 @@ const items = ref<StairItem[]>(Array.from(stairCatalog.values()));
 
 watch(
   () => stair.value,
-  skin => {
-    controller.value.setSkin(skin ? stairCatalog.get(skin) : null);
+  async type => {
+    const item = (type && stairCatalog.get(type)) || null;
+    skin.value = item?.options.skin || null;
+    await controller.value.setItem(item);
+  }
+);
+
+watch(
+  () => skin.value,
+  async (skin, lastSkin) => {
+    if (skin && lastSkin) {
+      const skins = stairCatalog.get(stair.value!)!.skins;
+      await controller.value.setSkin(
+        skins?.find(s => s.id === skin!)?.id || null
+      );
+    }
   }
 );
 
@@ -63,6 +78,7 @@ const controller = computed(() => {
 
 const controlItems = ref<StickyControlItem[]>([
   {
+    color: 'red',
     label: 'Remove',
     icon: 'trash',
     action: async () => {
@@ -91,6 +107,7 @@ const controlItems = ref<StickyControlItem[]>([
     }
   },
   {
+    color: 'green',
     label: 'Apply',
     icon: 'apply',
     action: async () => {

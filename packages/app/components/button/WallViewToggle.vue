@@ -2,14 +2,10 @@
   <base-button class="cw-button-wall-view-toggle" aria-label="Wall View Toggle">
     <div>
       <transition name="fade">
-        <svg-icon-wall-small
-          v-if="viewMode === WALL_VIEW_MODE.SMALL"></svg-icon-wall-small>
+        <svg-icon-wall-small v-if="viewMode === WALL_VIEW_MODE.SMALL" />
         <svg-icon-wall-dynamic
-          v-else-if="
-            viewMode === WALL_VIEW_MODE.DYNAMIC
-          "></svg-icon-wall-dynamic>
-        <svg-icon-wall-large
-          v-else-if="viewMode === WALL_VIEW_MODE.LARGE"></svg-icon-wall-large>
+          v-else-if="viewMode === WALL_VIEW_MODE.DYNAMIC" />
+        <svg-icon-wall-large v-else-if="viewMode === WALL_VIEW_MODE.LARGE" />
       </transition>
     </div>
   </base-button>
@@ -30,6 +26,7 @@ defineProps<{
 <style lang="postcss" scoped>
 .cw-button-wall-view-toggle {
   padding: var(--cw-spacing-small);
+  color: var(--color-white);
   cursor: pointer;
   border-radius: var(--cw-border-radius-medium);
   transition: background-color var(--cw-easing-duration-short)
@@ -57,6 +54,7 @@ defineProps<{
   & svg {
     display: block;
     width: 100%;
+    fill: currentColor;
 
     &:not(:first-child) {
       position: absolute;
@@ -64,15 +62,5 @@ defineProps<{
       left: 0;
     }
   }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--cw-easing-duration-short) var(--cw-easing-base);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>

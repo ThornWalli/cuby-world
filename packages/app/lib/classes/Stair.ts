@@ -13,14 +13,14 @@ import { Subscription } from 'rxjs';
 import type { AnimationLoopSubject } from './Renderer';
 import type { StairSkinIdentifier } from '../types/stair/skins';
 import { FLOOR_HEIGHT } from '../utils/ground';
-import { OBJECT_NAME } from './Unit';
+import { OBJECT_NAME } from '../utils/object';
 import {
   disposeObject3D,
   setMainObjectRecursive
 } from '@cuby-world/app/lib/utils/object';
 import type Room from './Room';
 
-declare module '../../lib/classes/Unit' {
+declare module '../../lib/utils/object' {
   interface ObjectName {
     STAIR: string;
   }
