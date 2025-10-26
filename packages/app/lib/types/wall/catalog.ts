@@ -6,6 +6,7 @@ export type WallType = 'default' | string;
 export interface WallItem extends CatalogItem {
   type: WallType;
   skins: WallSkinDescription[];
+  skinMap: Map<WallSkinIdentifier, WallSkinDescription>;
   options: {
     skin: WallSkinIdentifier;
   };

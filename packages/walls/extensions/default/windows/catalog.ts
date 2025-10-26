@@ -11,6 +11,7 @@ const items: WindowWallExtensionItem[] = [
     name: 'Standard Fenster (Small)',
     description: 'Klassisches Design für jede Wand.',
     tags: ['small'],
+    defaultSkinId: skins_standard[0]!.id,
     skins: skins_standard,
     instance: () =>
       import('./standard/Standard').then(
@@ -28,6 +29,7 @@ const items: WindowWallExtensionItem[] = [
     name: 'Standard Fenster (Medium)',
     description: 'Klassisches Design für jede Wand.',
     tags: ['medium'],
+    defaultSkinId: skins_standard[0]!.id,
     skins: skins_standard,
     instance: () =>
       import('./standard/Standard').then(
@@ -45,6 +47,7 @@ const items: WindowWallExtensionItem[] = [
     name: 'Standard Fenster (Large)',
     description: 'Klassisches Design für jede Wand.',
     tags: ['large'],
+    defaultSkinId: skins_standard[0]!.id,
     skins: skins_standard,
     instance: () =>
       import('./standard/Standard').then(

@@ -8,21 +8,21 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import type { StickyControlItem } from '../StickyControls.vue';
-import CwStickyControls from '../StickyControls.vue';
+import type { StickyControlItem } from '../../StickyControls.vue';
+import CwStickyControls from '../../StickyControls.vue';
 import icons from '@cuby-world/app/utils/icons';
-import type { EditorApp } from '@cuby-world/app/lib/classes/App';
 import type { Vector3 } from 'three';
 import type MasonController from '@cuby-world/app/lib/classes/appModule/editor/wall/MasonController';
 import { Subscription } from 'rxjs';
 import { MASON_STATUS } from '@cuby-world/app/lib/classes/appModule/editor/wall/MasonController';
+import type App from '@cuby-world/app/lib/classes/App';
 
 const currentStatus = ref<MASON_STATUS>(MASON_STATUS.NONE);
 const position = ref<Vector3 | null>(null);
 const subscription = new Subscription();
 
 const $props = defineProps<{
-  app: EditorApp;
+  app: App;
 }>();
 
 const controller = computed(() => {

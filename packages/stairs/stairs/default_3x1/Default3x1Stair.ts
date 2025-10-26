@@ -1,16 +1,14 @@
-import { Mesh, MeshPhongMaterial, Object3D, Vector2 } from 'three';
-import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
+import { Mesh, MeshPhongMaterial, Vector2 } from 'three';
 import type { AnimationLoopSubject } from '@cuby-world/app/lib/classes/Renderer';
 import Stair, {
   type StairConstructorOptions
 } from '@cuby-world/app/lib/classes/Stair';
-import assetLoader from '@cuby-world/app/services/assetLoader';
-import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
+
 import glbBase from './assets/stair_default_1x3.glb?url';
-import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
+
 import { stairCatalog } from '@cuby-world/stairs/catalog';
 import type { Default3x1SkinDescription } from './skins';
+import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 
 export default class Default1x3Stair extends Stair {
   static override KEY = 'default_3x1';
@@ -30,7 +28,7 @@ export default class Default1x3Stair extends Stair {
   }): Promise<void> {
     await super.setup(context);
 
-    const { object } = await loadGltf(assetLoader);
+    const { object } = await loadGltf(glbBase);
 
     const skin: Default3x1SkinDescription | undefined = stairCatalog
       .get(this.key)
@@ -50,29 +48,4 @@ export default class Default1x3Stair extends Stair {
 
     this.addToRoot(object);
   }
-}
-
-async function loadGltf(assetLoader: AssetLoader): Promise<{
-  object: Object3D;
-}> {
-  const object = new Object3D();
-
-  const gltf: GLTF = await assetLoader.add<GLTF>({
-    loader: LOADER.GLTF,
-    value: glbBase
-  });
-
-  const model = gltf.scene.clone();
-
-  model.name = OBJECT_NAME.MESH;
-  model.traverse(object => {
-    if (object instanceof Mesh) {
-      object.castShadow = true;
-      object.receiveShadow = true;
-    }
-  });
-
-  object.add(model);
-
-  return { object };
 }

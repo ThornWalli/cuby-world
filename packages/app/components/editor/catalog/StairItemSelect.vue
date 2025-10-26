@@ -22,7 +22,7 @@
 <script lang="ts" setup generic="Item extends CatalogItem">
 import CwEditorCatalogItemSelect, {
   type BaseSelectItem
-} from './ItemSelect.vue';
+} from '../../ItemSelect.vue';
 import CwObjectPreviewStair from '../../objectPreview/Stair.vue';
 
 import type App from '../../../lib/classes/App';

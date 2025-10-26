@@ -8,7 +8,9 @@
         :spacer-timeout="spacerTimeout" />
     </div>
 
-    <cw-messages-input ref="input" @send="onSend" />
+    <transition name="fade">
+      <cw-messages-input v-if="!hideInput" ref="input" @send="onSend" />
+    </transition>
   </div>
 </template>
 
@@ -22,11 +24,13 @@ import { Vector2, Frustum, Matrix4 } from 'three';
 import CwMessagesGroup, { type MessageGroup } from './messages/Group.vue';
 import CwMessagesInput from './messages/Input.vue';
 import type { Message } from '../lib/classes/appModule/Multiplayer';
+import { FLOOR_HEIGHT } from '../lib/utils/ground';
 
 const removeTimeout = 12000;
 const spacerTimeout = 3000;
 const $props = defineProps<{
   app: App;
+  hideInput?: boolean;
 }>();
 
 const input = ref<InstanceType<typeof CwMessagesInput> | null>(null);
@@ -47,6 +51,7 @@ function onMessage(message: Message) {
 
   const unitPosition = player.unit?.getPosition();
   const position = unitPosition.clone();
+  position.y *= FLOOR_HEIGHT;
   position.y += Math.max(player.unit.getSize().y, 1) + 0.2;
 
   const groupId = getGroupKey(position);

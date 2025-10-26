@@ -49,7 +49,7 @@ export default class Block extends Unit<BlockOptions> {
 
     // mesh.add(helper());
 
-    this.materialReady$.next();
+    this.observables.materialReady$.next();
     return mesh;
   }
 }

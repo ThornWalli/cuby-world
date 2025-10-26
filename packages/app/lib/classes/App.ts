@@ -15,7 +15,8 @@ import EditorGroundAppModule from './appModule/editor/Ground';
 import type { ImportRoomDescription } from '../types/room';
 import EditorStairModule from './appModule/editor/Stair';
 import InventoryAppModule from './appModule/Inventory';
-import CatalogAppModule from './appModule/Catalog';
+import TeleportAppModule from './appModule/Teleport';
+import ShopAppModule from './appModule/Shop';
 
 type AppModuleList = (
   | typeof CursorAppModule
@@ -25,8 +26,13 @@ type AppModuleList = (
   | typeof SelectionAppModule
   | typeof PlacementAppModule
   | typeof MultiplayerAppModule
-  | typeof CatalogAppModule
   | typeof InventoryAppModule
+  | typeof ShopAppModule
+  | typeof TeleportAppModule
+  // editor
+  | typeof EditorWallAppModule
+  | typeof EditorGroundAppModule
+  | typeof EditorStairModule
 )[];
 interface AppModules {
   cursor: CursorAppModule;
@@ -35,8 +41,13 @@ interface AppModules {
   unitFocus: UnitFocusAppModule;
   selection: SelectionAppModule;
   placement: PlacementAppModule;
-  catalog: CatalogAppModule;
   inventory: InventoryAppModule;
+  shop: ShopAppModule;
+  teleport: TeleportAppModule;
+  // editor
+  editorWall: EditorWallAppModule;
+  editorGround: EditorGroundAppModule;
+  editorStair: EditorStairModule;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -80,9 +91,18 @@ export class BaseApp<
       UnitFocusAppModule,
       SelectionAppModule,
       PlacementAppModule,
-      CatalogAppModule,
-      InventoryAppModule
+      InventoryAppModule,
+      ShopAppModule,
+      TeleportAppModule
     );
+
+    // editor
+    moduleList.push(
+      EditorWallAppModule,
+      EditorGroundAppModule,
+      EditorStairModule
+    );
+
     this.moduleList = moduleList;
   }
 
@@ -123,6 +143,10 @@ export class BaseApp<
   isEditMode() {
     return this.config.mode === APP_MODE.EDITOR;
   }
+
+  setMode(mode: APP_MODE) {
+    this.config.mode = mode;
+  }
 }
 
 interface AppPlaygroundModules extends AppModules {
@@ -141,38 +165,5 @@ export default class App extends BaseApp<AppPlaygroundModules> {
     }
 
     super(config, renderer, modules);
-  }
-}
-
-interface AppEditorModules extends AppModules {
-  editorWall: EditorWallAppModule;
-  editorGround: EditorGroundAppModule;
-  editorStair: EditorStairModule;
-}
-
-export class EditorApp extends BaseApp<
-  AppEditorModules,
-  (
-    | typeof EditorWallAppModule
-    | typeof EditorGroundAppModule
-    | typeof EditorStairModule
-  )[] &
-    AppModuleList
-> {
-  constructor(
-    config: AppConfig,
-    renderer: Renderer,
-    moduleList: (
-      | typeof EditorWallAppModule
-      | typeof EditorGroundAppModule
-      | typeof EditorStairModule
-    )[] &
-      AppModuleList = []
-  ) {
-    moduleList.push(EditorWallAppModule);
-    moduleList.push(EditorGroundAppModule);
-    moduleList.push(EditorStairModule);
-
-    super(config, renderer, moduleList);
   }
 }

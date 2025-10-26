@@ -3,9 +3,9 @@ import UnitModule, {
   type UnitModuleObservables,
   type UnitModuleState
 } from '../UnitModule';
-import { findAllMeshes } from '@cuby-world/units/utils/mesh';
 import { normalizeMaterialList } from '../../utils/material';
 import type Unit from '../Unit';
+import { Mesh } from 'three';
 
 interface TransparentDescription {
   transparent: boolean;
@@ -34,34 +34,40 @@ export class PlacementUnitModule extends UnitModule<State, Observables> {
 
   startPlace() {
     this.lastMaterial.clear();
-    findAllMeshes(this.unit.root).forEach(mesh => {
-      normalizeMaterialList(mesh.material).forEach(material => {
-        this.lastMaterial.set(material.uuid, {
-          transparent: material.transparent,
-          opacity: material.opacity
+    this.unit.root.traverse(obj => {
+      if (obj instanceof Mesh) {
+        normalizeMaterialList(obj.material).forEach(material => {
+          if (!this.lastMaterial.has(material.uuid)) {
+            this.lastMaterial.set(material.uuid, {
+              transparent: material.transparent,
+              opacity: material.opacity
+            });
+            material.transparent = true;
+            material.opacity = 0.5;
+          }
         });
-        material.transparent = true;
-        material.opacity = 0.5;
-      });
+      }
     });
     this.observables.startPlace$.next();
   }
 
   stopPlace() {
-    findAllMeshes(this.unit.root).forEach(mesh => {
-      normalizeMaterialList(mesh.material).forEach(material => {
-        console.log(material.uuid, this.lastMaterial);
-        const last = this.lastMaterial.get(material.uuid);
-        if (last) {
-          material.transparent = last.transparent;
-          material.opacity = last.opacity;
-        }
-      });
+    this.unit.root.traverse(obj => {
+      if (obj instanceof Mesh) {
+        normalizeMaterialList(obj.material).forEach(material => {
+          const last = this.lastMaterial.get(material.uuid);
+          if (last) {
+            console.log('XXXX', last);
+            material.transparent = last.transparent;
+            material.opacity = last.opacity;
+          }
+        });
+      }
     });
     this.observables.stopPlace$.next();
   }
 
-  abortPlace() {
+  abort() {
     this.observables.abortPlace$.next();
   }
 }

@@ -7,7 +7,7 @@ import {
   Vector2,
   Vector3
 } from 'three';
-import { ROTATION, ROTATION_TYPE, rotationDirections } from '../types';
+import { ROTATION, ROTATION_TYPE, rotationDirections } from '../utils/rotation';
 import type { StairDescription, StairIdentifier } from '../types/stair';
 import { Subscription } from 'rxjs';
 import type { AnimationLoopSubject } from './Renderer';

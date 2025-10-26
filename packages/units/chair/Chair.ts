@@ -64,7 +64,7 @@ export default class Chair extends Unit<ChairOptions> {
     // const mesh: Object3D = new Mesh(geometry, material);
     // mesh.position.set(0, (size * ratio) / 2, 0);
 
-    this.materialReady$.next();
+    this.observables.materialReady$.next();
     return object;
   }
 }

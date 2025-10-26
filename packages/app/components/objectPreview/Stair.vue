@@ -18,11 +18,11 @@ import { ReplaySubject } from 'rxjs';
 
 import type App from '../../lib/classes/App';
 
-import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
+import type { AnimationLoopValue } from '../../lib/classes/Renderer';
 import CwObjectPreview from '../ObjectPreview.vue';
 
-import { ROTATION } from '@cuby-world/app/lib/types';
-import { resolveStair } from '@cuby-world/app/lib/utils/stair';
+import { ROTATION } from '../../lib/utils/rotation';
+import { resolveStair } from '../../lib/utils/stair';
 
 const $props = defineProps<{
   app: App;
@@ -52,7 +52,7 @@ async function setup(data: StairPreview) {
   await stair.setup({
     animationLoop$
   });
-  root.position.set(0 - Math.round(stair.size.y / 3), -0.5, 0);
+  root.position.set(0 - Math.round(stair.size.y / 3), 0, 0);
 
   root.add(stair.root);
   return root;

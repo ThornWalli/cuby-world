@@ -31,8 +31,8 @@ import {
   setupGround,
   updateOrthoCameraForObject
 } from '../utils/thumbs';
-import type { ROTATION } from '../lib/types';
-import { disposeObject3D } from '@cuby-world/app/lib/utils/object';
+import type { ROTATION } from '../lib/utils/rotation';
+import { disposeObject3D } from '../lib/utils/object';
 import { SKIN_DEFAULT_GROUND } from '@cuby-world/grounds';
 
 const rootEl = ref<HTMLDivElement | null>(null);
@@ -245,14 +245,14 @@ async function updatePreview(obj: Object3D, groundScale = 1) {
     ground = await setupGround(SKIN_DEFAULT_GROUND, $props.app.assetLoader, {
       scale: groundScale
     });
-    ground.position.set(0, -1 / 2, 0);
+    // ground.position.set(0, -1 / 2, 0);
+    // ground.position.set(0, 0.2 / 2, 0);
     previewScene.add(ground);
   }
 
   if (obj) {
     previewMesh = obj.clone();
     previewScene.add(previewMesh);
-    previewMesh.rotation.set(0, -Math.PI / 2, 0);
   }
 
   updateOrthoCameraForObject(
@@ -322,6 +322,7 @@ const next = () => {
     display: block;
     width: 100%;
     height: 100%;
+    filter: drop-shadow(0 0 4px rgb(0 0 0 /40%));
   }
 
   &.ready {

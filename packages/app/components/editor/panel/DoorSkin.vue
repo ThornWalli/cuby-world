@@ -24,7 +24,7 @@
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
 import CwCatalogWallItemSelect from '../catalog/WallItemSelect.vue';
-import CwEditorSkinFilter from '../SkinFilter.vue';
+import CwEditorSkinFilter from '../../CatalogItemSkinFilter.vue';
 import IconButton from '../../button/IconButton.vue';
 import { computed, ref } from 'vue';
 import { getWallExtensionMap } from '../../../lib/utils/catalog';
@@ -95,7 +95,8 @@ function onClickBack() {
 .cw-panel-editor-door-skin {
   align-items: center;
   align-self: center;
-  width: 90%;
+  width: calc(100% - 96px * 2);
+  pointer-events: auto;
 
   & :deep(.cw-editor-catalog-item-select) {
     position: relative;

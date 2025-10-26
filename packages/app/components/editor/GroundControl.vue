@@ -21,13 +21,14 @@ import CwPanelEditorGroundSkin from './panel/GroundSkin.vue';
 
 import { GROUND_ACTION } from '@cuby-world/app/lib/types/editor';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import type { EditorApp } from '@cuby-world/app/lib/classes/App';
+
 import { Subscription } from 'rxjs';
 import { CURSOR_TYPE } from '@cuby-world/app/lib/classes/appModule/Cursor';
 import type { GroundSkinIdentifier } from '@cuby-world/app/lib/types/ground/skins';
+import type App from '@cuby-world/app/lib/classes/App';
 
 const $props = defineProps<{
-  app: EditorApp;
+  app: App;
 }>();
 
 const currentAction = ref<GroundAction>({

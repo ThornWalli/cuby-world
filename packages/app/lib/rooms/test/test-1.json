@@ -11,20 +11,8 @@
       3
     ]
   },
-  "start": {
-    "position": {
-      "type": "Vector3",
-      "value": [
-        0,
-        0,
-        1
-      ]
-    },
-    "rotation": "east"
-  },
   "teleports": [
     {
-      "id": "default",
       "type": "entrance",
       "position": {
         "type": "Vector3",
@@ -37,7 +25,6 @@
       "rotation": "east"
     },
     {
-      "id": "teleport-2",
       "type": "room",
       "position": {
         "type": "Vector3",
@@ -52,109 +39,184 @@
       "roomTeleportId": "default"
     }
   ],
-  "walls": [
+  "walls": [],
+  "units": [
     {
-      "direction": "horizontal",
-      "position": {
-        "type": "Vector3",
-        "value": [
-          2,
-          0,
-          1
-        ]
-      },
-      "skins": [
-        "default_base",
-        "default_base"
-      ],
-      "extensions": [
-        {
-          "key": "door_standard",
-          "state": {
-            "hasDoor": false,
-            "skin": "default",
-            "opened": false
-          }
+      "unit": "cardboardBox",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            2,
+            0.2,
+            0
+          ]
+        },
+        "rotation": "south",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
         }
-      ]
+      }
     },
     {
-      "direction": "vertical",
-      "position": {
-        "type": "Vector3",
-        "value": [
-          2,
-          0,
-          1
-        ]
-      },
-      "skins": [
-        "default_base",
-        "default_base"
-      ],
-      "extensions": [
-        {
-          "key": "door_standard",
-          "state": {
-            "hasDoor": false,
-            "skin": "default",
-            "opened": false
-          }
+      "unit": "cardboardBox",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            0
+          ]
+        },
+        "rotation": "south",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
         }
-      ]
+      }
     },
     {
-      "direction": "horizontal",
-      "position": {
-        "type": "Vector3",
-        "value": [
-          2,
-          0,
-          2
-        ]
-      },
-      "skins": [
-        "default_base",
-        "default_base"
-      ],
-      "extensions": [
-        {
-          "key": "door_standard",
-          "state": {
-            "hasDoor": false,
-            "skin": "default",
-            "opened": false
-          }
+      "unit": "cardboardBox",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            2,
+            0.4,
+            0
+          ]
+        },
+        "rotation": "south",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
         }
-      ]
+      }
     },
     {
-      "direction": "vertical",
-      "position": {
-        "type": "Vector3",
-        "value": [
-          3,
-          0,
-          1
-        ]
-      },
-      "skins": [
-        "default_base",
-        "default_base"
-      ],
-      "extensions": [
-        {
-          "key": "door_standard",
-          "state": {
-            "hasDoor": false,
-            "skin": "default",
-            "opened": false
-          }
+      "unit": "cardboardBox",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            2,
+            0.6000000000000001,
+            0
+          ]
+        },
+        "rotation": "south",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
         }
-      ]
+      }
+    },
+    {
+      "unit": "cardboardBox",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            0
+          ]
+        },
+        "rotation": "south",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "unit": "cardboardBox",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            3,
+            0.2,
+            0
+          ]
+        },
+        "rotation": "south",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "unit": "cardboardBox",
+      "options": {
+        "position": {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            0
+          ]
+        },
+        "rotation": "south",
+        "options": {
+          "canPlaced": true,
+          "canRotate": true
+        },
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
     }
   ],
-  "units": [],
   "groundStyles": [
     {
       "type": "default",

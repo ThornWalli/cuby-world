@@ -40,8 +40,8 @@ import type Room from '../Room';
 import { OBJECT_NAME, OBJECT_USER_DATA } from '../../utils/object';
 
 import {
+  WALL_DIRECTION,
   WALL_SIZE,
-  type WALL_DIRECTION,
   type WallDescription,
   type WallGeometryMap,
   type WallRoomDescription
@@ -51,6 +51,7 @@ import type { FloorIndex } from '../../types/floor';
 import { default_mesh as MeshWall } from '@cuby-world/walls';
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import type { WallIdentifier } from '../Wall';
+import { invertRotation, ROTATION } from '../../utils/rotation';
 
 interface WallRoomTile {
   mesh: Mesh;
@@ -296,8 +297,8 @@ export default class WallModule extends RoomModule<
       this.room.app.modules.player.observables.currentPlayer$
         .pipe(
           switchMap(player => player.unit$),
-          switchMap(unit => unit.ready$),
-          switchMap(unit => unit.position$),
+          switchMap(unit => unit.observables.ready$),
+          switchMap(unit => unit.observables.position$),
           map(position => position.clone().ceil()),
           distinctUntilChanged((a, b) => a.equals(b))
         )
@@ -347,7 +348,7 @@ export default class WallModule extends RoomModule<
     this.room.app.modules.player.observables.currentPlayer$
       .pipe(
         switchMap(player => player.unit$),
-        switchMap(unit => unit.ready$),
+        switchMap(unit => unit.observables.ready$),
         map(unit => unit.mesh),
         filter(Boolean)
       )
@@ -390,6 +391,74 @@ export default class WallModule extends RoomModule<
         wall.position.z === position.z &&
         (!direction || wall.direction === direction)
     );
+  }
+
+  getBackSideWallByPositionAndRotation(position: Vector3, rotation: ROTATION) {
+    /**
+     * Invertiert die Rotation, da wir die Wand auf der Rückseite suchen
+     */
+    const invertedRotation = invertRotation(rotation);
+    /**
+     * Erst alle Walls sammeln:
+     * - Auf der aktuellen position
+     * - Auf der position z:+1 mit Direction Horizontal
+     * - Auf der position x:+1 mit Direction Vertical
+     *
+     * Dann je nach Rotation den passenden Wall zurückgeben
+     */
+    const possibleWalls = this.state.walls.filter(
+      wall =>
+        (wall.position.x === position.x &&
+          wall.position.y === position.y &&
+          wall.position.z === position.z) ||
+        (wall.position.x === position.x &&
+          wall.position.y === position.y &&
+          wall.position.z === position.z + 1 &&
+          wall.direction === WALL_DIRECTION.HORIZONTAL) ||
+        (wall.position.x === position.x + 1 &&
+          wall.position.y === position.y &&
+          wall.position.z === position.z &&
+          wall.direction === WALL_DIRECTION.VERTICAL)
+    );
+
+    switch (invertedRotation) {
+      case ROTATION.NORTH: {
+        return possibleWalls.find(
+          wall =>
+            wall.position.x === position.x &&
+            wall.position.y === position.y &&
+            wall.position.z === position.z &&
+            wall.direction === WALL_DIRECTION.HORIZONTAL
+        );
+      }
+      case ROTATION.EAST: {
+        return possibleWalls.find(
+          wall =>
+            wall.position.x === position.x + 1 &&
+            wall.position.y === position.y &&
+            wall.position.z === position.z &&
+            wall.direction === WALL_DIRECTION.VERTICAL
+        );
+      }
+      case ROTATION.SOUTH: {
+        return possibleWalls.find(
+          wall =>
+            wall.position.x === position.x &&
+            wall.position.y === position.y &&
+            wall.position.z === position.z + 1 &&
+            wall.direction === WALL_DIRECTION.HORIZONTAL
+        );
+      }
+      case ROTATION.WEST: {
+        return possibleWalls.find(
+          wall =>
+            wall.position.x === position.x &&
+            wall.position.y === position.y &&
+            wall.position.z === position.z &&
+            wall.direction === WALL_DIRECTION.VERTICAL
+        );
+      }
+    }
   }
 
   async addWalls(wallDescriptions: WallDescription[], refresh = true) {

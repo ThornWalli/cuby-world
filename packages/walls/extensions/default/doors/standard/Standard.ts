@@ -20,11 +20,14 @@ import type {
   AnimationLoopValue
 } from '@cuby-world/app/lib/classes/Renderer';
 import assetLoader from '@cuby-world/app/services/assetLoader';
-import {
-  MATERIAL_NAME,
-  replaceMaterialByName
-} from '@cuby-world/app/lib/utils/material';
+import { replaceMaterialByName } from '@cuby-world/app/lib/utils/material';
 import skins from './skins';
+
+const MATERIAL_NAME = {
+  FRAME: 'frame',
+  BLADE: 'blade',
+  HANDLE: 'handle'
+};
 
 type StandardState = DoorState;
 export default class Standard extends DoorWallExtension<StandardState> {
@@ -41,10 +44,29 @@ export default class Standard extends DoorWallExtension<StandardState> {
 
     replaceMaterialByName(
       object,
-      MATERIAL_NAME.BASE,
+      MATERIAL_NAME.FRAME,
       new MeshPhongMaterial({
         color: skin?.options.color || 0xffffff,
-        side: DoubleSide
+        side: DoubleSide,
+        shadowSide: DoubleSide
+      })
+    );
+    replaceMaterialByName(
+      object,
+      MATERIAL_NAME.BLADE,
+      new MeshPhongMaterial({
+        color: skin?.options.color || 0xffffff,
+        side: DoubleSide,
+        shadowSide: DoubleSide
+      })
+    );
+    replaceMaterialByName(
+      object,
+      MATERIAL_NAME.HANDLE,
+      new MeshPhongMaterial({
+        color: 0x000000,
+        side: DoubleSide,
+        shadowSide: DoubleSide
       })
     );
 

@@ -4,7 +4,7 @@ import type {
   AppModuleControllerState
 } from '../../../AppModuleController';
 import AppModuleController from '../../../AppModuleController';
-import { ROTATION } from '@cuby-world/app/lib/types';
+import { ROTATION } from '../../../../../lib/utils/rotation';
 import {
   concatMap,
   debounceTime,

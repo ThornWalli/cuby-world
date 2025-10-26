@@ -1,0 +1,14 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="1024" height="1024" viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg" version="1.1">
+<desc>cardboardBox.blend, (Blender 4.5.2 LTS)</desc>
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="755.810,536.381 487.619,536.381 487.619,1024.000 755.810,1024.000 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="755.810,48.762 487.619,48.762 487.619,536.381 755.810,536.381 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="1024.000,536.381 755.810,536.381 755.810,1024.000 1024.000,1024.000 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="1024.000,48.762 755.810,48.762 755.810,536.381 1024.000,536.381 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="487.619,1024.000 487.619,536.381 -0.000,536.381 0.000,1024.000 " />
+<polygon stroke="black" stroke-width="1" fill="rgb(204, 204, 204)" fill-opacity="0.25" points="487.619,536.381 487.619,48.762 -0.000,48.762 0.000,536.381 " />
+
+</svg>

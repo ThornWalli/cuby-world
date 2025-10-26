@@ -9,7 +9,10 @@
         v-for="{ icon, label, value: { primary, secondary } } in actions"
         :key="label">
         <cw-toggle-icon
-          hide-label
+          :hide-label="
+            (actions.find(a => a.value.primary === primary)?.items || [])
+              .length > 0
+          "
           :icon="icon"
           :label="label"
           :model-value="modelValue.primary === primary"

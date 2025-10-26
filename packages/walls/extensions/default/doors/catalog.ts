@@ -10,6 +10,7 @@ const items: DoorWallExtensionItem[] = [
     extension: 'door_standard',
     name: 'Standard Door',
     description: 'Überzeugt mit zeitlosem Design und Funktionalität.',
+    defaultSkinId: skins_standard[0]!.id,
     skins: skins_standard,
     instance: () =>
       import('./standard/Standard').then(
@@ -26,6 +27,7 @@ const items: DoorWallExtensionItem[] = [
     name: 'Standard Door (Only Frame)',
     description: 'Überzeugt mit zeitlosem Design und Funktionalität.',
     tags: ['frame'],
+    defaultSkinId: skins_standard[0]!.id,
     skins: skins_standard,
     instance: () =>
       import('./standard/Standard').then(

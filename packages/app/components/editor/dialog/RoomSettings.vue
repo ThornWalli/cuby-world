@@ -44,14 +44,14 @@ import CwFormFieldTextarea from '../../../components/formField/Textarea.vue';
 import CwButton from '../../../components/Button.vue';
 import CwRoomEditorDialogRoomGridResize from './RoomGridResize.vue';
 import CwRoomEditorDialogRoomEntrancePosition from './RoomEntrancePosition.vue';
-import {
-  TELEPORT_TYPE,
-  type EntranceTeleportDescription,
-  type RoomDescription
-} from '../../../lib/types/room';
 
 import type App from '@cuby-world/app/lib/classes/App';
 import { resizeRoom } from '@cuby-world/app/lib/utils/editor/room';
+import {
+  TELEPORT_TYPE,
+  type EntranceTeleportDescription
+} from '@cuby-world/app/lib/types/teleport';
+import type { RoomDescription } from '@cuby-world/app/lib/types/room';
 
 const formEl = ref<HTMLFormElement | null>(null);
 
@@ -103,7 +103,7 @@ async function onClickEntrancePosition() {
   entranceTeleport =
     await dialogRoomEntrancePosition.value!.open(entranceTeleport);
 
-  if (newTeleport) {
+  if (newTeleport && entranceTeleport) {
     description.teleports.push(entranceTeleport);
   } else {
     description.teleports = description!.teleports.map(teleport => {

@@ -21,7 +21,7 @@ import CwPanel from '../../Panel.vue';
 import CwCatalogWallItemSelect, {
   type WallSelectItem
 } from '../catalog/WallItemSelect.vue';
-import CwEditorSkinFilter from '../SkinFilter.vue';
+import CwEditorSkinFilter from '../../CatalogItemSkinFilter.vue';
 import { computed, ref } from 'vue';
 import type App from '../../../lib/classes/App';
 import type {
@@ -72,7 +72,8 @@ const $emit = defineEmits<{
 .cw-panel-editor-wall-skin {
   align-items: center;
   align-self: center;
-  width: 90%;
+  width: calc(100% - 96px * 2);
+  pointer-events: auto;
 
   & :deep(.cw-panel-catalog-wall-item-select) {
     width: 100%;

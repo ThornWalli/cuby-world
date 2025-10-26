@@ -1,116 +1,181 @@
 <template>
-  <div ref="rootEl" class="cw-app-playground">
-    <cw-messages v-if="isMessagingActive" :app="app" />
-    <cw-panel-group position="top-left">
-      <cw-panel-camera-control :app="app" />
-      <cw-panel-wall-control :app="app" />
-      <cw-panel-floor-control :app="app" />
-    </cw-panel-group>
-    <cw-panel-group position="top-right">
-      <cw-panel-general :app="app" />
-      <cw-panel-export-import :app="app" />
-    </cw-panel-group>
-    <cw-panel-group position="bottom-left">
-      <!-- <cw-debug-panel-unit-settings v-if="selectedUnit" :unit="selectedUnit" /> -->
-      <cw-panel-catalog :app="app" />
-    </cw-panel-group>
-    <cw-panel-group position="bottom-right">
-      <cw-panel-unit-preview v-if="selectedUnit" :unit="selectedUnit">
-        <template #actions>
-          <cw-button @click="onClickRotate">Rotate</cw-button>
-          <cw-button
-            v-if="canPlaced"
-            :selected="!!placedUnit"
-            @click="onClickPlacement">
-            Move
-          </cw-button>
+  <cw-app-layout
+    class="cw-app-playground"
+    :class="{ ['action-' + currentEditorAction]: !!currentEditorAction }">
+    <template #[PANEL.TOP_LEFT]>
+      <cw-panel-camera-control key="camera-control" :app="app" />
+      <cw-panel-wall-control key="wall-control" :app="app" />
+      <cw-panel-floor-control key="floor-control" :app="app" />
+    </template>
+    <template #[PANEL.TOP_RIGHT]>
+      <cw-panel-general key="general" :app="app" />
+      <cw-panel-export-import key="export-import" :app="app" />
+    </template>
+    <template #[PANEL.LEFT]>
+      <cw-panel-editor-actions
+        v-if="currentAction === ACTION.EDITOR"
+        v-model="currentEditorAction"
+        :actions="actions"
+        :app="app">
+        <template #before>
+          <cw-button-icon
+            label="Settings"
+            label-direction="right"
+            icon="settings"
+            @click="onClickSettings" />
         </template>
-      </cw-panel-unit-preview>
-    </cw-panel-group>
-  </div>
+      </cw-panel-editor-actions>
+    </template>
+    <template #[PANEL.BOTTOM_LEFT]>
+      <cw-panel-design-control
+        key="design-control"
+        v-model="currentAction"
+        :app="app" />
+    </template>
+    <template #[PANEL.BOTTOM_RIGHT]>
+      <cw-panel-unit-preview
+        v-if="currentAction === ACTION.NONE"
+        key="unit-preview"
+        :app="app" />
+    </template>
+    <template #foreground>
+      <cw-messages
+        v-if="isMessagingActive"
+        :app="app"
+        :hide-input="currentAction !== ACTION.NONE" />
+      <cw-selected-unit-controls :app="app" />
+
+      <!-- editor -->
+      <component :is="controlComponent" v-if="controlComponent" :app="app" />
+      <teleport to="#teleports">
+        <cw-room-editor-dialog-room-settings
+          ref="dialogRoomSettings"
+          :app="app" />
+      </teleport>
+    </template>
+  </cw-app-layout>
 </template>
 
 <script lang="ts" setup>
 import {
   computed,
+  defineAsyncComponent,
   markRaw,
-  nextTick,
   onMounted,
-  onUnmounted,
   ref,
-  type Raw
+  nextTick,
+  watch
 } from 'vue';
-import { Subscription } from 'rxjs';
 import type App from '../../lib/classes/App';
-import type Unit from '../../lib/classes/Unit';
 
 import CwMessages from '../Messages.vue';
 
+import CwAppLayout, { PANEL } from '../AppLayout.vue';
 import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelWallControl from '../panel/WallControl.vue';
 import CwPanelFloorControl from '../panel/FloorControl.vue';
-
-import CwPanelUnitPreview from '../panel/UnitPreview.vue';
 import CwPanelGeneral from '../panel/General.vue';
-import CwPanelGroup from '../PanelGroup.vue';
-import CwPanelCatalog from '../panel/Catalog.vue';
 import CwPanelExportImport from '../editor/panel/ExportImport.vue';
-// import CwDebugPanelUnitSettings from '../debug/panel/UnitSettings.vue';
-import CwButton from '../Button.vue';
+import CwPanelDesignControl from '../panel/DesignControl.vue';
+import CwPanelUnitPreview from '../panel/UnitPreview.vue';
+import CwSelectedUnitControls from '../SelectedUnitControls.vue';
+import CwPanelEditorActions from '../editor/panel/Actions.vue';
+import CwButtonIcon from '../button/IconButton.vue';
+import CwRoomEditorDialogRoomSettings from '../editor/dialog/RoomSettings.vue';
+import { EDITOR_ACTION } from '@cuby-world/app/lib/types/editor';
 
-const subscription = new Subscription();
+import icons from '@cuby-world/app/utils/icons';
+import { APP_MODE } from '../../lib/classes/App';
 
 const $props = defineProps<{
   app: App;
 }>();
 
-const rootEl = ref<HTMLElement>();
-const selectedUnit = ref<Raw<Unit> | null>(null);
-const placedUnit = ref<Raw<Unit> | null>(null);
-const canPlaced = computed(() => selectedUnit.value?.options.canPlaced);
 const isMessagingActive = computed(() => !!$props.app.modules.multiplayer);
 
-// let sceneUnsubscribe;
 onMounted(async () => {
   nextTick(() => {
-    setup();
+    // currentAction.value = EDITOR_ACTION.WALL;
+    // onClickSettings();
   });
 });
 
-async function setup() {
-  const app = $props.app;
+const currentAction = ref<ACTION>(ACTION.NONE);
 
-  subscription.add(
-    app.modules.selection.observables.selectUnit$.subscribe(unit => {
-      selectedUnit.value = unit ? markRaw(unit) : null;
-    })
-  );
-  subscription.add(
-    app.modules.placement.observables.startPlace$.subscribe(unit => {
-      placedUnit.value = markRaw(unit);
-    })
-  );
-  subscription.add(
-    app.modules.placement.observables.stopPlace$.subscribe(() => {
-      placedUnit.value = null;
-    })
-  );
-}
+//#region editor
 
-onUnmounted(() => {
-  subscription.unsubscribe();
+const currentEditorAction = ref<EDITOR_ACTION>(EDITOR_ACTION.NONE);
+
+watch(
+  () => currentAction.value,
+  action => {
+    if (action !== ACTION.EDITOR) {
+      $props.app.setMode(APP_MODE.PLAYGROUND);
+      currentEditorAction.value = EDITOR_ACTION.NONE;
+    } else {
+      $props.app.setMode(APP_MODE.EDITOR);
+    }
+  }
+);
+
+const dialogRoomSettings = ref<InstanceType<
+  typeof CwRoomEditorDialogRoomSettings
+> | null>(null);
+
+const controlComponent = computed(() => {
+  switch (currentEditorAction.value) {
+    case EDITOR_ACTION.GROUND: {
+      return markRaw(
+        defineAsyncComponent(() => import('../editor/GroundControl.vue'))
+      );
+    }
+    case EDITOR_ACTION.WALL: {
+      return markRaw(
+        defineAsyncComponent(() => import('../editor/WallControl.vue'))
+      );
+    }
+    case EDITOR_ACTION.STAIR: {
+      return markRaw(
+        defineAsyncComponent(() => import('../editor/StairControl.vue'))
+      );
+    }
+    default:
+      return null;
+  }
 });
 
-function onClickRotate() {
-  if (selectedUnit.value) {
-    selectedUnit.value.rotateRight();
-  }
+function onClickSettings() {
+  dialogRoomSettings.value?.open(
+    $props.app.modules.room.getRoom()!.toDescription()
+  );
 }
 
-function onClickPlacement() {
-  if (selectedUnit.value) {
-    $props.app.modules.placement?.startPlace(selectedUnit.value);
+const actions = ref([
+  {
+    icon: icons.mode_wall,
+    label: 'Wall',
+    value: EDITOR_ACTION.WALL
+  },
+  {
+    icon: icons.mode_ground,
+    label: 'Ground',
+    value: EDITOR_ACTION.GROUND
+  },
+  {
+    icon: icons.mode_stair,
+    label: 'Stair',
+    value: EDITOR_ACTION.STAIR
   }
+]);
+
+//#endregion
+</script>
+
+<script lang="ts">
+export enum ACTION {
+  NONE = 'none',
+  SHOP = 'shop',
+  EDITOR = 'editor'
 }
 </script>
 

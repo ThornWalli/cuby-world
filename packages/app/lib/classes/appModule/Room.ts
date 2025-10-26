@@ -15,20 +15,15 @@ import AppModule, {
 } from '../AppModule';
 import Room from '../Room';
 import Cuby from '@cuby-world/units/cuby/Cuby';
-import {
-  matrixPositionToPosition,
-  preparePosition,
-  type PreparedPosition
-} from '../../utils/matrix';
+import { preparePosition, type PreparedPosition } from '../../utils/matrix';
 import { Vector3, type Object3D } from 'three';
-import { getYPositionByPosition } from '../../utils/room';
 import type Player from '../Player';
 
 import { catalog } from '@cuby-world/units';
-import { TELEPORT_TYPE, type RoomDescription } from '../../types/room';
+import type { RoomDescription } from '../../types/room';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
-import type Unit from '../Unit';
 import { OBJECT_NAME } from '../../utils/object';
+import { TELEPORT_TYPE } from '../../types/teleport';
 
 interface Observables extends AppModuleObservables {
   room$: Observable<Room | undefined>;
@@ -154,16 +149,33 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     }
   }
 
-  async addUnit(unit: Unit) {
-    const room = this.getRoom();
-    if (!room) {
-      throw new Error('No room available to add unit');
-    }
-    await room.modules.units.add(unit);
+  // /**
+  //  * @deprecated Glaub muss weg, verschieben sollte wo anders stattfinden mit dem placement module
+  //  */
+  // async addUnitWithPlacement(unit: Unit) {
+  //   const room = this.getRoom();
+  //   if (!room) {
+  //     throw new Error('No room available to add unit');
+  //   }
+  //   await room.modules.units.add(unit);
 
-    this.app.modules.selection.setSelectedUnit(unit);
-    this.app.modules.placement.startPlace(unit);
-  }
+  //   this.app.modules.selection.setSelectedUnit(unit);
+  //   this.app.modules.placement.startPlace(unit);
+  // }
+
+  // /**
+  //  * @deprecated Glaub muss weg, verschieben sollte wo anders stattfinden mit dem placement module
+  //  */
+  // removeUnit(unit: Unit) {
+  //   const room = this.getRoom();
+  //   if (!room) {
+  //     throw new Error('No room available to remove unit');
+  //   }
+
+  //   this.app.modules.selection.setSelectedUnit(null);
+  //   this.app.modules.placement.abortPlace();
+  //   room.modules.units.remove(unit);
+  // }
 
   /**
    * Set the current room from a room description.
@@ -273,64 +285,19 @@ export default class RoomAppModule extends AppModule<State, Observables> {
   onHover(preparedPositions: PreparedPosition[]) {
     const app = this.app;
     const player = app.modules.player.getCurrentPlayer();
-    /**
-     * Wenn nicht im Edit Mode, dann Wände ignorieren
-     */
-    if (!this.app.isEditMode()) {
-      preparedPositions = preparedPositions.filter(
-        pos => !pos.object?.userData[OBJECT_NAME.WALL]
-      );
-    }
+
+    // /**
+    //  * Wenn nicht im Edit Mode, dann Wände ignorieren
+    //  */
+    // if (!this.app.isEditMode()) {
+    //   preparedPositions = preparedPositions.filter(
+    //     pos => !pos.object?.userData[OBJECT_NAME.WALL]
+    //   );
+    // }
     Object.values(app.modules).some((module: AppModule) => {
       return module.onSceneHover({ preparedPositions, player });
     });
     this.observables.hover$.next(preparedPositions);
-  }
-
-  subscribePlacement() {
-    const subscription = new Subscription();
-    const app = this.app;
-    const room = this.getRoom();
-
-    if (!room) {
-      throw new Error('No room available for placement subscription');
-    }
-
-    let placeSubscription: Subscription;
-    let lastPosition: Vector3 | null = null;
-    subscription.add(
-      app.modules.placement.observables.startPlace$.subscribe(unit => {
-        lastPosition = unit.getPosition().clone();
-        placeSubscription = room.modules.ground.observables.hover$.subscribe(
-          position => {
-            unit.setPosition(
-              matrixPositionToPosition(
-                new Vector3(
-                  position.x,
-                  getYPositionByPosition(room, position),
-                  position.z
-                )
-              )
-            );
-          }
-        );
-      })
-    );
-    subscription.add(
-      app.modules.placement.observables.stopPlace$.subscribe(() => {
-        placeSubscription?.unsubscribe();
-      })
-    );
-
-    subscription.add(
-      app.modules.placement.observables.abortPlace$.subscribe(unit => {
-        if (lastPosition) {
-          unit.setPosition(lastPosition);
-        }
-      })
-    );
-
-    return subscription;
   }
 
   private registerRoomSubscriptions(app: App) {
@@ -338,7 +305,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     const room = app.modules.room.getRoom()!;
     const renderer = app.renderer;
 
-    this.subscribePlacement();
+    // this.subscribePlacement();
 
     //#region intersection
 
@@ -418,7 +385,6 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       if (object && isStair(object)) {
         const stair = getStairFromObject(app, object);
         if (stair) {
-          console.log(stair?.getEntryPositions());
           const position = Object.values(stair?.getEntryPositions()).find(
             pos => pos.y !== player.unit?.getPosition().y
           );
@@ -426,10 +392,6 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         }
 
         // alert('test');
-      } else if (app.modules.placement.hasPlace()) {
-        // placing mode
-        app.modules.placement.stopPlace();
-        app.modules.selection.setSelectedUnit(null);
       } else if (
         unit &&
         app.modules.selection.getSelectedUnit()?.id === unit?.id

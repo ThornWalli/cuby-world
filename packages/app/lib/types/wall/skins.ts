@@ -4,7 +4,7 @@ import type { SkinDescription, SkinIdentifier, SkinOptions } from '../skin';
 export type WallSkinIdentifier = SkinIdentifier;
 
 export interface WallSkinOptions extends SkinOptions {
-  texture?: ExternalWallStyleTexture | InternalWallStyleTexture;
+  texture?: WallStyleTexture;
   color: string | number;
 }
 
@@ -16,22 +16,35 @@ export type WallSkinDescription<
 export type WallSkins = [WallSkinIdentifier, WallSkinIdentifier];
 
 export interface WallStyleTexture {
+  /**
+   * Internal or External path to the texture image
+   */
+  path: string;
   options?: {
     position: Vector2;
     dimension: Vector2;
   };
 }
 
+/**
+ * @deprecated Use path instead
+ */
 export interface ExternalWallStyleTexture extends WallStyleTexture {
   url: string;
 }
 
+/**
+ * @deprecated Use path instead
+ */
 export interface InternalWallStyleTexture extends WallStyleTexture {
   id: string;
 }
 
 export interface WallStyle {
-  texture?: ExternalWallStyleTexture | InternalWallStyleTexture;
+  texture?:
+    | ExternalWallStyleTexture
+    | InternalWallStyleTexture
+    | WallStyleTexture;
   color: string | number;
 }
 

@@ -107,11 +107,12 @@ export default class PainterController extends AppModuleController<
     await this.resetLast();
     if (current && faceIndex > -1 && [0, 1].includes(faceIndex)) {
       const wallId = getWallIdentifierFromObject(current!)!;
+
       const wall = this.app.modules.room
         .getRoom()!
         .modules.wall.getWallById(wallId)!;
 
-      if (this.state.skin) {
+      if (this.state.skin && wall) {
         const skins: WallSkins = [
           wall.state.skins?.[0] || 'default',
           wall.state.skins?.[1] || 'default'

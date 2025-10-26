@@ -19,9 +19,16 @@ interface MatrixDescription {
   matrix: number[][];
   floorIndex: FloorIndex;
 }
+
+enum TARGET_TYPE {
+  NONE = 'none',
+  DOOR = 'door',
+  STAIR = 'stair'
+}
 interface Result {
   success: boolean;
   path: Vector3[];
+  targetType: TARGET_TYPE;
   doorWallByPosition: ArrayKeyMap<
     [number, number],
     DoorWallExtension<DoorState>
@@ -197,6 +204,7 @@ export async function findBestPathByStairs(
         walls: functions.getWallsByFloor([endPosition.y])
       }
     });
+    result.targetType = TARGET_TYPE.STAIR;
 
     if (result.path.length > 0) {
       results.push(result);
@@ -371,6 +379,7 @@ async function findPath_(
   if (startPosition.y !== endPosition.y) {
     return {
       success: false,
+      targetType: TARGET_TYPE.DOOR,
       path: [],
       doorWallByPosition
     };
@@ -426,6 +435,7 @@ async function findPath_(
 
   return {
     success,
+    targetType: TARGET_TYPE.NONE,
     path: preparedPath,
     doorWallByPosition
   };

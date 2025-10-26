@@ -52,7 +52,7 @@ export default class Door extends BaseDoor<DoorOptions> {
     mesh.castShadow = true;
     material.side = DoubleSide;
 
-    this.materialReady$.next();
+    this.observables.materialReady$.next();
     return mesh;
   }
 }

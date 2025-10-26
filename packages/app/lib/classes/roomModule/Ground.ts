@@ -276,18 +276,12 @@ export default class GroundModule extends RoomModule<State, Observables> {
     for (let y = 0; y < this.room.gridSize.y; y++) {
       for (let x = 0; x < this.room.gridSize.x; x++) {
         const groundStyle = groundStyleMap.get(x, foorIndex, y);
-        console.log(groundStyle);
+
         if (groundStyle) {
           const skin = groundCatalog
             .get(groundStyle.type)
             ?.skins?.find(s => s.id === groundStyle.skinId);
           if (groundStyle && (skin?.options.accessible ?? true)) {
-            console.log(
-              this.getTileCostKey(groundStyle.type, groundStyle.skinId),
-              tileCostMap?.get(
-                this.getTileCostKey(groundStyle.type, groundStyle.skinId)
-              )
-            );
             values.push(
               tileCostMap?.get(
                 this.getTileCostKey(groundStyle.type, groundStyle.skinId)
@@ -352,7 +346,6 @@ export default class GroundModule extends RoomModule<State, Observables> {
     this.removeGroundChunks(floorIndex ?? -1);
 
     const currentFloor = this.room.modules.floor.getFloor();
-    console.log('refreshGround', { floorIndex, currentFloor });
 
     const tileChecker = (floor: number) => (position: Vector2) => {
       return !this.room.modules.stair.isStairAt(

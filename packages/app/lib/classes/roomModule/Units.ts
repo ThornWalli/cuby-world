@@ -46,7 +46,9 @@ export default class UnitsModule extends RoomModule<State> {
    * TODO: Ggf. muss hier noch eine Map aus performancegründen her
    */
   getUnitsByFloor(floor: number) {
-    return this.getUnits().filter(unit => unit.position.y === floor);
+    return this.getUnits().filter(
+      unit => Math.floor(unit.position.y) === floor
+    );
   }
 
   async setupUnits(units: Unit[]) {
@@ -65,7 +67,7 @@ export default class UnitsModule extends RoomModule<State> {
     });
 
     unit.subscription.add(
-      unit.position$
+      unit.observables.position$
         .pipe(
           map(pos => pos.clone().floor()),
           distinctUntilChanged((prev, next) => prev.equals(next))

@@ -47,7 +47,8 @@ const $emit = defineEmits<{
 .cw-panel-editor-stair-select {
   align-items: center;
   align-self: center;
-  width: 90%;
+  width: calc(100% - 96px * 2);
+  pointer-events: auto;
 
   & :deep(.cw-panel-catalog-select-item-select) {
     width: 100%;

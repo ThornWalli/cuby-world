@@ -69,4 +69,26 @@ export default class SelectionAppModule extends AppModule<State, Observables> {
     // unit?.modules.selection?.select();
     this.observables.selectUnit$.next(unit);
   }
+
+  /**
+   * Hebt die selektierung auf.
+   */
+  apply() {
+    this.setSelectedUnit(null);
+  }
+  abort() {
+    this.setSelectedUnit(null);
+  }
+  remove() {
+    this.app.modules.room
+      .getRoom()
+      ?.modules.units.remove(this.state.selectedUnit!);
+    this.setSelectedUnit(null);
+  }
+  move() {
+    this.app.modules.placement.startPlace(this.state.selectedUnit!);
+  }
+  rotate() {
+    this.state.selectedUnit?.rotateRight();
+  }
 }

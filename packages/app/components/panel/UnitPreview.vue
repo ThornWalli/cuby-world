@@ -1,133 +1,103 @@
 <template>
-  <cw-panel class="cw-panel-unit-preview" :title="panelTitle">
-    <div class="image">
-      <canvas ref="canvasEl" />
+  <cw-panel
+    v-if="unit && ready"
+    class="cw-panel-unit-preview"
+    :title="panelTitle">
+    <div :key="unit.key" class="preview">
+      <div>
+        <cw-object-preview-unit
+          :app="app"
+          :ratio="1"
+          :model-value="{
+            type: unit.key
+          }" />
+      </div>
     </div>
 
-    {{ unit.getPosition().x }} / {{ unit.getPosition().z }}
-
-    <div v-if="$slots.actions" class="actions">
-      <slot name="actions"></slot>
-    </div>
+    <p>
+      <span>Pos.:</span> {{ unit.getPosition().toArray().join(' / ') }}<br />
+      <span>Rot.:</span> {{ unit.rotation }}
+    </p>
   </cw-panel>
 </template>
 
 <script lang="ts" setup>
-import type { Mesh, OrthographicCamera, Scene } from 'three';
-import { Vector2, WebGLRenderer } from 'three';
 import type Unit from '../../lib/classes/Unit';
-import { computed, onMounted, ref, watch } from 'vue';
-import { OBJECT_NAME } from '../../lib/utils/object';
-import { Subscription } from 'rxjs';
+import CwObjectPreviewUnit from '../objectPreview/Unit.vue';
+import { computed, markRaw, onMounted, onUnmounted, ref, type Raw } from 'vue';
 
 import CwPanel from '../Panel.vue';
-import { createPreviewCamera, createScene } from '../../utils/thumbs';
-
-const canvasEl = ref<HTMLCanvasElement | null>(null);
+import type App from '../../lib/classes/App';
+import { Subscription } from 'rxjs';
 
 const $props = defineProps<{
-  unit: Unit;
+  app: App;
 }>();
 
-const player = computed(() => $props.unit.modules.player.player);
+const unit = ref<Raw<Unit> | null>(null);
+
+const player = computed(() => unit.value?.modules.player.player);
 const panelTitle = computed(
-  () => player.value?.state.name || $props.unit.name || 'n/a'
+  () => player.value?.state.name || unit.value?.name || 'n/a'
 );
 
-function refresh(unit: Unit) {
-  updatePreview(unit.mesh);
-  renderer.render(previewScene, previewCamera);
-}
-
-let previewScene: Scene;
-let previewCamera: OrthographicCamera;
-let previewMesh: Mesh;
-
-function updatePreview(mesh: Mesh) {
-  if (previewMesh) {
-    previewScene.remove(previewMesh);
-    console.log(previewMesh, previewMesh.geometry, previewMesh.material);
-    previewMesh.geometry.dispose();
-    const materials = [];
-    if (Array.isArray(previewMesh.material)) {
-      materials.push(...previewMesh.material);
-    } else {
-      materials.push(previewMesh.material);
-    }
-    materials.forEach(material => material.dispose());
-  }
-
-  if (mesh) {
-    previewMesh = mesh.clone();
-
-    const meshOutline = previewMesh.getObjectByName(OBJECT_NAME.MESH_OUTLINE);
-    if (meshOutline) {
-      meshOutline.visible = false;
-    }
-
-    previewScene.add(previewMesh);
-
-    previewMesh.position.set(0, 0, 0);
-    previewMesh.rotation.set(0, -Math.PI / 2, 0);
-  }
-}
-
 const ready = ref(false);
-let renderer: WebGLRenderer;
-function setup() {
-  if (!canvasEl.value) {
-    console.error('Canvas-Element wurde nicht gefunden.');
-    return;
-  }
+const subscription = new Subscription();
 
-  renderer = new WebGLRenderer({ canvas: canvasEl.value, alpha: true });
-  const canvas = canvasEl.value;
-  const dimension = new Vector2(canvas.offsetWidth, canvas.offsetHeight);
-  if (canvas) {
-    renderer.setSize(dimension.x, dimension.y);
-  }
+async function setup() {
+  const app = $props.app;
 
-  previewScene = createScene();
-  previewCamera = createPreviewCamera(canvas, dimension.width);
-
+  subscription.add(
+    app.modules.selection.observables.selectUnit$.subscribe(u => {
+      unit.value = u ? markRaw(u) : null;
+    })
+  );
   ready.value = true;
 }
 
 onMounted(() => {
   setup();
-  registerUnit($props.unit);
 });
 
-function registerUnit(unit: Unit) {
-  unitSubscriptions?.unsubscribe();
-  unitSubscriptions = new Subscription();
-  unitSubscriptions.add(
-    unit.materialReady$.subscribe(() => {
-      refresh(unit);
-    })
-  );
-}
-
-let unitSubscriptions: Subscription;
-watch(
-  () => $props.unit,
-  () => {
-    registerUnit($props.unit);
-  }
-);
+onUnmounted(() => {
+  subscription.unsubscribe();
+});
 </script>
 
 <style lang="postcss" scoped>
 .cw-panel-unit-preview {
-  & canvas {
+  & .preview {
+    position: relative;
     width: 128px;
-    height: 128px;
+    padding: var(--cw-spacing-medium);
+    background-color: rgb(255 255 255 / 40%);
+    border-radius: var(--cw-border-radius-medium);
+
+    & > div {
+      position: relative;
+
+      &::before {
+        display: block;
+        width: 100%;
+        padding-top: calc(100% * 1);
+        content: '';
+      }
+
+      & > * {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+      }
+    }
   }
 
-  & .image {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  p {
+    font-size: 12px;
+
+    & span {
+      font-weight: bold;
+    }
   }
 
   & .actions {

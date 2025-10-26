@@ -21,7 +21,7 @@ import CwPanel from '../../Panel.vue';
 import CwCatalogGroundItemSelect, {
   type GroundItem
 } from '../catalog/GroundItemSelect.vue';
-import CwEditorSkinFilter from '../SkinFilter.vue';
+import CwEditorSkinFilter from '../../CatalogItemSkinFilter.vue';
 import { computed, ref } from 'vue';
 
 import type App from '../../../lib/classes/App';
@@ -73,7 +73,8 @@ const $emit = defineEmits<{
 .cw-panel-editor-ground-skin {
   align-items: center;
   align-self: center;
-  width: 90%;
+  width: calc(100% - 96px * 2);
+  pointer-events: auto;
 
   & :deep(.cw-panel-catalog-ground-item-select) {
     width: 100%;

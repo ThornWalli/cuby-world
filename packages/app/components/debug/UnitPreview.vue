@@ -58,11 +58,11 @@ import { getGltfObjectFromFile } from '../../utils/file';
 import Custom from '@cuby-world/units/Custom';
 import { groundTextureMap } from '@cuby-world/grounds';
 
-import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
+import { loadGroundGeometries } from '../../lib/utils/ground';
 
 import MeshGround from '@cuby-world/grounds/grounds/default/default_ground.glb?url';
-import { ROTATION } from '@cuby-world/app/lib/types';
-import assetLoader from '@cuby-world/app/services/assetLoader';
+import { ROTATION } from '../../lib/utils/rotation';
+import assetLoader from '../../services/assetLoader';
 
 let unitWrapper: Object3D;
 const subscription = new Subscription();

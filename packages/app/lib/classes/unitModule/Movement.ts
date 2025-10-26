@@ -129,6 +129,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         position.clone().round(),
         grid
       );
+      console.log('movements', JSON.parse(JSON.stringify(this.movements)));
       if (this.movements.length) {
         this.observables.moveStart$.next(position);
       }
@@ -177,7 +178,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       .options.movement;
 
     const tileCostsMap = this.currentRoom.modules.ground.getTileCostMap();
-    debugger;
+
     const paths = await findBestPathByStairs(matrixList, {
       positions: { start: startPosition, end: endPosition },
       options: {
@@ -332,7 +333,6 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         //#endregion
 
         if (!moveOptions.nextPosition) {
-          debugger;
           moveOptions.nextPosition = null;
           this.currentMovement = null;
           return;

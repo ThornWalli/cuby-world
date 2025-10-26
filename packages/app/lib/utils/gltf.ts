@@ -22,36 +22,31 @@ export async function loadGltf(
 
   const model = gltf.scene.clone();
 
-  prepareTexture(model);
-
-  model.position.y = 0;
+  prepare(model);
 
   model.name = OBJECT_NAME.MESH;
-  model.traverse(object => {
-    if (object instanceof Mesh) {
-      // object.castShadow = true;
-      // object.receiveShadow = true;
-      // const texture = object.material.map;
-      // texture.wrapS = ClampToEdgeWrapping;
-      // texture.wrapT = ClampToEdgeWrapping;
-    }
-  });
 
   object.add(model);
 
   return { object, animations: gltf.animations };
 }
 
-function prepareTexture(object: Object3D) {
+function prepare(object: Object3D) {
   object.traverse(child => {
-    if (child instanceof Mesh && child.material.map) {
-      const tex = child.material.map as Texture;
-      tex.wrapS = ClampToEdgeWrapping;
-      tex.wrapT = ClampToEdgeWrapping;
-      tex.minFilter = LinearFilter;
-      tex.magFilter = LinearFilter;
+    if (child instanceof Mesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
 
-      tex.needsUpdate = true;
+      if (child.material.map) {
+        const tex = child.material.map as Texture;
+        tex.wrapS = ClampToEdgeWrapping;
+        tex.wrapT = ClampToEdgeWrapping;
+        tex.minFilter = LinearFilter;
+        tex.magFilter = LinearFilter;
+        tex.needsUpdate = true;
+      }
+
+      child.material = child.material.clone();
     }
   });
 }

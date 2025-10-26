@@ -1,11 +1,12 @@
 import { WALL_EXTENSION_TYPE, type WallExtensionState } from './WallExtension';
 
 import {
-  type Mesh,
+  Mesh,
   Vector3,
   type Texture,
   type Material,
-  type BufferGeometry
+  type BufferGeometry,
+  DoubleSide
 } from 'three';
 import {
   Box3,
@@ -47,7 +48,8 @@ import {
   setMainObjectRecursive,
   OBJECT_NAME
 } from '../utils/object';
-import { skinMap } from '@cuby-world/walls/skins';
+import { catalog as wallCatalog } from '@cuby-world/walls/walls/catalog';
+// import { skinMap } from '@cuby-world/walls/skins';
 
 declare module '../utils/object' {
   interface ObjectUserData {
@@ -89,6 +91,10 @@ export type WallConstructorOptions = Omit<WallDescription, 'extensions'> & {
   center?: boolean;
 };
 export default class Wall {
+  static KEY = 'default';
+
+  readonly key = Wall.KEY;
+
   extensions: WallExtension[] = [];
 
   state: WallState = {
@@ -155,15 +161,12 @@ export default class Wall {
 
   async setup({
     animationLoop$,
-    wallGeometryMap,
-    wallTextureMap
+    wallGeometryMap
   }: {
     animationLoop$: AnimationLoopSubject;
     wallGeometryMap: WallGeometryMap;
-    wallTextureMap: WallTextureMap;
   }) {
     this.wallGeometryMap = wallGeometryMap;
-    this.wallTextureMap = wallTextureMap;
 
     await this.refreshWallMeshes({
       editMode: this.editMode,
@@ -318,16 +321,40 @@ export default class Wall {
     return WALL_TYPE.DEFAULT;
   }
 
-  toggleVisibility(value?: boolean, mesh: Mesh = this.getMesh()) {
-    let materials;
-    if (Array.isArray(mesh.material)) {
-      materials = mesh.material;
-    } else {
-      materials = [mesh.material as Material];
-    }
-    materials.forEach(mat => {
-      const material = mat as MeshPhongMaterial;
-      material.opacity = value ? 1 : 0;
+  toggleVisibility(value?: boolean, mesh: Mesh | Object3D = this.getMesh()) {
+    // let materials;
+    // if (Array.isArray(mesh.material)) {
+    //   materials = mesh.material;
+    // } else {
+    //   materials = [mesh.material as Material];
+    // }
+    // // materials.forEach(mat => {
+    // //   const material = mat as MeshPhongMaterial;
+    // //   material.opacity = value ? 1 : 0;
+    // // });
+
+    mesh.traverse(child => {
+      if (child instanceof Mesh) {
+        let materials;
+        if (Array.isArray(child.material)) {
+          materials = child.material;
+        } else {
+          materials = [child.material as Material];
+        }
+        // materials.forEach(mat => {
+        materials.forEach(material => {
+          // Ausblenden für Kamera und dunkle Räume.
+          if (!value) {
+            material.colorWrite = false;
+            material.depthWrite = false;
+            material.transparent = false;
+          } else {
+            material.colorWrite = true;
+            material.depthWrite = true;
+            material.transparent = false;
+          }
+        });
+      }
     });
   }
 
@@ -344,16 +371,16 @@ export default class Wall {
 
   setVisible(visible: boolean) {
     this.visible = visible;
-    // if (visible) {
-    //   this.wallMeshes[WALL_SIZE.LARGE]!.visible = this.size === WALL_SIZE.LARGE;
-    //   this.wallMeshes[WALL_SIZE.SMALL]!.visible = this.size === WALL_SIZE.SMALL;
-    // } else {
-    //   Object.values(this.wallMeshes).forEach(mesh => {
-    //     mesh.visible = false;
-    //   });
-    // }
-    // this.extensions.forEach(ext => ext.setVisible(visible));
-    this.root.visible = visible;
+
+    this.toggleVisibility(
+      visible && this.size === WALL_SIZE.LARGE,
+      this.wallMeshes[WALL_SIZE.LARGE]
+    );
+
+    // this.toggleVisibility(visible, this.wallMeshes[WALL_SIZE.LARGE]!);
+    // this.toggleVisibility(visible, this.wallMeshes[WALL_SIZE.SMALL]!);
+    this.extensions.forEach(ext => ext.setVisible(visible));
+    // this.root.visible = true;
   }
 
   getTmpBox() {
@@ -396,6 +423,8 @@ export default class Wall {
       wallGeometryMap: this.wallGeometryMap!
     }
   ) {
+    const skinMap = wallCatalog.get(this.key)!.skinMap;
+
     Object.values(this.wallMeshes).forEach(obj => {
       if (Array.isArray(obj)) {
         obj.forEach(o => {
@@ -410,6 +439,7 @@ export default class Wall {
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color:
           skinMap.get(this.state.skins[0] || 'default')?.options.color ||
           0x333333
@@ -417,6 +447,7 @@ export default class Wall {
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color:
           skinMap.get(this.state.skins[1] || 'default')?.options.color ||
           0x333333
@@ -424,26 +455,31 @@ export default class Wall {
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       }),
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       }),
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       }),
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       }),
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       })
     ];
@@ -466,7 +502,7 @@ export default class Wall {
         }
       );
       largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-      largeWall.visible = this.size === WALL_SIZE.LARGE;
+      // largeWall.visible = this.size === WALL_SIZE.LARGE;
 
       this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
       this.addToRoot(largeWall);
@@ -485,6 +521,7 @@ export default class Wall {
       largeWall.geometry.dispose();
       largeWall.geometry = geometry!;
     }
+    this.toggleVisibility(this.size === WALL_SIZE.LARGE, largeWall);
 
     let smallWall = this.wallMeshes[WALL_SIZE.SMALL]!;
     if (!this.wallMeshes[WALL_SIZE.SMALL]) {
@@ -529,14 +566,8 @@ export default class Wall {
         this.state.skins.map(async (style, index: number) => {
           let url: string | undefined = undefined;
           const texture = skinMap.get(style || 'default')?.options.texture;
-          if (texture && 'id' in texture) {
-            if (this.wallTextureMap.has(texture.id)) {
-              url = this.wallTextureMap.get(texture.id)?.url;
-            } else {
-              console.warn(`Texture id ${texture.id} not found`);
-            }
-          } else if (texture && 'url' in texture) {
-            url = texture.url;
+          if (texture) {
+            url = texture.path;
           }
           if (url) {
             return [
@@ -672,8 +703,8 @@ async function setupMaterial(
 
     const material = new MeshPhongMaterial({
       map: texture,
-      transparent: true
-      // side: DoubleSide
+      transparent: true,
+      side: DoubleSide
     });
     materialsMap.set(key, material);
   }

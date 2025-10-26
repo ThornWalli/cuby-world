@@ -43,6 +43,7 @@ const currentIcon = computed(() => {
 
 <style lang="postcss" scoped>
 .cw-button-icon-button {
+  position: relative;
   display: flex;
   flex-direction: row;
   gap: 8px;
@@ -51,6 +52,11 @@ const currentIcon = computed(() => {
   font-family: var(--font-base);
   font-size: 12px;
   color: white;
+
+  /* &[disabled] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  } */
 
   & > div {
     position: relative;
@@ -134,6 +140,16 @@ const currentIcon = computed(() => {
         opacity: 1;
         transform: translateX(0);
       }
+    }
+
+    &[disabled] {
+      & > div {
+        background-color: var(--color-mono-4);
+        box-shadow: none;
+      }
+
+      cursor: not-allowed;
+      opacity: 0.5;
     }
   }
 

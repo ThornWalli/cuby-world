@@ -23,19 +23,19 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import CwPanelEditorStairSelect from '../panel/StairSelect.vue';
 import CwPanelEditorStairSkin from '../panel/StairSkin.vue';
-import type { EditorApp } from '@cuby-world/app/lib/classes/App';
 import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins';
 import type PlannerController from '@cuby-world/app/lib/classes/appModule/editor/stair/PlannerController';
 
 import { Subscription } from 'rxjs';
 import CwStickyControls, {
   type StickyControlItem
-} from '../StickyControls.vue';
+} from '../../StickyControls.vue';
 import type { Vector3 } from 'three';
 import { CURSOR_TYPE } from '@cuby-world/app/lib/classes/appModule/Cursor';
 import type { StairIdentifier } from '@cuby-world/app/lib/types/stair';
 import { stairCatalog } from '@cuby-world/stairs';
 import type { StairItem } from '@cuby-world/app/lib/types/stair/catalog';
+import type App from '@cuby-world/app/lib/classes/App';
 
 const stair = ref<StairIdentifier | null>(null);
 const skin = ref<StairSkinIdentifier | null>(null);
@@ -117,7 +117,7 @@ const controlItems = ref<StickyControlItem[]>([
 ]);
 
 const $props = defineProps<{
-  app: EditorApp;
+  app: App;
 }>();
 
 const selected = ref(false);

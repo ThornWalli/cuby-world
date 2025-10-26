@@ -29,8 +29,6 @@ import { loadWallGeometries } from '@cuby-world/app/lib/utils/wall';
 
 import { default_mesh as wallGlb } from '@cuby-world/walls';
 
-import { textureMap as wallTextureMap } from '@cuby-world/walls/textures';
-
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
 import type {
@@ -126,13 +124,13 @@ async function setupWall({
 
   await wall.setup({
     animationLoop$,
-    wallGeometryMap,
-    wallTextureMap
+    wallGeometryMap
   });
 
   const root = wall.root;
 
-  root.position.set(0, -0.5, 0);
+  root.position.set(0, 0, 0);
+  root.rotation.set(0, -Math.PI / 2, 0);
 
   return root;
 }
