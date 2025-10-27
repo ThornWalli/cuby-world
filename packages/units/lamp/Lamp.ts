@@ -2,8 +2,8 @@ import type { CubeTexture } from 'three';
 import {
   LoopPingPong,
   Mesh,
-  MeshBasicMaterial,
   MeshPhysicalMaterial,
+  MeshStandardMaterial,
   PointLight,
   SphereGeometry
 } from 'three';
@@ -38,7 +38,7 @@ export default class Lamp extends Unit<
   LampOptions,
   UnitModules & { animation: UnitAnimation }
 > {
-  static override KEY = 'lamp';
+  static override KEY = 'lamp_1';
   static override NAME = 'Lamp';
 
   constructor(
@@ -68,30 +68,43 @@ export default class Lamp extends Unit<
 
     const mesh = new Mesh(geometry, defaultMaterial());
 
-    const lampGeometry = new SphereGeometry(0.1, 32, 16);
-    const lampMaterial = new MeshBasicMaterial({ color: 0xffff00 });
-    const innerMesh = new Mesh(lampGeometry, lampMaterial);
+    // const lampGeometry = new SphereGeometry(0.1, 32, 16);
+    // const lampMaterial = new MeshBasicMaterial({ color: 0xffff00 });
 
+    // const light = new PointLight(0xffffff, 1, 8);
+    // light.position.set(0, 0, 0);
+    // light.castShadow = true;
+
+    // light.shadow.mapSize.width = 128;
+    // light.shadow.mapSize.height = 128;
+    // light.shadow.camera.near = 1;
+    // light.shadow.camera.far = 50;
+    // light.shadow.camera.updateProjectionMatrix();
+
+    // mesh.add(light);
+
+    const lampGeometry = new SphereGeometry(0.1, 32, 16);
+    const lampMaterial = new MeshStandardMaterial({
+      emissive: 0xffff99,
+      emissiveIntensity: 2
+    });
+    const innerMesh = new Mesh(lampGeometry, lampMaterial);
     mesh.add(innerMesh);
+
     mesh.name = OBJECT_NAME.MESH;
     mesh.position.set(0, 0.5, 0);
 
     setupMaterials(assetLoader, mesh, () => {
-      this.materialReady$.next();
+      this.observables.materialReady$.next();
     });
 
-    const light = new PointLight(0xffffff, 1, 8);
-    light.position.set(0, 0, 0);
+    const light = new PointLight(0xffeeaa, 1, 2);
+    light.decay = 2;
     light.castShadow = true;
-
-    light.shadow.mapSize.width = 128;
-    light.shadow.mapSize.height = 128;
-    light.shadow.camera.near = 1;
-    light.shadow.camera.far = 50;
-    light.shadow.camera.updateProjectionMatrix();
+    light.shadow.mapSize.set(128, 128);
+    light.shadow.radius = 4;
 
     mesh.add(light);
-
     return mesh;
   }
 }

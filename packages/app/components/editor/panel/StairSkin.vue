@@ -24,7 +24,7 @@
 <script lang="ts" setup>
 import CwPanel from '../../Panel.vue';
 import CwCatalogStairItemSelect from '../catalog/StairItemSelect.vue';
-import CwEditorSkinFilter from '../SkinFilter.vue';
+import CwEditorSkinFilter from '../../CatalogItemSkinFilter.vue';
 import IconButton from '../../button/IconButton.vue';
 
 import { computed, ref } from 'vue';

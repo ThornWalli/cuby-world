@@ -48,7 +48,7 @@ import CwButton from '../../Button.vue';
 import CwToggle from '../../formField/compact/Toggle.vue';
 import { computed } from 'vue';
 import type { Options } from '../UnitPreview.vue';
-import { ROTATION } from '@cuby-world/app/lib/types';
+import { ROTATION } from '../../../lib/utils/rotation';
 
 const $emit = defineEmits<{
   (e: 'select-unit', value: string): void;

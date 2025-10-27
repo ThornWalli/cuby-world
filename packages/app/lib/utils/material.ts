@@ -33,8 +33,8 @@ export function replaceMaterialByName(
 
 export function normalizeMaterialList(material: Material | Material[]) {
   if (Array.isArray(material)) {
-    return material;
+    return new Set(material);
   } else {
-    return [material];
+    return new Set([material]);
   }
 }

@@ -55,7 +55,7 @@ export default class Mirror extends Unit<MirrorOptions> {
 
     mesh.add(mirror);
 
-    this.materialReady$.next();
+    this.observables.materialReady$.next();
     return mesh;
   }
 }

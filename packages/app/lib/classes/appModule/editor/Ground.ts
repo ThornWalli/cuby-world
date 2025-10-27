@@ -20,13 +20,12 @@ import {
 } from 'rxjs';
 import { Vector3 } from 'three';
 
-import type App from '../../App';
 import type GroundStyleMap from '../../GroundStyleMap';
 import type { GrountStyleIdentifier } from '@cuby-world/app/lib/types/ground';
+import type { GroundStyleMapValue } from '../../GroundStyleMap';
 
-interface Observables extends AppModuleObservables {
-  select$: unknown;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface Observables extends AppModuleObservables {}
 
 interface State extends AppModuleState {
   action: GroundAction;
@@ -47,14 +46,6 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
     },
     skinId: 'default_base'
   };
-
-  constructor(app: App) {
-    super(app);
-    //#region observables
-    this.observables.select$ =
-      this.app.renderer.observables.pointerDown$.pipe();
-    //#endregion
-  }
 
   private async onClick(position: Vector3) {
     console.log(this.state.action);
@@ -133,10 +124,9 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
 
   private multipleSet: { startPosition: Vector3 } | null = null;
 
-  private lastGroundData: {
+  private lastGroundData: (GroundStyleMapValue & {
     position: Vector3;
-    groundStyle?: GrountStyleIdentifier;
-  }[] = [];
+  })[] = [];
 
   private currentGroundStyleMap: GroundStyleMap | null = null;
   private async onHover(position: Vector3) {
@@ -147,14 +137,15 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
 
     const groundStyleMap = groundModule.getGroundStyleMap();
     this.lastGroundData.forEach(data => {
+      console.log('data', data);
       groundStyleMap.set(
-        data?.position.x,
-        data?.position.y,
-        data?.position.z,
-        data?.groundStyle
+        data.position.x,
+        data.position.y,
+        data.position.z,
+        data.skinId
           ? {
               type: 'default',
-              skinId: data.groundStyle
+              skinId: data.skinId
             }
           : undefined
       );
@@ -168,9 +159,16 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
 
     for (let x = startPosition.x; x <= endPosition.x; x++) {
       for (let z = startPosition.z; z <= endPosition.z; z++) {
+        console.log(
+          {
+            position: new Vector3(x, startPosition.y, z)
+          },
+          groundStyleMap.get(x, startPosition.y, z)
+        );
+        const groundStyle = groundStyleMap.get(x, startPosition.y, z)!;
         this.lastGroundData.push({
           position: new Vector3(x, startPosition.y, z),
-          ...groundStyleMap.get(x, startPosition.y, z)
+          ...groundStyle
         });
         groundStyleMap.set(x, startPosition.y, z, {
           type: 'default',
@@ -195,10 +193,10 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
           data?.position.x,
           data?.position.y,
           data?.position.z,
-          data.groundStyle
+          data.skinId
             ? {
                 type: 'default',
-                skinId: data.groundStyle
+                skinId: data.skinId
               }
             : undefined
         );

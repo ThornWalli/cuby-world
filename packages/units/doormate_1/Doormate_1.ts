@@ -31,7 +31,7 @@ export default class Doormate_1 extends Unit<DoormateOptions> {
     const meshRoot = new Object3D();
 
     const { object } = await loadGltf(glbBase);
-    this.materialReady$.next();
+    this.observables.materialReady$.next();
     if (!this.isPreview()) {
       meshRoot.position.set(-0.2, 0, 0);
     }

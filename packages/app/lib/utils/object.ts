@@ -1,6 +1,7 @@
-import type { Material, Mesh, Object3D, Texture } from 'three';
+import type { Mesh, Material, Object3D, Texture } from 'three';
 
 export interface ObjectName {
+  BASE: 'base';
   UNIT: 'Unit';
   MESH: 'Mesh';
   MESH_OUTLINE: 'MeshOutline';
@@ -9,6 +10,7 @@ export interface ObjectName {
 }
 
 export const OBJECT_NAME: ObjectName = {
+  BASE: 'base',
   UNIT: 'Unit',
   MESH: 'Mesh',
   MESH_OUTLINE: 'MeshOutline',

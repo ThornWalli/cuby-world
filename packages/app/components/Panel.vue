@@ -52,6 +52,7 @@ export enum PANEL_POSITION {
   gap: var(--cw-spacing-medium);
   max-width: 100%;
   padding: var(--cw-spacing-medium);
+  pointer-events: auto;
 
   &.style-type-default {
     align-items: center;

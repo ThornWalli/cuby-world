@@ -11,27 +11,12 @@
 
 <script lang="ts" setup>
 import { useRoute, useRuntimeConfig } from '#imports';
-import { APP_MODE, type AppConfig } from '@cuby-world/app/lib/classes/App';
+import type { AppConfig } from '@cuby-world/app/lib/classes/App';
 
 import { defineAsyncComponent, onMounted, ref } from 'vue';
-import {
-  jsonParse,
-  parseRoomDescription
-} from '@cuby-world/app/lib/utils/parse';
-import type { RoomDescription } from '@cuby-world/app/lib/types/room';
-import { roomMap } from '@cuby-world/app/lib/room';
 
-async function loadRoom(key: string) {
-  if (!roomMap[key as string]) {
-    console.warn(`Room with key "${key}" not found, loading default room.`);
-    key = 'default';
-  }
-  const url = await roomMap[key as string]!();
-  const room = await fetch(url)
-    .then(async res => res.text())
-    .then(async raw => parseRoomDescription(jsonParse(raw)));
-  return room;
-}
+import type { RoomDescription } from '@cuby-world/app/lib/types/room';
+import { loadRoomById } from '@cuby-world/app/lib/utils/rooms';
 
 // const roomKey = $route.query.room || 'default';
 // roomMap[roomKey]!.then(module => {
@@ -50,7 +35,7 @@ const $route = useRoute();
 const runtimeConfig = useRuntimeConfig();
 
 onMounted(async () => {
-  roomDescription.value = await loadRoom(
+  roomDescription.value = await loadRoomById(
     ($route.query.room as string) || 'default'
   );
 
@@ -65,19 +50,11 @@ onMounted(async () => {
 const roomDescription = ref<RoomDescription>();
 
 const config = ref<AppConfig>({
-  mode: getMode(),
   firebase: runtimeConfig.public.firebase,
   multiplayer: {
     enabled: runtimeConfig.public.cubyWorld.multiplayerEnabled
   }
 });
-
-function getMode() {
-  if ($route.query.mode === APP_MODE.EDITOR) {
-    return APP_MODE.EDITOR;
-  }
-  return APP_MODE.PLAYGROUND;
-}
 </script>
 
 <style lang="postcss" scoped>

@@ -60,9 +60,9 @@ export default class Room<Modules extends RoomModules = RoomModules> {
   async setupModules() {
     const moduleList = this.moduleList;
     moduleList.push(GroundModule);
+    moduleList.push(WallModule);
     moduleList.push(TeleportModule);
     moduleList.push(SelectionMode);
-    moduleList.push(WallModule);
     moduleList.push(StairModule);
     moduleList.push(UnitsModule);
     moduleList.push(FloorModule);

@@ -38,10 +38,13 @@ export enum PANEL_GROUP_DIRECTION {
   --panel-offset: 1em;
   --panel-gap: 8px;
 
+  inset: var(--panel-offset) var(--panel-offset) var(--panel-offset)
+    var(--panel-offset);
   display: flex;
   gap: var(--panel-gap);
   align-items: flex-start;
-  max-width: 100%;
+  container-type: size;
+  pointer-events: none;
 
   .direction-column {
     flex-direction: column;
@@ -51,59 +54,54 @@ export enum PANEL_GROUP_DIRECTION {
     position: absolute;
   }
 
-  &.position-left {
-    position: absolute;
-    top: 50%;
-    left: var(--panel-offset);
-    transform: translateY(-50%);
+  &.position-top,
+  &.position-bottom {
+    flex-direction: column;
   }
 
+  &.position-left,
   &.position-right {
-    top: 50%;
-    right: var(--panel-offset);
-    transform: translateY(-50%);
+    align-items: center;
   }
 
   &.position-top {
-    top: var(--panel-offset);
-    left: 50%;
-    transform: translateX(-50%);
+    justify-content: flex-start;
+  }
+
+  &.position-left {
+    justify-content: flex-start;
+  }
+
+  &.position-right {
+    justify-content: flex-end;
   }
 
   &.position-bottom {
-    bottom: var(--panel-offset);
-    left: 50%;
-    justify-content: center;
-    width: 100%;
-    transform: translateX(-50%);
+    justify-content: flex-end;
+
+    @media (width <= 767px) {
+      bottom: calc(var(--panel-offset) + 60px);
+    }
   }
 
   &.position-top-left {
-    top: var(--panel-offset);
-    left: var(--panel-offset);
+    align-items: flex-start;
+    justify-content: flex-start;
   }
 
   &.position-top-right {
-    top: var(--panel-offset);
-    right: var(--panel-offset);
+    align-items: flex-start;
+    justify-content: flex-end;
   }
 
   &.position-bottom-left {
-    bottom: var(--panel-offset);
-    left: var(--panel-offset);
-
-    @media (width <= 767px) {
-      bottom: calc(var(--panel-offset) + 60px);
-    }
+    align-items: flex-end;
+    justify-content: flex-start;
   }
 
   &.position-bottom-right {
-    right: var(--panel-offset);
-    bottom: var(--panel-offset);
-
-    @media (width <= 767px) {
-      bottom: calc(var(--panel-offset) + 60px);
-    }
+    align-items: flex-end;
+    justify-content: flex-end;
   }
 }
 </style>

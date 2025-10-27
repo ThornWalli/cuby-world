@@ -39,7 +39,7 @@ export default class Box extends Unit<BoxOptions> {
     mesh.castShadow = true;
     mesh.position.set(0, (size.y * ratio) / 2, 0);
 
-    this.materialReady$.next();
+    this.observables.materialReady$.next();
     return mesh;
   }
 }

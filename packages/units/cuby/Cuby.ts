@@ -16,6 +16,7 @@ import {
 import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
+  type UnitModuleList,
   type UnitModules,
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
@@ -34,6 +35,7 @@ import {
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
+import CharacterUnitModule from '@cuby-world/app/lib/classes/unitModule/Character';
 
 declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
@@ -78,9 +80,16 @@ export interface CubyOptions extends UnitOptions<MovementModuleOptions> {
   state: CUBY_STATE;
   color: CUBY_COLOR;
 }
+
+type CubyUnitModules = UnitModules & {
+  character: CharacterUnitModule;
+};
+
+type CubyUnitModuleList = (typeof CharacterUnitModule)[] & UnitModuleList;
 export default class Cuby extends Unit<
   CubyOptions,
-  UnitModules & { animation: UnitAnimation }
+  CubyUnitModules,
+  CubyUnitModuleList
 > {
   static override KEY = 'cuby';
   static override NAME = 'Cuby';
@@ -101,8 +110,10 @@ export default class Cuby extends Unit<
         selectable: true,
         placeable: true,
         options: {
+          hasControls: false,
           movement: {
             diagonalMovement: true,
+            stairStepDuration: 325,
             stepDuration: 325,
             rotationDuration: 125
           },
@@ -112,7 +123,7 @@ export default class Cuby extends Unit<
           ...options.options
         }
       },
-      [UnitAnimation]
+      [CharacterUnitModule, UnitAnimation] as unknown as CubyUnitModuleList
     );
 
     this.clock = new Clock();
@@ -176,7 +187,7 @@ export default class Cuby extends Unit<
     await setupBodyMaterials(this, mesh, assetLoader).then(assets => {
       this.assetsByCubyState = assets;
       this.setCubyState(this.options.state, mesh);
-      this.materialReady$.next();
+      this.observables.materialReady$.next();
     });
 
     mesh.name = OBJECT_NAME.MESH;
@@ -186,16 +197,19 @@ export default class Cuby extends Unit<
     return mesh;
   }
 
-  setCubyState(state: CUBY_STATE, mesh: Mesh = this.mesh) {
+  setCubyState(state: CUBY_STATE, mesh?: Mesh) {
     if (!this.assetsByCubyState) {
       throw new Error('Cuby materials not ready yet');
     }
-    mesh.material = this.assetsByCubyState[state];
+    mesh = mesh || (this.root.getObjectByName(OBJECT_NAME.MESH) as Mesh);
+    if (mesh) {
+      mesh.material = this.assetsByCubyState[state];
+    }
   }
 
   setColor(color: CUBY_COLOR) {
     this.options.color = color;
-    const backgroundMesh = this.mesh.getObjectByName('cuby_background') as Mesh;
+    const backgroundMesh = this.root.getObjectByName('cuby_background') as Mesh;
     if (backgroundMesh) {
       (backgroundMesh.material as MeshPhongMaterial).color.set(
         CUBY_COLOR_VALUE[color]

@@ -1,4 +1,4 @@
-import { ReplaySubject, Subject } from 'rxjs';
+import { ReplaySubject, Subject, switchMap } from 'rxjs';
 import AppModule, {
   type AppModuleObservables,
   type AppModuleState
@@ -50,6 +50,23 @@ export default class PlayerAppModule extends AppModule<State, Observables> {
   setCurrentPlayer(player: Player) {
     this.state.currentPlayer = player;
     this.observables.currentPlayer$.next(player);
+
+    // TODO: Ist das hier richtig platziert?
+    this.state.currentPlayer.unit$
+      .pipe(switchMap(unit => unit.modules.movement.observables.moveEnd$))
+      .subscribe(() => {
+        const unit = this.state.currentPlayer!.unit!;
+        const room = this.app.modules.room.getRoom()!;
+
+        //#region teleport
+        const teleport = room.modules.teleport.getTeleportByPosition(
+          unit.getPosition()
+        );
+        console.log('Player moved!', teleport);
+
+        this.app.modules.teleport.resolveTeleport(teleport);
+        //#endregion
+      });
   }
 
   getPlayers() {

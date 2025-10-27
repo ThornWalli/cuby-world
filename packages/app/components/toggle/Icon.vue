@@ -49,6 +49,7 @@ const currentIcon = computed(() => {
 
 <style lang="postcss" scoped>
 .cw-toggle-icon {
+  position: relative;
   display: flex;
   flex-direction: row;
   gap: var(--cw-spacing-medium);

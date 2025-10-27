@@ -14,13 +14,14 @@ import CwEditorStairControlPlannerController from './stairControl/PlannerControl
 
 import { STAIR_ACTION } from '@cuby-world/app/lib/types/editor';
 import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue';
-import type { EditorApp } from '@cuby-world/app/lib/classes/App';
+
 import { Subscription } from 'rxjs';
 import PlannerController from '@cuby-world/app/lib/classes/appModule/editor/stair/PlannerController';
 import type AppModuleController from '@cuby-world/app/lib/classes/AppModuleController';
+import type App from '@cuby-world/app/lib/classes/App';
 
 const $props = defineProps<{
-  app: EditorApp;
+  app: App;
 }>();
 
 const currentAction = ref<StairAction>({

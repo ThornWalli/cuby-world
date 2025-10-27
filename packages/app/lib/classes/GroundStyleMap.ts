@@ -4,7 +4,7 @@ import type { GroundStyleDescription } from '../types/ground';
 
 const IGNORED_GROUND_STYLES = ['default_empty', 'default_editor_empty'];
 
-interface Value {
+export interface GroundStyleMapValue {
   skinId: GroundSkinIdentifier;
   type: string;
 }
@@ -22,12 +22,12 @@ export default class GroundStyleMap {
       .flat();
   }
 
-  map: (Value | undefined)[][][];
+  map: (GroundStyleMapValue | undefined)[][][];
 
   constructor({
     map: map
   }: {
-    map?: Value[][][];
+    map?: GroundStyleMapValue[][][];
   } = {}) {
     this.map = map ?? [];
   }
@@ -39,7 +39,7 @@ export default class GroundStyleMap {
     // return 'default_empty';
   }
 
-  set(x: number, y: number, z: number, value?: Value) {
+  set(x: number, y: number, z: number, value?: GroundStyleMapValue) {
     if (!this.map[y]) {
       this.map[y] = [];
     }
@@ -96,7 +96,7 @@ export default class GroundStyleMap {
     return this.map
       .flat()
       .flat()
-      .filter(v => v !== undefined) as Value[];
+      .filter(v => v !== undefined) as GroundStyleMapValue[];
   }
 
   static fromGroundsStyles(groundstyles: GroundStyleDescription[]) {

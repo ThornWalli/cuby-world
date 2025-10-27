@@ -1,12 +1,10 @@
 import {
-  ExtrudeGeometry,
   Mesh,
-  MeshPhongMaterial,
-  Shape,
-  Vector2,
   Vector3,
   Object3D,
-  DoubleSide
+  DoubleSide,
+  BoxGeometry,
+  ShadowMaterial
 } from 'three';
 import type { RoomModuleObservables, RoomModuleState } from '../RoomModule';
 import RoomModule from '../RoomModule';
@@ -16,13 +14,13 @@ import { WALL_VIEW_MODE } from './Wall';
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import { disposeObject3D, OBJECT_USER_DATA } from '../../utils/object';
 import { debounceTime, merge } from 'rxjs';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
 
-interface State extends RoomModuleState {
-  visible: boolean;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface State extends RoomModuleState {}
 
 interface WallRoomDescription {
   floor: number;
@@ -100,46 +98,38 @@ export default class RoofModule extends RoomModule<State, Observables> {
           .map(t => `${t.position.x},${t.position.y}`)
       );
 
+      // geometries erzugen und ein merge erzeugen
+
+      const geometries = [];
       for (const tile of room.tiles) {
         const x = tile.position.x;
         const y = tile.position.y;
-
         if (stairPositions.has(`${x},${y}`)) continue;
+        const geometry = new BoxGeometry(1, depth, 1);
 
-        const shape = new Shape([
-          new Vector2(x, y),
-          new Vector2(x + 1, y),
-          new Vector2(x + 1, y + 1),
-          new Vector2(x, y + 1)
-        ]);
+        geometries.push(geometry);
+        geometry.translate(x, depth / -2, y);
+      }
 
-        const geom = new ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+      if (geometries.length > 0) {
+        const mergedGeometry = mergeGeometries(geometries);
 
         const mesh = new Mesh(
-          geom,
-          new MeshPhongMaterial({
-            color: 0x9e9e9e,
-            side: DoubleSide
-          })
+          mergedGeometry,
+          new ShadowMaterial({ side: DoubleSide })
         );
 
-        mesh.userData[OBJECT_USER_DATA.IGNORE_SELECT] = true;
-
-        // if (this.room.modules.wall.state.viewMode !== WALL_VIEW_MODE.LARGE) {
-        //   mesh.material.opacity = 0;
-        //   (mesh.material as Material).depthWrite = false;
-        // }
+        mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT] = true;
 
         mesh.castShadow = true;
         mesh.receiveShadow = false;
-        // mesh.receiveShadow = true;
-        mesh.rotateX(Math.PI / 2);
-        mesh.position.set(-0.5, depth, -0.5);
+        mesh.position.set(0, depth, 0);
 
         description.root.visible =
           description.floor < this.room.modules.floor.getFloor();
         description.root.add(mesh);
       }
+
       descriptions.push(description);
     }
 
@@ -159,7 +149,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
       description.root.position.y =
         (description.floor + 1) * FLOOR_HEIGHT - 0.2;
     });
-    this.refreshCurrentRoofs();
+    this.updateVisiblity();
   }
 
   //#endregion
@@ -171,7 +161,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
           this.room.app.renderer.scene.remove(this.root);
         }
         this.root = new Object3D();
-        this.root.userData[OBJECT_USER_DATA.IGNORE_SELECT] = true;
+        this.root.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT] = true;
 
         this.updateDescriptions(wallRooms);
 
@@ -181,31 +171,12 @@ export default class RoofModule extends RoomModule<State, Observables> {
     );
   }
 
-  setVisible(
-    visible: boolean,
-    descriptions = this.descriptions,
-    hide: boolean = false
-  ) {
-    this.state.visible = visible;
+  /**
+   * Wenn gesetzt, wird oberstes Dach angezeigt.
+   */
+  setVisible(visible: boolean, descriptions = this.descriptions) {
     descriptions.forEach(({ root }) => {
-      root.visible = visible;
-      if (hide) {
-        root.traverse(child => {
-          if (child instanceof Mesh) {
-            const material = child.material as MeshPhongMaterial;
-            // Ausblenden für Kamera und dunkle Räume.
-            if (visible) {
-              material.colorWrite = false;
-              material.depthWrite = false;
-              material.transparent = false;
-            } else {
-              material.colorWrite = true;
-              material.depthWrite = true;
-              material.transparent = false;
-            }
-          }
-        });
-      }
+      root.visible = true;
     });
   }
 
@@ -234,24 +205,15 @@ export default class RoofModule extends RoomModule<State, Observables> {
   updateVisiblity(floorIndex?: number) {
     floorIndex = floorIndex ?? this.room.modules.floor.getFloor();
 
-    const roofs = this.getRoofs();
-    this.setVisible(false, roofs);
-
-    for (let f = 0; f <= floorIndex; f++) {
+    // Ebenen abgehen
+    for (let f = 0; f <= this.room.modules.floor.getMaxFloor(); f++) {
+      // Aktuelle Ebene wird ausgelassen.
+      // Alles über der aktuellen Ebene wird nicht angezeigt.
       const roofs = this.getRoofsByFloor(f);
-      if (f === floorIndex && !this.isRoofNeeded()) continue;
-      this.setVisible(true, roofs);
+      const visible =
+        f < floorIndex || (this.isRoofNeeded() && f <= floorIndex);
+      this.setVisible(visible, roofs);
     }
-
-    this.refreshCurrentRoofs(floorIndex);
-  }
-
-  /**
-   * Damit Raum abgedunkelt wird, muss aktuelle Decke unsichtbar anzeigt werden.
-   */
-  refreshCurrentRoofs(floorIndex?: number) {
-    floorIndex = floorIndex ?? this.room.modules.floor.getFloor();
-    this.setVisible(true, this.getRoofsByFloor(floorIndex), true);
   }
 
   //#endregion

@@ -14,14 +14,21 @@ import {
 } from './wall';
 import { WALL_DIRECTION } from '../types/wall';
 import type { TileCostDescription } from '../types/ground';
+import { ANIMATION_ACTION } from '../classes/unitModule/Animation';
 
 interface MatrixDescription {
   matrix: number[][];
   floorIndex: FloorIndex;
 }
+
+export interface PathPartDescription {
+  position: Vector3;
+  animationAction?: ANIMATION_ACTION;
+}
+
 interface Result {
   success: boolean;
-  path: Vector3[];
+  path: PathPartDescription[];
   doorWallByPosition: ArrayKeyMap<
     [number, number],
     DoorWallExtension<DoorState>
@@ -34,7 +41,7 @@ type findPath = (
   floorIndex: FloorIndex
 ) => Promise<{
   success: boolean;
-  path: Vector3[];
+  path: PathPartDescription[];
   doorWallByPosition: ArrayKeyMap<
     [number, number],
     DoorWallExtension<DoorState>
@@ -131,7 +138,7 @@ export async function findBestPathByStairs(
   /**
    * Alle Treppen finden, die mit dem Start- und Endpunkt verbunden sind.
    */
-  const stairConnections = await findStairConnections(
+  let stairConnections = await findStairConnections(
     matrixList,
     {
       stairs,
@@ -164,8 +171,24 @@ export async function findBestPathByStairs(
   //   endStairs = [];
   // }
 
+  // debugger;
+  // let match;
+  for (const start of startStairs) {
+    const test = stairConnections
+      .get(start)
+      ?.values()
+      .find(s => endStairs.has(s));
+
+    if (test) {
+      stairConnections = new Map([[start, new Set([test])]]);
+      console.log('Direct stair connection found');
+      break;
+    }
+  }
+
   const match = findStairMatch(stairConnections, startStairs, endStairs);
 
+  debugger;
   console.log({
     matrixList,
     match,
@@ -177,7 +200,7 @@ export async function findBestPathByStairs(
   const results = [];
   let startPosition = positions.start;
   let endPosition = positions.end;
-
+  debugger;
   for (const stair of match ?? []) {
     endPosition = stair.getEntryPositionByPosition(startPosition);
 
@@ -200,6 +223,13 @@ export async function findBestPathByStairs(
 
     if (result.path.length > 0) {
       results.push(result);
+      results.push({
+        success: true,
+        path: stair.getMovementPath(startPosition),
+        doorWallByPosition: result.doorWallByPosition
+      });
+    } else {
+      debugger;
     }
   }
 
@@ -316,37 +346,71 @@ async function findStairConnections(
   for (const floorIndex in stairsByFloors) {
     const stairs = stairsByFloors[Number(floorIndex)]!;
 
-    for (const stair of stairs) {
-      for (const targetStair of [...stairs, ...lastStairs].filter(
-        s => s !== stair
-      )) {
-        const test = await functions.findPath(
-          matrixList[Number(floorIndex)]!.matrix,
-          {
-            startPosition: stair.position,
-            endPosition: targetStair.position
-          },
-          Number(floorIndex)
+    await Promise.all(
+      stairs.map(async stair => {
+        await Promise.all(
+          [...stairs, ...lastStairs]
+            .filter(s => s !== stair)
+            .map(async targetStair => {
+              const test = await functions.findPath(
+                matrixList[Number(floorIndex)]!.matrix,
+                {
+                  startPosition: stair.position,
+                  endPosition: targetStair.position
+                },
+                Number(floorIndex)
+              );
+              // console.log(test.success, stair.position, targetStair.position);
+              if (test.success) {
+                connections.set(
+                  stair.stair,
+                  new Set([
+                    ...(connections.get(stair.stair) ?? []),
+                    targetStair.stair
+                  ])
+                );
+                connections.set(
+                  targetStair.stair,
+                  new Set([
+                    ...(connections.get(targetStair.stair) ?? []),
+                    stair.stair
+                  ])
+                );
+              }
+            })
         );
-        // console.log(test.success, stair.position, targetStair.position);
-        if (test.success) {
-          connections.set(
-            stair.stair,
-            new Set([
-              ...(connections.get(stair.stair) ?? []),
-              targetStair.stair
-            ])
-          );
-          connections.set(
-            targetStair.stair,
-            new Set([
-              ...(connections.get(targetStair.stair) ?? []),
-              stair.stair
-            ])
-          );
-        }
-      }
-    }
+
+        // for (const targetStair of [...stairs, ...lastStairs].filter(
+        //   s => s !== stair
+        // )) {
+        //   const test = await functions.findPath(
+        //     matrixList[Number(floorIndex)]!.matrix,
+        //     {
+        //       startPosition: stair.position,
+        //       endPosition: targetStair.position
+        //     },
+        //     Number(floorIndex)
+        //   );
+        //   // console.log(test.success, stair.position, targetStair.position);
+        //   if (test.success) {
+        //     connections.set(
+        //       stair.stair,
+        //       new Set([
+        //         ...(connections.get(stair.stair) ?? []),
+        //         targetStair.stair
+        //       ])
+        //     );
+        //     connections.set(
+        //       targetStair.stair,
+        //       new Set([
+        //         ...(connections.get(targetStair.stair) ?? []),
+        //         stair.stair
+        //       ])
+        //     );
+        //   }
+        // }
+      })
+    );
     lastStairs = [...stairs];
   }
   return connections;
@@ -385,10 +449,9 @@ async function findPath_(
   }
 
   easystar.setAcceptableTiles(tileDescriptions.map(({ index }) => index));
-  tileDescriptions.forEach(({ index, cost }) => {
-    console.log('Set tile cost', index, cost);
-    easystar.setTileCost(index, cost);
-  });
+  tileDescriptions.forEach(({ index, cost }) =>
+    easystar.setTileCost(index, cost)
+  );
 
   /**
    * Übernehme Wand-Daten in das Grid
@@ -424,9 +487,21 @@ async function findPath_(
     preparedPath.push(endPosition.clone());
   }
 
+  // TODO: Wird der IDLE wirklich benötigt?
+  const preparedPath_ = preparedPath.map(position => {
+    const animationAction = ANIMATION_ACTION.WALK;
+    // if (index === 0 || index === preparedPath.length - 1) {
+    //   animationAction = ANIMATION_ACTION.IDLE;
+    // }
+    return {
+      position,
+      animationAction
+    };
+  });
+
   return {
     success,
-    path: preparedPath,
+    path: preparedPath_,
     doorWallByPosition
   };
 }

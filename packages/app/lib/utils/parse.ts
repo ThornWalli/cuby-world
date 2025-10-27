@@ -4,7 +4,7 @@ import type {
   JsonRoomDescription,
   RoomDescription
 } from '@cuby-world/app/lib/types/room';
-import type { ROTATION } from '../types';
+import type { ROTATION } from '../utils/rotation';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function jsonStringify(data: any) {

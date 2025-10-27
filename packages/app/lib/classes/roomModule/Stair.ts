@@ -61,6 +61,9 @@ export default class StairModule extends RoomModule<State, Observables> {
     );
 
     stairs.forEach(stair => {
+      this.room.app.renderer.modules.intersection?.globalListener.removeMeshes(
+        stair.getRaycasterMeshes()
+      );
       stair.destroy();
     });
     this.observables.refresh$.next(this.state.stairs);
@@ -82,6 +85,9 @@ export default class StairModule extends RoomModule<State, Observables> {
       });
 
       resolvedStairs.push(stair);
+      this.room.app.renderer.modules.intersection?.globalListener.addMeshes(
+        stair.getRaycasterMeshes()
+      );
       this.room.addToRoot(stair.root!);
     }
     console.log('resolvedStairs', resolvedStairs);

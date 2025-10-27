@@ -39,15 +39,15 @@ import CwEditorWallControlMasonController from './wallControl/MasonController.vu
 import CwEditorWallControlPainterController from './wallControl/PainterController.vue';
 
 import { WALL_ACTION } from '../../lib/types/editor';
-import type { EditorApp } from '../../lib/classes/App';
 import type AppModuleController from '@cuby-world/app/lib/classes/AppModuleController';
 import MasonController from '@cuby-world/app/lib/classes/appModule/editor/wall/MasonController';
 import PainterController from '@cuby-world/app/lib/classes/appModule/editor/wall/PainterController';
 import DoorController from '@cuby-world/app/lib/classes/appModule/editor/wall/DoorController';
 import WindowController from '@cuby-world/app/lib/classes/appModule/editor/wall/WindowController';
+import type App from '../../lib/classes/App';
 
 const $props = defineProps<{
-  app: EditorApp;
+  app: App;
 }>();
 
 const currentAction = ref<WallAction>({
@@ -58,10 +58,10 @@ const subscription = new Subscription();
 const currentController = ref<AppModuleController | null>(null);
 
 onMounted(() => {
-  // currentAction.value = {
-  //   primary: WALL_ACTION.MODE_DOOR
-  //   // secondary: MASON_MODE.ADD
-  // };
+  currentAction.value = {
+    primary: WALL_ACTION.MODE_WINDOW
+    // secondary: MASON_MODE.ADD
+  };
 
   subscription.add(
     $props.app.modules.editorWall.observables.currentController$.subscribe(

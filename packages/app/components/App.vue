@@ -28,11 +28,11 @@ import {
   nextTick,
   onMounted,
   onUnmounted,
-  computed,
   defineAsyncComponent,
-  markRaw
+  markRaw,
+  computed
 } from 'vue';
-import App, { APP_MODE, EditorApp, type AppConfig } from '../lib/classes/App';
+import App, { type AppConfig } from '../lib/classes/App';
 import CwRenderer from './Renderer.vue';
 import CwDialogCreateUser from './dialogs/CreateUser.vue';
 
@@ -67,12 +67,9 @@ const app = ref<App>();
 const ready = ref(false);
 const hasPlayer = ref(false);
 
-const currentComponent = computed(() => {
-  if ($props.config.mode === APP_MODE.EDITOR) {
-    return defineAsyncComponent(() => import('./app/Editor.vue'));
-  }
-  return defineAsyncComponent(() => import('./app/Playground.vue'));
-});
+const currentComponent = computed(() =>
+  defineAsyncComponent(() => import('./app/Playground.vue'))
+);
 
 onMounted(async () => {
   nextTick(() => {
@@ -108,13 +105,7 @@ const STORAGE_PLAYER_KEY = 'cuby-world:player';
 const currentCursor = ref<Cursor>();
 
 async function setupApp(renderer: Renderer) {
-  app.value = markRaw(
-    getAppByMode(
-      $props.config.mode ?? APP_MODE.PLAYGROUND,
-      $props.config,
-      renderer
-    )
-  );
+  app.value = markRaw(new App($props.config, renderer));
 
   await app.value.setup();
   ready.value = true;
@@ -181,14 +172,6 @@ async function setupPlayer(app: App) {
   hasPlayer.value = true;
 }
 
-function getAppByMode(mode: APP_MODE, config: AppConfig, renderer: Renderer) {
-  if (mode === APP_MODE.EDITOR) {
-    return new EditorApp(config, renderer);
-  } else {
-    return new App(config, renderer);
-  }
-}
-
 function onResize() {
   const { width, height } = rootEl.value!.getBoundingClientRect();
   dimension.value = new Vector2(width, height);
@@ -205,12 +188,11 @@ function onResize() {
 
   & .cw-renderer {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     cursor: var(--cursor);
-    transform: translate(-50%, -50%);
   }
 }
 </style>

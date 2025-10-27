@@ -106,7 +106,7 @@ export default class Geometry extends Unit<GeometryOptions> {
     }
     mesh.position.set(0, y, 0);
 
-    this.materialReady$.next();
+    this.observables.materialReady$.next();
     return mesh;
   }
 }

@@ -31,11 +31,10 @@ import CwPanelEditorDoorSelect from '../panel/DoorSelect.vue';
 import CwPanelEditorDoorSkin from '../panel/DoorSkin.vue';
 import CwStickyControls, {
   type StickyControlItem
-} from '../StickyControls.vue';
+} from '../../StickyControls.vue';
 import icons from '@cuby-world/app/utils/icons';
 import { Subscription } from 'rxjs';
 import { doorCatalog } from '@cuby-world/walls';
-import type { EditorApp } from '@cuby-world/app/lib/classes/App';
 import type {
   WallExtensionIdentifier,
   WallExtensionSkinIdentifier
@@ -43,6 +42,7 @@ import type {
 import type DoorController from '@cuby-world/app/lib/classes/appModule/editor/wall/DoorController';
 import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
 import type { DoorWallExtensionItem } from '@cuby-world/app/lib/types/wall/extension/catalog';
+import type App from '@cuby-world/app/lib/classes/App';
 
 const extension = ref<WallExtensionIdentifier | null>(null);
 const skin = ref<WallExtensionSkinIdentifier | null>(null);
@@ -51,7 +51,7 @@ const currentExtension = ref<WallExtension | null>(null);
 const subscription = new Subscription();
 
 const $props = defineProps<{
-  app: EditorApp;
+  app: App;
 }>();
 
 const skins = computed(() => {

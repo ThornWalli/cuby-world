@@ -233,6 +233,16 @@ export default class ExtensionController<
       source.pipe(
         // eslint-disable-next-line complexity
         map(preparedPositions => {
+          const room = this.app.modules.room.getRoom()!;
+
+          preparedPositions = preparedPositions.filter(pos => {
+            const wallId =
+              pos.object!.userData[OBJECT_USER_DATA.WALL_EXTENSION_WALL] ||
+              pos.object!.userData[OBJECT_USER_DATA.WALL];
+
+            return room.modules.wall.getWallById(wallId)?.visible;
+          });
+
           const position = preparedPositions.find(p =>
             p.object?.name.includes(OBJECT_NAME.GROUND)
           )?.worldPosition;
@@ -246,9 +256,7 @@ export default class ExtensionController<
               OBJECT_USER_DATA.WALL_EXTENSION_WALL
             ] || wallPosition?.object?.userData[OBJECT_USER_DATA.WALL];
 
-          const wall = this.app.modules.room
-            .getRoom()
-            ?.modules.wall.getWallById(wallId);
+          const wall = room?.modules.wall.getWallById(wallId);
 
           const extensionPosition = preparedPositions.find(
             ({ object }) => object?.userData[OBJECT_USER_DATA.WALL_EXTENSION]
@@ -275,11 +283,9 @@ export default class ExtensionController<
             );
           }
 
-          const object = preparedPositions[0]?.object;
-
           return {
             position: position ?? null,
-            current: object ?? null,
+            current: preparedPositions[0]?.object ?? null,
             wall,
             wallExtension,
             wallFaceIndex

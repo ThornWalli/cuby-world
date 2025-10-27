@@ -60,8 +60,8 @@ import {
   TELEPORT_TYPE,
   type EntranceTeleportDescription,
   type TELEPORT_ROTATION
-} from '@cuby-world/app/lib/types/room';
-import { ROTATION } from '@cuby-world/app/lib/types';
+} from '../../../lib/types/teleport';
+import { ROTATION } from '../../../lib/utils/rotation';
 
 const formEl = ref<HTMLFormElement | null>(null);
 

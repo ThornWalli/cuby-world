@@ -38,9 +38,9 @@ import {
 import type { AnimationLoopSubject } from '../classes/Renderer';
 import type DoorWallExtension from '../classes/wallExtension/Door';
 import assetLoader from '@cuby-world/app/services/assetLoader';
-import { textureMap as wallTextureMap } from '@cuby-world/walls/textures';
 import type { FloorIndex } from '../types/floor';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
+import { ROTATION } from '../utils/rotation';
 
 export function getWallIdentifierFromObject(
   object?: Object3D | null
@@ -54,6 +54,28 @@ export function getWallIdentifierFromObject(
     return object.userData[OBJECT_USER_DATA.WALL] as WallIdentifier;
   }
   return null;
+}
+
+export function getRotationByPositionAndWall(_position: Vector3, wall: Wall) {
+  if (wall.position.equals(_position)) {
+    if (wall.direction === WALL_DIRECTION.VERTICAL) {
+      return ROTATION.WEST;
+    } else if (wall.direction === WALL_DIRECTION.HORIZONTAL) {
+      return ROTATION.NORTH;
+    }
+  } else if (
+    wall.position.equals(new Vector3(_position.x + 1, _position.y, _position.z))
+  ) {
+    if (wall.direction === WALL_DIRECTION.VERTICAL) {
+      return ROTATION.EAST;
+    }
+  } else if (
+    wall.position.equals(new Vector3(_position.x, _position.y, _position.z + 1))
+  ) {
+    if (wall.direction === WALL_DIRECTION.HORIZONTAL) {
+      return ROTATION.SOUTH;
+    }
+  }
 }
 
 function getDefaultDirections() {
@@ -656,8 +678,7 @@ export default async function createWalls(
   for (const wall of walls) {
     await wall.setup({
       animationLoop$,
-      wallGeometryMap,
-      wallTextureMap
+      wallGeometryMap
     });
   }
 
@@ -994,6 +1015,7 @@ function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
   const isSpecial =
     types.has(WALL_EDGE_TYPE.CROSS) ||
     types.has(WALL_EDGE_TYPE.T_CROSS_LEFT) ||
+    types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_RIGHT) ||
     types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_LEFT) ||
     types.has(WALL_EDGE_TYPE.T_CROSS_LEFT_LEFT) ||
     types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_RIGHT) ||
@@ -1035,6 +1057,7 @@ function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
     if (types.has(WALL_EDGE_TYPE.T_CROSS_RIGHT_LEFT)) {
       left = WALL_GEOMETRY_TYPE.LINE;
     }
+
     //#endregion
 
     //#region t-cross right
@@ -1093,7 +1116,10 @@ function getGeometryKey(options: WallOptions, edges: WallEdge[]) {
       type = WALL_TYPE.DEFAULT;
     }
   }
-  // console.log(`${type}${size}_${options.left}_${options.right}`);
+
+  // console.log('xxx', `${type}${size}_${options.left}_${options.right}`);
+  // console.log('xxx', 'types', types);
+
   return {
     key: `${type}${size}_${options.left}_${options.right}` as WALL_GEOMETRY,
     options
@@ -1241,13 +1267,13 @@ export function createWallMesh(
     const clickHelper = new Mesh(
       defaultGeometry,
       new MeshPhongMaterial({
-        color: 0x000000,
-        depthWrite: false
+        color: 0x000000
+        // depthWrite: false
       })
     );
     clickHelper.material.wireframe = true;
     clickHelper.name = 'click_helper';
-    clickHelper.visible = false;
+    clickHelper.visible = true;
     clickHelper.raycast = Mesh.prototype.raycast;
     mesh.add(clickHelper);
   }

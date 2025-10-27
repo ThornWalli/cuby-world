@@ -1,10 +1,6 @@
 import { FLOOR_HEIGHT } from './../../utils/ground';
 import { Object3D, Vector3 } from 'three';
-import {
-  TELEPORT_TYPE,
-  type TELEPORT_ROTATION,
-  type TeleportDescription
-} from '../../types/room';
+import { TELEPORT_TYPE, type TeleportDescription } from '../../types/teleport';
 import type { RoomModuleObservables, RoomModuleState } from '../RoomModule';
 import RoomModule from '../RoomModule';
 import {
@@ -14,6 +10,7 @@ import {
 import { loadGltf } from '../../utils/gltf';
 
 import defaultTeleport from '../../../assets/objects/teleports/default.glb?url';
+import Teleport, { EntranceTeleport, RoomTeleport } from '../Teleport';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
@@ -85,6 +82,12 @@ export default class TeleportModule extends RoomModule<State, Observables> {
   getTeleportsByType(type: TELEPORT_TYPE) {
     return this.state.teleports.filter(teleport => teleport.type === type);
   }
+
+  getTeleportByPosition(position: Vector3) {
+    return this.state.teleports.find(teleport =>
+      teleport.position.equals(position)
+    );
+  }
 }
 
 function getTeleportClass(description: TeleportDescription) {
@@ -95,68 +98,5 @@ function getTeleportClass(description: TeleportDescription) {
       return RoomTeleport;
     default:
       return Teleport;
-  }
-}
-
-class Teleport {
-  static TYPE = TELEPORT_TYPE.DEFAULT;
-  position: Vector3;
-  rotation: TELEPORT_ROTATION;
-
-  constructor({
-    position,
-    rotation
-  }: {
-    position: Vector3;
-    rotation: TELEPORT_ROTATION;
-  }) {
-    this.position = position;
-    this.rotation = rotation;
-  }
-
-  get type() {
-    return (this.constructor as typeof Teleport).TYPE;
-  }
-
-  toDescription(): TeleportDescription {
-    return {
-      type: this.type,
-      position: this.position,
-      rotation: this.rotation
-    };
-  }
-}
-
-export class EntranceTeleport extends Teleport {
-  static override TYPE = TELEPORT_TYPE.ENTRANCE;
-}
-
-export class RoomTeleport extends Teleport {
-  static override TYPE = TELEPORT_TYPE.ROOM;
-  roomId?: string;
-  roomTeleportId?: string;
-
-  constructor({
-    position,
-    rotation,
-    roomId,
-    roomTeleportId
-  }: {
-    position: Vector3;
-    rotation: TELEPORT_ROTATION;
-    roomId?: string;
-    roomTeleportId?: string;
-  }) {
-    super({ position, rotation });
-    this.roomId = roomId;
-    this.roomTeleportId = roomTeleportId;
-  }
-
-  override toDescription() {
-    return {
-      ...super.toDescription(),
-      roomId: this.roomId,
-      roomTeleportId: this.roomTeleportId
-    };
   }
 }

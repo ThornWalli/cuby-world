@@ -5,7 +5,12 @@
     hide-colon
     class="cw-form-field-compact-upload">
     <template #default="ctx">
-      <input :id="ctx.id" :accept="accept" type="file" @change="onChange" />
+      <input
+        :id="ctx.id"
+        ref="inputEl"
+        :accept="accept"
+        type="file"
+        @change="onChange" />
       <div class="indicator">
         <svg-indicator-upload />
       </div>
@@ -18,6 +23,7 @@ import CwFormField from '../../base/FormField.vue';
 import SvgIndicatorUpload from '../../../assets/icons/indicator/upload.svg';
 import { computed, ref } from 'vue';
 
+const inputEl = ref<HTMLInputElement | null>(null);
 const file = ref<File | undefined>(undefined);
 const $props = defineProps<{
   accept?: string;
@@ -35,6 +41,7 @@ const $emit = defineEmits<{
 function onChange(e: Event) {
   const files = (e.target as HTMLInputElement)?.files;
   file.value = files && files.length > 0 ? files[0] : undefined;
+  inputEl.value!.value = '';
   $emit('file', file.value);
 }
 </script>

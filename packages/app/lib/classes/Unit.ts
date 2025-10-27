@@ -1,8 +1,7 @@
 /* eslint-disable complexity */
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
-import { ReplaySubject, Subscription } from 'rxjs';
-import { Box3, Euler, Vector3, type Mesh } from 'three';
-import { Object3D } from 'three';
+import { ReplaySubject, Subscription, type SubscriptionLike } from 'rxjs';
+import { Box3, Euler, Group, Vector3, type Mesh, type Object3D } from 'three';
 import type Room from './Room';
 import MovementUnitModule from './unitModule/Movement';
 import PlayerUnitModule from './unitModule/Player';
@@ -20,13 +19,14 @@ import RoomUnitModule from './unitModule/Room';
 import type { UnitChunking } from './UnitChunkManager';
 import type { UnitModuleState } from './UnitModule';
 import type { AnimationLoopValue } from './Renderer';
-import { ROTATION, ROTATION_TYPE, rotationDirections } from '../types';
 import {
   disposeObject3D,
   OBJECT_NAME,
   OBJECT_USER_DATA,
   setMainObjectRecursive
 } from '../utils/object';
+import { getFloorFromPosition } from '../utils/floor';
+import { ROTATION, ROTATION_TYPE, rotationDirections } from '../utils/rotation';
 
 declare module '../../lib/utils/object' {
   interface ObjectUserData {
@@ -67,6 +67,7 @@ export type UnitOptions<OtherOptions = UnitOptionsPlaceholder> =
     rotationType?: ROTATION_TYPE;
     canPlaced?: boolean;
     canRotate?: boolean;
+    hasControls?: boolean;
   };
 
 export interface AnimatedUnit {
@@ -81,6 +82,10 @@ export interface UnitConstructorOptions<
   selectable?: boolean;
   placeable?: boolean;
   accessible?: boolean;
+  /**
+   * Wenn gesetzt, kann die Unit nur an einer Wand platziert werden.
+   */
+  wallOnly?: boolean;
   position?: Vector3;
   size?: Vector3;
   rotation?: ROTATION;
@@ -149,14 +154,29 @@ export enum ACCESSIBLE_TYPE {
   RIGHT = 'right',
   DOWN = 'down'
 }
+export interface PreviewOptions {
+  ground?: boolean;
+}
+
+export interface UnitObservables {
+  ready$: ReplaySubject<Unit>;
+  materialReady$: ReplaySubject<void>;
+  position$: ReplaySubject<Vector3>;
+  rotate$: ReplaySubject<ROTATION>;
+}
 
 export default class Unit<
   Options extends UnitOptions = UnitOptions,
   Modules extends UnitModules = UnitModules,
-  ModuleList extends UnitModuleList = UnitModuleList
+  ModuleList extends UnitModuleList = UnitModuleList,
+  Observables extends UnitObservables = UnitObservables
 > implements UnitChunking
 {
+  getFloor() {
+    return getFloorFromPosition(this.getPosition());
+  }
   debug = false;
+  previewOptions: PreviewOptions = {};
   private preview = false;
 
   currentChunkKeys: string[] = [];
@@ -164,11 +184,7 @@ export default class Unit<
   static KEY = 'unit';
   static NAME = 'Unit';
 
-  //#region subscriptions
-  ready$ = new ReplaySubject<Unit>(1);
-  materialReady$ = new ReplaySubject<void>(1);
-  rotate$ = new ReplaySubject<ROTATION>(0);
-  //#endregion
+  observables: Observables = {} as Observables;
 
   modules: Modules = {} as Modules;
   moduleList: ModuleList;
@@ -177,14 +193,15 @@ export default class Unit<
 
   subscription = new Subscription();
   options: Options = {
+    hasControls: true,
     canPlaced: true,
     canRotate: true
   } as Options;
-  root: Object3D;
+  root: Group;
 
+  wallOnly: boolean;
   accessible: boolean | ACCESSIBLE_TYPE[];
 
-  position$: ReplaySubject<Vector3> = new ReplaySubject(0);
   private _position: Vector3 = new Vector3(0, 0, 0);
   get position() {
     return this._position;
@@ -197,6 +214,10 @@ export default class Unit<
 
   get key(): string {
     return (this.constructor as typeof Unit).KEY;
+  }
+
+  equals(unit: Unit): boolean {
+    return this.id === unit.id;
   }
 
   toDescription(): UnitDescription {
@@ -226,6 +247,7 @@ export default class Unit<
       name,
       selectable,
       placeable,
+      wallOnly,
       accessible,
       position,
       size,
@@ -239,6 +261,13 @@ export default class Unit<
     },
     moduleList: ModuleList = [] as unknown as ModuleList
   ) {
+    //#region observables
+    this.observables.ready$ = new ReplaySubject<Unit>(1);
+    this.observables.materialReady$ = new ReplaySubject<void>(1);
+    this.observables.position$ = new ReplaySubject<Vector3>(1);
+    this.observables.rotate$ = new ReplaySubject<ROTATION>(1);
+    //#endregion
+
     this.debug = debug ?? false;
     this.preview = preview ?? false;
     this.options = {
@@ -247,6 +276,7 @@ export default class Unit<
     } as Options;
 
     this.size = size || this.size;
+    this.wallOnly = wallOnly ?? false;
     this.accessible = accessible ?? false;
 
     //#region modules
@@ -263,7 +293,12 @@ export default class Unit<
 
     const preparedModules = moduleList.map(ModuleClass => {
       const state = moduleStates?.[ModuleClass.TYPE] ?? {};
-      const moduleInstance = new ModuleClass(this, state, this.debug);
+      const moduleInstance = new ModuleClass(
+        this,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        state as any,
+        this.debug
+      );
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
@@ -283,7 +318,7 @@ export default class Unit<
   }
 
   setupRoot(name: string) {
-    const root = new Object3D();
+    const root = new Group();
     root.name = name;
     root.userData[OBJECT_USER_DATA.MAIN_OBJECT] = root.id;
     root.userData[OBJECT_USER_DATA.UNIT] = this;
@@ -297,16 +332,19 @@ export default class Unit<
   }
 
   destroy() {
-    this.position$.unsubscribe();
-    this.rotate$.unsubscribe();
-    this.ready$.unsubscribe();
-    this.materialReady$.unsubscribe();
+    Object.values(this.observables).forEach(o =>
+      (o as SubscriptionLike).unsubscribe()
+    );
     this.subscription.unsubscribe();
     findAllMeshes(this.root).forEach(mesh => {
       disposeObject3D(mesh);
     });
     this.root.removeFromParent();
     this.root.remove();
+  }
+
+  canDelete() {
+    return !this.modules.player.player;
   }
 
   get name() {
@@ -346,10 +384,12 @@ export default class Unit<
   getPosition() {
     return this._position.clone();
   }
+
   setPosition(position: Vector3) {
     this._position.copy(position);
-    this.setScenePosition(new Vector3(position.x, position.y, position.z));
-    this.position$.next(this._position);
+    this.setScenePosition(position.clone());
+    this.updateMesh();
+    this.observables.position$.next(this._position);
   }
 
   /**
@@ -395,7 +435,7 @@ export default class Unit<
     }
 
     this.fixPosition();
-    this.rotate$.next(rotation);
+    this.observables.rotate$.next(rotation);
   }
 
   rotateLeft() {
@@ -483,12 +523,6 @@ export default class Unit<
 
     const modules: UnitModule[] = Object.values(this.modules);
 
-    // Setup modules
-    mesh = await modules.reduce((result, module) => {
-      return result.then(mesh => module.setup({ mesh, ...context }));
-    }, Promise.resolve(mesh));
-    this.addToRoot(mesh);
-
     // center unit in tile
     const position = this.centerInTile(
       matrixPositionToPosition(this._position)
@@ -496,13 +530,18 @@ export default class Unit<
 
     this.root.position.copy(position);
 
+    // Setup modules
+    mesh = await modules.reduce((result, module) => {
+      return result.then(mesh => module.setup({ mesh, ...context }));
+    }, Promise.resolve(mesh));
+    this.addToRoot(mesh);
     // Filter modules that have update method
     const updateModules = modules.filter(
       module => typeof module.update === 'function'
     );
     this._updateModules = updateModules;
 
-    this.ready$.next(this);
+    this.observables.ready$.next(this);
   }
 
   _updateModules: UnitModule[] = [];
@@ -543,8 +582,26 @@ export default class Unit<
     throw new Error('createMesh method must be implemented in subclasses');
   }
 
+  /**
+   * Wird aufgerufen, wenn sich die Position wechselt.
+   * Beispiel: Regal an Wand.
+   */
+  updateMesh(): void {
+    // Override in subclasses to update the mesh based on position/rotation/size changes
+  }
+
+  /**
+   * @deprecated sollte weg
+   */
   get mesh() {
     return this.root.getObjectByName(OBJECT_NAME.MESH) as Mesh;
+  }
+
+  /**
+   * Kann überschrieben werden um die Meshes zu definieren, die für Raycaster genutzt werden.
+   */
+  getRaycasterMeshes(): Object3D[] {
+    return findAllMeshes(this.root);
   }
 
   toString() {

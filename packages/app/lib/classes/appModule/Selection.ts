@@ -47,7 +47,7 @@ export default class SelectionAppModule extends AppModule<State, Observables> {
 
     if (this.state.selectedUnit) {
       this.state.selectedUnit.modules.selection?.unselect();
-      this.app.renderer.unregisterOutlineObject(this.state.selectedUnit.mesh);
+      this.app.renderer.unregisterOutlineObject(this.state.selectedUnit.root);
       this.state.selectedUnit = null;
     }
 
@@ -61,12 +61,34 @@ export default class SelectionAppModule extends AppModule<State, Observables> {
       if (rotation) {
         playerUnit.setRotation(rotation);
       }
-      this.app.renderer.registerOutlineObject(unit.mesh);
+      this.app.renderer.registerOutlineObject(unit.root);
     } else {
       this.state.selectedUnit = null;
     }
     // this.app.renderer.addSelectedObject(selectedObjects);
     // unit?.modules.selection?.select();
     this.observables.selectUnit$.next(unit);
+  }
+
+  /**
+   * Hebt die selektierung auf.
+   */
+  apply() {
+    this.setSelectedUnit(null);
+  }
+  abort() {
+    this.setSelectedUnit(null);
+  }
+  remove() {
+    this.app.modules.room
+      .getRoom()
+      ?.modules.units.remove(this.state.selectedUnit!);
+    this.setSelectedUnit(null);
+  }
+  move() {
+    this.app.modules.placement.startPlace(this.state.selectedUnit!);
+  }
+  rotate() {
+    this.state.selectedUnit?.rotateRight();
   }
 }

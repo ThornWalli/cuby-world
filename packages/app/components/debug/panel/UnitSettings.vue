@@ -51,12 +51,12 @@ function registerUnit(unit: Unit) {
   unitSubscriptions?.unsubscribe();
   unitSubscriptions = new Subscription();
   unitSubscriptions.add(
-    unit.materialReady$.subscribe(() => {
+    unit.observables.materialReady$.subscribe(() => {
       refresh(unit);
     })
   );
   unitSubscriptions.add(
-    unit.rotate$.subscribe(() => {
+    unit.observables.rotate$.subscribe(() => {
       refreshDebugInfo(unit);
     })
   );

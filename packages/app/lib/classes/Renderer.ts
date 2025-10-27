@@ -138,7 +138,8 @@ export default class Renderer<
     });
 
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = PCFSoftShadowMap;
+    renderer.shadowMap.type = PCFSoftShadowMap; // oder PCFShadowMap
+    renderer.shadowMap.autoUpdate = true;
     this.renderer = renderer;
 
     // renderer.toneMapping = ACESFilmicToneMapping;
@@ -233,7 +234,9 @@ export default class Renderer<
     // this.setCameraClamp(true);
 
     // this.controls.enableDamping = true;
-    // this.controls.dampingFactor = 0.1;
+    // this.controls.dampingFactor = 0.1;controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05; // kleiner Wert = smoother
+    this.controls.zoomSpeed = 1.0;
     this.controls.zoomSpeed = 1.0;
     this.controls.panSpeed = 1.0;
 
@@ -380,7 +383,7 @@ export default class Renderer<
   updateLight(position: Vector3) {
     const { dirLight } = this.lights;
     // Position relativ zum Spieler
-    dirLight.position.set(position.x + 20, position.y + 30, position.z + 20);
+    dirLight.position.set(position.x + 30, position.y + 30, position.z + 30);
 
     // Licht zeigt Richtung Spieler
     dirLight.target.position.copy(position);
@@ -390,34 +393,34 @@ export default class Renderer<
   setupLights() {
     const lights = [];
 
-    // Umgebungslicht (Grundhelligkeit, alle Flächen sichtbar)
     const ambient = new AmbientLight(0xffffff, 0.5);
-
     lights.push(ambient);
 
-    // Himmelslicht (oben blau, unten leicht grau)
     const hemiLight = new HemisphereLight(0x87ceeb, 0x444444, 0.6);
-
     lights.push(hemiLight);
 
-    // Hauptlicht (wirft Schatten)
     const dirLight = new DirectionalLight(0xffffff, 1.5);
-    dirLight.position.set(10, 20, 10);
+    dirLight.position.set(80, 100, 80);
     dirLight.castShadow = true;
 
-    // Schattenqualität hochdrehen
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.near = 1;
-    dirLight.shadow.camera.far = 50;
-    dirLight.shadow.camera.left = -20;
-    dirLight.shadow.camera.right = 20;
-    dirLight.shadow.camera.top = 20;
-    dirLight.shadow.camera.bottom = -20;
+    dirLight.shadow.mapSize.set(2048, 2048);
+
+    // Bias gegen Streifen
+    dirLight.shadow.bias = -0.001;
+    dirLight.shadow.normalBias = 0.05;
+
+    // Schattencam begrenzen
+    const size = 25;
+    dirLight.shadow.camera.left = -size;
+    dirLight.shadow.camera.right = size;
+    dirLight.shadow.camera.top = size;
+    dirLight.shadow.camera.bottom = -size;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 200;
+
     lights.push(dirLight);
 
     this.scene.add(...lights);
-
     this.lights = { ambient, hemiLight, dirLight };
   }
 

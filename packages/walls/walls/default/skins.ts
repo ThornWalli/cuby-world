@@ -1,9 +1,15 @@
-import type { WallSkinDescription } from './../../../app/lib/types/wall/skins';
 import { SKIN_TAG, type SkinOptions } from '@cuby-world/app/lib/types/skin';
 import type {
-  ExternalWallStyleTexture,
-  InternalWallStyleTexture
+  WallSkinDescription,
+  WallStyleTexture
 } from '@cuby-world/app/lib/types/wall/skins';
+
+import texture_stripes_horizontal_bw from './assets/texture/stripes_horizontal_bw.jpg?url';
+import texture_stripes_vertical_bw from './assets/texture/stripes_vertical_bw.jpg?url';
+
+import texture_brick_1 from './assets/texture/brick_1.jpg?url';
+import texture_bubble_green_purple from './assets/texture/bubble_green_purple.jpg?url';
+import texture_stars from './assets/texture/stars.jpg?url';
 
 const colors = {
   very_light: '#F5F5F5',
@@ -14,7 +20,7 @@ const colors = {
   concrete: '#9E9E9E'
 };
 interface DefaultSkinOptions extends SkinOptions {
-  texture?: ExternalWallStyleTexture | InternalWallStyleTexture;
+  texture?: WallStyleTexture;
   color: string | number;
 }
 export type DefaultWallSkinDescription =
@@ -29,12 +35,21 @@ const skins: DefaultWallSkinDescription[] = [
     }
   },
   {
-    id: 'default_texture_default',
-    name: 'Default Texture',
+    id: 'default_texture_stripes_horizontal_bw',
+    name: 'Stripes Horizontal B/W',
     tags: [SKIN_TAG.TEXTURE],
     options: {
       color: '#ffffff',
-      texture: { id: 'default' }
+      texture: { path: texture_stripes_horizontal_bw }
+    }
+  },
+  {
+    id: 'default_texture_stripes_vertical_bw',
+    name: 'Stripes Vertical B/W',
+    tags: [SKIN_TAG.TEXTURE],
+    options: {
+      color: '#ffffff',
+      texture: { path: texture_stripes_vertical_bw }
     }
   },
   {
@@ -43,7 +58,25 @@ const skins: DefaultWallSkinDescription[] = [
     tags: [SKIN_TAG.TEXTURE],
     options: {
       color: '#ffffff',
-      texture: { id: 'brick_1' }
+      texture: { path: texture_brick_1 }
+    }
+  },
+  {
+    id: 'default_texture_bubble_green_purple',
+    name: 'Bubble Green/Purple',
+    tags: [SKIN_TAG.TEXTURE],
+    options: {
+      color: '#ffffff',
+      texture: { path: texture_bubble_green_purple }
+    }
+  },
+  {
+    id: 'default_texture_stars',
+    name: 'Stars',
+    tags: [SKIN_TAG.TEXTURE],
+    options: {
+      color: '#ffffff',
+      texture: { path: texture_stars }
     }
   },
   {

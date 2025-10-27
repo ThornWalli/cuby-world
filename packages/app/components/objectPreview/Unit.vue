@@ -1,7 +1,7 @@
 <template>
   <cw-object-preview
     v-if="root"
-    :hide-ground="hideGround"
+    :hide-ground="!unitInstance?.previewOptions.ground"
     :cache-key="modelValue ? JSON.stringify(modelValue) : undefined"
     :root="root"
     :app="app"
@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 import { Object3D } from 'three';
-import { markRaw, onUnmounted, ref, watch } from 'vue';
+import { markRaw, onUnmounted, ref, watch, type Raw } from 'vue';
 import { Subscription, ReplaySubject } from 'rxjs';
 
 import type App from '../../lib/classes/App';
@@ -22,13 +22,13 @@ import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 import CwObjectPreview from '../ObjectPreview.vue';
 
 import { catalog } from '@cuby-world/units';
+import type Unit from '@cuby-world/app/lib/classes/Unit';
 
 const $props = defineProps<{
   app: App;
   width?: number | 'auto';
   ratio: number;
   modelValue: UnitPreview;
-  hideGround?: boolean;
   hydrateWhenVisible?: boolean;
 }>();
 
@@ -45,13 +45,22 @@ onUnmounted(() => {
 
 let unitSubscriptions: Subscription;
 
+const unitInstance = ref<Raw<Unit> | null>(null);
+
 async function setup(data: UnitPreview) {
   const unitItem = catalog.get(data.type);
   const UnitClass = await unitItem!.instance();
-  const instance = new UnitClass({
-    name: UnitClass.NAME,
-    preview: true
-  });
+  unitInstance.value = markRaw(
+    new UnitClass({
+      name: UnitClass.NAME,
+      preview: true,
+      options: {
+        ...unitItem?.skinMap?.get(data.skin ?? '')?.options
+      }
+    })
+  );
+
+  const instance = unitInstance.value;
   await instance.setup({
     assetLoader: $props.app.assetLoader,
     unit: instance
@@ -61,7 +70,7 @@ async function setup(data: UnitPreview) {
   unitSubscriptions = new Subscription();
   return new Promise<Object3D>(resolve => {
     unitSubscriptions.add(
-      instance.materialReady$.subscribe(() => {
+      instance.observables.materialReady$.subscribe(() => {
         unitSubscriptions?.unsubscribe();
         resolve(instance.root);
       })
@@ -82,6 +91,7 @@ watch(
 <script lang="ts">
 export interface UnitPreview {
   type: string;
+  skin?: string;
 }
 </script>
 

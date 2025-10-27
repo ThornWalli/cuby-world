@@ -1,11 +1,12 @@
 import { WALL_EXTENSION_TYPE, type WallExtensionState } from './WallExtension';
 
 import {
-  type Mesh,
+  Mesh,
   Vector3,
   type Texture,
   type Material,
-  type BufferGeometry
+  type BufferGeometry,
+  DoubleSide
 } from 'three';
 import {
   Box3,
@@ -23,8 +24,7 @@ import { LOADER, type SpriteLoadDescription } from './AssetLoader';
 import {
   findNeighborWallEdges,
   createWallMesh,
-  getGroupBounds,
-  createWallGeometry
+  getGroupBounds
 } from '../utils/wall';
 import {
   WALL_DIRECTION,
@@ -47,7 +47,9 @@ import {
   setMainObjectRecursive,
   OBJECT_NAME
 } from '../utils/object';
-import { skinMap } from '@cuby-world/walls/skins';
+import { catalog as wallCatalog } from '@cuby-world/walls/walls/catalog';
+import { findAllMeshes } from '@cuby-world/units/utils/mesh';
+// import { skinMap } from '@cuby-world/walls/skins';
 
 declare module '../utils/object' {
   interface ObjectUserData {
@@ -89,6 +91,10 @@ export type WallConstructorOptions = Omit<WallDescription, 'extensions'> & {
   center?: boolean;
 };
 export default class Wall {
+  static KEY = 'default';
+
+  readonly key = Wall.KEY;
+
   extensions: WallExtension[] = [];
 
   state: WallState = {
@@ -155,15 +161,12 @@ export default class Wall {
 
   async setup({
     animationLoop$,
-    wallGeometryMap,
-    wallTextureMap
+    wallGeometryMap
   }: {
     animationLoop$: AnimationLoopSubject;
     wallGeometryMap: WallGeometryMap;
-    wallTextureMap: WallTextureMap;
   }) {
     this.wallGeometryMap = wallGeometryMap;
-    this.wallTextureMap = wallTextureMap;
 
     await this.refreshWallMeshes({
       editMode: this.editMode,
@@ -192,6 +195,12 @@ export default class Wall {
     setMainObjectRecursive(root, root);
 
     return root;
+  }
+  /**
+   * Kann überschrieben werden um die Meshes zu definieren, die für Raycaster genutzt werden.
+   */
+  getRaycasterMeshes(): Object3D[] {
+    return findAllMeshes(this.root);
   }
 
   setupExtensionRoot() {
@@ -318,16 +327,40 @@ export default class Wall {
     return WALL_TYPE.DEFAULT;
   }
 
-  toggleVisibility(value?: boolean, mesh: Mesh = this.getMesh()) {
-    let materials;
-    if (Array.isArray(mesh.material)) {
-      materials = mesh.material;
-    } else {
-      materials = [mesh.material as Material];
-    }
-    materials.forEach(mat => {
-      const material = mat as MeshPhongMaterial;
-      material.opacity = value ? 1 : 0;
+  toggleVisibility(value?: boolean, mesh: Mesh | Object3D = this.getMesh()) {
+    // let materials;
+    // if (Array.isArray(mesh.material)) {
+    //   materials = mesh.material;
+    // } else {
+    //   materials = [mesh.material as Material];
+    // }
+    // // materials.forEach(mat => {
+    // //   const material = mat as MeshPhongMaterial;
+    // //   material.opacity = value ? 1 : 0;
+    // // });
+
+    mesh.traverse(child => {
+      if (child instanceof Mesh) {
+        let materials;
+        if (Array.isArray(child.material)) {
+          materials = child.material;
+        } else {
+          materials = [child.material as Material];
+        }
+        // materials.forEach(mat => {
+        materials.forEach(material => {
+          // Ausblenden für Kamera und dunkle Räume.
+          if (!value) {
+            material.colorWrite = false;
+            material.depthWrite = false;
+            material.transparent = false;
+          } else {
+            material.colorWrite = true;
+            material.depthWrite = true;
+            material.transparent = false;
+          }
+        });
+      }
     });
   }
 
@@ -344,16 +377,20 @@ export default class Wall {
 
   setVisible(visible: boolean) {
     this.visible = visible;
-    // if (visible) {
-    //   this.wallMeshes[WALL_SIZE.LARGE]!.visible = this.size === WALL_SIZE.LARGE;
-    //   this.wallMeshes[WALL_SIZE.SMALL]!.visible = this.size === WALL_SIZE.SMALL;
-    // } else {
-    //   Object.values(this.wallMeshes).forEach(mesh => {
-    //     mesh.visible = false;
-    //   });
-    // }
-    // this.extensions.forEach(ext => ext.setVisible(visible));
-    this.root.visible = visible;
+
+    this.toggleVisibility(
+      visible && this.size === WALL_SIZE.LARGE,
+      this.wallMeshes[WALL_SIZE.LARGE]
+    );
+
+    /**
+     * Damit der Raycaster die Wand ignoriert wenn sie unsichtbar ist.
+     */
+    this.wallMeshes[WALL_SIZE.LARGE]!.userData[
+      OBJECT_USER_DATA.IGNORE_RAYCASTER
+    ] = !visible;
+
+    this.extensions.forEach(ext => ext.setVisible(visible));
   }
 
   getTmpBox() {
@@ -396,6 +433,8 @@ export default class Wall {
       wallGeometryMap: this.wallGeometryMap!
     }
   ) {
+    const skinMap = wallCatalog.get(this.key)!.skinMap;
+
     Object.values(this.wallMeshes).forEach(obj => {
       if (Array.isArray(obj)) {
         obj.forEach(o => {
@@ -410,6 +449,7 @@ export default class Wall {
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color:
           skinMap.get(this.state.skins[0] || 'default')?.options.color ||
           0x333333
@@ -417,6 +457,7 @@ export default class Wall {
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color:
           skinMap.get(this.state.skins[1] || 'default')?.options.color ||
           0x333333
@@ -424,119 +465,126 @@ export default class Wall {
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       }),
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       }),
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       }),
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       }),
       new MeshPhongMaterial({
         wireframe,
         transparent: true,
+        side: DoubleSide,
         color: 0x333333
       })
     ];
 
-    let largeWall = this.wallMeshes[WALL_SIZE.LARGE]!;
-    if (!this.wallMeshes[WALL_SIZE.LARGE]) {
-      largeWall = createWallMesh(
-        {
-          type: this.getType(),
-          windowSize: this.getWindowSize(),
-          small: false,
-          direction: this.direction,
-          materials: materials.map(m => m.clone())
-        },
-        {
-          center: this.center,
-          edges: this.edges,
-          editMode,
-          wallGeometryMap
-        }
-      );
-      largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-      largeWall.visible = this.size === WALL_SIZE.LARGE;
+    /**
+     * Entfernen der alten Meshes
+     */
 
-      this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
-      this.addToRoot(largeWall);
-    } else {
-      const { geometry } = createWallGeometry(
-        this.direction,
-        this.getType(),
-        WALL_SIZE.LARGE,
-        this.getWindowSize(),
-        {
-          edges: this.edges,
-          wallGeometryMap: this.wallGeometryMap
-        }
-      );
-      largeWall.material = materials.map(m => m.clone());
-      largeWall.geometry.dispose();
-      largeWall.geometry = geometry!;
-    }
+    Object.values(this.wallMeshes).forEach(mesh => {
+      this.root.remove(mesh!);
+      mesh!.remove();
+    });
+    this.wallMeshes = {};
 
-    let smallWall = this.wallMeshes[WALL_SIZE.SMALL]!;
-    if (!this.wallMeshes[WALL_SIZE.SMALL]) {
-      smallWall = createWallMesh(
-        {
-          type: this.getType(),
-          windowSize: this.getWindowSize(),
-          small: true,
-          direction: this.direction,
-          materials: materials.map(m => m.clone())
-        },
-        {
-          center: this.center,
-          edges: this.edges,
-          editMode,
-          wallGeometryMap
-        }
-      );
-      smallWall.name = MESH_WALL_NAME.SMALL_WALL;
-      smallWall.visible = this.size === WALL_SIZE.SMALL;
+    // if (!this.wallMeshes[WALL_SIZE.LARGE]) {
+    const largeWall = createWallMesh(
+      {
+        type: this.getType(),
+        windowSize: this.getWindowSize(),
+        small: false,
+        direction: this.direction,
+        materials: materials.map(m => m.clone())
+      },
+      {
+        center: this.center,
+        edges: this.edges,
+        editMode,
+        wallGeometryMap
+      }
+    );
+    largeWall.name = MESH_WALL_NAME.LARGE_WALL;
+    // largeWall.visible = this.size === WALL_SIZE.LARGE;
 
-      this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
-      this.addToRoot(smallWall);
-    } else {
-      const { geometry } = createWallGeometry(
-        this.direction,
-        this.getType(),
-        WALL_SIZE.SMALL,
-        this.getWindowSize(),
-        {
-          edges: this.edges,
-          wallGeometryMap: this.wallGeometryMap
-        }
-      );
-      smallWall.material = materials.map(m => m.clone());
-      smallWall.geometry.dispose();
-      smallWall.geometry = geometry!;
-    }
+    this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
+    this.addToRoot(largeWall);
+    // } else {
+    //   const { geometry } = createWallGeometry(
+    //     this.direction,
+    //     this.getType(),
+    //     WALL_SIZE.LARGE,
+    //     this.getWindowSize(),
+    //     {
+    //       edges: this.edges,
+    //       wallGeometryMap: this.wallGeometryMap
+    //     }
+    //   );
+    //   largeWall.material = materials.map(m => m.clone());
+    //   largeWall.geometry.dispose();
+    //   largeWall.geometry = geometry!;
+    // }
+    this.toggleVisibility(this.size === WALL_SIZE.LARGE, largeWall);
+
+    const smallWall = createWallMesh(
+      {
+        type: this.getType(),
+        windowSize: this.getWindowSize(),
+        small: true,
+        direction: this.direction,
+        materials: materials.map(m => m.clone())
+      },
+      {
+        center: this.center,
+        edges: this.edges,
+        editMode,
+        wallGeometryMap
+      }
+    );
+    smallWall.name = MESH_WALL_NAME.SMALL_WALL;
+    smallWall.visible = this.size === WALL_SIZE.SMALL;
+
+    this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
+    this.addToRoot(smallWall);
+    // } else {
+    //   const { geometry } = createWallGeometry(
+    //     this.direction,
+    //     this.getType(),
+    //     WALL_SIZE.SMALL,
+    //     this.getWindowSize(),
+    //     {
+    //       edges: this.edges,
+    //       wallGeometryMap: this.wallGeometryMap
+    //     }
+    //   );
+    //   smallWall.material = materials.map(m => m.clone());
+    //   smallWall.geometry.dispose();
+    //   smallWall.geometry = geometry!;
+    // }
 
     if (this.state.skins.length) {
       await Promise.all(
         this.state.skins.map(async (style, index: number) => {
           let url: string | undefined = undefined;
           const texture = skinMap.get(style || 'default')?.options.texture;
-          if (texture && 'id' in texture) {
-            if (this.wallTextureMap.has(texture.id)) {
-              url = this.wallTextureMap.get(texture.id)?.url;
-            } else {
-              console.warn(`Texture id ${texture.id} not found`);
-            }
-          } else if (texture && 'url' in texture) {
-            url = texture.url;
+          if (texture) {
+            url = texture.path;
           }
           if (url) {
             return [
@@ -577,12 +625,12 @@ export default class Wall {
         const largeMaterials = [...(largeWall.material as Material[])];
         largeMaterials[0] = styleA?.[0] || largeMaterials[0]!;
         largeMaterials[1] = styleB?.[0] || largeMaterials[1]!;
-        largeWall.material = largeMaterials;
+        largeWall.material = largeMaterials as MeshPhongMaterial[];
 
         const smallMaterials = [...(smallWall.material as Material[])];
         smallMaterials[0] = styleA?.[1] || smallMaterials[0]!;
         smallMaterials[1] = styleB?.[1] || smallMaterials[1]!;
-        smallWall.material = smallMaterials;
+        smallWall.material = smallMaterials as MeshPhongMaterial[];
       });
     }
   }
@@ -672,8 +720,8 @@ async function setupMaterial(
 
     const material = new MeshPhongMaterial({
       map: texture,
-      transparent: true
-      // side: DoubleSide
+      transparent: true,
+      side: DoubleSide
     });
     materialsMap.set(key, material);
   }

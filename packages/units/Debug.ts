@@ -42,7 +42,7 @@ export default class Debug extends Unit<DebugOptions> {
 
     dir.normalize();
 
-    this.materialReady$.next();
+    this.observables.materialReady$.next();
 
     return mesh;
   }
