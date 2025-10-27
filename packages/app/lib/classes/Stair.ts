@@ -19,6 +19,9 @@ import {
   setMainObjectRecursive
 } from '@cuby-world/app/lib/utils/object';
 import type Room from './Room';
+import { findAllMeshes } from '@cuby-world/units/utils/mesh';
+import { ANIMATION_ACTION } from './unitModule/Animation';
+import type { PathPartDescription } from '../utils/pathfindng';
 
 declare module '../../lib/utils/object' {
   interface ObjectName {
@@ -119,6 +122,34 @@ export default class Stair {
     setMainObjectRecursive(root, root);
   }
 
+  getAnimationAction(_startPosition: Vector3): ANIMATION_ACTION {
+    return ANIMATION_ACTION.STAIR_FALLBACK;
+    // if (this.position.y < startPosition.y) {
+    //   return ANIMATION_ACTION.ASCENDING_STAIR;
+    // }
+    // return ANIMATION_ACTION.DESCENDING_STAIR;
+  }
+
+  getMovementPath(startPosition: Vector3): PathPartDescription[] {
+    return [
+      {
+        position: this.getCounterpartEntryPositionByPosition(startPosition),
+        animationAction: this.getAnimationAction(startPosition)
+      },
+      {
+        position: this.getEntryPositionByPosition(startPosition),
+        animationAction: this.getAnimationAction(startPosition)
+      }
+    ];
+  }
+
+  /**
+   * Kann überschrieben werden um die Meshes zu definieren, die für Raycaster genutzt werden.
+   */
+  getRaycasterMeshes(): Object3D[] {
+    return findAllMeshes(this.root);
+  }
+
   setPosition(position: Vector3) {
     this.position = position;
     this.root.position.set(position.x, position.y * FLOOR_HEIGHT, position.z);
@@ -210,8 +241,8 @@ export default class Stair {
 
       switch (rotation) {
         case ROTATION.NORTH:
-          rx = x;
-          rz = y;
+          rx = y;
+          rz = -x;
           break;
         case ROTATION.SOUTH:
           rx = y;

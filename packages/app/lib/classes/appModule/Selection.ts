@@ -47,7 +47,7 @@ export default class SelectionAppModule extends AppModule<State, Observables> {
 
     if (this.state.selectedUnit) {
       this.state.selectedUnit.modules.selection?.unselect();
-      this.app.renderer.unregisterOutlineObject(this.state.selectedUnit.mesh);
+      this.app.renderer.unregisterOutlineObject(this.state.selectedUnit.root);
       this.state.selectedUnit = null;
     }
 
@@ -61,7 +61,7 @@ export default class SelectionAppModule extends AppModule<State, Observables> {
       if (rotation) {
         playerUnit.setRotation(rotation);
       }
-      this.app.renderer.registerOutlineObject(unit.mesh);
+      this.app.renderer.registerOutlineObject(unit.root);
     } else {
       this.state.selectedUnit = null;
     }

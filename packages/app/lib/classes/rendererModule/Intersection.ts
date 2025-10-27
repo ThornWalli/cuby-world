@@ -12,11 +12,32 @@ export interface Intersection
 
 declare module '../../utils/object' {
   interface ObjectUserData {
-    IGNORE_SELECT: string;
+    IGNORE_INTERSECTION_SELECT: string;
+    IGNORE_INTERSECTION_HOVER: string;
+    IGNORE_RAYCASTER: string;
   }
 }
 
-OBJECT_USER_DATA.IGNORE_SELECT = 'ignoreSelect';
+OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT = 'ignoreSelect';
+OBJECT_USER_DATA.IGNORE_INTERSECTION_HOVER = 'ignoreIntersectionHover';
+OBJECT_USER_DATA.IGNORE_RAYCASTER = 'ignoreRaycaster';
+
+export interface IntersectionListener {
+  id: string;
+  meshes: Object3D[];
+  clickIntersect$: ReplaySubject<Intersection>;
+  clickIntersects$: ReplaySubject<Intersection[]>;
+  hoverIntersect$: ReplaySubject<Intersection[]>;
+  //
+  pointerdown$: ReplaySubject<PointerEvent>;
+  pointerup$: ReplaySubject<PointerEvent>;
+  pointermove$: ReplaySubject<PointerEvent>;
+  pointerenter$: ReplaySubject<PointerEvent>;
+  pointerout$: ReplaySubject<PointerEvent>;
+
+  addMeshes: (newMeshes: Object3D[]) => void;
+  removeMeshes: (removeMeshes: Object3D[]) => void;
+}
 
 export type State = RendererModuleState;
 export default class IntersectionRendererModule extends RendererModule<State> {
@@ -27,25 +48,14 @@ export default class IntersectionRendererModule extends RendererModule<State> {
   raycaster: Raycaster;
   private mouse: Vector2;
 
-  listeners: {
-    mesh: Object3D;
-    clickIntersect$: ReplaySubject<Intersection>;
-    clickIntersects$: ReplaySubject<Intersection[]>;
-    hoverIntersect$: ReplaySubject<Intersection[]>;
-    //
-    pointerdown$: ReplaySubject<PointerEvent>;
-    pointerup$: ReplaySubject<PointerEvent>;
-    pointermove$: ReplaySubject<PointerEvent>;
-    pointerenter$: ReplaySubject<PointerEvent>;
-    pointerout$: ReplaySubject<PointerEvent>;
-
-    unregister: () => void;
-  }[] = [];
+  listeners = new Map<string, IntersectionListener>();
+  globalListener: IntersectionListener;
 
   constructor(renderer: Renderer) {
     super(renderer);
     this.raycaster = new Raycaster();
     this.mouse = new Vector2();
+    this.globalListener = this.registerListener();
   }
 
   override setup() {
@@ -60,7 +70,7 @@ export default class IntersectionRendererModule extends RendererModule<State> {
         const y = -((e.clientY - offset.y) / dimension.y) * 2 + 1;
         this.mouse = new Vector2(x, y);
         this.listeners.forEach(listener => {
-          listener.pointerdown$.next(e);
+          listener.pointermove$.next(e);
         });
       })
     );
@@ -75,9 +85,9 @@ export default class IntersectionRendererModule extends RendererModule<State> {
         const y = -((e.clientY - offset.y) / dimension.y) * 2 + 1;
         this.raycaster.setFromCamera(new Vector2(x, y), this.renderer.camera);
         this.listeners.forEach(listener => {
-          const intersects = this.raycaster.intersectObject(
-            listener.mesh,
-            true
+          const intersects = this.raycaster.intersectObjects(
+            listener.meshes,
+            false
           );
 
           const result = prepareIntersections(this.renderer, intersects);
@@ -114,9 +124,15 @@ export default class IntersectionRendererModule extends RendererModule<State> {
         this.listeners.forEach(listener => {
           listener.pointermove$.next(e);
           this.listeners.forEach(listener => {
-            const intersects = this.raycaster.intersectObject(
-              listener.mesh,
-              true
+            const intersects = this.raycaster.intersectObjects(
+              listener.meshes.filter(mesh => {
+                return (
+                  mesh.visible &&
+                  !mesh.userData[OBJECT_USER_DATA.IGNORE_RAYCASTER] &&
+                  !mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_HOVER]
+                );
+              }),
+              false
             );
             const result = prepareIntersections(this.renderer, intersects);
             listener.hoverIntersect$.next(result);
@@ -126,44 +142,14 @@ export default class IntersectionRendererModule extends RendererModule<State> {
     );
   }
 
-  register(mesh: Object3D) {
-    const hoverIntersect$ = new ReplaySubject<Intersection[]>(0);
-    const clickIntersect$ = new ReplaySubject<Intersection>(0);
-    const clickIntersects$ = new ReplaySubject<Intersection[]>(0);
-
-    // pointer events
-    const pointerdown$ = new ReplaySubject<PointerEvent>(0);
-    const pointerup$ = new ReplaySubject<PointerEvent>(0);
-    const pointermove$ = new ReplaySubject<PointerEvent>(0);
-    const pointerenter$ = new ReplaySubject<PointerEvent>(0);
-    const pointerout$ = new ReplaySubject<PointerEvent>(0);
-
-    const existingListener = this.listeners.find(l => l.mesh === mesh);
-    if (existingListener) {
-      return existingListener;
-    }
-
-    const unregister = () => {
-      const index = this.listeners.findIndex(l => l.mesh === mesh);
-      if (index !== -1) {
-        this.listeners.splice(index, 1);
-      }
-    };
-    const listener = {
-      mesh,
-      hoverIntersect$,
-      clickIntersect$,
-      clickIntersects$,
-      unregister,
-      // pointer events
-      pointerdown$,
-      pointerup$,
-      pointermove$,
-      pointerenter$,
-      pointerout$
-    };
-    this.listeners.push(listener);
+  registerListener(): IntersectionListener {
+    const listener = createListener();
+    this.listeners.set(listener.id, listener);
     return listener;
+  }
+
+  unregisterListener(id: string) {
+    this.listeners.delete(id);
   }
 
   override update() {
@@ -197,8 +183,47 @@ function prepareIntersections(
         })
         .filter(o => o?.object?.visible)
         .filter(
-          i => i?.object && !i.object.userData[OBJECT_USER_DATA.IGNORE_SELECT]
+          i =>
+            i?.object &&
+            !i.object.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT]
         )
     )
   ) as Intersection[];
+}
+
+function createListener() {
+  const hoverIntersect$ = new ReplaySubject<Intersection[]>(0);
+  const clickIntersect$ = new ReplaySubject<Intersection>(0);
+  const clickIntersects$ = new ReplaySubject<Intersection[]>(0);
+
+  // pointer events
+  const pointerdown$ = new ReplaySubject<PointerEvent>(0);
+  const pointerup$ = new ReplaySubject<PointerEvent>(0);
+  const pointermove$ = new ReplaySubject<PointerEvent>(0);
+  const pointerenter$ = new ReplaySubject<PointerEvent>(0);
+  const pointerout$ = new ReplaySubject<PointerEvent>(0);
+
+  const id = crypto.randomUUID();
+  const listener: IntersectionListener = {
+    id,
+    meshes: [],
+    hoverIntersect$,
+    clickIntersect$,
+    clickIntersects$,
+    addMeshes: (newMeshes: Object3D[]) => {
+      listener.meshes.push(...newMeshes);
+    },
+    removeMeshes: (removeMeshes: Object3D[]) => {
+      listener.meshes = listener.meshes.filter(
+        mesh => !removeMeshes.includes(mesh)
+      );
+    },
+    // pointer events
+    pointerdown$,
+    pointerup$,
+    pointermove$,
+    pointerenter$,
+    pointerout$
+  };
+  return listener;
 }

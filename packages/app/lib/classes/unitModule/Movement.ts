@@ -23,12 +23,16 @@ import type { AnimationLoopValue } from '../Renderer';
 import type DoorWallExtension from '../wallExtension/Door';
 import { WALL_DIRECTION } from '../../types/wall';
 import { FLOOR_HEIGHT } from '../../utils/ground';
-import { findBestPathByStairs } from '../../utils/pathfindng';
+import {
+  findBestPathByStairs,
+  type PathPartDescription
+} from '../../utils/pathfindng';
 import { GRID_BLOCKED } from '../roomModule/Ground';
+import { ANIMATION_ACTION, type AnimationUnitModule } from './Animation';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
-  nextPosition: Vector3 | null; // Nächste Position, zu der sich die Einheit bewegen soll
+  nextPosition: PathPartDescription | null; // Nächste Position, zu der sich die Einheit bewegen soll
   startPosition: Vector3 | null; // Startposition der Bewegung
   lastPosition: Vector3 | null; // Letzte Position der Bewegung
 }
@@ -44,6 +48,7 @@ export interface MovementModuleOptions extends UnitModuleOptions {
   movement: {
     diagonalMovement: boolean;
     stepDuration: number;
+    stairStepDuration: number;
     rotationDuration: number;
   };
 }
@@ -67,7 +72,7 @@ function getDefaultRotateOptions(): RotateOptions {
 }
 
 interface MovementDescription {
-  path: Vector3[];
+  path: PathPartDescription[];
   doorWallByPosition: ArrayKeyMap<[number, number], DoorWallExtension>;
 }
 
@@ -124,6 +129,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     ) {
       this.moveOptions = getDefaultMoveOptions();
       this.rotateOptions = getDefaultRotateOptions();
+
       this.movements = await this.prepareMovement(
         startPosition,
         position.clone().round(),
@@ -202,7 +208,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       }) ||
       (paths.length === 1 &&
         paths[0]!.path.length === 1 &&
-        paths[0]!.path[0]?.equals(startPosition));
+        paths[0]!.path[0]?.position.equals(startPosition));
 
     console.log('paths', paths, isFailed);
 
@@ -227,7 +233,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
   }
 
   pathHelper?: InstancedMesh;
-  createPathHelper(path: Vector3[]) {
+  createPathHelper(path: PathPartDescription[]) {
     if (this.pathHelper) {
       this.pathHelper.parent?.remove(this.pathHelper);
       this.pathHelper.geometry.dispose();
@@ -244,8 +250,18 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
     const helper = new Object3D();
     path.forEach((path, index) => {
+      let position: Vector3;
+      if (path instanceof Vector3) {
+        position = path;
+      } else {
+        position = path.position;
+      }
       helper.updateMatrix();
-      helper.matrix.makeTranslation(path.x, path.y * FLOOR_HEIGHT, path.z);
+      helper.matrix.makeTranslation(
+        position.x,
+        position.y * FLOOR_HEIGHT,
+        position.z
+      );
       instancedMesh.setMatrixAt(index, helper.matrix);
     });
 
@@ -259,6 +275,14 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     }
   }
   lastRotation: Euler | null = null;
+
+  setUnitAnimation(action: ANIMATION_ACTION) {
+    const unit = this.unit;
+    if ('animation' in unit.modules) {
+      const animation = unit.modules.animation as AnimationUnitModule;
+      animation.setAnimationAction(action);
+    }
+  }
 
   /**
    * Bewegt die Einheit entlang des aktuellen Pfads.
@@ -294,27 +318,6 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       const { startDuration } = moveOptions;
       const nextPosition = moveOptions.nextPosition;
       const startPosition = moveOptions.startPosition;
-      const lastPosition = moveOptions.lastPosition;
-
-      const lastDoor =
-        lastPosition &&
-        this.currentMovement.doorWallByPosition.get([
-          lastPosition.x,
-          lastPosition.z
-        ]);
-      let nextDoor =
-        moveOptions.nextPosition &&
-        this.currentMovement.doorWallByPosition.get([
-          moveOptions.nextPosition.x,
-          moveOptions.nextPosition.z
-        ]);
-      if (nextDoor && nextDoor.isOpening()) {
-        return;
-      }
-
-      if (lastDoor && lastDoor.isClosing()) {
-        return;
-      }
 
       /**
        * Wenn `nextPosition` nicht gesetzt ist, handelt es sich um den Beginn eines neuen Bewegungsschritts.
@@ -326,7 +329,9 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         moveOptions.startPosition = unit.getPosition().clone();
         moveOptions.nextPosition = this.currentMovement.path.shift()!;
 
-        if (moveOptions.startPosition.equals(moveOptions.nextPosition)) {
+        if (
+          moveOptions.startPosition.equals(moveOptions.nextPosition.position)
+        ) {
           moveOptions.nextPosition = this.currentMovement.path.shift()!;
         }
 
@@ -335,11 +340,16 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         if (!moveOptions.nextPosition) {
           moveOptions.nextPosition = null;
           this.currentMovement = null;
+
+          this.setUnitAnimation(ANIMATION_ACTION.IDLE);
           return;
         }
 
         if (
-          !room?.modules.units?.isPositionFree(moveOptions.nextPosition, [unit])
+          !room?.modules.units?.isPositionFree(
+            moveOptions.nextPosition.position,
+            [unit]
+          )
         ) {
           abort();
           return;
@@ -351,7 +361,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         rotateOptions.startRotation = unit.root.rotation.clone();
 
         const rotation = unit.getRotationByPosition(
-          moveOptions.nextPosition!,
+          moveOptions.nextPosition.position,
           movementOptions.diagonalMovement
         );
 
@@ -368,49 +378,29 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         //#endregion
       }
 
-      nextDoor =
+      const nextDoor =
         moveOptions.nextPosition &&
         this.currentMovement.doorWallByPosition.get([
-          moveOptions.nextPosition.x,
-          moveOptions.nextPosition.z
+          moveOptions.nextPosition.position.x,
+          moveOptions.nextPosition.position.z
         ]);
 
-      // console.log({
-      //   nextDoor,
-      //   lastDoor
-      // });
-
       //#region Door Check
-      if (nextDoor && nextDoor == lastDoor && !nextDoor.isOpen()) {
-        // console.log(
-        //   'Öffne Tür',
-        //   [moveOptions.lastPosition!.x, moveOptions.nextPosition!.x],
-        //   [moveOptions.lastPosition!.z, moveOptions.nextPosition!.z],
-        //   (nextDoor.wall.direction === WALL_DIRECTION.VERTICAL &&
-        //     moveOptions.lastPosition!.x < moveOptions.nextPosition!.x) ||
-        //     (nextDoor.wall.direction === WALL_DIRECTION.HORIZONTAL &&
-        //       moveOptions.lastPosition!.z > moveOptions.nextPosition!.z)
-        //     ? false
-        //     : true
-        // );
-        if (
-          !nextDoor.open(
-            (nextDoor.wall.direction === WALL_DIRECTION.VERTICAL &&
-              moveOptions.lastPosition!.x < moveOptions.nextPosition!.x) ||
-              (nextDoor.wall.direction === WALL_DIRECTION.HORIZONTAL &&
-                moveOptions.lastPosition!.z > moveOptions.nextPosition!.z)
-              ? false
-              : true
-          )
-        ) {
-          // Wenn Tür verschlossen oder nicht geöffnet werden kann, Abbruch der Bewegung
-          moveOptions.nextPosition = null;
-        }
-        return;
-      } else if (lastDoor && !nextDoor && lastDoor.isOpen()) {
-        // console.log('Schließe Tür');
-        // lastDoor.close();
-        // return;
+      if (
+        nextDoor &&
+        !nextDoor.open(
+          (nextDoor.wall.direction === WALL_DIRECTION.VERTICAL &&
+            moveOptions.lastPosition!.x <
+              moveOptions.nextPosition!.position.x) ||
+            (nextDoor.wall.direction === WALL_DIRECTION.HORIZONTAL &&
+              moveOptions.lastPosition!.z >
+                moveOptions.nextPosition!.position.z)
+            ? false
+            : true
+        )
+      ) {
+        // Wenn Tür verschlossen oder nicht geöffnet werden kann, Abbruch der Bewegung
+        moveOptions.nextPosition = null;
       }
 
       /**
@@ -419,12 +409,20 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       if (!rotateOptions.nextRotation && nextPosition) {
         const elapsedTime = time - startDuration;
 
-        const progress = Math.min(
-          elapsedTime / movementOptions.stepDuration,
-          1
-        );
+        let duration = movementOptions.stepDuration;
+        if (nextPosition.animationAction === ANIMATION_ACTION.STAIR_FALLBACK) {
+          // this.setUnitAnimation(ANIMATION_ACTION.ASCENDING_STAIR);
+          this.setUnitAnimation(ANIMATION_ACTION.STAIR_FALLBACK);
+          duration = movementOptions.stairStepDuration;
+        } else if (nextPosition.animationAction === ANIMATION_ACTION.IDLE) {
+          this.setUnitAnimation(ANIMATION_ACTION.IDLE);
+        } else {
+          this.setUnitAnimation(ANIMATION_ACTION.WALK);
+        }
 
-        let preparedNextPosition = nextPosition!.clone();
+        const progress = Math.min(elapsedTime / duration, 1);
+
+        let preparedNextPosition = nextPosition!.position.clone();
         preparedNextPosition = new Vector3(
           preparedNextPosition.x,
           preparedNextPosition.y,
@@ -441,7 +439,8 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
          * Bewegungsschritt beendet
          */
         if (progress >= 1) {
-          moveOptions.lastPosition = moveOptions.nextPosition?.clone() || null;
+          moveOptions.lastPosition =
+            moveOptions.nextPosition?.position.clone() || null;
           moveOptions.nextPosition = null;
           moveOptions.startDuration = time;
           if (!this.currentMovement.path.length) {
@@ -449,6 +448,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
              * Bewegung beendet
              */
             this.currentMovement = null;
+            this.setUnitAnimation(ANIMATION_ACTION.IDLE);
             this.observables.moveEnd$.next();
           }
         }

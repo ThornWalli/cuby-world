@@ -11,6 +11,7 @@ import {
   CanvasTexture
 } from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 export enum LOADER {
   CUBE_TEXTURE = 'CubeTextureLoader',
@@ -61,13 +62,23 @@ export default class AssetLoader {
   //   return this.textures.get(id) as Promise<T>;
   // }
 
-  constructor() {
-    this.loaders = {
+  private createLoaders() {
+    const loaderGltf = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath(
+      'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
+    ); // oder '/draco/'
+
+    loaderGltf.setDRACOLoader(dracoLoader);
+    return {
       [LOADER.CUBE_TEXTURE]: new CubeTextureLoader(),
       [LOADER.TEXTURE]: new TextureLoader(),
-      [LOADER.GLTF]: new GLTFLoader()
-    };
+      [LOADER.GLTF]: loaderGltf
+    } as Loaders;
+  }
 
+  constructor() {
+    this.loaders = this.createLoaders();
     this.subscription.add(
       this.addDescription$.pipe(loadTexture(this.loaders)).subscribe(void 0)
     );

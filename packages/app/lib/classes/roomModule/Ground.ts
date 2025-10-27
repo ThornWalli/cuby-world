@@ -19,7 +19,8 @@ import {
   distinctUntilChanged,
   filter,
   map,
-  Subject
+  Subject,
+  switchMap
 } from 'rxjs';
 import { preparePosition, type PreparedPosition } from '../../utils/matrix';
 import type {
@@ -109,20 +110,30 @@ export default class GroundModule extends RoomModule<State, Observables> {
   }
 
   override async setup() {
+    const app = this.room.app;
     this.groundGeometryMap = await loadGroundGeometries(
-      this.room.app.assetLoader,
+      app.assetLoader,
       MeshGround
     );
     this.setupGround();
 
-    const renderer = this.room.app.renderer!;
-
-    const intersection = renderer.modules.intersection!;
-    const room = this.room;
-
-    const groundIntersectionListener = intersection.register(
-      room.root.getObjectByName('ground')!
+    this.subscription.add(
+      app.observables.mode$
+        .pipe(
+          switchMap(_mode => {
+            return app.modules.room.observables.room$.pipe(
+              concatMap(async room => {
+                if (room) {
+                  this.refreshGround();
+                }
+              })
+            );
+          })
+        )
+        .subscribe(void 0)
     );
+
+    const listener = app.renderer.modules.intersection!.globalListener;
 
     this.subscription.add(
       this.room.modules.floor.observables.floor$.subscribe(() => {
@@ -130,7 +141,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
       })
     );
     this.subscription.add(
-      groundIntersectionListener.clickIntersect$
+      listener.clickIntersect$
         .pipe(
           filter(intersection => {
             return (
@@ -151,7 +162,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
         .subscribe(this.onClick.bind(this))
     );
     this.subscription.add(
-      groundIntersectionListener.hoverIntersect$
+      listener.hoverIntersect$
         .pipe(
           map(
             intersections =>
@@ -177,7 +188,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
         .subscribe(void 0)
     );
     this.subscription.add(
-      groundIntersectionListener.hoverIntersect$
+      listener.hoverIntersect$
         .pipe(
           filter(intersections => intersections.length < 1),
           debounceTime(100)
@@ -187,29 +198,23 @@ export default class GroundModule extends RoomModule<State, Observables> {
         })
     );
     this.subscription.add(
-      groundIntersectionListener.pointerdown$.subscribe(e =>
+      listener.pointerdown$.subscribe(e =>
         this.observables.pointerDown$.next(e)
       )
     );
     this.subscription.add(
-      groundIntersectionListener.pointerup$.subscribe(e =>
-        this.observables.pointerOut$.next(e)
-      )
+      listener.pointerup$.subscribe(e => this.observables.pointerOut$.next(e))
     );
     this.subscription.add(
-      groundIntersectionListener.pointermove$.subscribe(e =>
+      listener.pointermove$.subscribe(e =>
         this.observables.pointerEnter$.next(e)
       )
     );
     this.subscription.add(
-      groundIntersectionListener.pointerenter$.subscribe(
-        this.onPointerEnter.bind(this)
-      )
+      listener.pointerenter$.subscribe(this.onPointerEnter.bind(this))
     );
     this.subscription.add(
-      groundIntersectionListener.pointerout$.subscribe(
-        this.onPointerOut.bind(this)
-      )
+      listener.pointerout$.subscribe(this.onPointerOut.bind(this))
     );
   }
 
@@ -375,6 +380,11 @@ export default class GroundModule extends RoomModule<State, Observables> {
     }
 
     this.state.groundChunks = groundChunks;
+
+    const listener =
+      this.room.app.renderer.modules.intersection!.globalListener;
+    listener?.addMeshes(groundChunks.map(chunk => chunk.mesh));
+
     this.state.groundChunks.forEach(chunk =>
       this.state.groundMesh!.add(chunk.mesh)
     );

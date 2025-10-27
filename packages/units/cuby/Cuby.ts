@@ -113,6 +113,7 @@ export default class Cuby extends Unit<
           hasControls: false,
           movement: {
             diagonalMovement: true,
+            stairStepDuration: 325,
             stepDuration: 325,
             rotationDuration: 125
           },
@@ -196,16 +197,19 @@ export default class Cuby extends Unit<
     return mesh;
   }
 
-  setCubyState(state: CUBY_STATE, mesh: Mesh = this.mesh) {
+  setCubyState(state: CUBY_STATE, mesh?: Mesh) {
     if (!this.assetsByCubyState) {
       throw new Error('Cuby materials not ready yet');
     }
-    mesh.material = this.assetsByCubyState[state];
+    mesh = mesh || (this.root.getObjectByName(OBJECT_NAME.MESH) as Mesh);
+    if (mesh) {
+      mesh.material = this.assetsByCubyState[state];
+    }
   }
 
   setColor(color: CUBY_COLOR) {
     this.options.color = color;
-    const backgroundMesh = this.mesh.getObjectByName('cuby_background') as Mesh;
+    const backgroundMesh = this.root.getObjectByName('cuby_background') as Mesh;
     if (backgroundMesh) {
       (backgroundMesh.material as MeshPhongMaterial).color.set(
         CUBY_COLOR_VALUE[color]

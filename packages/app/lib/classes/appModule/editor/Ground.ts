@@ -48,7 +48,6 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
   };
 
   private async onClick(position: Vector3) {
-    debugger;
     console.log(this.state.action);
     if (this.state.action.secondary === GROUND_ACTION.REMOVE_SINGLE_SET) {
       const room = this.app.modules.room.getRoom()!;

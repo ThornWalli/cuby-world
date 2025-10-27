@@ -1,5 +1,5 @@
 /* eslint-disable complexity */
-import { Subject, type Observable } from 'rxjs';
+import { EMPTY, Subject, switchMap, type Observable } from 'rxjs';
 import {
   concatMap,
   from,
@@ -14,9 +14,9 @@ import AppModule, {
   type AppModuleState
 } from '../AppModule';
 import Room from '../Room';
-import Cuby from '@cuby-world/units/cuby/Cuby';
 import { preparePosition, type PreparedPosition } from '../../utils/matrix';
-import { Vector3, type Object3D } from 'three';
+import type { Object3D } from 'three';
+import { Vector3 } from 'three';
 import type Player from '../Player';
 
 import { catalog } from '@cuby-world/units';
@@ -24,6 +24,9 @@ import type { RoomDescription } from '../../types/room';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 import { OBJECT_NAME } from '../../utils/object';
 import { TELEPORT_TYPE } from '../../types/teleport';
+import Character from '@cuby-world/units/character/Character';
+import type Unit from '../Unit';
+import type { IntersectionListener } from '../rendererModule/Intersection';
 
 interface Observables extends AppModuleObservables {
   room$: Observable<Room | undefined>;
@@ -131,51 +134,32 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     if (!teleport) {
       throw new Error('No entrance teleport found in the room');
     }
-    const cuby = new Cuby({
-      options: {
-        color: player.state.color
-      },
+
+    /**
+     * Player Unit
+     */
+
+    const playerUnit = new Character({
       position: teleport.position.clone(),
       rotation: teleport.rotation
     });
+    // const cuby = new Cuby({
+    //   options: {
+    //     color: player.state.color
+    //   },
+    //   position: teleport.position.clone(),
+    //   rotation: teleport.rotation
+    // });
 
-    player.setUnit(cuby);
+    player.setUnit(playerUnit);
 
-    await room.modules.units.add(cuby);
+    await room.modules.units.add(playerUnit);
 
     if (player.client) {
-      this.app.modules.selection.setSelectedUnit(cuby);
+      this.app.modules.selection.setSelectedUnit(playerUnit);
       // unitFocusModule?.setFocusedUnit(cuby);
     }
   }
-
-  // /**
-  //  * @deprecated Glaub muss weg, verschieben sollte wo anders stattfinden mit dem placement module
-  //  */
-  // async addUnitWithPlacement(unit: Unit) {
-  //   const room = this.getRoom();
-  //   if (!room) {
-  //     throw new Error('No room available to add unit');
-  //   }
-  //   await room.modules.units.add(unit);
-
-  //   this.app.modules.selection.setSelectedUnit(unit);
-  //   this.app.modules.placement.startPlace(unit);
-  // }
-
-  // /**
-  //  * @deprecated Glaub muss weg, verschieben sollte wo anders stattfinden mit dem placement module
-  //  */
-  // removeUnit(unit: Unit) {
-  //   const room = this.getRoom();
-  //   if (!room) {
-  //     throw new Error('No room available to remove unit');
-  //   }
-
-  //   this.app.modules.selection.setSelectedUnit(null);
-  //   this.app.modules.placement.abortPlace();
-  //   room.modules.units.remove(unit);
-  // }
 
   /**
    * Set the current room from a room description.
@@ -300,48 +284,121 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     this.observables.hover$.next(preparedPositions);
   }
 
+  intersectionListener?: IntersectionListener;
+  private registerUnitIntersection(unit: Unit) {
+    const renderer = this.app.renderer;
+
+    if (!renderer.modules.intersection) {
+      throw new Error('Intersection module is not available');
+    }
+    renderer.modules.intersection.globalListener.addMeshes(
+      unit.getRaycasterMeshes()
+    );
+  }
+
+  private unregisterUnitIntersection(unit: Unit) {
+    if (!this.intersectionListener) {
+      return;
+    }
+    this.intersectionListener.removeMeshes(unit.getRaycasterMeshes());
+  }
+
   private registerRoomSubscriptions(app: App) {
     const subscription = new Subscription();
-    const room = app.modules.room.getRoom()!;
     const renderer = app.renderer;
 
-    // this.subscribePlacement();
+    if (!renderer.modules.intersection) {
+      throw new Error('Intersection module is not available');
+    }
+
+    subscription.add(
+      this.observables.room$
+        .pipe(
+          switchMap(room => room?.modules.units.observables.addUnit$ ?? EMPTY),
+          concatMap(async unit => {
+            this.registerUnitIntersection(unit);
+          })
+        )
+        .subscribe(void 0)
+    );
+    subscription.add(
+      this.observables.room$
+        .pipe(
+          switchMap(
+            room => room?.modules.units.observables.removeUnit$ ?? EMPTY
+          ),
+          concatMap(async unit => {
+            this.unregisterUnitIntersection(unit);
+          })
+        )
+        .subscribe(void 0)
+    );
+
+    const listener = renderer.modules.intersection.globalListener;
+
+    subscription.add(
+      listener.hoverIntersect$
+        .pipe(
+          concatMap(interactions => {
+            return from(interactions).pipe(preparePosition(), toArray());
+          })
+        )
+        .subscribe(this.onHover.bind(this))
+    );
+    subscription.add(
+      listener.clickIntersects$
+        .pipe(
+          concatMap(interactions => {
+            return from(
+              interactions.filter(interaction => {
+                return (
+                  (!interaction.object.userData[
+                    OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
+                  ] &&
+                    interaction.object.name === OBJECT_NAME.GROUND) ||
+                  interaction.object.name !== OBJECT_NAME.GROUND
+                );
+              })
+            ).pipe(preparePosition(), toArray());
+          })
+        )
+        .subscribe(this.onSelect.bind(this))
+    );
 
     //#region intersection
 
     if (renderer.modules.intersection) {
       // subscription.add(this.subscribeGroundSelection());
-
-      const { hoverIntersect$, clickIntersects$ } =
-        renderer.modules.intersection.register(room.root);
-      subscription.add(
-        hoverIntersect$
-          .pipe(
-            concatMap(interactions => {
-              return from(interactions).pipe(preparePosition(), toArray());
-            })
-          )
-          .subscribe(this.onHover.bind(this))
-      );
-      subscription.add(
-        clickIntersects$
-          .pipe(
-            concatMap(interactions => {
-              return from(
-                interactions.filter(interaction => {
-                  return (
-                    (!interaction.object.userData[
-                      OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
-                    ] &&
-                      interaction.object.name === OBJECT_NAME.GROUND) ||
-                    interaction.object.name !== OBJECT_NAME.GROUND
-                  );
-                })
-              ).pipe(preparePosition(), toArray());
-            })
-          )
-          .subscribe(this.onSelect.bind(this))
-      );
+      // const { hoverIntersect$, clickIntersects$ } =
+      //   renderer.modules.intersection.register(room.root);
+      // subscription.add(
+      //   hoverIntersect$
+      //     .pipe(
+      //       concatMap(interactions => {
+      //         return from(interactions).pipe(preparePosition(), toArray());
+      //       })
+      //     )
+      //     .subscribe(this.onHover.bind(this))
+      // );
+      // subscription.add(
+      //   clickIntersects$
+      //     .pipe(
+      //       concatMap(interactions => {
+      //         return from(
+      //           interactions.filter(interaction => {
+      //             return (
+      //               (!interaction.object.userData[
+      //                 OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION
+      //               ] &&
+      //                 interaction.object.name === OBJECT_NAME.GROUND) ||
+      //               interaction.object.name !== OBJECT_NAME.GROUND
+      //             );
+      //           })
+      //         ).pipe(preparePosition(), toArray());
+      //       })
+      //     )
+      //     .subscribe(this.onSelect.bind(this))
+      // );
     }
 
     //#endregion
@@ -352,6 +409,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
 
   onSelect(preparedPositions: PreparedPosition[]) {
     const app = this.app;
+
     const player = app.modules.player.getCurrentPlayer();
     if (!player) {
       throw new Error('No player available');

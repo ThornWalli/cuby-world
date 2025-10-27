@@ -1,8 +1,7 @@
 /* eslint-disable complexity */
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 import { ReplaySubject, Subscription, type SubscriptionLike } from 'rxjs';
-import { Box3, Euler, Vector3, type Mesh } from 'three';
-import { Object3D } from 'three';
+import { Box3, Euler, Group, Vector3, type Mesh, type Object3D } from 'three';
 import type Room from './Room';
 import MovementUnitModule from './unitModule/Movement';
 import PlayerUnitModule from './unitModule/Player';
@@ -159,7 +158,7 @@ export interface PreviewOptions {
   ground?: boolean;
 }
 
-export interface Observables {
+export interface UnitObservables {
   ready$: ReplaySubject<Unit>;
   materialReady$: ReplaySubject<void>;
   position$: ReplaySubject<Vector3>;
@@ -169,7 +168,8 @@ export interface Observables {
 export default class Unit<
   Options extends UnitOptions = UnitOptions,
   Modules extends UnitModules = UnitModules,
-  ModuleList extends UnitModuleList = UnitModuleList
+  ModuleList extends UnitModuleList = UnitModuleList,
+  Observables extends UnitObservables = UnitObservables
 > implements UnitChunking
 {
   getFloor() {
@@ -197,7 +197,7 @@ export default class Unit<
     canPlaced: true,
     canRotate: true
   } as Options;
-  root: Object3D;
+  root: Group;
 
   wallOnly: boolean;
   accessible: boolean | ACCESSIBLE_TYPE[];
@@ -293,7 +293,12 @@ export default class Unit<
 
     const preparedModules = moduleList.map(ModuleClass => {
       const state = moduleStates?.[ModuleClass.TYPE] ?? {};
-      const moduleInstance = new ModuleClass(this, state, this.debug);
+      const moduleInstance = new ModuleClass(
+        this,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        state as any,
+        this.debug
+      );
       return [ModuleClass.TYPE, moduleInstance];
     });
     this.modules = Object.fromEntries(preparedModules);
@@ -313,7 +318,7 @@ export default class Unit<
   }
 
   setupRoot(name: string) {
-    const root = new Object3D();
+    const root = new Group();
     root.name = name;
     root.userData[OBJECT_USER_DATA.MAIN_OBJECT] = root.id;
     root.userData[OBJECT_USER_DATA.UNIT] = this;
@@ -585,8 +590,18 @@ export default class Unit<
     // Override in subclasses to update the mesh based on position/rotation/size changes
   }
 
+  /**
+   * @deprecated sollte weg
+   */
   get mesh() {
     return this.root.getObjectByName(OBJECT_NAME.MESH) as Mesh;
+  }
+
+  /**
+   * Kann überschrieben werden um die Meshes zu definieren, die für Raycaster genutzt werden.
+   */
+  getRaycasterMeshes(): Object3D[] {
+    return findAllMeshes(this.root);
   }
 
   toString() {

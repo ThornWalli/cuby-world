@@ -234,7 +234,9 @@ export default class Renderer<
     // this.setCameraClamp(true);
 
     // this.controls.enableDamping = true;
-    // this.controls.dampingFactor = 0.1;
+    // this.controls.dampingFactor = 0.1;controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05; // kleiner Wert = smoother
+    this.controls.zoomSpeed = 1.0;
     this.controls.zoomSpeed = 1.0;
     this.controls.panSpeed = 1.0;
 

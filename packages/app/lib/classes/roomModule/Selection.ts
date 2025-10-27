@@ -135,6 +135,6 @@ function extendMesh() {
   });
   const mesh = new Mesh(geometry, material);
   mesh.name = OBJECT_NAME.RAYCASTER;
-  mesh.userData[OBJECT_USER_DATA.IGNORE_SELECT] = true;
+  mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT] = true;
   return mesh;
 }

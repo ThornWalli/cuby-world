@@ -1,14 +1,19 @@
-import { roomMap } from '../roomMap';
 import { jsonParse, parseRoomDescription } from './parse';
 
-export async function loadRoomById(id: string) {
-  if (!roomMap[id as string]) {
-    console.warn(`Room with key "${id}" not found, loading default room.`);
-    id = 'default';
+export async function loadRoomById(path: string) {
+  if (!path) {
+    throw new Error('Room id is required to load a room.');
   }
-  const url = await roomMap[id as string]!();
-  const room = await fetch(url)
-    .then(async res => res.text())
-    .then(async raw => parseRoomDescription(jsonParse(raw)));
-  return room;
+
+  try {
+    const url = new URL(window.location.href);
+    url.pathname = `/rooms/${path}.json`;
+    const room = await fetch(url.toString())
+      .then(async res => res.text())
+      .then(async raw => parseRoomDescription(jsonParse(raw)));
+    return room;
+  } catch (error) {
+    console.error('Error loading room:', error);
+    throw error;
+  }
 }

@@ -1267,13 +1267,13 @@ export function createWallMesh(
     const clickHelper = new Mesh(
       defaultGeometry,
       new MeshPhongMaterial({
-        color: 0x000000,
-        depthWrite: false
+        color: 0x000000
+        // depthWrite: false
       })
     );
     clickHelper.material.wireframe = true;
     clickHelper.name = 'click_helper';
-    clickHelper.visible = false;
+    clickHelper.visible = true;
     clickHelper.raycast = Mesh.prototype.raycast;
     mesh.add(clickHelper);
   }

@@ -1,4 +1,4 @@
-import type { Subscription } from 'rxjs';
+import { ReplaySubject, type Subscription, type SubscriptionLike } from 'rxjs';
 
 import type Renderer from './Renderer';
 
@@ -50,6 +50,10 @@ interface AppModules {
   editorStair: EditorStairModule;
 }
 
+interface AppObservables {
+  mode$: ReplaySubject<APP_MODE>;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface AppState {}
 
@@ -67,6 +71,10 @@ export class BaseApp<
   ModuleList extends AppModuleList = AppModuleList
 > {
   assetLoader = new AssetLoader();
+
+  observables: AppObservables = {
+    mode$: new ReplaySubject<APP_MODE>(1)
+  };
 
   state: AppState = {};
 
@@ -125,6 +133,9 @@ export class BaseApp<
   }
 
   destroy() {
+    Object.values(this.observables).forEach(o =>
+      (o as SubscriptionLike).unsubscribe()
+    );
     this.roomSubscription?.unsubscribe();
     Object.values(this.modules).forEach(module => {
       module.destroy();
@@ -146,6 +157,7 @@ export class BaseApp<
 
   setMode(mode: APP_MODE) {
     this.config.mode = mode;
+    this.observables.mode$.next(mode);
   }
 }
 

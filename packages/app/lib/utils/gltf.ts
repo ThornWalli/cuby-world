@@ -1,52 +1,29 @@
-import type { Texture } from 'three';
-import { ClampToEdgeWrapping, LinearFilter, Mesh, Object3D } from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LOADER } from '../classes/AssetLoader';
 import { OBJECT_NAME } from '../utils/object';
 import assetLoader from '@cuby-world/app/services/assetLoader';
+import { clone as skeletonClone } from 'three/addons/utils/SkeletonUtils.js';
+import { Group, type Object3D } from 'three';
 
 export async function loadGltf(
   value: string | ArrayBuffer,
   parse?: boolean
 ): Promise<{
-  object: Object3D;
+  scene: Object3D;
+  object: Group;
   animations: GLTF['animations'];
 }> {
-  const object = new Object3D();
-
   const gltf: GLTF = await assetLoader.add<GLTF>({
     loader: LOADER.GLTF,
     value,
     parse
   });
 
-  const model = gltf.scene.clone();
+  const object = new Group();
+  const scene = gltf.scene;
+  scene.name = OBJECT_NAME.MESH;
 
-  prepare(model);
+  object.add(skeletonClone(scene));
 
-  model.name = OBJECT_NAME.MESH;
-
-  object.add(model);
-
-  return { object, animations: gltf.animations };
-}
-
-function prepare(object: Object3D) {
-  object.traverse(child => {
-    if (child instanceof Mesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-
-      if (child.material.map) {
-        const tex = child.material.map as Texture;
-        tex.wrapS = ClampToEdgeWrapping;
-        tex.wrapT = ClampToEdgeWrapping;
-        tex.minFilter = LinearFilter;
-        tex.magFilter = LinearFilter;
-        tex.needsUpdate = true;
-      }
-
-      child.material = child.material.clone();
-    }
-  });
+  return { scene: scene, object, animations: gltf.animations };
 }

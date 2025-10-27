@@ -32,7 +32,8 @@ import {
   filter,
   debounceTime,
   distinctUntilChanged,
-  switchMap
+  switchMap,
+  concatMap
 } from 'rxjs';
 import type Unit from '../Unit';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -52,6 +53,7 @@ import { default_mesh as MeshWall } from '@cuby-world/walls';
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import type { WallIdentifier } from '../Wall';
 import { invertRotation, ROTATION } from '../../utils/rotation';
+import { APP_MODE } from '../App';
 
 interface WallRoomTile {
   mesh: Mesh;
@@ -174,8 +176,8 @@ interface State extends RoomModuleState {
   currentWallRoom?: WallRoomDescription;
   walls: Wall[];
   wallMap: ArrayKeyMap<[number, number, number, WALL_DIRECTION], Wall>;
-  targets: Mesh[];
-  wallRoomTargets: Mesh[];
+  targets: Object3D[];
+  wallRoomTargets: Object3D[];
   activeWallRooms: Map<string, WallRoom>;
   wallRooms: Set<WallRoom>;
   wallRoomTiles: Map<string, WallRoom>;
@@ -277,6 +279,7 @@ export default class WallModule extends RoomModule<
   selectionPosition: Vector3 = new Vector3();
 
   override async setup(): Promise<void> {
+    const app = this.room.app;
     const description = this.room.description;
 
     this.state.baseWallGeometryMap = await loadWallGeometries(MeshWall);
@@ -286,15 +289,14 @@ export default class WallModule extends RoomModule<
     this.subscription.add(
       this.room.modules.floor.observables.floor$.subscribe(floorIndex => {
         this.updateVisibility(
-          this.room.app.renderer.camera,
+          app.renderer.camera,
           getFloorDescendingList(floorIndex)
         );
-        // this.updateActiveWallRooms();
       })
     );
 
     this.subscription.add(
-      this.room.app.modules.player.observables.currentPlayer$
+      app.modules.player.observables.currentPlayer$
         .pipe(
           switchMap(player => player.unit$),
           switchMap(unit => unit.observables.ready$),
@@ -302,9 +304,11 @@ export default class WallModule extends RoomModule<
           map(position => position.clone().ceil()),
           distinctUntilChanged((a, b) => a.equals(b))
         )
-        .subscribe(() => {
+        // TEST
+        .subscribe(position => {
+          console.log(position);
           if (this.updateActiveWallRooms()) {
-            this.updateVisibility(this.room.app.renderer.camera);
+            this.updateVisibility(app.renderer.camera);
           }
         })
     );
@@ -338,23 +342,48 @@ export default class WallModule extends RoomModule<
     );
 
     this.subscription.add(
-      this.room.app.modules.player.observables.currentPlayer$
+      app.modules.player.observables.currentPlayer$
         .pipe(switchMap(player => player.unit$))
         .subscribe(unit => {
           this.addUnitForTracking(unit);
         })
     );
 
-    this.room.app.modules.player.observables.currentPlayer$
+    app.modules.player.observables.currentPlayer$
       .pipe(
         switchMap(player => player.unit$),
         switchMap(unit => unit.observables.ready$),
-        map(unit => unit.mesh),
+        map(unit => unit.root),
         filter(Boolean)
       )
       .subscribe(mesh => {
         this.state.targets.push(mesh);
       });
+
+    this.subscription.add(
+      app.observables.mode$
+        .pipe(
+          switchMap(mode => {
+            return app.modules.room.observables.room$.pipe(
+              concatMap(async room => {
+                if (room) {
+                  const wallModule = app.modules.room.getRoom()!.modules.wall!;
+                  const walls = wallModule.getWalls() || [];
+                  walls.forEach(wall =>
+                    wall.setEditMode(mode === APP_MODE.EDITOR)
+                  );
+
+                  for (const wall of wallModule.state.walls) {
+                    await wall.refreshWallMeshes();
+                  }
+                  wallModule.updateVisibility(app.renderer.camera);
+                }
+              })
+            );
+          })
+        )
+        .subscribe(void 0)
+    );
   }
 
   //#region viewMode
@@ -489,6 +518,9 @@ export default class WallModule extends RoomModule<
     });
 
     walls.forEach(wall => {
+      this.room.app.renderer.modules.intersection?.globalListener.addMeshes(
+        wall.getRaycasterMeshes()
+      );
       this.room.addToRoot(wall.root!);
     });
 
@@ -529,6 +561,9 @@ export default class WallModule extends RoomModule<
     walls = walls || this.state.walls;
 
     walls.forEach(wall => {
+      this.room.app.renderer.modules.intersection?.globalListener.removeMeshes(
+        wall.getRaycasterMeshes()
+      );
       wall.destroy();
     });
     this.state.walls = this.state.walls.filter(w => !walls.includes(w));
@@ -570,27 +605,16 @@ export default class WallModule extends RoomModule<
     return floors.map(index => this.wallsByFloorMap.get(index) || []).flat();
   }
 
-  updateVisibility(camera: Camera, floors?: FloorIndex[]) {
+  test: number = 0;
+  async updateVisibility(camera: Camera, floors?: FloorIndex[]) {
     floors =
       floors ?? getFloorDescendingList(this.room.modules.floor.getFloor());
 
-    this.state.walls.forEach(wall => {
-      wall.setVisible(false);
-    });
-
-    function getSizeByViewMode(viewMode: WALL_VIEW_MODE): WALL_SIZE {
-      if (viewMode === WALL_VIEW_MODE.SMALL) {
-        return WALL_SIZE.SMALL;
-      } else if (viewMode === WALL_VIEW_MODE.LARGE) {
-        return WALL_SIZE.LARGE;
-      } else if (viewMode === WALL_VIEW_MODE.DYNAMIC) {
-        return WALL_SIZE.LARGE;
-      }
-      return WALL_SIZE.LARGE;
-    }
-
     this.getWallRooms().forEach(wallRoom => {
       wallRoom.setVisible(false);
+    });
+    this.state.walls.forEach(wall => {
+      wall.setVisible(false);
     });
 
     const maxFloorIndex = Math.max(...floors);
@@ -611,7 +635,7 @@ export default class WallModule extends RoomModule<
     });
 
     if (this.getViewMode() === WALL_VIEW_MODE.DYNAMIC) {
-      const objectsToKeepVisible = Array<Mesh>().concat(
+      const objectsToKeepVisible = Array<Object3D>().concat(
         this.state.targets,
         this.state.wallRoomTargets
       );
@@ -619,8 +643,9 @@ export default class WallModule extends RoomModule<
       const { targetBox, direction, raycaster, matrix, frustum, wallsToHide } =
         this.wallState;
 
+      const size = getSizeByViewMode(this.state.viewMode);
       wallsToHide.forEach(wall => {
-        wall.setSize(getSizeByViewMode(this.state.viewMode));
+        wall.setSize(size);
       });
 
       wallsToHide.clear();
@@ -657,6 +682,7 @@ export default class WallModule extends RoomModule<
           { x: min.x, y: max.y, z: max.z },
           { x: max.x, y: max.y, z: max.z }
         ];
+
         corners.forEach(corner => {
           this.wallState.direction
             .subVectors(corner, camera.position)
@@ -827,7 +853,7 @@ function createRayLine(
   const geometry = new BufferGeometry().setFromPoints(points);
   const material = new LineBasicMaterial({ color });
   const line = new Line(geometry, material);
-  line.userData = { [OBJECT_USER_DATA.IGNORE_SELECT]: true };
+  line.userData = { [OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT]: true };
   return line;
 }
 function createDebugRayLines(
@@ -861,4 +887,15 @@ function getFloorDescendingList(floorIndex: FloorIndex): FloorIndex[] {
   return Array(floorIndex + 1)
     .fill(0)
     .map((_, index) => index);
+}
+
+function getSizeByViewMode(viewMode: WALL_VIEW_MODE): WALL_SIZE {
+  if (viewMode === WALL_VIEW_MODE.SMALL) {
+    return WALL_SIZE.SMALL;
+  } else if (viewMode === WALL_VIEW_MODE.LARGE) {
+    return WALL_SIZE.LARGE;
+  } else if (viewMode === WALL_VIEW_MODE.DYNAMIC) {
+    return WALL_SIZE.LARGE;
+  }
+  return WALL_SIZE.LARGE;
 }

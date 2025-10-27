@@ -1,7 +1,6 @@
-import type { AnimationMixer } from 'three';
-import { BoxGeometry, Mesh, Clock } from 'three';
+import { Mesh, type Object3D } from 'three';
+import { Group } from 'three';
 
-import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
@@ -9,15 +8,23 @@ import Unit, {
   type UnitModules,
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
-import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 import CharacterUnitModule from '@cuby-world/app/lib/classes/unitModule/Character';
+import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
+
+import glbBase from './assets/character.glb?url';
+import {
+  ANIMATION_ACTION,
+  AnimationUnitModule
+} from '@cuby-world/app/lib/classes/unitModule/Animation';
+import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CharacterOptions extends UnitOptions<MovementModuleOptions> {}
 
 type CharacterUnitModules = UnitModules & {
   character: CharacterUnitModule;
+  animation: AnimationUnitModule;
 };
 
 type CharacterUnitModuleList = (typeof CharacterUnitModule)[] & UnitModuleList;
@@ -28,9 +35,6 @@ export default class Character extends Unit<
 > {
   static override KEY = 'character';
   static override NAME = 'Character';
-
-  clock: Clock = new Clock();
-  mixer?: AnimationMixer;
 
   constructor(
     options: Omit<
@@ -48,26 +52,62 @@ export default class Character extends Unit<
           hasControls: false,
           movement: {
             diagonalMovement: true,
-            stepDuration: 325,
+            // stepDuration: 700,
+            // stairStepDuration: 3000,
+            // rotationDuration: 125
+            stepDuration: 550,
+            stairStepDuration: 1100,
             rotationDuration: 125
           },
           ...options.options
         }
       },
-      [CharacterUnitModule] as unknown as CharacterUnitModuleList
+      [
+        CharacterUnitModule,
+        AnimationUnitModule
+      ] as unknown as CharacterUnitModuleList
     );
   }
 
+  override async setup(context: SetupContext) {
+    await super.setup(context);
+
+    this.modules.animation.getAction(
+      ANIMATION_ACTION.STAIR_FALLBACK
+    )!.timeScale = 2.2;
+    this.modules.animation.getAction(ANIMATION_ACTION.WALK)!.timeScale = 1.4;
+  }
+  // override getRaycasterMeshes() {
+  //   return [
+  //     this.root.getObjectByName('Mesh')!,
+  //     this.root.getObjectByName('Alpha_Surface')!,
+  //     this.root.getObjectByName('Alpha_Joints')!
+  //   ];
+  // }
+
   override async createMesh(_context: SetupContext) {
-    const size = 1;
-    const ratio = 19 / 20;
-    const geometry = new BoxGeometry(size * 1, size * ratio, size * 1);
-    const mesh: Mesh = new Mesh(geometry, defaultMaterial());
+    const meshRoot = new Group();
 
-    mesh.name = OBJECT_NAME.MESH;
-    mesh.castShadow = true;
-    mesh.position.set(0, (size * ratio) / 2 + 0.2, 0);
+    const { scene, object, animations } = await loadGltf(glbBase);
 
-    return mesh;
+    this.modules.animation.setAnimations(animations);
+    // const obj = object.getObjectByName('empty')!;
+    let obj: Object3D | Group = object;
+    if (this.isPreview()) {
+      obj = scene;
+    } else {
+      obj.scale.set(0.9, 0.9, 0.9);
+    }
+
+    obj.traverse(mesh => {
+      if (mesh instanceof Mesh) {
+        mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_HOVER] = true;
+      }
+    });
+
+    this.observables.materialReady$.next();
+
+    meshRoot.add(obj);
+    return meshRoot;
   }
 }

@@ -1,4 +1,4 @@
-import type { Object3D, Vector3 } from 'three';
+import { Object3D, type Vector3 } from 'three';
 import UnitModule, {
   type UnitModuleObservables,
   type UnitModuleSetupContext,
@@ -15,12 +15,11 @@ type State = {
 export default class WallUnitModule extends UnitModule<State, Obervables> {
   static override TYPE = 'wall';
 
-  // constructor(unit: Unit, state: State, debug: boolean) {
-  //   super(unit, state, debug);
-  // }
+  wrapper!: Object3D;
 
   override async setup(context: UnitModuleSetupContext): Promise<Object3D> {
-    const mesh = context.mesh;
+    this.wrapper = new Object3D();
+    const wrapper = this.wrapper;
 
     this.subscription.add(
       this.unit.observables.ready$
@@ -34,7 +33,9 @@ export default class WallUnitModule extends UnitModule<State, Obervables> {
         .subscribe(void 0)
     );
 
-    return mesh;
+    wrapper.add(context.mesh);
+
+    return wrapper;
   }
 
   refresh() {
@@ -43,7 +44,7 @@ export default class WallUnitModule extends UnitModule<State, Obervables> {
         this.unit.position,
         this.unit.rotation
       );
-    const obj = this.unit.mesh;
+    const obj = this.wrapper;
     if (obj) {
       if (wall) {
         obj.position.copy(this.state.offset);

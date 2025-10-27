@@ -24,8 +24,7 @@ import { LOADER, type SpriteLoadDescription } from './AssetLoader';
 import {
   findNeighborWallEdges,
   createWallMesh,
-  getGroupBounds,
-  createWallGeometry
+  getGroupBounds
 } from '../utils/wall';
 import {
   WALL_DIRECTION,
@@ -49,6 +48,7 @@ import {
   OBJECT_NAME
 } from '../utils/object';
 import { catalog as wallCatalog } from '@cuby-world/walls/walls/catalog';
+import { findAllMeshes } from '@cuby-world/units/utils/mesh';
 // import { skinMap } from '@cuby-world/walls/skins';
 
 declare module '../utils/object' {
@@ -195,6 +195,12 @@ export default class Wall {
     setMainObjectRecursive(root, root);
 
     return root;
+  }
+  /**
+   * Kann überschrieben werden um die Meshes zu definieren, die für Raycaster genutzt werden.
+   */
+  getRaycasterMeshes(): Object3D[] {
+    return findAllMeshes(this.root);
   }
 
   setupExtensionRoot() {
@@ -377,10 +383,14 @@ export default class Wall {
       this.wallMeshes[WALL_SIZE.LARGE]
     );
 
-    // this.toggleVisibility(visible, this.wallMeshes[WALL_SIZE.LARGE]!);
-    // this.toggleVisibility(visible, this.wallMeshes[WALL_SIZE.SMALL]!);
+    /**
+     * Damit der Raycaster die Wand ignoriert wenn sie unsichtbar ist.
+     */
+    this.wallMeshes[WALL_SIZE.LARGE]!.userData[
+      OBJECT_USER_DATA.IGNORE_RAYCASTER
+    ] = !visible;
+
     this.extensions.forEach(ext => ext.setVisible(visible));
-    // this.root.visible = true;
   }
 
   getTmpBox() {
@@ -484,82 +494,89 @@ export default class Wall {
       })
     ];
 
-    let largeWall = this.wallMeshes[WALL_SIZE.LARGE]!;
-    if (!this.wallMeshes[WALL_SIZE.LARGE]) {
-      largeWall = createWallMesh(
-        {
-          type: this.getType(),
-          windowSize: this.getWindowSize(),
-          small: false,
-          direction: this.direction,
-          materials: materials.map(m => m.clone())
-        },
-        {
-          center: this.center,
-          edges: this.edges,
-          editMode,
-          wallGeometryMap
-        }
-      );
-      largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-      // largeWall.visible = this.size === WALL_SIZE.LARGE;
+    /**
+     * Entfernen der alten Meshes
+     */
 
-      this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
-      this.addToRoot(largeWall);
-    } else {
-      const { geometry } = createWallGeometry(
-        this.direction,
-        this.getType(),
-        WALL_SIZE.LARGE,
-        this.getWindowSize(),
-        {
-          edges: this.edges,
-          wallGeometryMap: this.wallGeometryMap
-        }
-      );
-      largeWall.material = materials.map(m => m.clone());
-      largeWall.geometry.dispose();
-      largeWall.geometry = geometry!;
-    }
+    Object.values(this.wallMeshes).forEach(mesh => {
+      this.root.remove(mesh!);
+      mesh!.remove();
+    });
+    this.wallMeshes = {};
+
+    // if (!this.wallMeshes[WALL_SIZE.LARGE]) {
+    const largeWall = createWallMesh(
+      {
+        type: this.getType(),
+        windowSize: this.getWindowSize(),
+        small: false,
+        direction: this.direction,
+        materials: materials.map(m => m.clone())
+      },
+      {
+        center: this.center,
+        edges: this.edges,
+        editMode,
+        wallGeometryMap
+      }
+    );
+    largeWall.name = MESH_WALL_NAME.LARGE_WALL;
+    // largeWall.visible = this.size === WALL_SIZE.LARGE;
+
+    this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
+    this.addToRoot(largeWall);
+    // } else {
+    //   const { geometry } = createWallGeometry(
+    //     this.direction,
+    //     this.getType(),
+    //     WALL_SIZE.LARGE,
+    //     this.getWindowSize(),
+    //     {
+    //       edges: this.edges,
+    //       wallGeometryMap: this.wallGeometryMap
+    //     }
+    //   );
+    //   largeWall.material = materials.map(m => m.clone());
+    //   largeWall.geometry.dispose();
+    //   largeWall.geometry = geometry!;
+    // }
     this.toggleVisibility(this.size === WALL_SIZE.LARGE, largeWall);
 
-    let smallWall = this.wallMeshes[WALL_SIZE.SMALL]!;
-    if (!this.wallMeshes[WALL_SIZE.SMALL]) {
-      smallWall = createWallMesh(
-        {
-          type: this.getType(),
-          windowSize: this.getWindowSize(),
-          small: true,
-          direction: this.direction,
-          materials: materials.map(m => m.clone())
-        },
-        {
-          center: this.center,
-          edges: this.edges,
-          editMode,
-          wallGeometryMap
-        }
-      );
-      smallWall.name = MESH_WALL_NAME.SMALL_WALL;
-      smallWall.visible = this.size === WALL_SIZE.SMALL;
+    const smallWall = createWallMesh(
+      {
+        type: this.getType(),
+        windowSize: this.getWindowSize(),
+        small: true,
+        direction: this.direction,
+        materials: materials.map(m => m.clone())
+      },
+      {
+        center: this.center,
+        edges: this.edges,
+        editMode,
+        wallGeometryMap
+      }
+    );
+    smallWall.name = MESH_WALL_NAME.SMALL_WALL;
+    smallWall.visible = this.size === WALL_SIZE.SMALL;
 
-      this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
-      this.addToRoot(smallWall);
-    } else {
-      const { geometry } = createWallGeometry(
-        this.direction,
-        this.getType(),
-        WALL_SIZE.SMALL,
-        this.getWindowSize(),
-        {
-          edges: this.edges,
-          wallGeometryMap: this.wallGeometryMap
-        }
-      );
-      smallWall.material = materials.map(m => m.clone());
-      smallWall.geometry.dispose();
-      smallWall.geometry = geometry!;
-    }
+    this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
+    this.addToRoot(smallWall);
+    // } else {
+    //   const { geometry } = createWallGeometry(
+    //     this.direction,
+    //     this.getType(),
+    //     WALL_SIZE.SMALL,
+    //     this.getWindowSize(),
+    //     {
+    //       edges: this.edges,
+    //       wallGeometryMap: this.wallGeometryMap
+    //     }
+    //   );
+    //   smallWall.material = materials.map(m => m.clone());
+    //   smallWall.geometry.dispose();
+    //   smallWall.geometry = geometry!;
+    // }
 
     if (this.state.skins.length) {
       await Promise.all(
@@ -608,12 +625,12 @@ export default class Wall {
         const largeMaterials = [...(largeWall.material as Material[])];
         largeMaterials[0] = styleA?.[0] || largeMaterials[0]!;
         largeMaterials[1] = styleB?.[0] || largeMaterials[1]!;
-        largeWall.material = largeMaterials;
+        largeWall.material = largeMaterials as MeshPhongMaterial[];
 
         const smallMaterials = [...(smallWall.material as Material[])];
         smallMaterials[0] = styleA?.[1] || smallMaterials[0]!;
         smallMaterials[1] = styleB?.[1] || smallMaterials[1]!;
-        smallWall.material = smallMaterials;
+        smallWall.material = smallMaterials as MeshPhongMaterial[];
       });
     }
   }

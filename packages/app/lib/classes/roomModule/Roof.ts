@@ -119,7 +119,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
           new ShadowMaterial({ side: DoubleSide })
         );
 
-        mesh.userData[OBJECT_USER_DATA.IGNORE_SELECT] = true;
+        mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT] = true;
 
         mesh.castShadow = true;
         mesh.receiveShadow = false;
@@ -161,7 +161,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
           this.room.app.renderer.scene.remove(this.root);
         }
         this.root = new Object3D();
-        this.root.userData[OBJECT_USER_DATA.IGNORE_SELECT] = true;
+        this.root.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT] = true;
 
         this.updateDescriptions(wallRooms);
 

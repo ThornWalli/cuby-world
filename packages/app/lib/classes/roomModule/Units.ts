@@ -1,18 +1,27 @@
 import type { Vector3, Camera } from 'three';
-import RoomModule, { type RoomModuleState } from '../RoomModule';
+import RoomModule, {
+  type RoomModuleObservables,
+  type RoomModuleState
+} from '../RoomModule';
 import type Unit from '../Unit';
 import UnitChunkManager from '../UnitChunkManager';
-import { distinctUntilChanged, map } from 'rxjs';
+import { distinctUntilChanged, map, ReplaySubject } from 'rxjs';
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { AnimationLoopValue } from '../Renderer';
 import { FLOOR_HEIGHT } from '../../utils/ground';
+import type Room from '../Room';
+
+interface Observables extends RoomModuleObservables {
+  addUnit$: ReplaySubject<Unit>;
+  removeUnit$: ReplaySubject<Unit>;
+}
 
 interface State extends RoomModuleState {
   visibleUnits: Unit[];
   units: Map<string, Unit>;
 }
 
-export default class UnitsModule extends RoomModule<State> {
+export default class UnitsModule extends RoomModule<State, Observables> {
   static override TYPE = 'units';
 
   /**
@@ -25,6 +34,14 @@ export default class UnitsModule extends RoomModule<State> {
     visibleUnits: [],
     units: new Map<string, Unit>()
   };
+
+  constructor(room: Room, debug: boolean) {
+    super(room, debug);
+    //#region observables
+    this.observables.addUnit$ = new ReplaySubject<Unit>();
+    this.observables.removeUnit$ = new ReplaySubject<Unit>();
+    //#endregion
+  }
 
   override setup() {
     super.setup();
@@ -88,12 +105,17 @@ export default class UnitsModule extends RoomModule<State> {
     this.untiPositionMap.add(unit);
     this.room.addToRoot(unit.root);
     this.updateVisiblity(this.room.modules.floor.getFloor(), [unit]);
+    this.observables.addUnit$.next(unit);
   }
 
   remove(unit: Unit) {
+    this.room.app.renderer.modules.intersection?.globalListener.removeMeshes(
+      unit.getRaycasterMeshes()
+    );
     this.state.units.delete(unit.id);
     this.chunkManager.removeFromChunk(unit);
     this.room.root.remove(unit.root);
+    this.untiPositionMap.remove(unit);
   }
 
   getById(id: string): Unit | undefined {

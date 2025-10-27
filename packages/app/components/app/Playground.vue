@@ -95,8 +95,8 @@ const isMessagingActive = computed(() => !!$props.app.modules.multiplayer);
 
 onMounted(async () => {
   nextTick(() => {
-    // currentAction.value = EDITOR_ACTION.WALL;
-    // onClickSettings();
+    // currentAction.value = ACTION.EDITOR;
+    // // onClickSettings();
   });
 });
 
