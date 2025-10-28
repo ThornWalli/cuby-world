@@ -302,15 +302,15 @@ export default class WallModule extends RoomModule<
           switchMap(unit => unit.observables.ready$),
           switchMap(unit => unit.observables.position$),
           map(position => position.clone().ceil()),
-          distinctUntilChanged((a, b) => a.equals(b))
+          distinctUntilChanged((a, b) => a.equals(b)),
+          concatMap(async () => {
+            if (this.updateActiveWallRooms()) {
+              this.updateVisibility(app.renderer.camera);
+            }
+          })
         )
         // TEST
-        .subscribe(position => {
-          console.log(position);
-          if (this.updateActiveWallRooms()) {
-            this.updateVisibility(app.renderer.camera);
-          }
-        })
+        .subscribe(void 0)
     );
 
     this.subscription.add(

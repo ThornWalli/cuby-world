@@ -1,4 +1,11 @@
-import { ReplaySubject } from 'rxjs';
+import {
+  concatMap,
+  distinctUntilChanged,
+  EMPTY,
+  map,
+  ReplaySubject,
+  switchMap
+} from 'rxjs';
 import AppModule, {
   type AppModuleObservables,
   type AppModuleState
@@ -23,6 +30,26 @@ export default class UnitFocusAppModule extends AppModule<State, Observables> {
     //#region observables
     this.observables.focusedUnit$ = new ReplaySubject<Unit | undefined>(1);
     //#endregion
+  }
+
+  override setup(): void {
+    super.setup();
+    this.subscription.add(
+      this.observables.focusedUnit$
+        .pipe(
+          switchMap(
+            unit =>
+              unit?.observables.position$.pipe(
+                map(position => ({ unit, floor: Math.ceil(position.y) }))
+              ) || EMPTY
+          ),
+          distinctUntilChanged((prev, curr) => prev.floor === curr.floor),
+          concatMap(async ({ unit, floor }) => {
+            unit.modules.room?.currentRoom?.modules.floor.setFloor(floor);
+          })
+        )
+        .subscribe(void 0)
+    );
   }
 
   get focusedUnit() {

@@ -77,13 +77,6 @@ export default class Character extends Unit<
     )!.timeScale = 2.2;
     this.modules.animation.getAction(ANIMATION_ACTION.WALK)!.timeScale = 1.4;
   }
-  // override getRaycasterMeshes() {
-  //   return [
-  //     this.root.getObjectByName('Mesh')!,
-  //     this.root.getObjectByName('Alpha_Surface')!,
-  //     this.root.getObjectByName('Alpha_Joints')!
-  //   ];
-  // }
 
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Group();

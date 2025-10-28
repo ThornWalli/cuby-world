@@ -4,6 +4,7 @@ import type { RoomModuleObservables, RoomModuleState } from '../RoomModule';
 import RoomModule from '../RoomModule';
 import type Room from '../Room';
 import { FLOOR_HEIGHT } from '../../utils/ground';
+import type { Vector3 } from 'three';
 
 interface Observables extends RoomModuleObservables {
   floor$: ReplaySubject<FloorIndex>;
@@ -58,6 +59,11 @@ export default class FloorModule extends RoomModule<State, Observables> {
 
   getMaxFloor() {
     return this.state.maxFloor + 1;
+  }
+
+  setFloorByPosition(position: Vector3) {
+    const floor = position.y;
+    this.setFloor(floor);
   }
 
   setFloor(floor: FloorIndex) {

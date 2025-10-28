@@ -383,6 +383,8 @@ export default class Wall {
       this.wallMeshes[WALL_SIZE.LARGE]
     );
 
+    this.wallMeshes[WALL_SIZE.SMALL]!.visible = visible;
+
     /**
      * Damit der Raycaster die Wand ignoriert wenn sie unsichtbar ist.
      */
