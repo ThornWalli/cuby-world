@@ -95,6 +95,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
   constructor(unit: Unit, state: State, debug: boolean) {
     super(unit, state, debug);
+
     this.observables.moveStart$ = new Subject<Vector3>();
     this.observables.moveStep$ = new Subject<Vector3>();
     this.observables.moveEnd$ = new Subject<void>();
@@ -387,14 +388,14 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
       //#region Door Check
       if (
+        moveOptions.lastPosition &&
+        moveOptions.nextPosition &&
         nextDoor &&
         !nextDoor.open(
           (nextDoor.wall.direction === WALL_DIRECTION.VERTICAL &&
-            moveOptions.lastPosition!.x <
-              moveOptions.nextPosition!.position.x) ||
+            moveOptions.lastPosition.x < moveOptions.nextPosition.position.x) ||
             (nextDoor.wall.direction === WALL_DIRECTION.HORIZONTAL &&
-              moveOptions.lastPosition!.z >
-                moveOptions.nextPosition!.position.z)
+              moveOptions.lastPosition.z > moveOptions.nextPosition.position.z)
             ? false
             : true
         )

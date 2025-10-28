@@ -143,7 +143,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       position: teleport.position.clone(),
       rotation: teleport.rotation
     });
-    // const cuby = new Cuby({
+    // const playerUnit = new Cuby({
     //   options: {
     //     color: player.state.color
     //   },

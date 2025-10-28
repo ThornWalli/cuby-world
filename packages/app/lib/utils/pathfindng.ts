@@ -110,7 +110,8 @@ export async function findBestPathByStairs(
       },
       options: {
         tileDescriptions: options.tileDescriptions,
-        walls: functions.getWallsByFloor([positions.start.y])
+        walls: functions.getWallsByFloor([positions.start.y]),
+        diagonalMovement: options.diagonalMovement
       }
     });
     if (result.success) {
@@ -188,7 +189,6 @@ export async function findBestPathByStairs(
 
   const match = findStairMatch(stairConnections, startStairs, endStairs);
 
-  debugger;
   console.log({
     matrixList,
     match,
@@ -200,7 +200,7 @@ export async function findBestPathByStairs(
   const results = [];
   let startPosition = positions.start;
   let endPosition = positions.end;
-  debugger;
+
   for (const stair of match ?? []) {
     endPosition = stair.getEntryPositionByPosition(startPosition);
 
