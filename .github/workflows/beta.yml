@@ -87,7 +87,7 @@ jobs:
         env:
           WEBSITE_HOST: https://thornwalli.github.io
           NUXT_PUBLIC_SITE_URL: https://thornwalli.github.io
-          BASE_URL: /cuby-world/
+          # BASE_URL: /cuby-world/
           MODULE_MULTIPLAYER_ENABLED: true
 
           RECAPTCHA_PUBLIC_KEY: ${{ vars.RECAPTCHA_PUBLIC_KEY }}
