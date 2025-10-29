@@ -85,24 +85,24 @@ export class AnimationUnitModule extends UnitModule<State, Observables> {
     if (this.state.action === type) return;
     console.log('setAnimationAction', type);
     this.state.action = type;
-    fadeToAction(this.mixer ? this.actions : {}, type, 0.2);
+    this.fadeToAction(this.mixer ? this.actions : {}, type, 0.2);
     this.observables.action$.next(type);
   }
 
   override update({ delta }: AnimationLoopValue) {
     this.mixer?.update(delta);
   }
-}
 
-let activeAction: AnimationAction | null = null;
-function fadeToAction(actions: Actions, name: string, duration = 0.5) {
-  const next = actions[name];
-  if (!next || next === activeAction) return;
+  activeAction: AnimationAction | null = null;
+  fadeToAction(actions: Actions, name: string, duration = 0.5) {
+    const next = actions[name];
+    if (!next || next === this.activeAction) return;
 
-  if (activeAction) {
-    activeAction.fadeOut(duration);
+    if (this.activeAction) {
+      this.activeAction.fadeOut(duration);
+    }
+
+    next.reset().fadeIn(duration).play();
+    this.activeAction = next;
   }
-
-  next.reset().fadeIn(duration).play();
-  activeAction = next;
 }

@@ -308,6 +308,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       .options.movement;
 
     const abort = () => {
+      this.setUnitAnimation(ANIMATION_ACTION.IDLE);
       this.currentMovement = null;
       this.moveOptions = null;
       this.rotateOptions = null;
