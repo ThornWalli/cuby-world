@@ -38,7 +38,7 @@ interface RoomModules {
 interface RoomState {}
 
 export default class Room<Modules extends RoomModules = RoomModules> {
-  debug = true;
+  debug = false;
 
   state: RoomState = {};
   modules: Modules = {} as Modules;
