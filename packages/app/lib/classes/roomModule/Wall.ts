@@ -92,6 +92,7 @@ export class WallRoom implements Omit<WallRoomDescription, 'tiles'> {
       this.meshes.push(mesh);
       return { mesh, position: tile };
     });
+
     if (this.debug) {
       this.untrack();
     }
@@ -324,7 +325,7 @@ export default class WallModule extends RoomModule<
 
     this.subscription.add(
       this.room.modules.selection.observables.selectionVisible$.subscribe(
-        visible => {
+        _visible => {
           const selectionObject =
             this.room.modules.selection.state.selectionMesh?.getObjectByName(
               OBJECT_NAME.RAYCASTER
@@ -332,11 +333,11 @@ export default class WallModule extends RoomModule<
           if (!selectionObject) {
             return;
           }
-          if (visible) {
-            this.addTarget(selectionObject);
-          } else {
-            this.removeTarget(selectionObject);
-          }
+          // if (visible) {
+          //   this.addTarget(selectionObject);
+          // } else {
+          //   this.removeTarget(selectionObject);
+          // }
         }
       )
     );
@@ -606,7 +607,7 @@ export default class WallModule extends RoomModule<
   }
 
   test: number = 0;
-  async updateVisibility(camera: Camera, floors?: FloorIndex[]) {
+  updateVisibility(camera: Camera, floors?: FloorIndex[]) {
     floors =
       floors ?? getFloorDescendingList(this.room.modules.floor.getFloor());
 
@@ -614,6 +615,7 @@ export default class WallModule extends RoomModule<
       wallRoom.setVisible(false);
     });
     this.state.walls.forEach(wall => {
+      wall.setSize(getSizeByViewMode(this.state.viewMode));
       wall.setVisible(false);
     });
 
@@ -635,94 +637,89 @@ export default class WallModule extends RoomModule<
     });
 
     if (this.getViewMode() === WALL_VIEW_MODE.DYNAMIC) {
-      const objectsToKeepVisible = Array<Object3D>().concat(
-        this.state.targets,
-        this.state.wallRoomTargets
+      this.getWallsToHideByTarget(camera, floors).forEach(wall =>
+        wall.setSize(WALL_SIZE.SMALL)
       );
-
-      const { targetBox, direction, raycaster, matrix, frustum, wallsToHide } =
-        this.wallState;
-
-      const size = getSizeByViewMode(this.state.viewMode);
-      wallsToHide.forEach(wall => {
-        wall.setSize(size);
-      });
-
-      wallsToHide.clear();
-
-      matrix.multiplyMatrices(
-        camera.projectionMatrix,
-        camera.matrixWorldInverse
-      );
-      frustum.setFromProjectionMatrix(matrix);
-
-      const visibleWalls = this.getWallsByFloor(floors.slice(-1)).reduce(
-        (result, wall) => {
-          if (frustum.intersectsBox(wall.getTmpBox())) {
-            result.push(wall.root!);
-          }
-          return result;
-        },
-        [] as Object3D[]
-      );
-
-      objectsToKeepVisible.forEach(target => {
-        targetBox.setFromObject(target);
-
-        const min = targetBox.min;
-        const max = targetBox.max;
-
-        const corners = [
-          { x: min.x, y: min.y, z: min.z },
-          { x: max.x, y: min.y, z: min.z },
-          { x: min.x, y: max.y, z: min.z },
-          { x: min.x, y: min.y, z: max.z },
-          { x: max.x, y: max.y, z: min.z },
-          { x: max.x, y: min.y, z: max.z },
-          { x: min.x, y: max.y, z: max.z },
-          { x: max.x, y: max.y, z: max.z }
-        ];
-
-        corners.forEach(corner => {
-          this.wallState.direction
-            .subVectors(corner, camera.position)
-            .normalize();
-          raycaster.set(camera.position, direction);
-
-          const intersects = raycaster.intersectObjects(visibleWalls);
-          // console.log(intersects);
-
-          if (intersects.length > 0) {
-            const distanceToCorner = camera.position.distanceTo(corner);
-            if (intersects[0] && intersects[0].distance < distanceToCorner) {
-              const wallObj = this.room.app.renderer.scene.getObjectById(
-                intersects[0].object.userData[OBJECT_USER_DATA.MAIN_OBJECT]
-              );
-              const wallId = getWallIdentifierFromObject(wallObj);
-              const wall = this.getWallById(wallId!);
-              if (!wall) {
-                throw new Error('Wall not found in object parent chain');
-              }
-              wallsToHide.add(wall);
-            }
-          }
-
-          if (this.debug) {
-            createDebugRayLines(
-              this.room,
-              camera.position,
-              direction,
-              50,
-              0x00ff00
-            );
-          }
-        });
-      });
-      wallsToHide.forEach(wall => {
-        wall.setSize(WALL_SIZE.SMALL);
-      });
     }
   }
+
+  getWallsToHideByTarget(camera: Camera, floors: FloorIndex[]) {
+    const objectsToKeepVisible = Array<Object3D>()
+      .concat(this.state.targets, this.state.wallRoomTargets)
+      .filter(target => {
+        return target.position.y / FLOOR_HEIGHT === floors[floors.length - 1];
+      });
+
+    const { targetBox, direction, raycaster, matrix, frustum } = this.wallState;
+
+    matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(matrix);
+
+    const visibleWalls = this.getWallsByFloor(floors.slice(-1)).reduce(
+      (result, wall) => {
+        if (frustum.intersectsBox(wall.getTmpBox())) {
+          result.push(wall.root!);
+        }
+        return result;
+      },
+      [] as Object3D[]
+    );
+
+    const wallsToHide = new Set<Wall>();
+    objectsToKeepVisible.forEach(target => {
+      targetBox.setFromObject(target);
+
+      const min = targetBox.min;
+      const max = targetBox.max;
+
+      const corners = [
+        { x: min.x, y: min.y, z: min.z },
+        { x: max.x, y: min.y, z: min.z },
+        { x: min.x, y: max.y, z: min.z },
+        { x: min.x, y: min.y, z: max.z },
+        { x: max.x, y: max.y, z: min.z },
+        { x: max.x, y: min.y, z: max.z },
+        { x: min.x, y: max.y, z: max.z },
+        { x: max.x, y: max.y, z: max.z }
+      ];
+
+      corners.forEach(corner => {
+        this.wallState.direction
+          .subVectors(corner, camera.position)
+          .normalize();
+        raycaster.set(camera.position, direction);
+
+        const intersects = raycaster.intersectObjects(visibleWalls);
+
+        if (intersects.length > 0) {
+          const distanceToCorner = camera.position.distanceTo(corner);
+          if (intersects[0] && intersects[0].distance < distanceToCorner) {
+            const wallObj = this.room.app.renderer.scene.getObjectById(
+              intersects[0].object.userData[OBJECT_USER_DATA.MAIN_OBJECT]
+            );
+            const wallId = getWallIdentifierFromObject(wallObj);
+            const wall = this.getWallById(wallId!);
+            if (!wall) {
+              throw new Error('Wall not found in object parent chain');
+            }
+            wallsToHide.add(wall);
+          }
+        }
+
+        if (this.debug) {
+          createDebugRayLines(
+            this.room,
+            camera.position,
+            direction,
+            50,
+            0x00ff00
+          );
+        }
+      });
+    });
+    return wallsToHide;
+  }
+
   //#region wallRooms
 
   getWallRooms() {

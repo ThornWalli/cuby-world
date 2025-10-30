@@ -8,7 +8,7 @@ import AppModule, {
 import { selfId, type DataPayload, type Room as TrysteroRoom } from 'trystero';
 
 import type { FirebaseApp } from 'firebase/app';
-import { Subject, Subscription } from 'rxjs';
+import { concatMap, Subject, Subscription, switchMap } from 'rxjs';
 import type { PLAYER_COLOR, PlayerSettings } from '../Player';
 import Player from '../Player';
 import { Vector3 } from 'three';
@@ -140,24 +140,23 @@ export default class MultiplayerAppModule extends AppModule<
         playerSubscription?.unsubscribe();
         playerSubscription = new Subscription();
         playerSubscription.add(
-          player.unit$.subscribe(unit => {
-            playerSubscription.add(
-              unit.modules.movement.observables.moveStart$.subscribe(
-                position => {
-                  console.log('Player started moving');
-                  if (!this.actions?.setMoveTo) {
-                    throw new Error('No setMoveTo action available');
-                  }
-                  this.actions.setMoveTo(
-                    {
-                      position: position.toArray()
-                    },
-                    this.getOtherPlayers()
-                  );
+          player.unit$
+            .pipe(
+              switchMap(unit => unit.modules.movement.observables.moveStart$),
+              concatMap(async position => {
+                console.log('Player started moving');
+                if (!this.actions?.setMoveTo) {
+                  throw new Error('No setMoveTo action available');
                 }
-              )
-            );
-          })
+                this.actions.setMoveTo(
+                  {
+                    position: position.toArray()
+                  },
+                  this.getOtherPlayers()
+                );
+              })
+            )
+            .subscribe(void 0)
         );
         playerSubscription.add(
           player.playerSettings$.subscribe(playerSettings => {
@@ -271,6 +270,7 @@ export default class MultiplayerAppModule extends AppModule<
   }
 
   async joinRoom(roomId: string) {
+    console.log('Joining room', roomId);
     if (this.state.room) {
       console.log('Leaving current room');
       this.state.room.leave();

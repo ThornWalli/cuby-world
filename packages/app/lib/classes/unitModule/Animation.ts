@@ -83,7 +83,6 @@ export class AnimationUnitModule extends UnitModule<State, Observables> {
 
   setAnimationAction(type: ANIMATION_ACTION) {
     if (this.state.action === type) return;
-    console.log('setAnimationAction', type);
     this.state.action = type;
     this.fadeToAction(this.mixer ? this.actions : {}, type, 0.2);
     this.observables.action$.next(type);

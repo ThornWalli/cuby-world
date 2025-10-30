@@ -31,17 +31,15 @@ const skinId = ref<CatalogItemIdentifier | null>(null);
 watch(catalogItemId, v => {
   if (v) {
     const catalogItem = unitCatalog.get(v);
-    const hasSkins = catalogItem?.skins?.length;
-
+    const hasSkins = (catalogItem?.skins?.length ?? 0) > 1;
     if (!hasSkins && catalogItem?.defaultSkinId) {
-      $props.app.modules.shop.setItem(
-        v
-          ? {
-              catalogItemId: v,
-              skinId: catalogItem.defaultSkinId
-            }
-          : null
-      );
+      const value = v
+        ? {
+            catalogItemId: v,
+            skinId: catalogItem.defaultSkinId
+          }
+        : null;
+      $props.app.modules.shop.setItem(value);
     }
   }
 });

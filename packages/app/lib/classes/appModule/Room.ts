@@ -231,6 +231,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     );
 
     console.log('Set room:', roomDescription.info.name, room);
+    return room;
   }
 
   setRoom(room: Room | undefined) {
@@ -425,7 +426,8 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     }
 
     if (preparedPositions.length > 0) {
-      const { unit, worldPosition, object } = preparedPositions[0]!;
+      const { wall, wallExtension, unit, worldPosition, object } =
+        preparedPositions[0]!;
 
       const abort = Object.values(app.modules).some((module: AppModule) => {
         return module.onSceneSelect({ preparedPositions, player });
@@ -439,8 +441,16 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       if (abort) {
         return;
       }
-
-      if (object && isStair(object)) {
+      if (wallExtension && wall) {
+        const extension = app.modules.room
+          .getRoom()
+          ?.modules.wall.getWallById(wall)
+          ?.getExtensionById(wallExtension);
+        console.log('Wall Extension selected:', extension);
+        if (extension) {
+          player.moveTo(extension.getPosition());
+        }
+      } else if (object && isStair(object)) {
         const stair = getStairFromObject(app, object);
         if (stair) {
           const position = Object.values(stair?.getEntryPositions()).find(

@@ -27,7 +27,7 @@ import {
   findBestPathByStairs,
   type PathPartDescription
 } from '../../utils/pathfindng';
-import { GRID_BLOCKED } from '../roomModule/Ground';
+import { GRID_BLOCKED, GRID_NON_BLOCKED } from '../roomModule/Ground';
 import { ANIMATION_ACTION, type AnimationUnitModule } from './Animation';
 
 interface MoveOptions {
@@ -291,7 +291,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
    * Rotation wird nur ausgeführt, wenn die nächste Position nicht in Blickrichtung liegt.
    */
   movementUpdate({ time }: AnimationLoopValue) {
-    const room = this.currentRoom!;
+    // const room = this.currentRoom!;
     const rotateOptions = this.rotateOptions;
     const moveOptions = this.moveOptions;
     const unit = this.unit;
@@ -307,14 +307,14 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     const movementOptions = (unit as Unit<UnitOptions<MovementModuleOptions>>)
       .options.movement;
 
-    const abort = () => {
-      this.setUnitAnimation(ANIMATION_ACTION.IDLE);
-      this.currentMovement = null;
-      this.moveOptions = null;
-      this.rotateOptions = null;
-      this.observables.moveEnd$.next();
-      return;
-    };
+    // const abort = () => {
+    //   this.setUnitAnimation(ANIMATION_ACTION.IDLE);
+    //   this.currentMovement = null;
+    //   this.moveOptions = null;
+    //   this.rotateOptions = null;
+    //   this.observables.moveEnd$.next();
+    //   return;
+    // };
 
     if (this.currentMovement?.path.length || moveOptions.nextPosition) {
       const { startDuration } = moveOptions;
@@ -347,15 +347,15 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
           return;
         }
 
-        if (
-          !room?.modules.units?.isPositionFree(
-            moveOptions.nextPosition.position,
-            [unit]
-          )
-        ) {
-          abort();
-          return;
-        }
+        // if (
+        //   !room?.modules.units?.isPositionFree(
+        //     moveOptions.nextPosition.position,
+        //     [unit]
+        //   )
+        // ) {
+        //   abort();
+        //   return;
+        // }
 
         //#region set start values
 
@@ -542,6 +542,17 @@ function createRoomGrid(unit: Unit) {
   const data: number[][] = room.modules.ground.getGrids();
 
   const grid = RoomGrid.fromData(data, room.gridSize.x);
+
+  room?.modules.teleport.getTeleports().forEach(teleport => {
+    const pos = teleport.position;
+    grid.set(pos.x, pos.y, pos.z, GRID_NON_BLOCKED);
+  });
+  room?.modules.units.getUnits().forEach(otherUnit => {
+    if (!otherUnit.accessible) {
+      const pos = otherUnit.getPosition();
+      grid.set(pos.x, pos.y, pos.z, GRID_BLOCKED);
+    }
+  });
 
   room.modules.stair.getStairs().forEach(stair => {
     stair

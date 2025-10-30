@@ -26,6 +26,6 @@ async function onClickExport() {
 
 async function onFile(file?: File) {
   if (!file) return;
-  $props.app.loadRoom(await importRoom(file));
+  $props.app.enterRoom(await importRoom(file));
 }
 </script>

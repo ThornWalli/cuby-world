@@ -8,6 +8,8 @@ import type { FACE_INDEX } from '../types/wall';
 import { FLOOR_HEIGHT } from './ground';
 import { OBJECT_USER_DATA } from './object';
 import type { Intersection } from '../classes/rendererModule/Intersection';
+import type { WallExtensionIdentifier } from '../types/wall/extension/skins';
+import type { WallIdentifier } from '../classes/Wall';
 
 export function positionToMatrixPosition(
   position: THREE.Vector3
@@ -30,6 +32,8 @@ export function matrixPositionToPosition(
 }
 
 export interface PreparedPosition {
+  wallExtension?: WallExtensionIdentifier;
+  wall?: WallIdentifier;
   unit?: Unit;
   object: Object3D | null;
   matrixPosition: THREE.Vector3 | null;
@@ -55,6 +59,12 @@ export function preparePosition(onlyTopFace = false) {
         }
 
         let object: Object3D | null = intersection.object;
+
+        const wallExtension: WallExtensionIdentifier =
+          object.userData[OBJECT_USER_DATA.WALL_EXTENSION];
+        const wall: WallIdentifier =
+          object.userData[OBJECT_USER_DATA.WALL_EXTENSION_WALL];
+
         let unit: Unit | undefined;
         while (object) {
           const objUnit = object.userData[OBJECT_USER_DATA.UNIT];
@@ -67,6 +77,8 @@ export function preparePosition(onlyTopFace = false) {
         object = object ?? intersection.object;
 
         const preparedPosition: PreparedPosition = {
+          wallExtension,
+          wall,
           unit,
           object,
           matrixPosition: matrixPosition,

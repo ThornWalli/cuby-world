@@ -1,4 +1,7 @@
+import { concatMap } from 'rxjs';
+import type { AnimationAction } from 'three';
 import {
+  AnimationClip,
   AnimationMixer,
   DoubleSide,
   LoopOnce,
@@ -29,9 +32,12 @@ const MATERIAL_NAME = {
   HANDLE: 'handle'
 };
 
+type Actions = { [key: string]: AnimationAction };
+
 type StandardState = DoorState;
 export default class Standard extends DoorWallExtension<StandardState> {
   static override KEY = 'door_standard';
+  private mixer?: AnimationMixer;
 
   override async setup(context: {
     animationLoop$: AnimationLoopSubject;
@@ -82,63 +88,50 @@ export default class Standard extends DoorWallExtension<StandardState> {
       });
     }
     this.addToRoot(object);
+
+    this.subscription.add(
+      this.observables.action$
+        .pipe(
+          concatMap(async action => {
+            this.fadeToAction(this.actions, action);
+          })
+        )
+        .subscribe(void 0)
+    );
   }
 
-  private mixer!: AnimationMixer;
   private setupAnimation(
     obj: Object3D,
     animations: GLTF['animations'],
     { animationLoop$ }: { animationLoop$: AnimationLoopSubject }
   ) {
     this.mixer = new AnimationMixer(obj);
-    this.mixer.addEventListener('finished', () => {
+    const mixer = this.mixer;
+    mixer.addEventListener('finished', () => {
+      console.log('Animation finished');
       if (this.isOpening()) {
-        this.setOpenedState();
+        this.setOpened(true);
       } else if (this.isClosing()) {
-        this.setClosedState();
+        this.setOpened(false);
       }
     });
 
-    const mixer = this.mixer;
+    animations.forEach(clip => {
+      const action = mixer.clipAction(
+        new AnimationClip(clip.name, clip.duration, clip.tracks)
+      );
 
-    const action = mixer.clipAction(animations[0]!);
-    action.setLoop(LoopOnce, 0);
-    action.clampWhenFinished = true;
-    // auf Frame 0 starten
-    action.reset();
-    action.paused = true;
-    action.play();
+      action.setDuration(0.3);
+      action.clampWhenFinished = true;
+      action.setLoop(LoopOnce, 0);
+      // action.timeScale = 2;
+      // action.setEffectiveTimeScale(8);
 
-    // oder auf "geschlossen" stellen (z. B. Ende der Animation)
-    const clip = action.getClip();
-    const duration = clip.duration;
-
-    // halben Fortschritt setzen
-    action.time = duration / 2;
-    mixer.update(0);
-
-    const speed = {
-      open: 5,
-      close: 5
-    };
+      this.addAction(clip.name, action);
+    });
 
     this.subscription.add(
       animationLoop$.subscribe(({ delta }: AnimationLoopValue) => {
-        if (this.isOpeningLeft()) {
-          action.paused = false;
-          action.timeScale = speed.open; // vorwärts abspielen
-        } else if (this.isOpeningRight()) {
-          action.paused = false;
-          action.timeScale = -speed.open; // rückwärts abspielen
-        } else if (this.isClosingLeft()) {
-          action.paused = false;
-          action.timeScale = -speed.close; // rückwärts abspielen
-        } else if (this.isClosingRight()) {
-          action.paused = false;
-          action.timeScale = speed.close; // vorwärts abspielen
-        } else {
-          action.paused = true;
-        }
         mixer.update(delta);
       })
     );
@@ -148,23 +141,30 @@ export default class Standard extends DoorWallExtension<StandardState> {
     super.destroy();
     this.mixer?.stopAllAction();
   }
+
+  actions: Actions = {};
+  activeAction: AnimationAction | null = null;
+
+  private addAction(name: string, action: AnimationAction) {
+    this.actions[name] = action;
+  }
+  getAction(name: string) {
+    return this.actions[name];
+  }
+
+  fadeToAction(actions: Actions, name: string, duration = 0.5) {
+    console.log(`Fading to action: ${name}`);
+    const next = actions[name];
+    if (!next || next === this.activeAction) return;
+
+    if (this.activeAction) {
+      this.activeAction.fadeOut(duration);
+    }
+
+    next.reset().fadeIn(duration).play();
+    this.activeAction = next;
+  }
 }
-
-// function openDoor() {
-//   doorAction = DOOR_ACTION.OPENING;
-
-//   action.paused = false;
-//   action.timeScale = 1;   // vorwärts abspielen
-//   action.play();
-// }
-
-// function closeDoor() {
-//   doorAction = DOOR_ACTION.CLOSING;
-
-//   action.paused = false;
-//   action.timeScale = -1;  // rückwärts abspielen
-//   action.play();
-// }
 
 async function loadGltf(
   wall: Wall,
@@ -202,22 +202,3 @@ async function loadGltf(
 
   return { object, animations: gltf.animations };
 }
-
-// class UnitAnimation extends AnimationUnitModule {
-//   override async setup(context: UnitModuleSetupContext) {
-//     const mesh = await super.setup(context);
-
-//     const hoverClip = getHoverClip(0.03);
-//     const action = this.mixer.clipAction(hoverClip);
-//     action.setLoop(LoopPingPong, Infinity);
-
-//     window.setTimeout(() => {
-//       action.play();
-//     }, Math.random() * 1000);
-
-//     return mesh;
-//   }
-//   override update(_deltaTime: number) {
-//     this.mixer?.update(this.clock.getDelta());
-//   }
-// }

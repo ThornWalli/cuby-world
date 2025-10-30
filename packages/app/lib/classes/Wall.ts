@@ -328,17 +328,6 @@ export default class Wall {
   }
 
   toggleVisibility(value?: boolean, mesh: Mesh | Object3D = this.getMesh()) {
-    // let materials;
-    // if (Array.isArray(mesh.material)) {
-    //   materials = mesh.material;
-    // } else {
-    //   materials = [mesh.material as Material];
-    // }
-    // // materials.forEach(mat => {
-    // //   const material = mat as MeshPhongMaterial;
-    // //   material.opacity = value ? 1 : 0;
-    // // });
-
     mesh.traverse(child => {
       if (child instanceof Mesh) {
         let materials;
@@ -347,7 +336,6 @@ export default class Wall {
         } else {
           materials = [child.material as Material];
         }
-        // materials.forEach(mat => {
         materials.forEach(material => {
           // Ausblenden für Kamera und dunkle Räume.
           if (!value) {
@@ -378,21 +366,22 @@ export default class Wall {
   setVisible(visible: boolean) {
     this.visible = visible;
 
-    this.toggleVisibility(
-      visible && this.size === WALL_SIZE.LARGE,
-      this.wallMeshes[WALL_SIZE.LARGE]
-    );
+    this.root.visible = visible;
+    // this.toggleVisibility(
+    //   visible && this.size === WALL_SIZE.LARGE,
+    //   this.wallMeshes[WALL_SIZE.LARGE]
+    // );
 
-    this.wallMeshes[WALL_SIZE.SMALL]!.visible = visible;
+    // this.wallMeshes[WALL_SIZE.SMALL]!.visible = visible;
 
-    /**
-     * Damit der Raycaster die Wand ignoriert wenn sie unsichtbar ist.
-     */
-    this.wallMeshes[WALL_SIZE.LARGE]!.userData[
-      OBJECT_USER_DATA.IGNORE_RAYCASTER
-    ] = !visible;
+    // /**
+    //  * Damit der Raycaster die Wand ignoriert wenn sie unsichtbar ist.
+    //  */
+    // this.wallMeshes[WALL_SIZE.LARGE]!.userData[
+    //   OBJECT_USER_DATA.IGNORE_RAYCASTER
+    // ] = !visible;
 
-    this.extensions.forEach(ext => ext.setVisible(visible));
+    // this.extensions.forEach(ext => ext.setVisible(visible));
   }
 
   getTmpBox() {

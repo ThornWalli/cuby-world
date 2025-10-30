@@ -44,7 +44,6 @@ import { Vector2 } from 'three';
 import type Renderer from '../lib/classes/Renderer';
 import Player, { type PlayerSettings } from '../lib/classes/Player';
 import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
-import { DEFAULT_ROOM_ID } from '../lib/classes/appModule/Multiplayer';
 import type { RoomDescription } from '../lib/types/room';
 import type { Cursor } from '../lib/classes/appModule/Cursor';
 
@@ -74,7 +73,7 @@ const currentComponent = computed(() =>
 onMounted(async () => {
   nextTick(() => {
     setup();
-    app.value!.loadRoom($props.roomDescription);
+    app.value!.enterRoom($props.roomDescription);
   });
 });
 
@@ -94,7 +93,6 @@ async function setup() {
 
   const app = await setupApp(renderer);
   await setupPlayer(app);
-  await app.modules.multiplayer?.joinRoom(DEFAULT_ROOM_ID);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).cubyWorld = app;

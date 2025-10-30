@@ -228,8 +228,6 @@ export async function findBestPathByStairs(
         path: stair.getMovementPath(startPosition),
         doorWallByPosition: result.doorWallByPosition
       });
-    } else {
-      debugger;
     }
   }
 
@@ -458,6 +456,7 @@ async function findPath_(
    * Beispiel Wände nicht begehbar, Türen begehbar
    */
   setWallConditions(walls, easystar);
+
   const path = await new Promise<number[][]>(resolve => {
     easystar.findPath(
       startPosition.x,

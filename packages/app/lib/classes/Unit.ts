@@ -1,7 +1,17 @@
 /* eslint-disable complexity */
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 import { ReplaySubject, Subscription, type SubscriptionLike } from 'rxjs';
-import { Box3, Euler, Group, Vector3, type Mesh, type Object3D } from 'three';
+import type { MeshPhongMaterial, Texture, Object3D } from 'three';
+import {
+  Box3,
+  ClampToEdgeWrapping,
+  Euler,
+  Group,
+  LinearFilter,
+  Mesh,
+  SRGBColorSpace,
+  Vector3
+} from 'three';
 import type Room from './Room';
 import MovementUnitModule from './unitModule/Movement';
 import PlayerUnitModule from './unitModule/Player';
@@ -606,6 +616,30 @@ export default class Unit<
 
   toString() {
     return `${(this.constructor as typeof Unit).NAME}(${this.name})(${this.id})`;
+  }
+
+  setTexture(
+    texture: Texture,
+    group?: Object3D,
+    prepare: (mesh: Mesh) => void = () => void 0
+  ) {
+    const meshes: Mesh[] = [];
+    (group || this.root.getObjectByName(OBJECT_NAME.MESH)!).traverse(child => {
+      if (child instanceof Mesh) {
+        meshes.push(child);
+      }
+    });
+    meshes.forEach(mesh => {
+      texture.flipY = false;
+      texture.wrapS = ClampToEdgeWrapping;
+      texture.wrapT = ClampToEdgeWrapping;
+      texture.minFilter = LinearFilter;
+      texture.magFilter = LinearFilter;
+      texture.colorSpace = SRGBColorSpace;
+      (mesh.material as MeshPhongMaterial).map = texture;
+      (mesh.material as MeshPhongMaterial).needsUpdate = true;
+      prepare?.(mesh);
+    });
   }
 }
 

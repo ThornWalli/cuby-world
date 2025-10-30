@@ -38,7 +38,7 @@ interface RoomModules {
 interface RoomState {}
 
 export default class Room<Modules extends RoomModules = RoomModules> {
-  debug = false;
+  debug = true;
 
   state: RoomState = {};
   modules: Modules = {} as Modules;
@@ -86,6 +86,10 @@ export default class Room<Modules extends RoomModules = RoomModules> {
       module.destroy();
     });
     this.app.renderer.scene.remove(this.root);
+  }
+
+  get id() {
+    return this.description.id;
   }
 
   addToRoot(object: Object3D) {

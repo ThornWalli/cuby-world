@@ -15,7 +15,8 @@
     </div>
 
     <p>
-      <span>Pos.:</span> {{ unit.getPosition().toArray().join(' / ') }}<br />
+      <span>Pos.:</span>
+      {{ unit.getPosition().clone().round().toArray().join(' / ') }}<br />
       <span>Rot.:</span> {{ unit.rotation }}
     </p>
   </cw-panel>

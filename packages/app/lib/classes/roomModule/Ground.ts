@@ -50,6 +50,7 @@ declare module '../../../lib/utils/object' {
 OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION = 'ignoreGroundIntersection';
 
 export const GRID_BLOCKED = 0;
+export const GRID_NON_BLOCKED = 1;
 
 interface Observables extends RoomModuleObservables {
   hover$: Subject<Vector3>;
@@ -290,7 +291,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
             values.push(
               tileCostMap?.get(
                 this.getTileCostKey(groundStyle.type, groundStyle.skinId)
-              )?.index ?? 1
+              )?.index ?? GRID_NON_BLOCKED
             );
           } else {
             values.push(GRID_BLOCKED);
@@ -406,7 +407,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
           const skin = ground?.skins?.find(s => s.id === skinId);
           result.set(key, {
             index: index + 1,
-            cost: skin?.options.cost ?? 0
+            cost: skin?.options.cost ?? GRID_BLOCKED
           });
         }
         return result;

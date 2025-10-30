@@ -23,7 +23,7 @@ export default class TeleportAppModule extends AppModule<State, Observables> {
         throw new Error('RoomTeleport has no roomId defined');
       }
       // roomTeleport.roomId
-      await this.app.loadRoom(await loadRoomById(roomTeleport.roomId));
+      await this.app.enterRoom(await loadRoomById(roomTeleport.roomId));
     }
   }
 }

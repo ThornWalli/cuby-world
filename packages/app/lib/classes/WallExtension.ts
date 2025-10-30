@@ -1,6 +1,6 @@
 import { Object3D } from 'three';
 import type Wall from './Wall';
-import { Subscription } from 'rxjs';
+import { Subscription, type SubscriptionLike } from 'rxjs';
 import type { AnimationLoopSubject } from './Renderer';
 import {
   OBJECT_USER_DATA,
@@ -31,6 +31,9 @@ export interface WallExtensionDescription<
   state?: State;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type WallExtensionObservables = {};
+
 export type WallExtensionState = {
   skin: WallExtensionSkinIdentifier;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +41,8 @@ export type WallExtensionState = {
 };
 
 export default class WallExtension<
-  State extends WallExtensionState = WallExtensionState
+  State extends WallExtensionState = WallExtensionState,
+  Observables extends WallExtensionObservables = WallExtensionObservables
 > {
   id: string = crypto.randomUUID();
 
@@ -49,6 +53,8 @@ export default class WallExtension<
   static TYPE: WALL_EXTENSION_TYPE;
 
   private enabled = true;
+
+  observables: Observables = {} as Observables;
 
   wall: Wall;
   state: State = {} as State;
@@ -65,9 +71,16 @@ export default class WallExtension<
   }
 
   destroy(): void {
+    Object.values(this.observables).forEach(o =>
+      (o as SubscriptionLike).unsubscribe()
+    );
     this.subscription.unsubscribe();
     this.root.parent?.remove(this.root);
     this.root.remove();
+  }
+
+  getPosition() {
+    return this.wall.position.clone();
   }
 
   async setup(_context: { animationLoop$: AnimationLoopSubject }) {

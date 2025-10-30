@@ -147,7 +147,17 @@ export class BaseApp<
     this.renderer.resetCamera();
   }
 
-  loadRoom(roomDescription: ImportRoomDescription) {
+  async enterRoom(roomDescription: ImportRoomDescription) {
+    const room = await this.loadRoom(roomDescription);
+
+    console.log('Joining default room', room.id);
+    if ('multiplayer' in this.modules) {
+      const multiplayer = this.modules.multiplayer as MultiplayerAppModule;
+      await multiplayer.joinRoom(room!.id);
+    }
+  }
+
+  async loadRoom(roomDescription: ImportRoomDescription) {
     return this.modules.room.fromDescription(roomDescription);
   }
 

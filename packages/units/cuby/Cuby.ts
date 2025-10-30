@@ -1,12 +1,4 @@
-import {
-  ClampToEdgeWrapping,
-  Group,
-  LinearFilter,
-  type AnimationMixer,
-  type Object3D,
-  type Texture,
-  SRGBColorSpace
-} from 'three';
+import { Group, type AnimationMixer, type Object3D, type Texture } from 'three';
 import { Mesh, MeshPhongMaterial, Clock, PlaneGeometry, Vector2 } from 'three';
 
 import {
@@ -247,23 +239,8 @@ export default class Cuby extends Unit<
     // return mesh;
   }
 
-  setTexture(texture: Texture, group?: Object3D) {
-    const meshes: Mesh[] = [];
-    (group || this.root.getObjectByName(OBJECT_NAME.MESH)!).traverse(child => {
-      if (child instanceof Mesh) {
-        meshes.push(child);
-      }
-    });
-    meshes.forEach(mesh => {
-      texture.flipY = false;
-      texture.wrapS = ClampToEdgeWrapping;
-      texture.wrapT = ClampToEdgeWrapping;
-      texture.minFilter = LinearFilter;
-      texture.magFilter = LinearFilter;
-      texture.colorSpace = SRGBColorSpace;
-      (mesh.material as MeshPhongMaterial).map = texture;
-      (mesh.material as MeshPhongMaterial).needsUpdate = true;
-
+  override setTexture(texture: Texture, group?: Object3D) {
+    super.setTexture(texture, group, (mesh: Mesh) => {
       (mesh.material as MeshPhongMaterial).onBeforeCompile = (
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         shader: any
@@ -420,24 +397,3 @@ function loadUVTextures(assetLoader: AssetLoader) {
       .then(t => [CUBY_STATE.SLEEP_2, t])
   ]).then(Object.fromEntries);
 }
-
-// class UnitAnimation extends AnimationUnitModule {
-//   override async setup(context: UnitModuleSetupContext) {
-//     const mesh = await super.setup(context);
-
-//     const hoverClip = getHoverClip();
-//     const action = this.mixer.clipAction(hoverClip);
-//     action.setLoop(LoopPingPong, Infinity);
-
-//     window.setTimeout(() => {
-//       action.play();
-//     }, Math.random() * 250);
-
-//     console.log('Cuby setup complete with animation:', action);
-
-//     return mesh;
-//   }
-//   override update({ delta }: AnimationLoopValue) {
-//     this.mixer?.update(delta);
-//   }
-// }

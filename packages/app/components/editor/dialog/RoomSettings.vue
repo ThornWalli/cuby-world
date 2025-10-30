@@ -87,7 +87,7 @@ async function onClickRoomGridResize() {
     if (dimension && origin) {
       description = resizeRoom(description, dimension, origin);
       model.value = description;
-      $props.app.loadRoom(description);
+      $props.app.enterRoom(description);
     }
   }
 }
@@ -114,7 +114,7 @@ async function onClickEntrancePosition() {
     });
   }
 
-  $props.app.loadRoom(description);
+  $props.app.enterRoom(description);
 }
 
 function onSubmit(

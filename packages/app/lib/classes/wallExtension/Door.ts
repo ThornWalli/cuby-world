@@ -1,8 +1,13 @@
+import { ReplaySubject } from 'rxjs';
 import type Wall from '../Wall';
 import WallExtension, {
   WALL_EXTENSION_TYPE,
   type WallExtensionState
 } from '../WallExtension';
+
+export interface DoorObservables {
+  action$: ReplaySubject<DOOR_ACTION>;
+}
 
 export interface DoorState extends WallExtensionState {
   hasDoor?: boolean;
@@ -10,15 +15,23 @@ export interface DoorState extends WallExtensionState {
 }
 
 export enum DOOR_ACTION {
-  NONE = 'none',
-  OPENING_LEFT = 'opening_left',
-  OPENING_RIGHT = 'opening_right',
-  CLOSING = 'closing'
+  CLOSED = 'closed',
+  OPEN_LEFT = 'open_left',
+  OPEN_RIGHT = 'open_right',
+  OPENED_LEFT = 'opened_left',
+  OPENED_RIGHT = 'opened_right'
 }
 
 export default class DoorWallExtension<
-  State extends DoorState = DoorState
-> extends WallExtension<State> {
+  State extends DoorState = DoorState,
+  Observables extends DoorObservables = DoorObservables
+> extends WallExtension<State, Observables> {
+  isOpenedLeft() {
+    return this.state.opened && this.action === DOOR_ACTION.OPENED_LEFT;
+  }
+  isOpenedRight() {
+    return this.state.opened && this.action === DOOR_ACTION.OPENED_RIGHT;
+  }
   static override TYPE = WALL_EXTENSION_TYPE.DOOR;
 
   constructor({ wall, state }: { wall: Wall; state?: State }) {
@@ -26,42 +39,30 @@ export default class DoorWallExtension<
       wall,
       state: { hasDoor: true, ...(state ?? ({} as State)), opened: false }
     });
+
+    this.observables.action$ = new ReplaySubject<DOOR_ACTION>(1);
+    this.observables.action$.next(DOOR_ACTION.CLOSED);
   }
 
-  private action = DOOR_ACTION.NONE;
+  private action = DOOR_ACTION.CLOSED;
+
+  isOpeningLeft() {
+    return this.action === DOOR_ACTION.OPEN_LEFT;
+  }
+
+  isOpeningRight() {
+    return this.action === DOOR_ACTION.OPEN_RIGHT;
+  }
 
   isOpening() {
-    return this.isOpeningLeft() || this.isOpeningRight();
-  }
-  isOpeningLeft() {
-    return this.action === DOOR_ACTION.OPENING_LEFT;
-  }
-  isOpeningRight() {
-    return this.action === DOOR_ACTION.OPENING_RIGHT;
+    return (
+      this.action === DOOR_ACTION.OPEN_LEFT ||
+      this.action === DOOR_ACTION.OPEN_RIGHT
+    );
   }
 
   isClosing() {
-    return this.isClosingLeft() || this.isClosingRight();
-  }
-  isClosingLeft() {
-    return this.action === DOOR_ACTION.CLOSING && this.isOpeningLeft();
-  }
-  isClosingRight() {
-    return this.action === DOOR_ACTION.CLOSING && this.isOpeningRight();
-  }
-
-  setOpenedState() {
-    if (this.isOpening()) {
-      this.setOpened(true);
-      this.setAction(DOOR_ACTION.NONE);
-    }
-  }
-
-  setClosedState() {
-    if (this.isClosing()) {
-      this.setOpened(false);
-      this.setAction(DOOR_ACTION.NONE);
-    }
+    return this.action === DOOR_ACTION.CLOSED;
   }
 
   isOpen() {
@@ -72,11 +73,19 @@ export default class DoorWallExtension<
   }
 
   setAction(action: DOOR_ACTION) {
+    if (this.action === action) return;
+    console.log(`Setting door action to ${action}`);
     this.action = action;
+    this.observables.action$.next(action);
   }
 
   setOpened(opened: boolean) {
     this.state.opened = opened;
+    const action =
+      this.action === DOOR_ACTION.OPEN_LEFT
+        ? DOOR_ACTION.OPENED_LEFT
+        : DOOR_ACTION.OPENED_RIGHT;
+    this.setAction(opened ? action : DOOR_ACTION.CLOSED);
   }
 
   open(rightMovement = false) {
@@ -84,7 +93,7 @@ export default class DoorWallExtension<
       return true;
     } else if (this.canOpen()) {
       this.setAction(
-        rightMovement ? DOOR_ACTION.OPENING_RIGHT : DOOR_ACTION.OPENING_LEFT
+        rightMovement ? DOOR_ACTION.OPEN_RIGHT : DOOR_ACTION.OPEN_LEFT
       );
       return true;
     }
@@ -95,7 +104,7 @@ export default class DoorWallExtension<
     if (!this.isOpen()) {
       return true;
     } else if (this.canOpen()) {
-      this.setAction(DOOR_ACTION.CLOSING);
+      this.setAction(DOOR_ACTION.CLOSED);
       return true;
     }
     return false;

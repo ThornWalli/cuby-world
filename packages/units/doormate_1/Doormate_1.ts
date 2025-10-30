@@ -1,3 +1,4 @@
+import type { Texture } from 'three';
 import { Object3D } from 'three';
 import Unit, {
   type SetupContext,
@@ -5,7 +6,11 @@ import Unit, {
   type UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
+import assetLoader from '@cuby-world/app/services/assetLoader';
+import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
+
 import glbBase from './assets/doormate_1.glb?url';
+import image_doormate_1 from './assets/uv/doormate_1.png?url';
 
 export type DoormateOptions = UnitOptions;
 export default class Doormate_1 extends Unit<DoormateOptions> {
@@ -31,11 +36,21 @@ export default class Doormate_1 extends Unit<DoormateOptions> {
     const meshRoot = new Object3D();
 
     const { object } = await loadGltf(glbBase);
-    this.observables.materialReady$.next();
+
     if (!this.isPreview()) {
       meshRoot.position.set(-0.2, 0, 0);
     }
     meshRoot.add(object);
+
+    assetLoader
+      .add<Texture>({
+        loader: LOADER.TEXTURE,
+        value: image_doormate_1
+      })
+      .then(texture => {
+        this.setTexture(texture, meshRoot);
+        this.observables.materialReady$.next();
+      });
 
     return meshRoot;
   }
