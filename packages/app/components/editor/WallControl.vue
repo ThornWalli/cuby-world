@@ -40,9 +40,7 @@ import CwEditorWallControlPainterController from './wallControl/PainterControlle
 
 import { WALL_ACTION } from '../../lib/types/editor';
 import type AppModuleController from '@cuby-world/app/lib/classes/AppModuleController';
-import MasonController, {
-  MASON_MODE
-} from '@cuby-world/app/lib/classes/appModule/editor/wall/MasonController';
+import MasonController from '@cuby-world/app/lib/classes/appModule/editor/wall/MasonController';
 import PainterController from '@cuby-world/app/lib/classes/appModule/editor/wall/PainterController';
 import DoorController from '@cuby-world/app/lib/classes/appModule/editor/wall/DoorController';
 import WindowController from '@cuby-world/app/lib/classes/appModule/editor/wall/WindowController';
@@ -61,8 +59,8 @@ const currentController = ref<AppModuleController | null>(null);
 
 onMounted(() => {
   currentAction.value = {
-    primary: WALL_ACTION.NONE,
-    secondary: MASON_MODE.ADD
+    primary: WALL_ACTION.NONE
+    // secondary: MASON_MODE.ADD
   };
 
   subscription.add(
