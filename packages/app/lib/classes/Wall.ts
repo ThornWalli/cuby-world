@@ -33,7 +33,6 @@ import {
   WALL_WINDOW_SIZE,
   type WallDescription,
   type WallEdge,
-  type WallTextureMap,
   type WallGeometryMap
 } from '../types/wall';
 import type WallExtension from './WallExtension';
@@ -119,10 +118,7 @@ export default class Wall {
   public root: Object3D;
   public extensionRoot: Object3D;
   private center: boolean;
-
   private wallGeometryMap: WallGeometryMap = new Map();
-  private wallTextureMap: WallTextureMap = new Map();
-
   private tmpBox = new Box3();
   private size: WALL_SIZE = WALL_SIZE.LARGE;
 
@@ -142,7 +138,19 @@ export default class Wall {
   }
 
   destroy() {
-    this.root?.removeFromParent();
+    this.extensions.forEach(ext => ext.destroy());
+    this.root.removeFromParent();
+    this.root.traverse(mesh => {
+      if (mesh instanceof Mesh) {
+        mesh!.geometry.dispose();
+        if (Array.isArray(mesh!.material)) {
+          mesh!.material.forEach(mat => mat.dispose());
+        } else {
+          (mesh!.material as Material).dispose();
+        }
+      }
+    });
+    this.root.remove();
   }
 
   setEditMode(editMode: boolean) {
@@ -531,7 +539,6 @@ export default class Wall {
     //   largeWall.geometry.dispose();
     //   largeWall.geometry = geometry!;
     // }
-    this.toggleVisibility(this.size === WALL_SIZE.LARGE, largeWall);
 
     const smallWall = createWallMesh(
       {
@@ -622,6 +629,8 @@ export default class Wall {
         smallMaterials[0] = styleA?.[1] || smallMaterials[0]!;
         smallMaterials[1] = styleB?.[1] || smallMaterials[1]!;
         smallWall.material = smallMaterials as MeshPhongMaterial[];
+
+        this.toggleVisibility(this.size === WALL_SIZE.LARGE, largeWall);
       });
     }
   }

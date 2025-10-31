@@ -7,11 +7,7 @@
         ? `url(${currentCursor?.src}) 0 0, auto`
         : currentCursor?.type
     }">
-    <cw-renderer
-      ref="rendererEl"
-      debug
-      :options="rendererOptions"
-      :modules="[IntersectionRendererModule]" />
+    <cw-renderer ref="rendererEl" debug :options="rendererOptions" />
     <transition name="fade">
       <component :is="currentComponent" v-if="ready && hasPlayer" :app="app!" />
     </transition>
@@ -38,7 +34,6 @@ import CwDialogCreateUser from './dialogs/CreateUser.vue';
 
 import setupFonts from './../utils/fonts';
 import type { RendererOptions } from '../types';
-import IntersectionRendererModule from '../lib/classes/rendererModule/Intersection';
 import { fromEvent, Subscription } from 'rxjs';
 import { Vector2 } from 'three';
 import type Renderer from '../lib/classes/Renderer';

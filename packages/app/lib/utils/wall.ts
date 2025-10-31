@@ -1250,30 +1250,27 @@ export function createWallMesh(
 
   //#region click helper
   if (editMode) {
-    const { geometry: defaultGeometry } = createWallGeometry(
-      direction,
-      WALL_TYPE.DEFAULT,
-      small ? WALL_SIZE.SMALL : WALL_SIZE.LARGE,
-      windowSize,
-      {
-        edges,
-        wallGeometryMap
-      }
-    );
-    if (!defaultGeometry) {
-      throw new Error('Keine Standard-Wandgeometrie gefunden');
+    const geometry = new BoxGeometry(1, 2.2, 0.22);
+    geometry.rotateY(Math.PI / 2);
+    geometry.translate(0, 1.1, 0);
+
+    if (direction === WALL_DIRECTION.VERTICAL) {
+      geometry.translate(-0.5, 0, 0);
+    } else {
+      geometry.translate(0, 0, -1);
+      geometry.rotateY(Math.PI / 2);
+      geometry.translate(1, 0, -0.5);
     }
-    groupByNormal(defaultGeometry, direction);
+
     const clickHelper = new Mesh(
-      defaultGeometry,
+      geometry,
       new MeshPhongMaterial({
-        color: 0x000000
-        // depthWrite: false
+        color: 0x333333
       })
     );
     clickHelper.material.wireframe = true;
     clickHelper.name = 'click_helper';
-    clickHelper.visible = true;
+    clickHelper.visible = false;
     clickHelper.raycast = Mesh.prototype.raycast;
     mesh.add(clickHelper);
   }

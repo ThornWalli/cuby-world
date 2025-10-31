@@ -17,6 +17,8 @@ import EditorStairModule from './appModule/editor/Stair';
 import InventoryAppModule from './appModule/Inventory';
 import TeleportAppModule from './appModule/Teleport';
 import ShopAppModule from './appModule/Shop';
+import TimeAppModule from './appModule/Time';
+import LightAppModule from './appModule/Light';
 
 type AppModuleList = (
   | typeof CursorAppModule
@@ -29,6 +31,8 @@ type AppModuleList = (
   | typeof InventoryAppModule
   | typeof ShopAppModule
   | typeof TeleportAppModule
+  | typeof TimeAppModule
+  | typeof LightAppModule
   // editor
   | typeof EditorWallAppModule
   | typeof EditorGroundAppModule
@@ -44,6 +48,8 @@ interface AppModules {
   inventory: InventoryAppModule;
   shop: ShopAppModule;
   teleport: TeleportAppModule;
+  time: TimeAppModule;
+  light: LightAppModule;
   // editor
   editorWall: EditorWallAppModule;
   editorGround: EditorGroundAppModule;
@@ -101,7 +107,9 @@ export class BaseApp<
       PlacementAppModule,
       InventoryAppModule,
       ShopAppModule,
-      TeleportAppModule
+      TeleportAppModule,
+      TimeAppModule,
+      LightAppModule
     );
 
     // editor

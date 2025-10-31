@@ -70,7 +70,7 @@ export default class WallExtension<
     }
   }
 
-  destroy(): void {
+  destroy() {
     Object.values(this.observables).forEach(o =>
       (o as SubscriptionLike).unsubscribe()
     );

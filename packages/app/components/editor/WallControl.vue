@@ -59,7 +59,7 @@ const currentController = ref<AppModuleController | null>(null);
 
 onMounted(() => {
   currentAction.value = {
-    primary: WALL_ACTION.MODE_WINDOW
+    primary: WALL_ACTION.NONE
     // secondary: MASON_MODE.ADD
   };
 

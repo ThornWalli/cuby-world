@@ -3,13 +3,20 @@
     class="cw-app-playground"
     :class="{ ['action-' + currentEditorAction]: !!currentEditorAction }">
     <template #[PANEL.TOP_LEFT]>
-      <cw-panel-camera-control key="camera-control" :app="app" />
-      <cw-panel-wall-control key="wall-control" :app="app" />
-      <cw-panel-floor-control key="floor-control" :app="app" />
+      <div class="panel-row">
+        <cw-panel-camera-control key="camera-control" :app="app" />
+        <cw-panel-wall-control key="wall-control" :app="app" />
+        <cw-panel-floor-control key="floor-control" :app="app" />
+      </div>
     </template>
     <template #[PANEL.TOP_RIGHT]>
-      <cw-panel-general key="general" :app="app" />
-      <cw-panel-export-import key="export-import" :app="app" />
+      <div class="panel-row">
+        <cw-panel-time-control key="time-control" :app="app" />
+      </div>
+      <div class="panel-row">
+        <cw-panel-general key="general" :app="app" />
+        <cw-panel-export-import key="export-import" :app="app" />
+      </div>
     </template>
     <template #[PANEL.LEFT]>
       <cw-panel-editor-actions
@@ -74,6 +81,7 @@ import CwAppLayout, { PANEL } from '../AppLayout.vue';
 import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelWallControl from '../panel/WallControl.vue';
 import CwPanelFloorControl from '../panel/FloorControl.vue';
+import CwPanelTimeControl from '../panel/TimeControl.vue';
 import CwPanelGeneral from '../panel/General.vue';
 import CwPanelExportImport from '../editor/panel/ExportImport.vue';
 import CwPanelDesignControl from '../panel/DesignControl.vue';
@@ -96,6 +104,7 @@ const isMessagingActive = computed(() => !!$props.app.modules.multiplayer);
 onMounted(async () => {
   nextTick(() => {
     // currentAction.value = ACTION.EDITOR;
+    // currentEditorAction.value = EDITOR_ACTION.WALL;
     // // onClickSettings();
   });
 });

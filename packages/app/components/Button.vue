@@ -44,6 +44,9 @@ defineProps<{
   --indicator-foreground: var(--color-white);
   --indicator-background: var(--color-blue-7);
 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 
   &[disabled] {

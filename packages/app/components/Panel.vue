@@ -58,8 +58,10 @@ export enum PANEL_POSITION {
     align-items: center;
     color: white;
     background: var(--cw-overlay-background);
+    border: solid 1px rgb(255 255 255 / 40%);
     border-radius: var(--cw-overlay-border-radius);
-    box-shadow: var(--cw-overlay-box-shadow);
+
+    /* box-shadow: var(--cw-overlay-box-shadow); */
 
     /* backdrop-filter: blur(5px); */
   }

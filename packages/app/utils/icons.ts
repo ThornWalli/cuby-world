@@ -228,5 +228,15 @@ export default {
     defineAsyncComponent(
       () => import('../assets/icons/actions/editor.svg?component')
     )
+  ),
+  play: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/actions/play.svg?component')
+    )
+  ),
+  pause: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/actions/pause.svg?component')
+    )
   )
 };

@@ -41,39 +41,45 @@ export enum PANEL_GROUP_DIRECTION {
   inset: var(--panel-offset) var(--panel-offset) var(--panel-offset)
     var(--panel-offset);
   display: flex;
+  flex-direction: column;
   gap: var(--panel-gap);
   align-items: flex-start;
   container-type: size;
   pointer-events: none;
 
-  .direction-column {
-    flex-direction: column;
+  & > :deep(.panel-row) {
+    display: flex;
+    flex-direction: row;
+    gap: var(--panel-gap);
+    align-items: flex-start;
   }
+
+  & > :deep(.panel-column) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--panel-gap);
+    align-items: flex-start;
+  }
+
+  /* .direction-column {
+    flex-direction: column;
+  } */
 
   &[class*='position-'] {
     position: absolute;
   }
 
-  &.position-top,
-  &.position-bottom {
-    flex-direction: column;
-  }
-
   &.position-left,
   &.position-right {
-    align-items: center;
+    justify-content: center;
   }
 
   &.position-top {
     justify-content: flex-start;
   }
 
-  &.position-left {
-    justify-content: flex-start;
-  }
-
   &.position-right {
-    justify-content: flex-end;
+    align-items: flex-end;
   }
 
   &.position-bottom {
@@ -90,13 +96,13 @@ export enum PANEL_GROUP_DIRECTION {
   }
 
   &.position-top-right {
-    align-items: flex-start;
-    justify-content: flex-end;
+    align-items: flex-end;
+    justify-content: flex-start;
   }
 
   &.position-bottom-left {
-    align-items: flex-end;
-    justify-content: flex-start;
+    align-items: flex-start;
+    justify-content: flex-end;
   }
 
   &.position-bottom-right {

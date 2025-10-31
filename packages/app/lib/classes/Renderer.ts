@@ -8,6 +8,9 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import type { Observable } from 'rxjs';
 import { fromEvent, ReplaySubject } from 'rxjs';
 import {
+  type AmbientLight,
+  type DirectionalLight,
+  type HemisphereLight,
   ACESFilmicToneMapping,
   Clock,
   SRGBColorSpace,
@@ -17,16 +20,13 @@ import {
 
 import {
   Vector2,
-  AmbientLight,
   Color,
-  DirectionalLight,
-  HemisphereLight,
   OrthographicCamera,
   PCFSoftShadowMap,
   Scene,
   WebGLRenderer
 } from 'three';
-import type IntersectionRendererModule from './rendererModule/Intersection';
+import IntersectionRendererModule from './rendererModule/Intersection';
 import DebugRendererModule from './rendererModule/Debug';
 
 export type RendererModuleList = (
@@ -35,8 +35,8 @@ export type RendererModuleList = (
 )[];
 
 interface RendererModules {
-  debug?: DebugRendererModule;
-  intersection?: IntersectionRendererModule;
+  debug: DebugRendererModule;
+  intersection: IntersectionRendererModule;
 }
 
 interface Passes {
@@ -110,6 +110,8 @@ export default class Renderer<
     } = {},
     modules: RendererModuleList = []
   ) {
+    modules.push(IntersectionRendererModule);
+
     if (this.debug) {
       modules.push(DebugRendererModule);
     }
@@ -129,7 +131,7 @@ export default class Renderer<
 
     this.initScene();
     this.setOrthographicCamera();
-    this.setupLights();
+    // this.setupLights();
 
     this.pixelated = options.pixelated ?? false;
     const renderer = new WebGLRenderer({
@@ -166,7 +168,10 @@ export default class Renderer<
     this.renderer.setSize(dimension.x, dimension.y);
     this.composer.setSize(dimension.x, dimension.y);
 
+    let lastTime = 0;
     renderer.setAnimationLoop(time => {
+      const delta = time - lastTime; // <-- Nur Differenz!
+      lastTime = time;
       this.observables.animationLoop$.next({
         time,
         delta: this.clock.getDelta()
@@ -177,7 +182,10 @@ export default class Renderer<
       Object.values(this.modules)
         .filter(handler => 'update' in handler)
         .forEach(handler => {
-          handler.update();
+          handler.update({
+            time,
+            delta
+          });
         });
     });
   }
@@ -380,49 +388,49 @@ export default class Renderer<
   //     this.camera.lookAt(0, 0, 0);
   //   }
   // }
-  updateLight(position: Vector3) {
-    const { dirLight } = this.lights;
-    // Position relativ zum Spieler
-    dirLight.position.set(position.x + 30, position.y + 30, position.z + 30);
+  // updateLight(position: Vector3) {
+  //   const { dirLight } = this.lights;
+  //   // Position relativ zum Spieler
+  //   dirLight.position.set(position.x + 30, position.y + 30, position.z + 30);
 
-    // Licht zeigt Richtung Spieler
-    dirLight.target.position.copy(position);
-    dirLight.target.updateMatrixWorld();
-  }
+  //   // Licht zeigt Richtung Spieler
+  //   dirLight.target.position.copy(position);
+  //   dirLight.target.updateMatrixWorld();
+  // }
 
-  setupLights() {
-    const lights = [];
+  // setupLights() {
+  //   const lights = [];
 
-    const ambient = new AmbientLight(0xffffff, 0.5);
-    lights.push(ambient);
+  //   const ambient = new AmbientLight(0xffffff, 0.5);
+  //   lights.push(ambient);
 
-    const hemiLight = new HemisphereLight(0x87ceeb, 0x444444, 0.6);
-    lights.push(hemiLight);
+  //   const hemiLight = new HemisphereLight(0x87ceeb, 0x444444, 0.6);
+  //   lights.push(hemiLight);
 
-    const dirLight = new DirectionalLight(0xffffff, 1.5);
-    dirLight.position.set(80, 100, 80);
-    dirLight.castShadow = true;
+  //   const dirLight = new DirectionalLight(0xffffff, 1.5);
+  //   dirLight.position.set(80, 100, 80);
+  //   dirLight.castShadow = true;
 
-    dirLight.shadow.mapSize.set(2048, 2048);
+  //   dirLight.shadow.mapSize.set(2048, 2048);
 
-    // Bias gegen Streifen
-    dirLight.shadow.bias = -0.001;
-    dirLight.shadow.normalBias = 0.05;
+  //   // Bias gegen Streifen
+  //   dirLight.shadow.bias = -0.001;
+  //   dirLight.shadow.normalBias = 0.05;
 
-    // Schattencam begrenzen
-    const size = 25;
-    dirLight.shadow.camera.left = -size;
-    dirLight.shadow.camera.right = size;
-    dirLight.shadow.camera.top = size;
-    dirLight.shadow.camera.bottom = -size;
-    dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 200;
+  //   // Schattencam begrenzen
+  //   const size = 25;
+  //   dirLight.shadow.camera.left = -size;
+  //   dirLight.shadow.camera.right = size;
+  //   dirLight.shadow.camera.top = size;
+  //   dirLight.shadow.camera.bottom = -size;
+  //   dirLight.shadow.camera.near = 0.5;
+  //   dirLight.shadow.camera.far = 200;
 
-    lights.push(dirLight);
+  //   lights.push(dirLight);
 
-    this.scene.add(...lights);
-    this.lights = { ambient, hemiLight, dirLight };
-  }
+  //   this.scene.add(...lights);
+  //   this.lights = { ambient, hemiLight, dirLight };
+  // }
 
   registerOutlineObject(
     object: Object3D,

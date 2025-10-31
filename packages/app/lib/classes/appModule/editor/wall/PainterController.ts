@@ -10,7 +10,7 @@ import type {
 import AppModuleController from '../../../AppModuleController';
 import type { Object3D } from 'three';
 import type { FACE_INDEX } from '@cuby-world/app/lib/types/wall';
-import { ReplaySubject, type Observable } from 'rxjs';
+import { filter, ReplaySubject, type Observable } from 'rxjs';
 import { concatMap, map } from 'rxjs';
 
 import { OBJECT_NAME } from '../../../../utils/object';
@@ -71,8 +71,16 @@ export default class PainterController extends AppModuleController<
         .subscribe(void 0)
     );
 
-    const room = this.app.modules.room.getRoom()!;
-    room.modules.selection.hideSelection();
+    this.subscription.add(
+      this.app.modules.room.observables.room$
+        .pipe(
+          filter(Boolean),
+          concatMap(async room => {
+            room.modules.selection.hideSelection();
+          })
+        )
+        .subscribe(void 0)
+    );
   }
 
   //#region events
@@ -187,12 +195,14 @@ export default class PainterController extends AppModuleController<
             .getRoom()
             ?.modules.wall.getWallById(wallId);
 
-          const preparedPosition = preparedPositions[0];
+          return { preparedPosition: preparedPositions[0], position, wall };
+        }),
+        map(({ preparedPosition, position, wall }) => {
           const object = preparedPosition?.object;
           let faceIndex = -1;
           if (wall) {
             faceIndex = getFaceGroupIndex(
-              wall.root,
+              wall.root.getObjectByName('click_helper')!,
               preparedPosition?.faceIndex
             );
           }

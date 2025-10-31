@@ -225,7 +225,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         if (unitFocusModule?.focusedUnit) {
           const position = unitFocusModule.focusedUnit.getScenePosition();
           renderer.updateCamera(position);
-          renderer.updateLight(position);
+          // renderer.modules.light.updateLight(position);
         }
       })
     );
