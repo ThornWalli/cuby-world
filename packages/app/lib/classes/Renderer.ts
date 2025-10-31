@@ -341,6 +341,7 @@ export default class Renderer<
   static ISOMETRIC_DISTANCE = 35; // Abstand Kamera vom Target
 
   updateCamera(position?: Vector3) {
+    console.log('update camera', position);
     this.camera.zoom = 1;
     if (position) {
       // Kamera bleibt im gleichen Winkel, nur verschoben

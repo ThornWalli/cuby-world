@@ -527,15 +527,20 @@ export default class WallModule extends RoomModule<
 
     if (refresh) {
       const floors = Array.from(new Set(walls.map(wall => wall.position.y)));
+      const maxFloor = Math.max(...floors);
       this.refreshWallRooms(floors);
       const descriptions = this.getWallsByFloor(floors).map(wall =>
         wall.toDescription()
       );
-      for (const wall of this.state.walls) {
+
+      for (const wall of this.getWallsByFloor(floors)) {
         wall.update(descriptions);
         await wall.refreshWallMeshes();
       }
-      this.updateVisibility(this.room.app.renderer.camera, floors);
+      this.updateVisibility(
+        this.room.app.renderer.camera,
+        getFloorDescendingList(maxFloor)
+      );
     }
 
     return walls;

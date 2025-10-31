@@ -1,3 +1,5 @@
+import { Euler } from 'three';
+
 export enum ROTATION {
   WEST = 'west',
   NORTH = 'north',
@@ -50,5 +52,28 @@ export function invertRotation(rotation: ROTATION): ROTATION {
       return ROTATION.NORTH_WEST;
     case ROTATION.SOUTH_WEST:
       return ROTATION.NORTH_EAST;
+  }
+}
+
+export function getRotationAngle(rotation: ROTATION) {
+  switch (rotation) {
+    case ROTATION.WEST:
+      return new Euler(0, Math.PI, 0);
+    case ROTATION.EAST:
+      return new Euler(0, 0, 0);
+    case ROTATION.NORTH_WEST:
+      return new Euler(0, (3 * Math.PI) / 4, 0);
+    case ROTATION.SOUTH_WEST:
+      return new Euler(0, -(3 * Math.PI) / 4, 0);
+    case ROTATION.NORTH_EAST:
+      return new Euler(0, Math.PI / 4, 0);
+    case ROTATION.SOUTH_EAST:
+      return new Euler(0, -Math.PI / 4, 0);
+    case ROTATION.NORTH:
+      return new Euler(0, Math.PI / 2, 0);
+    case ROTATION.SOUTH:
+      return new Euler(0, -Math.PI / 2, 0);
+    default:
+      return new Euler(0, 0, 0);
   }
 }

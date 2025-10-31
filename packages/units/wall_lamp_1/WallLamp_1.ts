@@ -36,7 +36,7 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
       },
       moduleStates: {
         wall: {
-          offset: new Vector3(-0.4, 1.6, 0)
+          offset: new Vector3(-0.4, 1.4, 0)
         }
       }
     });
@@ -65,9 +65,10 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
       emissiveIntensity: 1
     });
 
-    const light = new PointLight(this.options.color, 1, 3);
+    const light = new PointLight(this.options.color, 0.4, 1);
     light.decay = 2;
     light.castShadow = true;
+    // light.shadow.bias = -0.001;
     light.shadow.mapSize.set(128, 128);
     light.shadow.radius = 2;
     light.position.set(0.4, 0, 0);
@@ -76,6 +77,7 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
 
     this.observables.materialReady$.next();
     meshRoot.add(object);
+    // _context.room?.app.renderer.scene.add(new PointLightHelper(light, 0.1));
     return meshRoot;
   }
 }

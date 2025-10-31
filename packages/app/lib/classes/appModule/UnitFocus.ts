@@ -64,6 +64,15 @@ export default class UnitFocusAppModule extends AppModule<State, Observables> {
     this.setFocusedUnit(player.unit);
   }
 
+  focusUnit(unit: Unit = this.state.focusedUnit!) {
+    if (unit) {
+      const controls = this.app.renderer.controls;
+      controls.target.copy(unit.root.position);
+      controls.object.position.copy(this.app.renderer.camera.position);
+      controls.update();
+    }
+  }
+
   setFocusedUnit(unit?: Unit) {
     const lastFocusedUnit = this.state.focusedUnit;
     this.state.focusedUnit = unit;
@@ -71,9 +80,7 @@ export default class UnitFocusAppModule extends AppModule<State, Observables> {
     if (!unit) {
       this.app.renderer.enableControls();
       if (lastFocusedUnit) {
-        controls.object.position.copy(this.app.renderer.camera.position);
-        controls.target.copy(lastFocusedUnit.root.position);
-        controls.update();
+        this.focusUnit(lastFocusedUnit);
       }
     } else {
       this.app.renderer.disableControls();

@@ -132,6 +132,20 @@ export default class MasonController extends AppModuleController<
   override setup() {
     super.setup();
 
+    // this.subscription.add(
+    //   this.app.modules.room
+    //     .getRoom()
+    //     ?.modules.floor.observables.floor$.pipe(
+    //       concatMap(async () => {
+    //         updateWallCreatorMeshHeight(
+    //           this.indicatorMeshes,
+    //           this.app.modules.room.getRoom()!.modules.floor.getFloor()
+    //         );
+    //       })
+    //     )
+    //     .subscribe(void 0)
+    // );
+
     this.subscription.add(
       this.app.modules.room.observables.hover$
         .pipe(
@@ -202,6 +216,7 @@ export default class MasonController extends AppModuleController<
   // eslint-disable-next-line complexity
   public async onMove(position?: Vector3 | null) {
     if (position && this.state.status === MASON_STATUS.PLACE) {
+      this.showIndicators();
       const offset = position.clone().sub(this.state.startPosition!);
       if (Math.abs(offset.x) < Math.abs(offset.z)) {
         position = new Vector3(
@@ -433,6 +448,10 @@ export default class MasonController extends AppModuleController<
     this.indicatorMeshes.end.visible = true;
   }
 
+  private showIndicators() {
+    this.indicatorMeshes.start.visible = true;
+    this.indicatorMeshes.end.visible = true;
+  }
   private hideIndicators() {
     this.indicatorMeshes.start.visible = false;
     this.indicatorMeshes.end.visible = false;
@@ -449,26 +468,21 @@ export default class MasonController extends AppModuleController<
 }
 
 function createWallCreatorMesh(): Mesh {
-  const height = 2.6;
+  const height = FLOOR_HEIGHT + 0.4;
   const geometry = new BoxGeometry(0.2, height, 0.2);
 
   geometry.translate(0, height / 2, 0);
   geometry.translate(-0.5, 0, -0.5);
-  const material = new MeshPhongMaterial({
-    // color: 0x000000,
-    opacity: 1,
-    transparent: true,
-    depthWrite: false
-  });
+  const material = new MeshPhongMaterial();
 
   const subMeshPlane = new Mesh(
-    new BoxGeometry(1, 1, 1),
+    new BoxGeometry(1, height, 1),
     new MeshBasicMaterial({
       color: 0x000000,
-      visible: false,
-      depthWrite: false
+      visible: false
     })
   );
+  subMeshPlane.geometry.translate(0, height / 2, 0);
   subMeshPlane.position.y = 0.6;
   subMeshPlane.rotation.x = -Math.PI / 2;
 

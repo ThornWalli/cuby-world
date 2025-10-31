@@ -1,4 +1,12 @@
-import { AmbientLight, Color, DirectionalLight, HemisphereLight } from 'three';
+import {
+  AmbientLight,
+  Color,
+  DirectionalLight,
+  DirectionalLightHelper,
+  HemisphereLight,
+  PointLight,
+  PointLightHelper
+} from 'three';
 import type { AppModuleControllerObservables } from '../AppModuleController';
 import type { AppModuleState } from '../AppModule';
 import AppModule from '../AppModule';
@@ -20,6 +28,8 @@ interface State extends AppModuleState {}
 export default class LightAppModule extends AppModule<State, Observables> {
   static override TYPE = 'light';
 
+  debug = false;
+
   state: State = {};
 
   lights: {
@@ -35,11 +45,20 @@ export default class LightAppModule extends AppModule<State, Observables> {
     //#endregion
 
     this.lights = createLights();
-    app.renderer.scene.add(
-      this.lights.ambient,
-      this.lights.hemiLight,
-      this.lights.dirLight
-    );
+
+    const scene = app.renderer.scene;
+
+    if (this.debug) {
+      Object.values(this.lights).forEach(light => {
+        if (light instanceof PointLight) {
+          scene.add(new PointLightHelper(light, 0.1));
+        } else if (light instanceof DirectionalLight) {
+          scene.add(new DirectionalLightHelper(light, 1));
+        }
+      });
+    }
+
+    scene.add(this.lights.ambient, this.lights.hemiLight, this.lights.dirLight);
   }
 
   override setup(): void {

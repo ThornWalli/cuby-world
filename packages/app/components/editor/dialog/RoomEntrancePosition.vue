@@ -1,6 +1,9 @@
 <template>
-  <cw-dialog ref="dialog" v-bind="$attrs" class="cw-dialog-room-grid-resize">
-    <template #header>Resize Grid</template>
+  <cw-dialog
+    ref="dialog"
+    v-bind="$attrs"
+    class="cw-dialog-room-entrance-position">
+    <template #header>Entrance Position</template>
     <template #default="ctx">
       <form
         ref="formEl"
@@ -136,7 +139,7 @@ defineExpose({
 </script>
 
 <style lang="postcss" scoped>
-.cw-dialog-room-grid-resize {
+.cw-dialog-room-entrance-position {
   .fields {
     display: flex;
     flex-direction: column;

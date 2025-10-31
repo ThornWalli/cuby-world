@@ -126,7 +126,6 @@ export default class RoomAppModule extends AppModule<State, Observables> {
   }
 
   async addPlayerUnit(player: Player) {
-    // const { unitFocus: unitFocusModule } = this.app.modules!;
     const room = this.getRoom()!;
     const teleport = room.modules.teleport.getTeleportsByType(
       TELEPORT_TYPE.ENTRANCE
@@ -157,7 +156,14 @@ export default class RoomAppModule extends AppModule<State, Observables> {
 
     if (player.client) {
       this.app.modules.selection.setSelectedUnit(playerUnit);
-      // unitFocusModule?.setFocusedUnit(cuby);
+
+      this.app.renderer.updateCamera(playerUnit.getScenePosition());
+      this.app.renderer.controls.object.position.copy(
+        this.app.renderer.camera.position
+      );
+      this.app.renderer.controls.target.copy(playerUnit.getScenePosition());
+
+      this.app.modules.unitFocus.setFocusedUnit(playerUnit);
     }
   }
 
@@ -426,9 +432,6 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     }
 
     if (preparedPositions.length > 0) {
-      const { wall, wallExtension, unit, worldPosition, object } =
-        preparedPositions[0]!;
-
       const abort = Object.values(app.modules).some((module: AppModule) => {
         return module.onSceneSelect({ preparedPositions, player });
       });
@@ -441,36 +444,46 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       if (abort) {
         return;
       }
-      if (wallExtension && wall) {
+
+      console.log(preparedPositions);
+      if (
+        preparedPositions[0] &&
+        preparedPositions[0].wallExtension &&
+        preparedPositions[0].wall
+      ) {
         const extension = app.modules.room
           .getRoom()
-          ?.modules.wall.getWallById(wall)
-          ?.getExtensionById(wallExtension);
+          ?.modules.wall.getWallById(preparedPositions[0].wall)
+          ?.getExtensionById(preparedPositions[0].wallExtension);
         console.log('Wall Extension selected:', extension);
         if (extension) {
           player.moveTo(extension.getPosition());
         }
-      } else if (object && isStair(object)) {
-        const stair = getStairFromObject(app, object);
-        if (stair) {
-          const position = Object.values(stair?.getEntryPositions()).find(
-            pos => pos.y !== player.unit?.getPosition().y
-          );
-          player.moveTo(position!);
-        }
-
-        // alert('test');
-      } else if (
-        unit &&
-        app.modules.selection.getSelectedUnit()?.id === unit?.id
-      ) {
-        console.log('Move player to selected unit');
-        player.moveTo(unit.getPosition());
-      } else if (unit) {
-        app.modules.selection.setSelectedUnit(unit);
       } else {
-        app.modules.selection.setSelectedUnit(null);
-        player.moveTo(worldPosition!);
+        preparedPositions = preparedPositions.filter(pos => !pos.wall);
+        const { unit, worldPosition, object } = preparedPositions[0]!;
+        if (object && isStair(object)) {
+          const stair = getStairFromObject(app, object);
+          if (stair) {
+            const position = Object.values(stair?.getEntryPositions()).find(
+              pos => pos.y !== player.unit?.getPosition().y
+            );
+            player.moveTo(position!);
+          }
+
+          // alert('test');
+        } else if (
+          unit &&
+          app.modules.selection.getSelectedUnit()?.id === unit?.id
+        ) {
+          console.log('Move player to selected unit');
+          player.moveTo(unit.getPosition());
+        } else if (unit) {
+          app.modules.selection.setSelectedUnit(unit);
+        } else {
+          app.modules.selection.setSelectedUnit(null);
+          player.moveTo(worldPosition!);
+        }
       }
     } else {
       console.log('No intersected object');

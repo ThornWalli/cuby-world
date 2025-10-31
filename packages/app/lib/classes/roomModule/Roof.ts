@@ -116,7 +116,7 @@ export default class RoofModule extends RoomModule<State, Observables> {
 
         const mesh = new Mesh(
           mergedGeometry,
-          new ShadowMaterial({ side: DoubleSide })
+          new ShadowMaterial({ side: DoubleSide, shadowSide: DoubleSide })
         );
 
         mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_SELECT] = true;

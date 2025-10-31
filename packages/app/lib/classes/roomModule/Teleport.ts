@@ -11,6 +11,7 @@ import { loadGltf } from '../../utils/gltf';
 
 import defaultTeleport from '../../../assets/objects/teleports/default.glb?url';
 import Teleport, { EntranceTeleport, RoomTeleport } from '../Teleport';
+import { getRotationAngle, invertRotation } from '../../utils/rotation';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Observables extends RoomModuleObservables {}
@@ -71,6 +72,9 @@ export default class TeleportModule extends RoomModule<State, Observables> {
     const { object } = await loadGltf(defaultTeleport);
     object.position.copy(
       teleporter.position.clone().multiply(new Vector3(1, FLOOR_HEIGHT, 1))
+    );
+    object.setRotationFromEuler(
+      getRotationAngle(invertRotation(teleporter.rotation))
     );
     return object;
   }

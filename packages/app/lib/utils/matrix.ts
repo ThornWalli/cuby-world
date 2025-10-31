@@ -62,8 +62,7 @@ export function preparePosition(onlyTopFace = false) {
 
         const wallExtension: WallExtensionIdentifier =
           object.userData[OBJECT_USER_DATA.WALL_EXTENSION];
-        const wall: WallIdentifier =
-          object.userData[OBJECT_USER_DATA.WALL_EXTENSION_WALL];
+        const wall: WallIdentifier = object.userData[OBJECT_USER_DATA.WALL];
 
         let unit: Unit | undefined;
         while (object) {
