@@ -1,5 +1,12 @@
 # Project Changelog
 
+# [1.0.0-beta.20](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.19...v1.0.0-beta.20) (2025-10-31)
+
+
+### Bug Fixes
+
+* **App:** ensure setup is awaited in onMounted lifecycle ([717f836](https://github.com/ThornWalli/cuby-world/commit/717f8366107d799682285edd7fed59d58ef6a422))
+
 # [1.0.0-beta.19](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.18...v1.0.0-beta.19) (2025-10-31)
 
 
