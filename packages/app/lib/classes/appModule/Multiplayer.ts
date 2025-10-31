@@ -388,14 +388,12 @@ export default class MultiplayerAppModule extends AppModule<
     if (!player) {
       throw new Error('No current player');
     }
-    console.log('Sending message', this.actions.sendMessage);
     if (this.actions.sendMessage) {
       const data = {
         ...message,
         timestamp: Date.now(),
         playerId: player.id
       };
-      console.log('sendMessage data', data, this.getOtherPlayers());
       this.actions.sendMessage(data, this.getOtherPlayers());
 
       this.observables.message$.next({

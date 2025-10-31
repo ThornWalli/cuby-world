@@ -65,9 +65,9 @@ const currentComponent = computed(() =>
   defineAsyncComponent(() => import('./app/Playground.vue'))
 );
 
-onMounted(async () => {
-  nextTick(() => {
-    setup();
+onMounted(() => {
+  nextTick(async () => {
+    await setup();
     app.value!.enterRoom($props.roomDescription);
   });
 });

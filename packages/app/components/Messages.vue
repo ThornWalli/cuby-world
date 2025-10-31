@@ -133,7 +133,6 @@ function onUpdateMessagePositions() {
 
 async function onSend(message: Message) {
   if (message && $props.app.modules.multiplayer?.actions.sendMessage) {
-    console.log('sending message', message);
     await $props.app.modules.multiplayer.sendMessage(message);
     input.value?.reset();
   }
