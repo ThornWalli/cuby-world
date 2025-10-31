@@ -1,4 +1,4 @@
-import { Mesh, type Object3D } from 'three';
+import { Mesh, Vector3, type Object3D } from 'three';
 import { Group } from 'three';
 
 import Unit, {
@@ -45,6 +45,7 @@ export default class Character extends Unit<
     super(
       {
         ...options,
+        size: new Vector3(1, 1.8, 1),
         name: 'Character',
         selectable: true,
         placeable: true,
