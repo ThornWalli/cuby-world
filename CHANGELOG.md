@@ -1,5 +1,12 @@
 # Project Changelog
 
+# [1.0.0-beta.22](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.21...v1.0.0-beta.22) (2025-11-01)
+
+
+### Bug Fixes
+
+* **app:** initialize skin with default player skin ID and improve skin options retrieval ([c491a57](https://github.com/ThornWalli/cuby-world/commit/c491a5772445f1b28d150fffb17ee67ceef73a40))
+
 # [1.0.0-beta.21](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.20...v1.0.0-beta.21) (2025-11-01)
 
 
