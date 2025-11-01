@@ -9,8 +9,8 @@ import { selfId, type DataPayload, type Room as TrysteroRoom } from 'trystero';
 
 import type { FirebaseApp } from 'firebase/app';
 import { concatMap, Subject, Subscription, switchMap } from 'rxjs';
-import type { PLAYER_COLOR, PlayerSettings } from '../Player';
-import Player from '../Player';
+import type { PlayerSettings } from '../Player';
+import Player, { DEFAULT_PLAYER_SKIN_ID } from '../Player';
 import { Vector3 } from 'three';
 // import {
 //   createUser,
@@ -19,7 +19,6 @@ import { Vector3 } from 'three';
 //   type User
 // } from './multiplayer/database';
 import CurrentPlayer from '../player/Current';
-import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
 import type App from '../App';
 
 export interface Message {
@@ -65,10 +64,8 @@ type PlayerInfoPayload = DataPayload & Partial<PlayerInfo>;
 
 export const DEFAULT_ROOM_ID = 'lobby';
 
-interface PlayerInfo {
+interface PlayerInfo extends PlayerSettings {
   // peerId: string;
-  name: string;
-  color: PLAYER_COLOR;
   position: [number, number, number];
 }
 export default class MultiplayerAppModule extends AppModule<
@@ -142,7 +139,9 @@ export default class MultiplayerAppModule extends AppModule<
         playerSubscription.add(
           player.unit$
             .pipe(
-              switchMap(unit => unit.modules.movement.observables.moveStart$),
+              switchMap(
+                ({ unit }) => unit.modules.movement.observables.moveStart$
+              ),
               concatMap(async position => {
                 console.log('Player started moving');
                 if (!this.actions?.setMoveTo) {
@@ -166,36 +165,56 @@ export default class MultiplayerAppModule extends AppModule<
       })
     );
 
-    this.observables?.moveTo$?.subscribe(({ data, peerId }) => {
-      const player = this.players.get(peerId);
-      console.log('Received moveTo from', peerId, data);
-      if (player && player.unit) {
-        player.unit.modules.movement.moveTo(
-          new Vector3().fromArray(data.position)
-        );
-      }
-    });
+    this.subscription.add(
+      this.observables?.moveTo$
+        ?.pipe(
+          concatMap(async ({ data, peerId }) => {
+            const player = this.players.get(peerId);
+            console.log('Received moveTo from', peerId, data);
+            if (player && player.unit) {
+              await player.unit.modules.movement.moveTo(
+                new Vector3().fromArray(data.position)
+              );
+              await player.unit.modules.movement.applyPosition(
+                new Vector3().fromArray(data.position)
+              );
+            }
+          })
+        )
+        .subscribe(void 0)
+    );
 
     //#region room event handlers
 
     this.subscription.add(
-      this.observables?.peerJoin$?.subscribe(peerId => {
-        const player = new Player({ id: peerId, name: peerId });
-        const currentPlayer = this.app.modules.player.getCurrentPlayer();
-        if (currentPlayer && this.actions.sendPlayerInfo) {
-          this.actions.sendPlayerInfo(
-            {
-              name: currentPlayer.state.name,
-              color: currentPlayer.state.color,
-              position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
-            },
-            [peerId]
-          );
-        }
-        this.app.modules.player.addPlayer(player);
-        this.players.set(player.id, player);
-        console.log('Peer joined:', peerId);
-      })
+      this.observables?.peerJoin$
+        .pipe(
+          concatMap(async peerId => {
+            const player = new Player({
+              id: peerId,
+              name: peerId
+            });
+            const currentPlayer = this.app.modules.player.getCurrentPlayer();
+            if (currentPlayer && this.actions.sendPlayerInfo) {
+              this.actions.sendPlayerInfo(
+                {
+                  name: currentPlayer.state.name,
+                  characterType: currentPlayer.state.characterType || null,
+                  skin: currentPlayer.state.skin,
+                  position: currentPlayer.unit?.getPosition().toArray() || [
+                    0, 0, 0
+                  ]
+                },
+                [peerId]
+              );
+            }
+
+            this.app.modules.player.addPlayer(player);
+            this.players.set(player.id, player);
+            console.log('Peer joined:', peerId);
+          })
+        )
+        .subscribe(void 0)
     );
 
     this.subscription.add(
@@ -259,8 +278,9 @@ export default class MultiplayerAppModule extends AppModule<
 
     const player = new CurrentPlayer({
       id: selfId,
+      characterType: playerSettings.characterType,
       name: playerSettings.name || 'Unknown',
-      color: playerSettings.color || CUBY_COLOR.BLUE
+      skin: playerSettings.skin || DEFAULT_PLAYER_SKIN_ID
       // firebase: {
       //   userId: userCredential.user.uid
       // }
@@ -292,8 +312,9 @@ export default class MultiplayerAppModule extends AppModule<
     this.actions.sendPlayerInfo?.(
       {
         peerId: this.state.playerId,
+        characterType: currentPlayer.state.characterType,
         name: currentPlayer.state.name || 'Unknown',
-        color: currentPlayer.state.color,
+        skin: currentPlayer.state.skin,
         position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
       },
       this.getOtherPlayers()
@@ -359,10 +380,10 @@ export default class MultiplayerAppModule extends AppModule<
     const [sendPlayerInfo, getPlayerInfo] =
       room.makeAction<PlayerInfoPayload>('playerInfo');
 
-    getPlayerInfo((data, peerId) => {
+    getPlayerInfo(async (data, peerId) => {
       const player = this.players.get(peerId);
       if (player) {
-        this.setPlayerInfo(player, data as PlayerInfo);
+        await this.setPlayerInfo(player, data as PlayerInfo);
       }
     });
 
@@ -371,10 +392,11 @@ export default class MultiplayerAppModule extends AppModule<
     //#endregion
   }
 
-  setPlayerInfo(player: Player, info: PlayerInfo) {
-    player.setSettings({
+  async setPlayerInfo(player: Player, info: PlayerInfo) {
+    await player.setSettings({
+      characterType: info.characterType,
       name: info.name,
-      color: info.color
+      skin: info.skin
     });
     // set position if available
     if (info.position) {

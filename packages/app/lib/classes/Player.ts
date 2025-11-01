@@ -2,11 +2,25 @@ import type { Vector3 } from 'three';
 import type Unit from './Unit';
 import PlayerUnitModule from './unitModule/Player';
 import { ReplaySubject, Subject } from 'rxjs';
-import Cuby, { CUBY_COLOR as PLAYER_COLOR } from '@cuby-world/units/cuby/Cuby';
+import Cuby from '@cuby-world/units/cuby/Cuby';
+import { catalog } from '@cuby-world/units';
+import Character from '@cuby-world/units/character/Character';
+import PolyCharacter from '@cuby-world/units/poly_character/PolyCharacter';
+
+export type PlayerSkinIdentifier = string;
+
+export const DEFAULT_PLAYER_SKIN_ID: PlayerSkinIdentifier = 'default';
+
+export enum CHARACHTER_TYPE {
+  CUBY = 'cuby',
+  DEFAULT = 'character',
+  POLY_CHARACTER = 'poly_character'
+}
 
 export interface PlayerSettings {
+  characterType: CHARACHTER_TYPE | null;
   name: string;
-  color: PLAYER_COLOR;
+  skin: PlayerSkinIdentifier;
 }
 
 export enum PLAYER_STATE {
@@ -19,40 +33,52 @@ export enum PLAYER_STATE {
 
 export interface PlayerState {
   state: PLAYER_STATE;
+  characterType: CHARACHTER_TYPE | null;
   name: string;
-  color: PLAYER_COLOR;
+  skin: PlayerSkinIdentifier;
 }
 
 export interface PlayerConstructorOptions {
   client?: boolean;
   id?: string;
   name: string;
-  color?: PLAYER_COLOR;
+  characterType?: CHARACHTER_TYPE | null;
+  skin?: PlayerSkinIdentifier;
 }
 
-export { PLAYER_COLOR };
 export default class Player {
   private _client: boolean = false;
   get client() {
     return this._client;
   }
 
+  ready: boolean = false;
   state: PlayerState;
 
   id: string;
   unit?: Unit;
 
   playerSettings$ = new Subject<PlayerSettings>();
-  unit$ = new ReplaySubject<Unit>(1);
+  unit$ = new ReplaySubject<{
+    lastUnit?: Unit;
+    unit: Unit;
+  }>(1);
 
-  constructor({ client, id, name, color }: PlayerConstructorOptions) {
+  constructor({
+    client,
+    id,
+    characterType,
+    name,
+    skin
+  }: PlayerConstructorOptions) {
     this._client = client ?? false;
     this.id = id || crypto.randomUUID();
 
     this.state = {
+      characterType: characterType ?? null,
       state: PLAYER_STATE.IDLE,
       name,
-      color: color || PLAYER_COLOR.BLUE
+      skin: skin ?? DEFAULT_PLAYER_SKIN_ID
     };
   }
 
@@ -64,43 +90,84 @@ export default class Player {
   }
 
   setUnit(unit: Unit) {
+    const lastUnit = this.unit;
     this.unit = unit;
+
     if (PlayerUnitModule.TYPE in this.unit.modules) {
       this.unit.modules.player.setPlayer(this);
     }
 
-    this.unit$.next(unit);
+    this.unit$.next({ unit, lastUnit });
     console.log('Player unit set:', this.unit.name);
   }
 
-  moveTo(position: Vector3) {
+  async moveTo(position: Vector3) {
     if (this.unit) {
-      this.unit.modules.movement.moveTo(position);
+      await this.unit.modules.movement.resolveMoveTo(position);
     } else {
       throw new Error('Player unit is not set, cannot move to position');
     }
   }
 
-  setColor(color: PLAYER_COLOR) {
-    this.state.color = color;
-    if (this.unit instanceof Cuby) {
-      this.unit.setColor(color);
+  async createUnit() {
+    let UnitClass: typeof Unit;
+    switch (this.state.characterType) {
+      case CHARACHTER_TYPE.POLY_CHARACTER:
+        UnitClass = await catalog.get('poly_character')!.instance()!;
+        break;
+      case CHARACHTER_TYPE.CUBY:
+        UnitClass = await catalog.get('cuby')!.instance()!;
+        break;
+      default:
+        UnitClass = Character as typeof Unit;
+        break;
+    }
+
+    const unit = new UnitClass({
+      name: UnitClass.NAME
+    });
+
+    return unit;
+  }
+
+  async setCharacterType(characterType: CHARACHTER_TYPE) {
+    if (this.unit && this.state.characterType === characterType) {
+      return;
+    }
+    this.state.characterType = characterType;
+    // refresh unit
+    this.setUnit(await this.createUnit());
+  }
+
+  setSkin(skin: PlayerSkinIdentifier) {
+    if (this.state.skin === skin) {
+      return;
+    }
+    this.state.skin = skin;
+    if (this.unit instanceof Cuby || this.unit instanceof PolyCharacter) {
+      this.unit.setSkin(skin);
     }
   }
 
   getSettings() {
     return {
+      characterType: this.state.characterType,
       name: this.state.name,
-      color: this.state.color
+      skin: this.state.skin
     };
   }
 
-  setSettings(settings: Partial<PlayerState>) {
+  async setSettings(settings: Partial<PlayerState>) {
+    if (settings.characterType) {
+      this.state.characterType = settings.characterType;
+      await this.setCharacterType(settings.characterType);
+    }
+
     if (settings.name !== undefined) {
       this.state.name = settings.name;
     }
-    if (settings.color !== undefined) {
-      this.setColor(settings.color);
+    if (settings.skin !== undefined) {
+      this.setSkin(settings.skin);
     }
   }
 }

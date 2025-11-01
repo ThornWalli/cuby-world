@@ -1,6 +1,6 @@
 <template>
   <div class="cw-shop-catalog">
-    <transition name="fade" mode="out-in">
+    <transition name="fade-short" mode="out-in">
       <cw-shop-catalog-skin
         v-if="catalogItemId && skins.length > 1"
         v-model="skinId"

@@ -8,12 +8,12 @@
         : currentCursor?.type
     }">
     <cw-renderer ref="rendererEl" debug :options="rendererOptions" />
-    <transition name="fade">
+    <transition name="fade-short">
       <component :is="currentComponent" v-if="ready && hasPlayer" :app="app!" />
     </transition>
     <!-- Dialogs -->
     <teleport to="#teleports">
-      <cw-dialog-create-user ref="dialogCreateUser" />
+      <cw-dialog-create-user v-if="app" ref="dialogCreateUser" :app="app" />
     </teleport>
   </div>
 </template>
@@ -37,8 +37,11 @@ import type { RendererOptions } from '../types';
 import { fromEvent, Subscription } from 'rxjs';
 import { Vector2 } from 'three';
 import type Renderer from '../lib/classes/Renderer';
-import Player, { type PlayerSettings } from '../lib/classes/Player';
-import { CUBY_COLOR } from '@cuby-world/units/cuby/Cuby';
+import Player, {
+  CHARACHTER_TYPE,
+  DEFAULT_PLAYER_SKIN_ID,
+  type PlayerSettings
+} from '../lib/classes/Player';
 import type { RoomDescription } from '../lib/types/room';
 import type { Cursor } from '../lib/classes/appModule/Cursor';
 
@@ -158,7 +161,8 @@ async function setupPlayer(app: App) {
     player = new Player({
       client: true,
       name: playerSettings.name,
-      color: playerSettings.color || CUBY_COLOR.BLUE
+      characterType: playerSettings.characterType || CHARACHTER_TYPE.CUBY,
+      skin: playerSettings.skin || DEFAULT_PLAYER_SKIN_ID
     });
   }
   app.modules.player.addPlayer(player);

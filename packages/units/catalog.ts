@@ -1,15 +1,14 @@
 import type Unit from '@cuby-world/app/lib/classes/Unit';
 import type { UnitItem } from '@cuby-world/app/lib/types/unit/catalog';
 
-import doormate1Skins from './doormate_1/skins';
-import lampe1Skins from './lamp/skins';
-import cardboardBoxSkins from './cardboardBox/skins';
-import shelf1Skins from './shelf_1/skins';
-
-import wallLamp1Skins from './wall_lamp_1/skins';
-import { mapSkins } from '@cuby-world/app/lib/utils/skins';
-import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
 import { CATALOG_TAG } from '@cuby-world/app/lib/utils/catalog';
+import { skinsMap as cubySkinMap } from './cuby/skins';
+import { skinsMap as polyCharacterSkinMap } from './poly_character/skins';
+import { skinsMap as shelf1SkinMap } from './shelf_1/skins';
+import { skinsMap as wallLamp1SkinMap } from './wall_lamp_1/skins';
+import { skinsMap as doormate1SkinMap } from './doormate_1/skins';
+import { skinsMap as lamp1SkinMap } from './lamp_1/skins';
+import { skinsMap as cardboardBoxSkinMap } from './cardboardBox/skins';
 
 export const items: UnitItem[] = [
   {
@@ -17,11 +16,9 @@ export const items: UnitItem[] = [
     name: 'Doormate 1',
     description: 'A friendly doormate to welcome you home.',
     tags: [CATALOG_TAG.FURNITURE],
-    defaultSkinId: 'default',
-    skinMap: mapSkins<UnitSkinIdentifier, (typeof doormate1Skins)[0]>(
-      doormate1Skins
-    ),
-    skins: doormate1Skins,
+    skins: Array.from(doormate1SkinMap.values()),
+    defaultSkinId: doormate1SkinMap.get('default')!.id,
+    skinMap: doormate1SkinMap,
     instance: () =>
       import('./doormate_1/Doormate_1').then(m => m.default as typeof Unit),
     options: {}
@@ -31,10 +28,11 @@ export const items: UnitItem[] = [
     name: 'Lamp 1',
     description: 'A stylish lamp to light up your space.',
     tags: [CATALOG_TAG.LIGHT],
-    defaultSkinId: lampe1Skins[0]!.id,
-    skinMap: mapSkins<UnitSkinIdentifier, (typeof lampe1Skins)[0]>(lampe1Skins),
-    skins: lampe1Skins,
-    instance: () => import('./lamp/Lamp').then(m => m.default as typeof Unit),
+    skins: Array.from(lamp1SkinMap.values()),
+    defaultSkinId: lamp1SkinMap.get('default')!.id,
+    skinMap: lamp1SkinMap,
+    instance: () =>
+      import('./lamp_1/Lamp_1').then(m => m.default as typeof Unit),
     options: {}
   },
   {
@@ -42,11 +40,9 @@ export const items: UnitItem[] = [
     name: 'Wall Lamp 1',
     description: 'A stylish lamp to light up your space.',
     tags: [CATALOG_TAG.LIGHT],
-    defaultSkinId: wallLamp1Skins[0]!.id,
-    skinMap: mapSkins<UnitSkinIdentifier, (typeof wallLamp1Skins)[0]>(
-      wallLamp1Skins
-    ),
-    skins: wallLamp1Skins,
+    skins: Array.from(wallLamp1SkinMap.values()),
+    defaultSkinId: wallLamp1SkinMap.get('default')!.id,
+    skinMap: wallLamp1SkinMap,
 
     instance: () =>
       import('./wall_lamp_1/WallLamp_1').then(m => m.default as typeof Unit),
@@ -57,11 +53,9 @@ export const items: UnitItem[] = [
     name: 'Cardboard Box',
     description: 'A simple cardboard box for storage or play.',
     tags: [CATALOG_TAG.FURNITURE],
-    defaultSkinId: cardboardBoxSkins[0]!.id,
-    skinMap: mapSkins<UnitSkinIdentifier, (typeof cardboardBoxSkins)[0]>(
-      cardboardBoxSkins
-    ),
-    skins: cardboardBoxSkins,
+    skins: Array.from(cardboardBoxSkinMap.values()),
+    defaultSkinId: cardboardBoxSkinMap.get('default')!.id,
+    skinMap: cardboardBoxSkinMap,
     instance: () =>
       import('./cardboardBox/CardboardBox').then(m => m.default as typeof Unit),
     options: {}
@@ -71,9 +65,9 @@ export const items: UnitItem[] = [
     name: 'Shelf Basic',
     description: 'A basic wall shelf for storage or display.',
     tags: [CATALOG_TAG.FURNITURE],
-    defaultSkinId: shelf1Skins[0]!.id,
-    skinMap: mapSkins<UnitSkinIdentifier, (typeof shelf1Skins)[0]>(shelf1Skins),
-    skins: shelf1Skins,
+    skins: Array.from(shelf1SkinMap.values()),
+    defaultSkinId: shelf1SkinMap.get('default')!.id,
+    skinMap: shelf1SkinMap,
     instance: () =>
       import('./shelf_1/Shelf_1').then(m => m.default as typeof Unit),
     options: {}
@@ -109,9 +103,9 @@ export const items: UnitItem[] = [
     id: 'cuby',
     name: 'Cuby',
     description: 'The iconic Cuby unit.',
-    skins: [],
-    defaultSkinId: '',
-    skinMap: new Map(),
+    skins: Array.from(cubySkinMap.values()),
+    defaultSkinId: cubySkinMap.get('default')!.id,
+    skinMap: cubySkinMap,
     tags: ['player'],
     instance: () => import('./cuby/Cuby').then(m => m.default as typeof Unit),
     options: {}
@@ -127,6 +121,21 @@ export const items: UnitItem[] = [
     tags: ['player'],
     instance: () =>
       import('./character/Character').then(m => m.default as typeof Unit),
+    options: {}
+  },
+  {
+    hide: true,
+    id: 'poly_character',
+    name: 'Poly Character',
+    description: 'Base character unit for players.',
+    skins: Array.from(cubySkinMap.values()),
+    defaultSkinId: polyCharacterSkinMap.get('default')!.id,
+    skinMap: polyCharacterSkinMap,
+    tags: ['player'],
+    instance: () =>
+      import('./poly_character/PolyCharacter').then(
+        m => m.default as typeof Unit
+      ),
     options: {}
   }
 ];

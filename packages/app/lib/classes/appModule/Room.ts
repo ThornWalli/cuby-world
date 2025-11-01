@@ -24,7 +24,6 @@ import type { RoomDescription } from '../../types/room';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 import { OBJECT_NAME } from '../../utils/object';
 import { TELEPORT_TYPE } from '../../types/teleport';
-import Character from '@cuby-world/units/character/Character';
 import type Unit from '../Unit';
 import type { IntersectionListener } from '../rendererModule/Intersection';
 
@@ -125,7 +124,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     return this.state.room;
   }
 
-  async addPlayerUnit(player: Player) {
+  async addPlayer(player: Player) {
     const room = this.getRoom()!;
     const teleport = room.modules.teleport.getTeleportsByType(
       TELEPORT_TYPE.ENTRANCE
@@ -138,32 +137,34 @@ export default class RoomAppModule extends AppModule<State, Observables> {
      * Player Unit
      */
 
-    const playerUnit = new Character({
-      position: teleport.position.clone(),
-      rotation: teleport.rotation
+    player.unit$.subscribe(async ({ unit, lastUnit }) => {
+      console.log('Player unit changed from', lastUnit, 'to', unit);
+
+      if (lastUnit) {
+        await room.modules.units.remove(lastUnit);
+        lastUnit.destroy();
+      }
+
+      unit.setPosition(teleport.position);
+      unit.setRotation(teleport.rotation);
+
+      await room.modules.units.add(unit);
+
+      if (player.client) {
+        this.app.modules.selection.setSelectedUnit(unit);
+
+        this.app.renderer.updateCamera(unit.getScenePosition());
+        this.app.renderer.controls.object.position.copy(
+          this.app.renderer.camera.position
+        );
+        this.app.renderer.controls.target.copy(unit.getScenePosition());
+
+        // this.app.modules.unitFocus.setFocusedUnit(unit);
+      }
     });
-    // const playerUnit = new Cuby({
-    //   options: {
-    //     color: player.state.color
-    //   },
-    //   position: teleport.position.clone(),
-    //   rotation: teleport.rotation
-    // });
 
-    player.setUnit(playerUnit);
-
-    await room.modules.units.add(playerUnit);
-
-    if (player.client) {
-      this.app.modules.selection.setSelectedUnit(playerUnit);
-
-      this.app.renderer.updateCamera(playerUnit.getScenePosition());
-      this.app.renderer.controls.object.position.copy(
-        this.app.renderer.camera.position
-      );
-      this.app.renderer.controls.target.copy(playerUnit.getScenePosition());
-
-      this.app.modules.unitFocus.setFocusedUnit(playerUnit);
+    if (player.state.characterType) {
+      await player.setCharacterType(player.state.characterType);
     }
   }
 
@@ -197,10 +198,10 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     this.roomSubscription = this.registerRoomSubscriptions(app);
 
     playerModule.observables.addPlayer$.subscribe(player => {
-      this.addPlayerUnit(player);
+      this.addPlayer(player);
     });
     playerModule.getPlayers().forEach(player => {
-      this.addPlayerUnit(player);
+      this.addPlayer(player);
     });
 
     this.subscription.add(
@@ -414,7 +415,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
 
   _position: Vector3 = new Vector3();
 
-  onSelect(preparedPositions: PreparedPosition[]) {
+  async onSelect(preparedPositions: PreparedPosition[]) {
     const app = this.app;
 
     const player = app.modules.player.getCurrentPlayer();
@@ -451,17 +452,20 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         preparedPositions[0].wallExtension &&
         preparedPositions[0].wall
       ) {
-        const extension = app.modules.room
+        const wall = app.modules.room
           .getRoom()
-          ?.modules.wall.getWallById(preparedPositions[0].wall)
-          ?.getExtensionById(preparedPositions[0].wallExtension);
+          ?.modules.wall.getWallById(preparedPositions[0].wall);
+        const extension = wall?.getExtensionById(
+          preparedPositions[0].wallExtension
+        );
         console.log('Wall Extension selected:', extension);
-        if (extension) {
-          player.moveTo(extension.getPosition());
+        if (wall) {
+          player.moveTo(wall.position);
         }
       } else {
         preparedPositions = preparedPositions.filter(pos => !pos.wall);
         const { unit, worldPosition, object } = preparedPositions[0]!;
+
         if (object && isStair(object)) {
           const stair = getStairFromObject(app, object);
           if (stair) {
@@ -470,14 +474,14 @@ export default class RoomAppModule extends AppModule<State, Observables> {
             );
             player.moveTo(position!);
           }
-
-          // alert('test');
         } else if (
           unit &&
           app.modules.selection.getSelectedUnit()?.id === unit?.id
         ) {
-          console.log('Move player to selected unit');
-          player.moveTo(unit.getPosition());
+          const playerUnit = player.unit!;
+          await playerUnit.modules.movement.moveTo(worldPosition!);
+          await playerUnit.modules.movement.applyPosition(worldPosition!);
+          app.modules.selection.setSelectedUnit(null);
         } else if (unit) {
           app.modules.selection.setSelectedUnit(unit);
         } else {

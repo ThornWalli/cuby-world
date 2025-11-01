@@ -14,8 +14,8 @@ import {
 } from 'three';
 import UnitModule from '../UnitModule';
 import type Unit from '../Unit';
-import { Subject } from 'rxjs';
-import { getRadByRotation, type UnitOptions } from '../Unit';
+import { Subject, Subscription } from 'rxjs';
+import type { UnitOptions } from '../Unit';
 import { easeOutQuad } from '@cuby-world/app/utils/easings';
 import RoomGrid from '../RoomGrid';
 import type { ArrayKeyMap } from '../ArrayKeyMap';
@@ -29,6 +29,10 @@ import {
 } from '../../utils/pathfindng';
 import { GRID_BLOCKED, GRID_NON_BLOCKED } from '../roomModule/Ground';
 import { ANIMATION_ACTION, type AnimationUnitModule } from './Animation';
+import { getRadByRotation } from '../../utils/rotation';
+
+import ChairUnitModule, { type ChairUnitOptions } from './Chair';
+import CharacterUnitModule from './Character';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -80,6 +84,7 @@ interface Observables extends UnitModuleObservables {
   moveStart$: Subject<Vector3>;
   moveStep$: Subject<Vector3>;
   moveEnd$: Subject<void>;
+  moveAbort$: Subject<void>;
 }
 
 type State = UnitModuleState;
@@ -99,6 +104,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     this.observables.moveStart$ = new Subject<Vector3>();
     this.observables.moveStep$ = new Subject<Vector3>();
     this.observables.moveEnd$ = new Subject<void>();
+    this.observables.moveAbort$ = new Subject<void>();
   }
 
   /**
@@ -113,9 +119,10 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     return false;
   }
 
-  async moveTo(position: Vector3) {
+  async moveTo(position: Vector3): Promise<boolean> {
     if (this.abortMovement()) {
-      return;
+      this.observables.moveAbort$.next();
+      return false;
     }
 
     const grid = createRoomGrid(this.unit);
@@ -140,6 +147,22 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       if (this.movements.length) {
         this.observables.moveStart$.next(position);
       }
+
+      return new Promise<boolean>(resolve => {
+        const subscription = new Subscription();
+        subscription.add(
+          this.observables.moveAbort$.subscribe(() => {
+            resolve(false);
+            subscription.unsubscribe();
+          })
+        );
+        subscription.add(
+          this.observables.moveEnd$.subscribe(() => {
+            resolve(true);
+            subscription.unsubscribe();
+          })
+        );
+      });
     } else {
       console.warn(
         'Zielposition außerhalb des Raumgrids:',
@@ -147,7 +170,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         grid.width,
         grid.height
       );
-      return;
+      return false;
     }
   }
 
@@ -161,6 +184,32 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
     if (this.currentMovement) {
       this.movementUpdate(v);
+    }
+  }
+
+  async resolveMoveTo(position: Vector3) {
+    if (await this.moveTo(position)) {
+      await this.applyPosition(position);
+    }
+  }
+
+  applyPosition(position: Vector3) {
+    const units =
+      this.unit.modules
+        .room!.getRoom()
+        ?.modules.units.getUnitsByPosition(position) || [];
+    const chairUnit = units.find(
+      u => !u.equal(this.unit) && ChairUnitModule.TYPE in u.modules
+    ) as Unit<ChairUnitOptions>;
+    if (chairUnit) {
+      const characterModule = this.unit.getModule<CharacterUnitModule>(
+        CharacterUnitModule.TYPE
+      );
+      characterModule.sit(chairUnit);
+    } else if ((this.unit as Unit<ChairUnitOptions>).modules.animation) {
+      (
+        this.unit as Unit<ChairUnitOptions>
+      ).modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
     }
   }
 
@@ -342,8 +391,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         if (!moveOptions.nextPosition) {
           moveOptions.nextPosition = null;
           this.currentMovement = null;
-
-          this.setUnitAnimation(ANIMATION_ACTION.IDLE);
+          this.observables.moveEnd$.next();
           return;
         }
 

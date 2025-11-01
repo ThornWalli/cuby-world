@@ -16,8 +16,8 @@ export default class CurrentPlayer extends Player {
     this.firebase = firebase;
   }
 
-  override setSettings(settings: Partial<PlayerSettings>) {
-    super.setSettings(settings);
+  override async setSettings(settings: Partial<PlayerSettings>) {
+    await super.setSettings(settings);
 
     this.playerSettings$.next(this.getSettings());
   }

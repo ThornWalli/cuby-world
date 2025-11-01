@@ -1,6 +1,5 @@
-import { Mesh, Vector3, type Object3D } from 'three';
+import { type MeshPhongMaterial, Mesh, Vector3, type Object3D } from 'three';
 import { Group } from 'three';
-
 import Unit, {
   type PreviewOptions,
   type SetupContext,
@@ -12,30 +11,34 @@ import Unit, {
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 import CharacterUnitModule from '@cuby-world/app/lib/classes/unitModule/Character';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
-
-import glbBase from './assets/character.glb?url';
+import glbBase from './assets/poly_character.glb?url';
 import {
   ANIMATION_ACTION,
   AnimationUnitModule
 } from '@cuby-world/app/lib/classes/unitModule/Animation';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
+import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
+import { DEFAULT_PLAYER_SKIN_ID } from '@cuby-world/app/lib/classes/Player';
+import { skinsMap } from './skins';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface CharacterOptions extends UnitOptions<MovementModuleOptions> {}
-
-type CharacterUnitModules = UnitModules & {
+type PolyCharacterUnitModules = UnitModules & {
   character: CharacterUnitModule;
   animation: AnimationUnitModule;
 };
 
+export interface PolyCharacterOptions
+  extends UnitOptions<MovementModuleOptions> {
+  color: string | number;
+}
+
 type CharacterUnitModuleList = (typeof CharacterUnitModule)[] & UnitModuleList;
-export default class Character extends Unit<
-  CharacterOptions,
-  CharacterUnitModules,
+export default class PolyCharacter extends Unit<
+  PolyCharacterOptions,
+  PolyCharacterUnitModules,
   CharacterUnitModuleList
 > {
-  static override KEY = 'character';
-  static override NAME = 'Character';
+  static override KEY = 'poly_character';
+  static override NAME = 'Poly Character';
 
   override previewOptions: PreviewOptions = {
     ground: false
@@ -43,15 +46,15 @@ export default class Character extends Unit<
 
   constructor(
     options: Omit<
-      UnitConstructorOptions<Partial<CharacterOptions>>,
+      UnitConstructorOptions<Partial<PolyCharacterOptions>>,
       'name' | 'selectable'
     > = {}
   ) {
     super(
       {
         ...options,
-        size: new Vector3(1, 1.75, 1),
-        name: 'Character',
+        size: new Vector3(1, 1.8, 1),
+        name: 'Poly Character',
         selectable: true,
         placeable: true,
         options: {
@@ -65,6 +68,7 @@ export default class Character extends Unit<
             stairStepDuration: 1100,
             rotationDuration: 125
           },
+          color: skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options.color,
           ...options.options
         }
       },
@@ -78,7 +82,7 @@ export default class Character extends Unit<
   override async setup(context: SetupContext) {
     await super.setup(context);
 
-    this.modules.character.offsets.sitting_idle = new Vector3(-0.075, 0, 0);
+    this.modules.character.offsets.sitting_idle = new Vector3(-0.075, -0.06, 0);
     this.modules.animation.getAction(
       ANIMATION_ACTION.STAIR_FALLBACK
     )!.timeScale = 2.2;
@@ -99,13 +103,14 @@ export default class Character extends Unit<
     if (this.isPreview()) {
       obj = scene;
     } else {
-      const scale = 0.9;
+      const scale = 1;
       obj.scale.set(scale, scale, scale);
       obj.translateY(-0.01);
     }
 
     obj.traverse(mesh => {
       if (mesh instanceof Mesh) {
+        (mesh.material as MeshPhongMaterial).color.set(this.options.color);
         mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_HOVER] = true;
       }
     });
@@ -114,5 +119,23 @@ export default class Character extends Unit<
 
     meshRoot.add(obj);
     return meshRoot;
+  }
+
+  setSkin(skinId: UnitSkinIdentifier) {
+    const options =
+      skinsMap.get(skinId)?.options ||
+      skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options;
+    if (options.color) {
+      this.setColor(options.color);
+    }
+  }
+
+  private setColor(color: string | number, _group?: Object3D) {
+    this.root.traverse(child => {
+      if (child instanceof Mesh) {
+        debugger;
+        (child.material as MeshPhongMaterial).color.set(color);
+      }
+    });
   }
 }

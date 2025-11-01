@@ -1,6 +1,6 @@
 <template>
   <teleport to="#teleports-panel-bottom">
-    <transition name="fade" mode="out-in">
+    <transition name="fade-short" mode="out-in">
       <cw-panel-editor-window-skin
         v-if="currentItem && skins && skin"
         v-model="skin"

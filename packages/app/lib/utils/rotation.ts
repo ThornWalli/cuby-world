@@ -77,3 +77,43 @@ export function getRotationAngle(rotation: ROTATION) {
       return new Euler(0, 0, 0);
   }
 }
+
+export function getRotationByEuler(euler: Euler): ROTATION | null {
+  if (euler.x === 0 && euler.y === 0 && euler.z === 0) {
+    return null;
+  }
+
+  if (euler.x === Math.PI / 2) {
+    return ROTATION.NORTH;
+  } else if (euler.x === -Math.PI / 2) {
+    return ROTATION.SOUTH;
+  } else if (euler.y === Math.PI / 2) {
+    return ROTATION.EAST;
+  } else if (euler.y === -Math.PI / 2) {
+    return ROTATION.WEST;
+  }
+  return null;
+}
+
+export function getRadByRotation(rotation: ROTATION): number {
+  switch (rotation) {
+    case ROTATION.WEST:
+      return Math.PI;
+    case ROTATION.NORTH_WEST:
+      return (3 * Math.PI) / 4;
+    case ROTATION.SOUTH_WEST:
+      return -(3 * Math.PI) / 4;
+    case ROTATION.EAST:
+      return 0;
+    case ROTATION.NORTH_EAST:
+      return Math.PI / 4;
+    case ROTATION.SOUTH_EAST:
+      return -Math.PI / 4;
+    case ROTATION.NORTH:
+      return Math.PI / 2;
+    case ROTATION.SOUTH:
+      return -Math.PI / 2;
+    default:
+      return 0;
+  }
+}

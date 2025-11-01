@@ -6,7 +6,8 @@ import {
   type Texture,
   type Material,
   type BufferGeometry,
-  DoubleSide
+  DoubleSide,
+  ShadowMaterial
 } from 'three';
 import {
   Box3,
@@ -116,6 +117,7 @@ export default class Wall {
   id: WallIdentifier = crypto.randomUUID();
   private edges: WallEdge[] = [];
   public root: Object3D;
+  public wallWrapper: Object3D;
   public extensionRoot: Object3D;
   private center: boolean;
   private wallGeometryMap: WallGeometryMap = new Map();
@@ -134,6 +136,10 @@ export default class Wall {
     );
 
     this.root = this.setupRoot();
+    this.wallWrapper = new Object3D();
+    this.root.add(this.wallWrapper);
+    setMainObjectRecursive(this.wallWrapper, this.root);
+
     this.extensionRoot = this.setupExtensionRoot();
   }
 
@@ -229,7 +235,7 @@ export default class Wall {
   }
 
   addToRoot(object: Object3D) {
-    this.root.add(object);
+    this.wallWrapper.add(object);
     setMainObjectRecursive(object, this.root);
   }
 
@@ -374,7 +380,7 @@ export default class Wall {
   setVisible(visible: boolean) {
     this.visible = visible;
 
-    this.root.visible = visible;
+    this.wallWrapper.visible = visible;
     // this.toggleVisibility(
     //   visible && this.size === WALL_SIZE.LARGE,
     //   this.wallMeshes[WALL_SIZE.LARGE]
@@ -498,7 +504,7 @@ export default class Wall {
      */
 
     Object.values(this.wallMeshes).forEach(mesh => {
-      this.root.remove(mesh!);
+      this.wallWrapper.remove(mesh!);
       mesh!.remove();
     });
     this.wallMeshes = {};
@@ -520,25 +526,9 @@ export default class Wall {
       }
     );
     largeWall.name = MESH_WALL_NAME.LARGE_WALL;
-    // largeWall.visible = this.size === WALL_SIZE.LARGE;
 
     this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
     this.addToRoot(largeWall);
-    // } else {
-    //   const { geometry } = createWallGeometry(
-    //     this.direction,
-    //     this.getType(),
-    //     WALL_SIZE.LARGE,
-    //     this.getWindowSize(),
-    //     {
-    //       edges: this.edges,
-    //       wallGeometryMap: this.wallGeometryMap
-    //     }
-    //   );
-    //   largeWall.material = materials.map(m => m.clone());
-    //   largeWall.geometry.dispose();
-    //   largeWall.geometry = geometry!;
-    // }
 
     const smallWall = createWallMesh(
       {
@@ -560,21 +550,10 @@ export default class Wall {
 
     this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
     this.addToRoot(smallWall);
-    // } else {
-    //   const { geometry } = createWallGeometry(
-    //     this.direction,
-    //     this.getType(),
-    //     WALL_SIZE.SMALL,
-    //     this.getWindowSize(),
-    //     {
-    //       edges: this.edges,
-    //       wallGeometryMap: this.wallGeometryMap
-    //     }
-    //   );
-    //   smallWall.material = materials.map(m => m.clone());
-    //   smallWall.geometry.dispose();
-    //   smallWall.geometry = geometry!;
-    // }
+
+    //#region click helper
+    this.root.add(createShadowHelper(largeWall.geometry.clone()));
+    //#endregion
 
     if (this.state.skins.length) {
       await Promise.all(
@@ -727,4 +706,20 @@ async function setupMaterial(
   }
 
   return materialsMap.get(key)?.clone();
+}
+
+function createShadowHelper(geometry: BufferGeometry) {
+  const shadowHelper = new Mesh(
+    geometry,
+    new ShadowMaterial({
+      color: 0x333333
+    })
+  );
+  shadowHelper.castShadow = true;
+  // shadowHelper.material.wireframe = true;
+  shadowHelper.name = 'shadow_helper';
+  shadowHelper.visible = true;
+  shadowHelper.raycast = () => void 0;
+
+  return shadowHelper;
 }

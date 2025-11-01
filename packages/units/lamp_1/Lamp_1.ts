@@ -34,12 +34,12 @@ export interface LampOptions extends UnitOptions {
   size: number;
 }
 
-export default class Lamp extends Unit<
+export default class Lamp_1 extends Unit<
   LampOptions,
   UnitModules & { animation: UnitAnimation }
 > {
   static override KEY = 'lamp_1';
-  static override NAME = 'Lamp';
+  static override NAME = 'Lamp 1';
 
   constructor(
     options: Omit<
@@ -50,7 +50,7 @@ export default class Lamp extends Unit<
     super(
       {
         ...options,
-        name: 'Lamp',
+        name: 'Lamp 1',
         selectable: true,
         placeable: true,
         options: {

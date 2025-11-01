@@ -1,7 +1,7 @@
 <template>
   <base-button class="cw-button-wall-view-toggle" aria-label="Wall View Toggle">
     <div>
-      <transition name="fade">
+      <transition name="fade-short">
         <svg-icon-wall-small v-if="viewMode === WALL_VIEW_MODE.SMALL" />
         <svg-icon-wall-dynamic
           v-else-if="viewMode === WALL_VIEW_MODE.DYNAMIC" />

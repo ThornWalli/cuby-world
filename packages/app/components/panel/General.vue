@@ -38,7 +38,7 @@ async function onClickUserSettings() {
   if (data) {
     $props.app.modules.player.state.currentPlayer?.setSettings({
       name: data.name,
-      color: data.color
+      skin: data.skin
     });
   }
 }

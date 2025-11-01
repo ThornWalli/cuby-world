@@ -1,4 +1,10 @@
-import { Group, type AnimationMixer, type Object3D, type Texture } from 'three';
+import {
+  Group,
+  Vector3,
+  type AnimationMixer,
+  type Object3D,
+  type Texture
+} from 'three';
 import { Mesh, MeshPhongMaterial, Clock, PlaneGeometry, Vector2 } from 'three';
 
 import {
@@ -6,6 +12,7 @@ import {
   OBJECT_USER_DATA
 } from '@cuby-world/app/lib/utils/object';
 import Unit, {
+  type PreviewOptions,
   type SetupContext,
   type UnitConstructorOptions,
   type UnitModuleList,
@@ -16,9 +23,7 @@ import {
   ANIMATION_ACTION,
   AnimationUnitModule
 } from '@cuby-world/app/lib/classes/unitModule/Animation';
-
 import image_spritesheet_sleep from './assets/spritesheet/sleep.png';
-
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import {
   LOADER,
@@ -27,15 +32,16 @@ import {
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 import CharacterUnitModule from '@cuby-world/app/lib/classes/unitModule/Character';
-
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/cuby.glb?url';
 import assetLoader from '@cuby-world/app/services/assetLoader';
-
 import textureDefault from './assets/uv/default.svg?url';
 import textureSpeak from './assets/uv/speak_1.svg?url';
 import textureSleep1 from './assets/uv/sleep_1.svg?url';
 import textureSleep2 from './assets/uv/sleep_2.svg?url';
+import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
+import { DEFAULT_PLAYER_SKIN_ID } from '@cuby-world/app/lib/classes/Player';
+import { skinsMap } from './skins';
 
 declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
@@ -45,40 +51,9 @@ declare module '@cuby-world/app/lib/utils/object' {
 
 OBJECT_USER_DATA.INTERVAL = 'interval';
 
-export enum CUBY_COLOR {
-  BLUE = 'blue',
-  GREEN = 'green',
-  BROWN = 'brown',
-  ORANGE = 'orange',
-  LIGHTORANGE = 'lightorange',
-  DARKBROWN = 'darkbrown'
-}
-
-export const CUBY_NAME = {
-  [CUBY_COLOR.BLUE]: 'Blue ',
-  [CUBY_COLOR.GREEN]: 'Green ',
-  [CUBY_COLOR.BROWN]: 'Brown ',
-  [CUBY_COLOR.ORANGE]: 'Orange ',
-  [CUBY_COLOR.LIGHTORANGE]: 'Light Orange ',
-  [CUBY_COLOR.DARKBROWN]: 'Dark Brown '
-};
-
-export const CUBY_COLOR_VALUE = {
-  [CUBY_COLOR.BLUE]: 0x0066ff,
-  [CUBY_COLOR.GREEN]: 0x447821,
-  [CUBY_COLOR.BROWN]: 0x800000,
-  [CUBY_COLOR.ORANGE]: 0xff7f2a,
-  [CUBY_COLOR.LIGHTORANGE]: 0xffb380,
-  [CUBY_COLOR.DARKBROWN]: 0x502d16
-};
-
-export const colors = [
-  0x0066ff, 0x447821, 0x800000, 0xff7f2a, 0xffb380, 0x502d16
-];
 export interface CubyOptions extends UnitOptions<MovementModuleOptions> {
-  size: number;
   state: CUBY_STATE;
-  color: CUBY_COLOR;
+  color: string | number;
 }
 
 type CubyUnitModules = UnitModules & {
@@ -97,6 +72,10 @@ export default class Cuby extends Unit<
 
   clock: Clock = new Clock();
   mixer?: AnimationMixer;
+
+  override previewOptions: PreviewOptions = {
+    ground: false
+  };
 
   constructor(
     options: Omit<
@@ -118,8 +97,7 @@ export default class Cuby extends Unit<
             stairStepDuration: 1100,
             rotationDuration: 125
           },
-          size: 0.55,
-          color: CUBY_COLOR.BLUE,
+          color: skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options.color,
           state: CUBY_STATE.DEFAULT,
           ...options.options
         }
@@ -141,6 +119,8 @@ export default class Cuby extends Unit<
   sleepTimer?: number;
   override async setup(context: SetupContext) {
     await super.setup(context);
+
+    this.modules.character.offsets.sitting_idle = new Vector3(0.075, 0, 0);
     if (this.root.getObjectByName(OBJECT_NAME.MESH_ANIMATION)) {
       const sleepPlain = createSleepPlain();
       sleepPlain.rotateY(Math.PI / 2);
@@ -162,7 +142,17 @@ export default class Cuby extends Unit<
     this.modules.animation.getAction(
       ANIMATION_ACTION.STAIR_FALLBACK
     )!.timeScale = 2.2;
+
     this.modules.animation.getAction(ANIMATION_ACTION.WALK)!.timeScale = 1.4;
+  }
+
+  setSkin(skinId: UnitSkinIdentifier) {
+    const options =
+      skinsMap.get(skinId)?.options ||
+      skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options;
+    if (options.color) {
+      this.setColor(options.color);
+    }
   }
 
   wakeUp() {
@@ -189,13 +179,15 @@ export default class Cuby extends Unit<
   };
   assetsByCubyState?: { [key in CUBY_STATE]: MeshPhongMaterial[] };
   private _sleepPlain?: Mesh;
+  private meshRoot!: Group;
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Group();
+    this.meshRoot = meshRoot;
 
     const { scene, object, animations } = await loadGltf(glbBase);
 
     this.modules.animation.setAnimations(animations);
-    // const obj = object.getObjectByName('empty')!;
+
     let obj: Object3D | Group = object;
     if (this.isPreview()) {
       obj = scene;
@@ -204,9 +196,10 @@ export default class Cuby extends Unit<
     }
 
     const meshes: Mesh[] = [];
-    obj.traverse(child => {
-      if (child instanceof Mesh) {
-        meshes.push(child);
+    obj.traverse(mesh => {
+      if (mesh instanceof Mesh) {
+        (mesh.material as MeshPhongMaterial).color.set(this.options.color);
+        meshes.push(mesh);
       }
     });
 
@@ -219,24 +212,8 @@ export default class Cuby extends Unit<
 
     meshRoot.name = OBJECT_NAME.MESH;
     meshRoot.add(obj);
+
     return meshRoot;
-    // const size = this.options.size;
-    // const ratio = 19 / 20;
-    // const geometry = new BoxGeometry(size * 1, size * ratio, size * 1);
-
-    // const mesh: Mesh = new Mesh(geometry, defaultMaterial());
-
-    // await setupBodyMaterials(this, mesh, assetLoader).then(assets => {
-    //   this.assetsByCubyState = assets;
-    //   this.setCubyState(this.options.state, mesh);
-    //   this.observables.materialReady$.next();
-    // });
-
-    // mesh.name = OBJECT_NAME.MESH;
-    // mesh.castShadow = true;
-    // mesh.position.set(0, (size * ratio) / 2 + 0.2, 0);
-
-    // return mesh;
   }
 
   override setTexture(texture: Texture, group?: Object3D) {
@@ -269,17 +246,11 @@ export default class Cuby extends Unit<
     this.setTexture(texture);
   }
 
-  setColor(color: CUBY_COLOR, group?: Object3D) {
-    this.options.color = color;
-
-    const meshes: Mesh[] = [];
-    (group || this.root.getObjectByName(OBJECT_NAME.MESH)!).traverse(child => {
+  private setColor(color: string | number, _group?: Object3D) {
+    this.root.traverse(child => {
       if (child instanceof Mesh) {
-        meshes.push(child);
+        (child.material as MeshPhongMaterial).color.set(color);
       }
-    });
-    meshes.forEach(mesh => {
-      (mesh.material as MeshPhongMaterial).color.set(CUBY_COLOR_VALUE[color]);
     });
   }
 

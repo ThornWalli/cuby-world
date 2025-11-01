@@ -1,20 +1,22 @@
 <template>
   <cw-object-preview
     v-if="root"
-    :hide-ground="!unitInstance?.previewOptions.ground"
+    :hide-ground="showGround || !unitInstance?.previewOptions.ground"
     :cache-key="modelValue ? JSON.stringify(modelValue) : undefined"
     :root="root"
     :app="app"
+    :mode="mode"
     :width="width ?? 'auto'"
     :ratio="ratio"
     :hydrate-when-visible="hydrateWhenVisible"
-    class="cw-object-preview-unit" />
+    class="cw-object-preview-unit"
+    @animation-loop="animationLoop$.next($event)" />
 </template>
 
 <script lang="ts" setup>
 import { Object3D } from 'three';
-import { markRaw, onUnmounted, ref, watch, type Raw } from 'vue';
-import { Subscription, ReplaySubject } from 'rxjs';
+import { markRaw, onUnmounted, ref, type Raw } from 'vue';
+import { Subscription, Subject } from 'rxjs';
 
 import type App from '../../lib/classes/App';
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
@@ -23,22 +25,23 @@ import CwObjectPreview from '../ObjectPreview.vue';
 
 import { catalog } from '@cuby-world/units';
 import type Unit from '@cuby-world/app/lib/classes/Unit';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
 
 const $props = defineProps<{
   app: App;
+  mode?: 'static' | 'loop';
   width?: number | 'auto';
   ratio: number;
   modelValue: UnitPreview;
   hydrateWhenVisible?: boolean;
+  showGround?: boolean;
 }>();
 
 const root = ref<Object3D>(new Object3D());
 
-const animationLoop$ = new ReplaySubject<AnimationLoopValue>(1);
-animationLoop$.next({ time: 0, delta: 0 });
+const animationLoop$ = new Subject<AnimationLoopValue>();
 
 onUnmounted(() => {
-  animationLoop$.complete();
   animationLoop$.unsubscribe();
   unitSubscriptions?.unsubscribe();
 });
@@ -50,6 +53,7 @@ const unitInstance = ref<Raw<Unit> | null>(null);
 async function setup(data: UnitPreview) {
   const unitItem = catalog.get(data.type);
   const UnitClass = await unitItem!.instance();
+
   unitInstance.value = markRaw(
     new UnitClass({
       name: UnitClass.NAME,
@@ -65,13 +69,25 @@ async function setup(data: UnitPreview) {
     assetLoader: $props.app.assetLoader,
     unit: instance
   });
-
   unitSubscriptions?.unsubscribe();
   unitSubscriptions = new Subscription();
   return new Promise<Object3D>(resolve => {
     unitSubscriptions.add(
       instance.observables.materialReady$.subscribe(() => {
-        unitSubscriptions?.unsubscribe();
+        unitSubscriptions.add(
+          animationLoop$.subscribe(value => {
+            unitInstance.value!.update(value);
+          })
+        );
+        if (instance.modules.animation) {
+          if (data.action) {
+            instance.modules.animation.setAnimationAction(data.action);
+          } else {
+            instance.modules.animation.setAnimationAction(
+              ANIMATION_ACTION.IDLE
+            );
+          }
+        }
         resolve(instance.root);
       })
     );
@@ -79,19 +95,13 @@ async function setup(data: UnitPreview) {
 }
 
 root.value = markRaw(await setup($props.modelValue));
-
-watch(
-  () => $props.modelValue,
-  async data => {
-    root.value = markRaw(await setup(data));
-  }
-);
 </script>
 
 <script lang="ts">
 export interface UnitPreview {
   type: string;
   skin?: string;
+  action?: ANIMATION_ACTION;
 }
 </script>
 

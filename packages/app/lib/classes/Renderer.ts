@@ -131,7 +131,6 @@ export default class Renderer<
 
     this.initScene();
     this.setOrthographicCamera();
-    // this.setupLights();
 
     this.pixelated = options.pixelated ?? false;
     const renderer = new WebGLRenderer({
@@ -217,11 +216,15 @@ export default class Renderer<
     this.controls?.update();
   }
 
-  enableControls() {
-    this.controls.enabled = true;
+  enableControls(fullControl = false) {
+    this.controls.enablePan = true;
+    this.controls.enableZoom = true;
+    this.controls.enableRotate = fullControl;
   }
   disableControls() {
-    this.controls.enabled = false;
+    this.controls.enablePan = true;
+    this.controls.enableZoom = true;
+    this.controls.enableRotate = false;
   }
 
   get aspectRatio() {
@@ -372,65 +375,6 @@ export default class Renderer<
       this.controls.enableZoom = true; // Zoom mit Mausrad
     }
   }
-
-  // updateCamera(position: Vector3) {
-  //   if (position) {
-  //     this.controls.target.copy(position);
-
-  //     const newCameraPosition = new Vector3()
-  //       .copy(position)
-  //       .add(Renderer.ISOMETRIC_OFFSET);
-
-  //     this.camera.position.copy(newCameraPosition);
-  //     this.controls.update();
-  //   } else {
-  //     this.camera.position.copy(Renderer.ISOMETRIC_OFFSET);
-  //     this.camera.lookAt(0, 0, 0);
-  //   }
-  // }
-  // updateLight(position: Vector3) {
-  //   const { dirLight } = this.lights;
-  //   // Position relativ zum Spieler
-  //   dirLight.position.set(position.x + 30, position.y + 30, position.z + 30);
-
-  //   // Licht zeigt Richtung Spieler
-  //   dirLight.target.position.copy(position);
-  //   dirLight.target.updateMatrixWorld();
-  // }
-
-  // setupLights() {
-  //   const lights = [];
-
-  //   const ambient = new AmbientLight(0xffffff, 0.5);
-  //   lights.push(ambient);
-
-  //   const hemiLight = new HemisphereLight(0x87ceeb, 0x444444, 0.6);
-  //   lights.push(hemiLight);
-
-  //   const dirLight = new DirectionalLight(0xffffff, 1.5);
-  //   dirLight.position.set(80, 100, 80);
-  //   dirLight.castShadow = true;
-
-  //   dirLight.shadow.mapSize.set(2048, 2048);
-
-  //   // Bias gegen Streifen
-  //   dirLight.shadow.bias = -0.001;
-  //   dirLight.shadow.normalBias = 0.05;
-
-  //   // Schattencam begrenzen
-  //   const size = 25;
-  //   dirLight.shadow.camera.left = -size;
-  //   dirLight.shadow.camera.right = size;
-  //   dirLight.shadow.camera.top = size;
-  //   dirLight.shadow.camera.bottom = -size;
-  //   dirLight.shadow.camera.near = 0.5;
-  //   dirLight.shadow.camera.far = 200;
-
-  //   lights.push(dirLight);
-
-  //   this.scene.add(...lights);
-  //   this.lights = { ambient, hemiLight, dirLight };
-  // }
 
   registerOutlineObject(
     object: Object3D,

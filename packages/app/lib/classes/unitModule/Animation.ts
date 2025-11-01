@@ -11,11 +11,11 @@ import type Unit from '../Unit';
 import type { AnimationLoopValue } from '../Renderer';
 
 export enum ANIMATION_ACTION {
+  NONE = 'none',
   IDLE = 'idle',
   WALK = 'walk',
-  ASCENDING_STAIR = 'ascending_stair',
-  DESCENDING_STAIR = 'descending_stair',
-  STAIR_FALLBACK = 'stair_fallback'
+  STAIR_FALLBACK = 'stair_fallback',
+  SITTING_IDLE = 'sitting_idle'
 }
 
 type Actions = { [key: string]: AnimationAction };
@@ -37,10 +37,11 @@ export class AnimationUnitModule extends UnitModule<State, Observables> {
   animations: AnimationClip[] = [];
 
   constructor(unit: Unit, state: State, debug: boolean) {
-    state.action = ANIMATION_ACTION.IDLE;
+    state.action = ANIMATION_ACTION.NONE;
     super(unit, state, debug);
     //#region observables
     this.observables.action$ = new ReplaySubject<ANIMATION_ACTION>(1);
+    this.observables.action$.next(this.state.action);
     //#endregion
   }
 
@@ -66,7 +67,7 @@ export class AnimationUnitModule extends UnitModule<State, Observables> {
     });
 
     animationWrapper.add(context.mesh);
-    this.actions[ANIMATION_ACTION.IDLE]?.play();
+
     return animationWrapper;
   }
   getAction(name: string) {
@@ -81,10 +82,10 @@ export class AnimationUnitModule extends UnitModule<State, Observables> {
     this.animations = animations;
   }
 
-  setAnimationAction(type: ANIMATION_ACTION) {
+  setAnimationAction(type: ANIMATION_ACTION, duration = 0.2) {
     if (this.state.action === type) return;
     this.state.action = type;
-    this.fadeToAction(this.mixer ? this.actions : {}, type, 0.2);
+    this.fadeToAction(this.mixer ? this.actions : {}, type, duration);
     this.observables.action$.next(type);
   }
 

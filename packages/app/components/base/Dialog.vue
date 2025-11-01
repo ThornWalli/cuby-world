@@ -2,7 +2,7 @@
   <div class="base-dialog" :class="{ visible, fullscreen }">
     <div>
       <div class="trigger" @click="onClickTrigger"></div>
-      <transition name="fade" mode="out-in">
+      <transition name="fade-short" mode="out-in">
         <div v-if="visible" class="base-dialog-inner">
           <slot :close="close"></slot>
         </div>

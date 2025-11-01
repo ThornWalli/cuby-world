@@ -300,7 +300,7 @@ export default class WallModule extends RoomModule<
       app.modules.player.observables.currentPlayer$
         .pipe(
           switchMap(player => player.unit$),
-          switchMap(unit => unit.observables.ready$),
+          switchMap(({ unit }) => unit.observables.ready$),
           switchMap(unit => unit.observables.position$),
           map(position => position.clone().ceil()),
           distinctUntilChanged((a, b) => a.equals(b)),
@@ -345,7 +345,7 @@ export default class WallModule extends RoomModule<
     this.subscription.add(
       app.modules.player.observables.currentPlayer$
         .pipe(switchMap(player => player.unit$))
-        .subscribe(unit => {
+        .subscribe(({ unit }) => {
           this.addUnitForTracking(unit);
         })
     );
@@ -353,7 +353,7 @@ export default class WallModule extends RoomModule<
     app.modules.player.observables.currentPlayer$
       .pipe(
         switchMap(player => player.unit$),
-        switchMap(unit => unit.observables.ready$),
+        switchMap(({ unit }) => unit.observables.ready$),
         map(unit => unit.root),
         filter(Boolean)
       )
@@ -705,6 +705,7 @@ export default class WallModule extends RoomModule<
             const wallId = getWallIdentifierFromObject(wallObj);
             const wall = this.getWallById(wallId!);
             if (!wall) {
+              debugger;
               throw new Error('Wall not found in object parent chain');
             }
             wallsToHide.add(wall);

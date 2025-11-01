@@ -53,7 +53,7 @@ export default class PlayerAppModule extends AppModule<State, Observables> {
 
     // TODO: Ist das hier richtig platziert?
     this.state.currentPlayer.unit$
-      .pipe(switchMap(unit => unit.modules.movement.observables.moveEnd$))
+      .pipe(switchMap(({ unit }) => unit.modules.movement.observables.moveEnd$))
       .subscribe(() => {
         const unit = this.state.currentPlayer!.unit!;
         const room = this.app.modules.room.getRoom()!;

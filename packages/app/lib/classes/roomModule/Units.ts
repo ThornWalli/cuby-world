@@ -5,7 +5,7 @@ import RoomModule, {
 } from '../RoomModule';
 import type Unit from '../Unit';
 import UnitChunkManager from '../UnitChunkManager';
-import { distinctUntilChanged, map, ReplaySubject } from 'rxjs';
+import { concatMap, distinctUntilChanged, map, ReplaySubject } from 'rxjs';
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { AnimationLoopValue } from '../Renderer';
 import { FLOOR_HEIGHT } from '../../utils/ground';
@@ -45,11 +45,14 @@ export default class UnitsModule extends RoomModule<State, Observables> {
 
   override setup() {
     super.setup();
-
     this.subscription.add(
-      this.room.modules.floor.observables.floor$.subscribe(floorIndex => {
-        this.updateVisiblity(floorIndex);
-      })
+      this.room.modules.floor.observables.floor$
+        .pipe(
+          concatMap(async floorIndex => {
+            this.updateVisiblity(floorIndex);
+          })
+        )
+        .subscribe(void 0)
     );
   }
 
@@ -65,6 +68,15 @@ export default class UnitsModule extends RoomModule<State, Observables> {
   getUnitsByFloor(floor: number) {
     return this.getUnits().filter(
       unit => Math.floor(unit.position.y) === floor
+    );
+  }
+
+  getUnitsByPosition(position: Vector3) {
+    return this.getUnits().filter(
+      unit =>
+        Math.floor(unit.position.x) === Math.floor(position.x) &&
+        Math.floor(unit.position.y) === Math.floor(position.y) &&
+        Math.floor(unit.position.z) === Math.floor(position.z)
     );
   }
 
@@ -105,6 +117,7 @@ export default class UnitsModule extends RoomModule<State, Observables> {
     this.untiPositionMap.add(unit);
     this.room.addToRoot(unit.root);
     this.updateVisiblity(this.room.modules.floor.getFloor(), [unit]);
+
     this.observables.addUnit$.next(unit);
   }
 

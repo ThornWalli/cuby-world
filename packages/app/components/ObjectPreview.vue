@@ -18,6 +18,7 @@ import {
   type OrthographicCamera,
   type Scene,
   type WebGLRenderer,
+  Clock,
   Vector2,
   Vector3
 } from 'three';
@@ -34,6 +35,7 @@ import {
 import type { ROTATION } from '../lib/utils/rotation';
 import { disposeObject3D } from '../lib/utils/object';
 import { SKIN_DEFAULT_GROUND } from '@cuby-world/grounds';
+import type { AnimationLoopValue } from '../lib/classes/Renderer';
 
 const rootEl = ref<HTMLDivElement | null>(null);
 const previewSrc = ref<string | null>(null);
@@ -64,7 +66,6 @@ if (imageCache.has($props.cacheKey + '_' + currentWidth.value)) {
     imageCache.get($props.cacheKey + '_' + currentWidth.value) ?? null;
   ready.value = true;
 }
-
 /**
  * Überprüfe Bild auf existierende Pixel
  */
@@ -113,6 +114,9 @@ async function setup(retry = false) {
         ready.value = true;
         next();
       }, 50);
+    } else {
+      ready.value = true;
+      next();
     }
   }, 0);
 }
@@ -172,10 +176,21 @@ function setupRenderer() {
   previewCamera = createCamera();
   previewScene.add(previewCamera);
 
-  renderer.setAnimationLoop(() => {
+  renderer.setAnimationLoop(time => {
     renderer.render(previewScene, previewCamera);
+
+    $emit('animation-loop', {
+      time,
+      delta: $props.mode === 'loop' ? clock.value.getDelta() : 1000
+    });
   });
 }
+
+const clock = ref(new Clock());
+
+const $emit = defineEmits<{
+  (e: 'animation-loop', value: AnimationLoopValue): void;
+}>();
 
 async function getDataUrl() {
   const src = renderer.domElement.toDataURL('image/png');
@@ -251,7 +266,7 @@ async function updatePreview(obj: Object3D, groundScale = 1) {
   }
 
   if (obj) {
-    previewMesh = obj.clone();
+    previewMesh = obj;
     previewScene.add(previewMesh);
   }
 
@@ -322,12 +337,12 @@ const next = () => {
     display: block;
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 0 4px rgb(0 0 0 /40%));
+    filter: drop-shadow(0 0 1px rgb(0 0 0 /40%));
   }
 
   &.ready {
     opacity: 1;
-    transition: opacity var(--cw-easing-duration-short) var(--cw-easing-in);
+    transition: opacity var(--cw-easing-duration-short) var(--cw-easing-out);
   }
 
   & .image {

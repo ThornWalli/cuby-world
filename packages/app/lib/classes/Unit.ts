@@ -36,7 +36,13 @@ import {
   setMainObjectRecursive
 } from '../utils/object';
 import { getFloorFromPosition } from '../utils/floor';
-import { ROTATION, ROTATION_TYPE, rotationDirections } from '../utils/rotation';
+import {
+  getRotationByEuler,
+  ROTATION,
+  ROTATION_TYPE,
+  rotationDirections
+} from '../utils/rotation';
+import type { UnitDescription, UnitType } from '../types/unit';
 
 declare module '../../lib/utils/object' {
   interface ObjectUserData {
@@ -44,22 +50,6 @@ declare module '../../lib/utils/object' {
   }
 }
 OBJECT_USER_DATA.UNIT = 'unit';
-
-export interface RawUnitDescription<Rotation = string, Position = number[]> {
-  unit: string;
-  options: {
-    accessible?: boolean;
-    position: Position;
-    rotation: Rotation;
-    options: { [key: string]: unknown };
-    moduleStates: { [key: string]: UnitModuleState };
-    [key: string]: unknown;
-  };
-}
-export type UnitDescription<
-  Rotation = ROTATION,
-  Position = Vector3
-> = RawUnitDescription<Rotation, Position>;
 
 export type UnitModuleList = (
   | typeof PlayerUnitModule
@@ -104,52 +94,13 @@ export interface UnitConstructorOptions<
   moduleStates?: { [key: string]: UnitModuleState };
 }
 
-export function getRotationByEuler(euler: Euler): ROTATION | null {
-  if (euler.x === 0 && euler.y === 0 && euler.z === 0) {
-    return null;
-  }
-
-  if (euler.x === Math.PI / 2) {
-    return ROTATION.NORTH;
-  } else if (euler.x === -Math.PI / 2) {
-    return ROTATION.SOUTH;
-  } else if (euler.y === Math.PI / 2) {
-    return ROTATION.EAST;
-  } else if (euler.y === -Math.PI / 2) {
-    return ROTATION.WEST;
-  }
-  return null;
-}
-
-export function getRadByRotation(rotation: ROTATION): number {
-  switch (rotation) {
-    case ROTATION.WEST:
-      return Math.PI;
-    case ROTATION.NORTH_WEST:
-      return (3 * Math.PI) / 4;
-    case ROTATION.SOUTH_WEST:
-      return -(3 * Math.PI) / 4;
-    case ROTATION.EAST:
-      return 0;
-    case ROTATION.NORTH_EAST:
-      return Math.PI / 4;
-    case ROTATION.SOUTH_EAST:
-      return -Math.PI / 4;
-    case ROTATION.NORTH:
-      return Math.PI / 2;
-    case ROTATION.SOUTH:
-      return -Math.PI / 2;
-    default:
-      return 0;
-  }
-}
-
 export interface UnitModules {
   player: PlayerUnitModule;
   room?: RoomUnitModule;
   movement: MovementUnitModule;
   selection?: SelectionUnitModule;
   placement?: PlacementUnitModule;
+  animation?: AnimationUnitModule;
 }
 
 export interface SetupContext {
@@ -182,6 +133,12 @@ export default class Unit<
   Observables extends UnitObservables = UnitObservables
 > implements UnitChunking
 {
+  addType(type: UnitType | string) {
+    return this.type.add(type as UnitType);
+  }
+  isType(type: UnitType | string) {
+    return this.type.has(type as UnitType);
+  }
   getFloor() {
     return getFloorFromPosition(this.getPosition());
   }
@@ -193,6 +150,8 @@ export default class Unit<
 
   static KEY = 'unit';
   static NAME = 'Unit';
+
+  type: Set<UnitType> = new Set();
 
   observables: Observables = {} as Observables;
 
@@ -318,6 +277,7 @@ export default class Unit<
     this.root = this.setupRoot(name);
 
     this.setPosition(position ?? this._position);
+
     this.setRotation(
       rotation || getRotationByEuler(this.root.rotation) || ROTATION.SOUTH
     );
@@ -369,6 +329,10 @@ export default class Unit<
     return this.preview;
   }
 
+  getModule<M extends UnitModule>(moduleType: string) {
+    return this.modules[moduleType as keyof Modules] as M;
+  }
+
   getScenePosition(): Vector3 {
     return this.getPosition().clone();
   }
@@ -411,6 +375,10 @@ export default class Unit<
   }
 
   //#region rotation
+
+  getRotation(): ROTATION {
+    return this.rotation;
+  }
 
   setRotation(rotation: ROTATION) {
     this.rotation = rotation;
@@ -550,6 +518,8 @@ export default class Unit<
       module => typeof module.update === 'function'
     );
     this._updateModules = updateModules;
+
+    await this.modules.movement.applyPosition(this.getPosition());
 
     this.observables.ready$.next(this);
   }

@@ -1,30 +1,51 @@
-import { Object3D } from 'three';
+import { Object3D, Vector3 } from 'three';
 import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
-  type UnitOptions
+  type UnitModuleList,
+  type UnitModules
 } from '@cuby-world/app/lib/classes/Unit';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/chair_1.glb?url';
+import ChairUnitModule, {
+  type ChairUnitOptions
+} from '@cuby-world/app/lib/classes/unitModule/Chair';
 
-export type DoormateOptions = UnitOptions;
-export default class Chair_1 extends Unit<DoormateOptions> {
+type ChairUnitModules = UnitModules & {
+  chair: ChairUnitModules;
+};
+
+type ChairUnitModuleList = (typeof ChairUnitModule)[] & UnitModuleList;
+
+export type ChairOptions = ChairUnitOptions;
+export default class Chair_1 extends Unit<
+  ChairOptions,
+  ChairUnitModules,
+  ChairUnitModuleList
+> {
   static override KEY = 'chair_1';
   static override NAME = 'Chair_1';
 
   constructor(
     options: Omit<
-      UnitConstructorOptions<DoormateOptions>,
+      UnitConstructorOptions<ChairOptions>,
       'name' | 'selectable'
     > = {}
   ) {
-    super({
-      ...options,
-      name: 'Chair_1',
-      accessible: false,
-      selectable: true,
-      placeable: true
-    });
+    super(
+      {
+        ...options,
+        name: 'Chair_1',
+        accessible: true,
+        selectable: true,
+        placeable: true,
+        size: new Vector3(1, 0.3, 1),
+        options: {
+          offset: new Vector3(0, -0.3, 0)
+        }
+      },
+      [ChairUnitModule] as unknown as ChairUnitModuleList
+    );
   }
 
   override async createMesh(_context: SetupContext) {

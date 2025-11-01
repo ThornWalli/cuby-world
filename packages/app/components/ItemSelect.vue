@@ -167,11 +167,6 @@ export interface BaseSelectItem<Preview extends ObjectPreview = ObjectPreview> {
         border-color var(--cw-easing-duration-short) var(--cw-easing-base),
         color var(--cw-easing-duration-short) var(--cw-easing-base);
 
-      /* &:hover {
-        background-color: rgb(var(--rgb-white) / 80%);
-        box-shadow: inset 0 0 4px black;
-      } */
-
       & > div {
         display: flex;
         flex: 1;

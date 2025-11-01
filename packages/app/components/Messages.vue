@@ -8,7 +8,7 @@
         :spacer-timeout="spacerTimeout" />
     </div>
 
-    <transition name="fade">
+    <transition name="fade-short">
       <cw-messages-input v-if="!hideInput" ref="input" @send="onSend" />
     </transition>
   </div>

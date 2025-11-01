@@ -1,9 +1,29 @@
-.fade-enter-active,
-.fade-leave-active {
+.fade-short-enter-active,
+.fade-short-leave-active {
   transition: opacity var(--cw-easing-duration-short) var(--cw-easing-base);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.fade-short-enter-from,
+.fade-short-leave-to {
+  opacity: 0;
+}
+
+.fade-moderate-enter-active,
+.fade-moderate-leave-active {
+  transition: opacity var(--cw-easing-duration-moderate) var(--cw-easing-base);
+}
+
+.fade-moderate-enter-from,
+.fade-moderate-leave-to {
+  opacity: 0;
+}
+
+.fade-long-enter-active,
+.fade-long-leave-active {
+  transition: opacity var(--cw-easing-duration-long) var(--cw-easing-base);
+}
+
+.fade-long-enter-from,
+.fade-long-leave-to {
   opacity: 0;
 }

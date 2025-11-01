@@ -26,7 +26,7 @@
       icon-size="very-large"
       label-direction="right" /> -->
   </cw-panel>
-  <transition name="fade">
+  <transition name="fade-short">
     <teleport v-if="inventoryOpened" to="#teleports-panel-left">
       <cw-catalog
         class="test"
@@ -34,7 +34,7 @@
         @close="inventoryOpened = false" />
     </teleport>
   </transition>
-  <transition name="fade">
+  <transition name="fade-short">
     <teleport v-if="modelValue === ACTION.SHOP" to="#teleports-panel-bottom">
       <cw-shop-catalog :app="$props.app" />
     </teleport>

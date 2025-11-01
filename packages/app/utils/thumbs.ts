@@ -6,6 +6,7 @@ import {
   DoubleSide,
   Mesh,
   OrthographicCamera,
+  PCFSoftShadowMap,
   Scene,
   SRGBColorSpace,
   Vector3,
@@ -62,6 +63,10 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas) {
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
+
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = true;
 
   // const dimension = new Vector2(canvas.width, canvas.height);
   // if (canvas) {

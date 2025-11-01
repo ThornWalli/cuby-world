@@ -1,13 +1,18 @@
 import type { SkinOptions } from '@cuby-world/app/lib/types/skin';
-import type { UnitSkinDescription } from '@cuby-world/app/lib/utils/unit/skins';
+import { mapSkins } from '@cuby-world/app/lib/utils/skins';
+import type {
+  UnitSkinDescription,
+  UnitSkinIdentifier
+} from '@cuby-world/app/lib/utils/unit/skins';
 
 interface WallLamp1SkinOptions extends SkinOptions {
   color: string | number;
 }
 
-export type WallLamp1kinDescription = UnitSkinDescription<WallLamp1SkinOptions>;
+export type WallLamp1SkinDescription =
+  UnitSkinDescription<WallLamp1SkinOptions>;
 
-const skins: WallLamp1kinDescription[] = [
+const skins: WallLamp1SkinDescription[] = [
   {
     id: 'default',
     name: 'Default',
@@ -43,3 +48,5 @@ const skins: WallLamp1kinDescription[] = [
 ];
 
 export default skins;
+
+export const skinsMap = mapSkins<UnitSkinIdentifier, (typeof skins)[0]>(skins);

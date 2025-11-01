@@ -6,11 +6,10 @@
     <div :key="unit.key" class="preview">
       <div>
         <cw-object-preview-unit
+          v-if="previewOptions"
           :app="app"
           :ratio="1"
-          :model-value="{
-            type: unit.key
-          }" />
+          :model-value="previewOptions" />
       </div>
     </div>
 
@@ -30,6 +29,8 @@ import { computed, markRaw, onMounted, onUnmounted, ref, type Raw } from 'vue';
 import CwPanel from '../Panel.vue';
 import type App from '../../lib/classes/App';
 import { Subscription } from 'rxjs';
+
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
 
 const $props = defineProps<{
   app: App;
@@ -62,6 +63,16 @@ onMounted(() => {
 
 onUnmounted(() => {
   subscription.unsubscribe();
+});
+
+const previewOptions = computed(() => {
+  if (!unit.value) return null;
+
+  return {
+    type: unit.value.key,
+    skin: player.value?.state.skin || '',
+    action: ANIMATION_ACTION.IDLE
+  };
 });
 </script>
 
