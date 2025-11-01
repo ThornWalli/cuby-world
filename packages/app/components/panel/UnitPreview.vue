@@ -9,6 +9,7 @@
           v-if="previewOptions"
           :app="app"
           :ratio="1"
+          :size="null"
           :model-value="previewOptions" />
       </div>
     </div>

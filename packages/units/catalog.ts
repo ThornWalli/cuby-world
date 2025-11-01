@@ -3,7 +3,7 @@ import type { UnitItem } from '@cuby-world/app/lib/types/unit/catalog';
 
 import { CATALOG_TAG } from '@cuby-world/app/lib/utils/catalog';
 import { skinsMap as cubySkinMap } from './cuby/skins';
-import { skinsMap as polyCharacterSkinMap } from './poly_character/skins';
+import { skinsMap as polyManSkinMap } from './poly_man/skins';
 import { skinsMap as shelf1SkinMap } from './shelf_1/skins';
 import { skinsMap as wallLamp1SkinMap } from './wall_lamp_1/skins';
 import { skinsMap as doormate1SkinMap } from './doormate_1/skins';
@@ -129,13 +129,11 @@ export const items: UnitItem[] = [
     name: 'Poly Character',
     description: 'Base character unit for players.',
     skins: Array.from(cubySkinMap.values()),
-    defaultSkinId: polyCharacterSkinMap.get('default')!.id,
-    skinMap: polyCharacterSkinMap,
+    defaultSkinId: polyManSkinMap.get('default')!.id,
+    skinMap: polyManSkinMap,
     tags: ['player'],
     instance: () =>
-      import('./poly_character/PolyCharacter').then(
-        m => m.default as typeof Unit
-      ),
+      import('./poly_man/PolyMan').then(m => m.default as typeof Unit),
     options: {}
   }
 ];

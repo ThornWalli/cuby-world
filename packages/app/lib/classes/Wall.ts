@@ -7,7 +7,9 @@ import {
   type Material,
   type BufferGeometry,
   DoubleSide,
-  ShadowMaterial
+  ShadowMaterial,
+  PlaneGeometry,
+  MeshBasicMaterial
 } from 'three';
 import {
   Box3,
@@ -62,10 +64,12 @@ OBJECT_USER_DATA.WALL = 'wall';
 declare module '../../lib/utils/object' {
   interface ObjectName {
     WALL: string;
+    WALL_WRAPPER: string;
   }
 }
 
 OBJECT_NAME.WALL = 'wall';
+OBJECT_NAME.WALL_WRAPPER = 'wall_wrapper';
 
 enum MESH_WALL_NAME {
   SMALL_WALL = 'small_wall',
@@ -137,6 +141,7 @@ export default class Wall {
 
     this.root = this.setupRoot();
     this.wallWrapper = new Object3D();
+    this.wallWrapper.name = OBJECT_NAME.WALL_WRAPPER;
     this.root.add(this.wallWrapper);
     setMainObjectRecursive(this.wallWrapper, this.root);
 
@@ -220,7 +225,7 @@ export default class Wall {
   setupExtensionRoot() {
     const extensionRoot = new Object3D();
     extensionRoot.name = `WallExtensionRoot`;
-    this.addToRoot(extensionRoot);
+    this.addToWallWrapper(extensionRoot);
     setMainObjectRecursive(extensionRoot, extensionRoot);
 
     if (!this.center) {
@@ -234,8 +239,13 @@ export default class Wall {
     return extensionRoot;
   }
 
-  addToRoot(object: Object3D) {
+  addToWallWrapper(object: Object3D) {
     this.wallWrapper.add(object);
+    setMainObjectRecursive(object, this.root);
+  }
+
+  addToRoot(object: Object3D) {
+    this.root.add(object);
     setMainObjectRecursive(object, this.root);
   }
 
@@ -381,6 +391,8 @@ export default class Wall {
     this.visible = visible;
 
     this.wallWrapper.visible = visible;
+    // this.clickHelper!.visible = true;
+
     // this.toggleVisibility(
     //   visible && this.size === WALL_SIZE.LARGE,
     //   this.wallMeshes[WALL_SIZE.LARGE]
@@ -425,6 +437,9 @@ export default class Wall {
       wallGeometryMap: this.wallGeometryMap!
     });
   }
+
+  shadowHelper: Object3D | null = null;
+  clickHelper: Object3D | null = null;
 
   async refreshWallMeshes(
     {
@@ -528,7 +543,7 @@ export default class Wall {
     largeWall.name = MESH_WALL_NAME.LARGE_WALL;
 
     this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
-    this.addToRoot(largeWall);
+    this.addToWallWrapper(largeWall);
 
     const smallWall = createWallMesh(
       {
@@ -549,10 +564,17 @@ export default class Wall {
     smallWall.visible = this.size === WALL_SIZE.SMALL;
 
     this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
-    this.addToRoot(smallWall);
+    this.addToWallWrapper(smallWall);
 
     //#region click helper
-    this.root.add(createShadowHelper(largeWall.geometry.clone()));
+    if (!this.shadowHelper) {
+      this.shadowHelper = createShadowHelper(largeWall.geometry);
+      this.addToRoot(this.shadowHelper);
+    }
+    if (!this.clickHelper) {
+      this.clickHelper = createClickHelper({ direction: this.direction });
+      this.addToRoot(this.clickHelper);
+    }
     //#endregion
 
     if (this.state.skins.length) {
@@ -722,4 +744,68 @@ function createShadowHelper(geometry: BufferGeometry) {
   shadowHelper.raycast = () => void 0;
 
   return shadowHelper;
+}
+
+function createClickHelper({ direction }: { direction: WALL_DIRECTION }) {
+  const group = new Object3D();
+
+  const front = new Mesh(
+    new PlaneGeometry(0.8, FLOOR_HEIGHT),
+    new MeshBasicMaterial({
+      color: 0x333333,
+      wireframe: true
+    })
+  );
+  front.position.set(-0.11, FLOOR_HEIGHT / 2 - 0.1, 0);
+  front.rotateY(-Math.PI / 2);
+  front.userData[OBJECT_USER_DATA.WALL_SELECT_FRONT] = true;
+  front.name = 'click_helper';
+  group.add(front);
+
+  const back = new Mesh(
+    new PlaneGeometry(0.8, FLOOR_HEIGHT),
+    new MeshBasicMaterial({
+      color: 0x333333,
+      wireframe: true
+    })
+  );
+  back.position.set(0.15, FLOOR_HEIGHT / 2 - 0.1, 0);
+  back.rotateY(Math.PI / 2);
+  back.userData[OBJECT_USER_DATA.WALL_SELECT_BACK] = true;
+  back.name = 'click_helper';
+  group.add(back);
+
+  group.visible = false;
+
+  if (direction === WALL_DIRECTION.VERTICAL) {
+    group.position.x -= 0.5;
+  } else {
+    group.rotation.y = Math.PI / 2;
+    group.position.z -= 0.5;
+  }
+
+  return group;
+  // const geometry = new BoxGeometry(1, 2.2, 0.22);
+  // geometry.rotateY(Math.PI / 2);
+  // geometry.translate(0, 1.1, 0);
+
+  // if (direction === WALL_DIRECTION.VERTICAL) {
+  //   geometry.translate(-0.5, 0, 0);
+  // } else {
+  //   geometry.translate(0, 0, -1);
+  //   geometry.rotateY(Math.PI / 2);
+  //   geometry.translate(1, 0, -0.5);
+  // }
+
+  // const clickHelper = new Mesh(
+  //   geometry,
+  //   new MeshPhongMaterial({
+  //     color: 0x333333
+  //   })
+  // );
+  // clickHelper.material.wireframe = false;
+  // clickHelper.name = 'click_helper';
+  // clickHelper.visible = true;
+  // clickHelper.raycast = Mesh.prototype.raycast;
+  // return clickHelper;
 }

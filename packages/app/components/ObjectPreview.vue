@@ -13,12 +13,14 @@
 
 <script lang="ts" setup>
 import {
-  type Mesh,
   type Object3D,
   type OrthographicCamera,
   type Scene,
   type WebGLRenderer,
+  BoxGeometry,
   Clock,
+  Mesh,
+  MeshBasicMaterial,
   Vector2,
   Vector3
 } from 'three';
@@ -56,6 +58,7 @@ const $props = defineProps<{
   hideGround?: boolean;
   groundScale?: number;
   hydrateWhenVisible?: boolean;
+  size?: Vector3 | null;
 }>();
 
 const ready = ref(false);
@@ -162,6 +165,8 @@ function refreshDimension() {
   dimension.value.set(currentWidth.value, currentWidth.value * $props.ratio);
 }
 
+let sizeIndicator: Mesh | undefined;
+
 function setupRenderer() {
   if (!canvasEl.value) {
     console.error('Canvas-Element wurde nicht gefunden.');
@@ -175,6 +180,17 @@ function setupRenderer() {
   previewScene = createScene();
   previewCamera = createCamera();
   previewScene.add(previewCamera);
+
+  const size = $props.size;
+  if (size) {
+    sizeIndicator = new Mesh(
+      new BoxGeometry(size.x, size.y, size.z),
+      new MeshBasicMaterial({ color: 0xff0000 })
+    );
+    sizeIndicator.visible = false;
+    sizeIndicator.position.set(size.x / 2, size.y - 0.5, size.z / 2);
+    previewScene.add(sizeIndicator);
+  }
 
   renderer.setAnimationLoop(time => {
     renderer.render(previewScene, previewCamera);
@@ -273,7 +289,7 @@ async function updatePreview(obj: Object3D, groundScale = 1) {
   updateOrthoCameraForObject(
     previewCamera,
     dimension.value.x / dimension.value.y,
-    previewScene,
+    sizeIndicator ?? previewScene,
     new Vector3(10, 10, 10)
   );
 }

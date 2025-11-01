@@ -17,24 +17,25 @@
           label="Your Name" />
         <div class="preview-characters">
           <base-button
-            v-for="{ key, selected } in previewUnits"
-            :key="`${skin}_${characterType}_${key}`"
+            v-for="previewUnit in previewUnits"
+            :key="`${previewUnit.skin}_${previewUnit.key}_${previewUnit.selected}`"
             type="button"
             class="character"
             :class="{
-              [key]: true,
-              selected
+              [previewUnit.key]: true,
+              selected: previewUnit.selected
             }"
-            @click="onClickSelectCharacter(key)">
+            @click="onClickSelectCharacter(previewUnit.key)">
             <div>
               <cw-object-preview-unit
                 :app="app"
                 mode="loop"
                 :ratio="1"
+                :size="new Vector3(1, 1.8, 1)"
                 :model-value="{
-                  type: key,
-                  skin: skin,
-                  action: selected
+                  type: previewUnit.key,
+                  skin: previewUnit.skin,
+                  action: previewUnit.selected
                     ? ANIMATION_ACTION.WALK
                     : ANIMATION_ACTION.IDLE
                 }" />
@@ -74,6 +75,7 @@ import type App from '@cuby-world/app/lib/classes/App';
 
 import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
 import { catalog } from '@cuby-world/units';
+import { Vector3 } from 'three';
 
 const formEl = ref<HTMLFormElement | null>(null);
 
@@ -84,15 +86,18 @@ const skin = ref(DEFAULT_PLAYER_SKIN_ID);
 const previewUnits = computed(() => [
   {
     key: CHARACHTER_TYPE.CUBY,
-    selected: characterType.value === CHARACHTER_TYPE.CUBY
+    selected: characterType.value === CHARACHTER_TYPE.CUBY,
+    skin: DEFAULT_PLAYER_SKIN_ID
   },
   {
     key: CHARACHTER_TYPE.DEFAULT,
-    selected: characterType.value === CHARACHTER_TYPE.DEFAULT
+    selected: characterType.value === CHARACHTER_TYPE.DEFAULT,
+    skin: DEFAULT_PLAYER_SKIN_ID
   },
   {
     key: CHARACHTER_TYPE.POLY_CHARACTER,
-    selected: characterType.value === CHARACHTER_TYPE.POLY_CHARACTER
+    selected: characterType.value === CHARACHTER_TYPE.POLY_CHARACTER,
+    skin: DEFAULT_PLAYER_SKIN_ID
   }
 ]);
 
@@ -157,17 +162,19 @@ defineExpose({
 .fields {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--cw-spacing-medium);
 
-  & :deep(.cw-base-form-field label) {
-    min-width: 100px;
+  & :deep(.cw-base-form-field) {
+    & :deep(label) {
+      min-width: 100px;
+    }
   }
 
   & .preview-characters {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--cw-spacing-medium);
-    padding: var(--cw-spacing-large);
+    padding: var(--cw-spacing-medium) var(--cw-spacing-large);
     margin: 0 calc(var(--cw-spacing-medium) * -1);
     background-color: var(--color-blue-7);
 

@@ -5,13 +5,13 @@ import type {
   UnitSkinIdentifier
 } from '@cuby-world/app/lib/utils/unit/skins';
 
-interface PolySkinOptions extends SkinOptions {
+interface PolyManSkinOptions extends SkinOptions {
   color: string | number;
 }
 
-export type PolySkinDescription = UnitSkinDescription<PolySkinOptions>;
+export type PolyManSkinDescription = UnitSkinDescription<PolyManSkinOptions>;
 
-const skins: PolySkinDescription[] = [
+const skins: PolyManSkinDescription[] = [
   {
     id: 'default',
     name: 'Blue',

@@ -1,4 +1,4 @@
-import { Subscription, Subject, fromEvent, concatMap, map } from 'rxjs';
+import { Subscription, Subject, fromEvent, concatMap } from 'rxjs';
 import AppModule, {
   type AppModuleObservables,
   type AppModuleState,
@@ -127,21 +127,6 @@ export default class PlacementAppModule extends AppModule<State, Observables> {
     subscription.add(
       this.app.modules.room.observables.hover$
         .pipe(
-          map((preparedPositions: PreparedPosition[]) => {
-            if (!unit.wallOnly) {
-              preparedPositions = preparedPositions.filter(
-                pos => !pos.object?.userData[OBJECT_NAME.WALL]
-              );
-            } else {
-              preparedPositions = preparedPositions.filter(
-                pos =>
-                  room.modules.wall.getWallById(
-                    pos.object!.userData[OBJECT_NAME.WALL]
-                  )?.visible
-              );
-            }
-            return preparedPositions;
-          }),
           concatMap((preparedPositions: PreparedPosition[]) => {
             if (!unit.wallOnly) {
               preparedPositions = preparedPositions.filter(

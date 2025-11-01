@@ -1,13 +1,6 @@
 /* eslint-disable complexity */
-import type { Object3D, BufferAttribute } from 'three';
-import {
-  Vector2,
-  Vector3,
-  BoxGeometry,
-  BufferGeometry,
-  Mesh,
-  MeshPhongMaterial
-} from 'three';
+import type { Object3D, BufferAttribute, MeshPhongMaterial } from 'three';
+import { Vector2, Vector3, BoxGeometry, BufferGeometry, Mesh } from 'three';
 import EasyStar from 'easystarjs';
 import Wall, { type WallIdentifier } from '../classes/Wall';
 
@@ -1219,8 +1212,7 @@ export function createWallMesh(
   {
     center,
     edges,
-    wallGeometryMap,
-    editMode = false
+    wallGeometryMap
   }: {
     center: boolean;
     edges: WallEdge[];
@@ -1247,34 +1239,6 @@ export function createWallMesh(
   const preparedGeometry = geometry_ || new BoxGeometry(1, 1, 1);
 
   const mesh = new Mesh(preparedGeometry, materials);
-
-  //#region click helper
-  if (editMode) {
-    const geometry = new BoxGeometry(1, 2.2, 0.22);
-    geometry.rotateY(Math.PI / 2);
-    geometry.translate(0, 1.1, 0);
-
-    if (direction === WALL_DIRECTION.VERTICAL) {
-      geometry.translate(-0.5, 0, 0);
-    } else {
-      geometry.translate(0, 0, -1);
-      geometry.rotateY(Math.PI / 2);
-      geometry.translate(1, 0, -0.5);
-    }
-
-    const clickHelper = new Mesh(
-      geometry,
-      new MeshPhongMaterial({
-        color: 0x333333
-      })
-    );
-    clickHelper.material.wireframe = true;
-    clickHelper.name = 'click_helper';
-    clickHelper.visible = false;
-    clickHelper.raycast = Mesh.prototype.raycast;
-    mesh.add(clickHelper);
-  }
-  //#endregion
 
   mesh.castShadow = true;
 

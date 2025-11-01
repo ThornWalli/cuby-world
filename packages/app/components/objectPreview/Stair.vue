@@ -6,6 +6,7 @@
     :app="app"
     :width="width ?? 'auto'"
     :ratio="ratio"
+    :size="new Vector3(3, 3, 3)"
     :ground-scale="3"
     :hydrate-when-visible="hydrateWhenVisible"
     class="cw-object-preview-stair" />

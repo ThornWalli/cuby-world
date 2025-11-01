@@ -12,6 +12,7 @@
     <template #preview="{ preview }">
       <cw-object-preview-wall
         :app="app"
+        hide-ground
         :ratio="8 / 4"
         :model-value="preparedPreview(preview)"
         hydrate-when-visible />

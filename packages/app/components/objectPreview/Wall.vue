@@ -8,6 +8,7 @@
     :width="width ?? 'auto'"
     :ratio="ratio"
     :hydrate-when-visible="hydrateWhenVisible"
+    :size="new Vector3(1, 2, 1)"
     class="cw-object-preview-wall" />
 </template>
 
@@ -69,7 +70,7 @@ function getWallDescription({
 }
 
 const animationLoop$ = new ReplaySubject<AnimationLoopValue>(1);
-animationLoop$.next({ time: 0, delta: 0 });
+animationLoop$.next({ time: 0, delta: 1000 });
 
 let wall: Wall;
 const description = ref<WallDescription>();
@@ -132,7 +133,7 @@ async function setupWall({
   root.position.set(0, 0, 0);
   root.rotation.set(0, -Math.PI / 2, 0);
 
-  return root;
+  return markRaw(root);
 }
 
 if ($props.modelValue) {

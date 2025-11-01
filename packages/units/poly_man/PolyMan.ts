@@ -11,7 +11,7 @@ import Unit, {
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
 import CharacterUnitModule from '@cuby-world/app/lib/classes/unitModule/Character';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
-import glbBase from './assets/poly_character.glb?url';
+import glbBase from './assets/poly_man.glb?url';
 import {
   ANIMATION_ACTION,
   AnimationUnitModule
@@ -21,24 +21,23 @@ import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
 import { DEFAULT_PLAYER_SKIN_ID } from '@cuby-world/app/lib/classes/Player';
 import { skinsMap } from './skins';
 
-type PolyCharacterUnitModules = UnitModules & {
+type PolyManUnitModules = UnitModules & {
   character: CharacterUnitModule;
   animation: AnimationUnitModule;
 };
 
-export interface PolyCharacterOptions
-  extends UnitOptions<MovementModuleOptions> {
+export interface PolyManOptions extends UnitOptions<MovementModuleOptions> {
   color: string | number;
 }
 
-type CharacterUnitModuleList = (typeof CharacterUnitModule)[] & UnitModuleList;
-export default class PolyCharacter extends Unit<
-  PolyCharacterOptions,
-  PolyCharacterUnitModules,
-  CharacterUnitModuleList
+type PolyManUnitModuleList = (typeof CharacterUnitModule)[] & UnitModuleList;
+export default class PolyMan extends Unit<
+  PolyManOptions,
+  PolyManUnitModules,
+  PolyManUnitModuleList
 > {
-  static override KEY = 'poly_character';
-  static override NAME = 'Poly Character';
+  static override KEY = 'poly_man';
+  static override NAME = 'Poly Man';
 
   override previewOptions: PreviewOptions = {
     ground: false
@@ -46,7 +45,7 @@ export default class PolyCharacter extends Unit<
 
   constructor(
     options: Omit<
-      UnitConstructorOptions<Partial<PolyCharacterOptions>>,
+      UnitConstructorOptions<Partial<PolyManOptions>>,
       'name' | 'selectable'
     > = {}
   ) {
@@ -75,7 +74,7 @@ export default class PolyCharacter extends Unit<
       [
         CharacterUnitModule,
         AnimationUnitModule
-      ] as unknown as CharacterUnitModuleList
+      ] as unknown as PolyManUnitModuleList
     );
   }
 

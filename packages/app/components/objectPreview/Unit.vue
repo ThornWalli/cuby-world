@@ -1,19 +1,21 @@
 <template>
   <cw-object-preview
     v-if="root"
-    :hide-ground="showGround || !unitInstance?.previewOptions.ground"
+    :hide-ground="!showGround && !unitInstance?.previewOptions.ground"
     :cache-key="modelValue ? JSON.stringify(modelValue) : undefined"
     :root="root"
     :app="app"
     :mode="mode"
     :width="width ?? 'auto'"
     :ratio="ratio"
+    :size="size"
     :hydrate-when-visible="hydrateWhenVisible"
     class="cw-object-preview-unit"
     @animation-loop="animationLoop$.next($event)" />
 </template>
 
 <script lang="ts" setup>
+import type { Vector3 } from 'three';
 import { Object3D } from 'three';
 import { markRaw, onUnmounted, ref, type Raw } from 'vue';
 import { Subscription, Subject } from 'rxjs';
@@ -35,6 +37,7 @@ const $props = defineProps<{
   modelValue: UnitPreview;
   hydrateWhenVisible?: boolean;
   showGround?: boolean;
+  size?: Vector3 | null;
 }>();
 
 const root = ref<Object3D>(new Object3D());

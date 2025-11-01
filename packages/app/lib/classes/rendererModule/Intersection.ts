@@ -8,6 +8,7 @@ import { OBJECT_USER_DATA } from '../../utils/object';
 export interface Intersection
   extends Pick<ThreeIntersection, 'point' | 'face' | 'faceIndex'> {
   object: Object3D;
+  originObject: Object3D;
 }
 
 declare module '../../utils/object' {
@@ -178,7 +179,8 @@ function prepareIntersections(
             faceIndex: intersect.faceIndex,
             object: renderer.scene.getObjectById(
               intersect.object.userData[OBJECT_USER_DATA.MAIN_OBJECT]
-            )
+            ),
+            originObject: intersect.object
           } as Intersection;
         })
         .filter(o => o?.object?.visible)

@@ -3,7 +3,6 @@ import type { Object3D } from 'three';
 import { Vector3 } from 'three';
 import type Unit from '../classes/Unit';
 
-import type * as THREE from 'three';
 import type { FACE_INDEX } from '../types/wall';
 import { FLOOR_HEIGHT } from './ground';
 import { OBJECT_USER_DATA } from './object';
@@ -11,9 +10,7 @@ import type { Intersection } from '../classes/rendererModule/Intersection';
 import type { WallExtensionIdentifier } from '../types/wall/extension/skins';
 import type { WallIdentifier } from '../classes/Wall';
 
-export function positionToMatrixPosition(
-  position: THREE.Vector3
-): THREE.Vector3 {
+export function positionToMatrixPosition(position: Vector3): Vector3 {
   return new Vector3(
     Math.round(position.x),
     // Math.floor(position.y / FLOOR_HEIGHT),
@@ -22,9 +19,7 @@ export function positionToMatrixPosition(
   );
 }
 //---
-export function matrixPositionToPosition(
-  matrixPosition: THREE.Vector3
-): THREE.Vector3 {
+export function matrixPositionToPosition(matrixPosition: Vector3): Vector3 {
   const x = matrixPosition.x;
   const y = matrixPosition.y;
   const z = matrixPosition.z;
@@ -36,8 +31,9 @@ export interface PreparedPosition {
   wall?: WallIdentifier;
   unit?: Unit;
   object: Object3D | null;
-  matrixPosition: THREE.Vector3 | null;
-  worldPosition: THREE.Vector3 | null;
+  originObject: Object3D;
+  matrixPosition: Vector3 | null;
+  worldPosition: Vector3 | null;
   faceIndex?: FACE_INDEX | null;
 }
 
@@ -51,7 +47,7 @@ export function preparePosition(onlyTopFace = false) {
         const isTopFace = intersection.face && intersection.face.normal.y > 0.9;
 
         let matrixPosition: Vector3 | null = null;
-        let worldPosition: THREE.Vector3 | null = null;
+        let worldPosition: Vector3 | null = null;
 
         if (!onlyTopFace || (onlyTopFace && isTopFace)) {
           matrixPosition = positionToMatrixPosition(point);
@@ -80,6 +76,7 @@ export function preparePosition(onlyTopFace = false) {
           wall,
           unit,
           object,
+          originObject: intersection.originObject,
           matrixPosition: matrixPosition,
           worldPosition: worldPosition,
           faceIndex: intersection.faceIndex

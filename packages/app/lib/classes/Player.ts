@@ -5,7 +5,7 @@ import { ReplaySubject, Subject } from 'rxjs';
 import Cuby from '@cuby-world/units/cuby/Cuby';
 import { catalog } from '@cuby-world/units';
 import Character from '@cuby-world/units/character/Character';
-import PolyCharacter from '@cuby-world/units/poly_character/PolyCharacter';
+import PolyMan from '@cuby-world/units/poly_man/PolyMan';
 
 export type PlayerSkinIdentifier = string;
 
@@ -144,7 +144,7 @@ export default class Player {
       return;
     }
     this.state.skin = skin;
-    if (this.unit instanceof Cuby || this.unit instanceof PolyCharacter) {
+    if (this.unit instanceof Cuby || this.unit instanceof PolyMan) {
       this.unit.setSkin(skin);
     }
   }

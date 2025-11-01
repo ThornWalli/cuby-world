@@ -1,7 +1,4 @@
-import {
-  getFaceGroupIndex,
-  getWallIdentifierFromObject
-} from '@cuby-world/app/lib/utils/wall';
+import { getWallIdentifierFromObject } from '@cuby-world/app/lib/utils/wall';
 import type App from '../../../App';
 import type {
   AppModuleControllerObservables,
@@ -9,10 +6,12 @@ import type {
 } from '../../../AppModuleController';
 import AppModuleController from '../../../AppModuleController';
 import type { Object3D } from 'three';
-import type { FACE_INDEX } from '@cuby-world/app/lib/types/wall';
+import {
+  WALL_DIRECTION,
+  type FACE_INDEX
+} from '@cuby-world/app/lib/types/wall';
 import { filter, ReplaySubject, type Observable } from 'rxjs';
 import { concatMap, map } from 'rxjs';
-
 import { OBJECT_NAME } from '../../../../utils/object';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 import type { PreparedPosition } from '@cuby-world/app/lib/utils/matrix';
@@ -89,9 +88,10 @@ export default class PainterController extends AppModuleController<
     current,
     faceIndex
   }: {
-    current: Object3D | null;
+    current?: Object3D | null;
     faceIndex: FACE_INDEX;
   }) {
+    console.log('select', { current, faceIndex });
     const wallId = getWallIdentifierFromObject(current!)!;
     const wall = this.app.modules.room
       .getRoom()!
@@ -109,7 +109,7 @@ export default class PainterController extends AppModuleController<
     current,
     faceIndex
   }: {
-    current: Object3D | null;
+    current?: Object3D | null;
     faceIndex: FACE_INDEX;
   }) {
     await this.resetLast();
@@ -173,20 +173,13 @@ export default class PainterController extends AppModuleController<
   private prepareSelect() {
     return (source: Observable<PreparedPosition[]>) =>
       source.pipe(
-        /**
-         * Falls Wand einfärbung ignoriert wird, hier werden die faceIndex gefiltert.
-         */
+        // eslint-disable-next-line complexity
         map(preparedPositions => {
-          return preparedPositions.filter(
-            preparedPosition =>
-              !preparedPosition.faceIndex ||
-              [0, 1, 2].includes(preparedPosition.faceIndex!)
+          preparedPositions = preparedPositions.filter(
+            p =>
+              !p.object?.getObjectByName(OBJECT_NAME.WALL_WRAPPER) ||
+              p.object?.getObjectByName(OBJECT_NAME.WALL_WRAPPER)!.visible
           );
-        }),
-        map(preparedPositions => {
-          const position = preparedPositions.find(p =>
-            p.object?.name.includes(OBJECT_NAME.GROUND)
-          )?.worldPosition;
 
           const wallId = preparedPositions.find(({ object }) =>
             getWallIdentifierFromObject(object)
@@ -195,25 +188,50 @@ export default class PainterController extends AppModuleController<
             .getRoom()
             ?.modules.wall.getWallById(wallId);
 
-          return { preparedPosition: preparedPositions[0], position, wall };
-        }),
-        map(({ preparedPosition, position, wall }) => {
-          const object = preparedPosition?.object;
+          const preparedPosition = preparedPositions[0];
+
+          const position = preparedPositions.find(p =>
+            p.object?.name.includes(OBJECT_NAME.GROUND)
+          )?.worldPosition;
+
+          const isHorizontal = wall?.direction === WALL_DIRECTION.HORIZONTAL;
           let faceIndex = -1;
-          if (wall) {
-            faceIndex = getFaceGroupIndex(
-              wall.root.getObjectByName('click_helper')!,
-              preparedPosition?.faceIndex
-            );
+          if (
+            isHorizontal
+              ? preparedPosition?.originObject.userData[
+                  OBJECT_USER_DATA.WALL_SELECT_FRONT
+                ]
+              : preparedPosition?.originObject.userData[
+                  OBJECT_USER_DATA.WALL_SELECT_BACK
+                ]
+          ) {
+            faceIndex = WALL_FACE.FRONT;
+          } else if (
+            isHorizontal
+              ? preparedPosition?.originObject.userData[
+                  OBJECT_USER_DATA.WALL_SELECT_BACK
+                ]
+              : preparedPosition?.originObject.userData[
+                  OBJECT_USER_DATA.WALL_SELECT_FRONT
+                ]
+          ) {
+            faceIndex = WALL_FACE.BACK;
           }
 
+          const object = preparedPosition?.object;
+
           return {
-            position: position ?? null,
-            current: object ?? null,
+            position,
+            current: object,
             faceIndex
           };
         })
       );
   }
   //#endregion
+}
+
+export enum WALL_FACE {
+  FRONT = 0,
+  BACK = 1
 }
