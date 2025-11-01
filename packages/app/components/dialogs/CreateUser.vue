@@ -13,7 +13,7 @@
         <cw-form-field-textfield
           v-model="name"
           required
-          placeholder="Name…"
+          placeholder="Your Name…"
           label="Your Name" />
         <div class="preview-characters">
           <base-button
@@ -41,6 +41,7 @@
             </div>
           </base-button>
         </div>
+
         <cw-form-field-select v-model="skin" label="Your Skin">
           <cw-form-field-select-option
             v-for="option in skinOptions"
@@ -78,7 +79,7 @@ const formEl = ref<HTMLFormElement | null>(null);
 
 const name = ref('');
 const characterType = ref<CHARACHTER_TYPE>(CHARACHTER_TYPE.CUBY);
-const skin = ref('');
+const skin = ref(DEFAULT_PLAYER_SKIN_ID);
 
 const previewUnits = computed(() => [
   {
@@ -106,8 +107,8 @@ defineProps<{
 const skinOptions = computed(() => {
   const skins = Array.from(
     catalog
-      .get(characterType.value)
-      ?.skinMap?.values()
+      .get(characterType.value)!
+      .skinMap!.values()
       .map(skin => ({
         label: skin.name,
         value: skin.id
