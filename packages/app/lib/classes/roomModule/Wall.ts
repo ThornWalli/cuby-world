@@ -299,7 +299,7 @@ export default class WallModule extends RoomModule<
     this.subscription.add(
       app.modules.player.observables.currentPlayer$
         .pipe(
-          switchMap(player => player.unit$),
+          switchMap(player => player.observables.unit$),
           switchMap(({ unit }) => unit.observables.ready$),
           switchMap(unit => unit.observables.position$),
           map(position => position.clone().ceil()),
@@ -344,7 +344,7 @@ export default class WallModule extends RoomModule<
 
     this.subscription.add(
       app.modules.player.observables.currentPlayer$
-        .pipe(switchMap(player => player.unit$))
+        .pipe(switchMap(player => player.observables.unit$))
         .subscribe(({ unit }) => {
           this.addUnitForTracking(unit);
         })
@@ -352,7 +352,7 @@ export default class WallModule extends RoomModule<
 
     app.modules.player.observables.currentPlayer$
       .pipe(
-        switchMap(player => player.unit$),
+        switchMap(player => player.observables.unit$),
         switchMap(({ unit }) => unit.observables.ready$),
         map(unit => unit.root),
         filter(Boolean)

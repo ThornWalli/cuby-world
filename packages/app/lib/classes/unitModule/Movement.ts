@@ -29,7 +29,7 @@ import {
 } from '../../utils/pathfindng';
 import { GRID_BLOCKED, GRID_NON_BLOCKED } from '../roomModule/Ground';
 import { ANIMATION_ACTION, type AnimationUnitModule } from './Animation';
-import { getRadByRotation } from '../../utils/rotation';
+import { getRadByRotation, getRotationByPosition } from '../../utils/rotation';
 
 import ChairUnitModule, { type ChairUnitOptions } from './Chair';
 import CharacterUnitModule from './Character';
@@ -427,6 +427,14 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
         //#endregion
       }
+      if (moveOptions.startPosition && moveOptions.nextPosition) {
+        unit.setRootRotation(
+          getRotationByPosition(
+            moveOptions.startPosition,
+            moveOptions.nextPosition.position
+          )
+        );
+      }
 
       const nextDoor =
         moveOptions.nextPosition &&
@@ -537,7 +545,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
           startRotation!.z + rotationDifference.z * progress
         );
 
-        unit.setRootRotation(interpolatedRotation);
+        unit.setRootRotationByEuler(interpolatedRotation);
 
         /**
          * Rotation beendet

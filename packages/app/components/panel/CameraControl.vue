@@ -6,6 +6,13 @@
       @update:model-value="onToggleFocused">
       Focused Cuby
     </cw-toggle>
+    <cw-toggle
+      :disabled="focusedUnit"
+      style-type="dark"
+      :model-value="canRotate"
+      @update:model-value="onToggleCanRotate">
+      Can Rotate
+    </cw-toggle>
     <cw-button :disabled="focusedUnit" @click="app.resetCamera()">
       Reset Camera
     </cw-button>
@@ -33,8 +40,14 @@ const unitFocus = computed(() => {
   return $props.app.modules.unitFocus!;
 });
 
+const canRotate = ref(false);
 const focusedUnit = ref(false);
 onMounted(() => {
+  subscription.add(
+    $props.app.renderer.observables.controls$!.subscribe(controls => {
+      canRotate.value = controls.rotate;
+    })
+  );
   subscription.add(
     unitFocus.value.observables.focusedUnit$.subscribe(unit => {
       if (unit) {
@@ -66,5 +79,11 @@ function onToggleFocused(value: boolean) {
   } else {
     unitFocus.value.unfocusUnit();
   }
+}
+function onToggleCanRotate(value: boolean) {
+  $props.app.renderer.setControlsOptions({
+    ...$props.app.renderer.getControlsOptions(),
+    rotate: value
+  });
 }
 </script>

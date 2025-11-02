@@ -1,6 +1,7 @@
 import type { Object3D } from 'three';
 import {
   ACESFilmicToneMapping,
+  AmbientLight,
   Box3,
   DirectionalLight,
   DoubleSide,
@@ -14,7 +15,7 @@ import {
 } from 'three';
 import type AssetLoader from '../lib/classes/AssetLoader';
 import { loadGroundGeometries } from '../lib/utils/ground';
-import Ground from '../lib/classes/Ground';
+import Ground, { createMaterial } from '../lib/classes/Ground';
 import {
   default_mesh as groundGlb,
   groundTextureMap
@@ -39,10 +40,16 @@ export async function setupGround(
   });
   const geometry = groundTile.createGeometry(geometryMap);
   geometry.scale(scale ?? 1, 1, scale ?? 1);
-  const material = await groundTile.createMaterial({
-    assetLoader,
-    textureMap: groundTextureMap
-  });
+  const material = await createMaterial(
+    groundTile.texture,
+    groundTile.type,
+    groundTile.color,
+    groundTile.opacity,
+    {
+      assetLoader,
+      textureMap: groundTextureMap
+    }
+  );
   const groundMesh = new Mesh(geometry, material);
   groundMesh.material.side = DoubleSide;
   groundMesh.receiveShadow = true;
@@ -334,40 +341,62 @@ export function updateOrthoCameraForObject(
 export function createScene() {
   const scene = new Scene();
 
-  const lightPosition = new Vector3(10, 5, 15);
-  const zoom = 1;
+  const zoom = 20;
 
   //#region light
 
+  const ambient = new AmbientLight(0xffffff, 1);
+  scene.add(ambient);
+
   let light;
-  light = new DirectionalLight(0xffffff, 3);
-  light.position.set(lightPosition.x, lightPosition.y, lightPosition.z);
-  light.shadow.mapSize.width = 128;
-  light.shadow.mapSize.height = 128;
+  light = new DirectionalLight(0xffffff, 1);
+  light.position.copy(new Vector3(10, 15, 10));
+  light.shadow.mapSize.width = 256;
+  light.shadow.mapSize.height = 256;
   light.shadow.camera.left = -zoom;
   light.shadow.camera.right = zoom;
   light.shadow.camera.top = zoom;
   light.shadow.camera.bottom = -zoom;
   light.shadow.camera.near = 1;
-  light.shadow.camera.far = 50;
+  light.shadow.camera.far = 60;
   light.shadow.camera.updateProjectionMatrix();
 
-  scene.add(light);
-
-  light = new DirectionalLight(0xffffff, 0.6);
-  light.position.set(0, 3, 0);
   light.castShadow = true;
-  light.shadow.mapSize.width = 128;
-  light.shadow.mapSize.height = 128;
+  light.lookAt(0, 0, 0);
 
+  scene.add(light);
+
+  light = new DirectionalLight(0xffffff, 1);
+  light.position.set(10, 15, 10);
+  light.shadow.mapSize.width = 256;
+  light.shadow.mapSize.height = 256;
   light.shadow.camera.left = -zoom;
   light.shadow.camera.right = zoom;
   light.shadow.camera.top = zoom;
   light.shadow.camera.bottom = -zoom;
   light.shadow.camera.near = 1;
-  light.shadow.camera.far = 50;
+  light.shadow.camera.far = 60;
   light.shadow.camera.updateProjectionMatrix();
+
+  light.castShadow = true;
+  light.lookAt(0, 0, 0);
+
   scene.add(light);
+
+  // light = new DirectionalLight(0xffffff, 1);
+  // light.position.set(10, 10, 10);
+  // light.castShadow = true;
+  // light.shadow.mapSize.width = 128;
+  // light.shadow.mapSize.height = 128;
+
+  // light.shadow.camera.left = -zoom;
+  // light.shadow.camera.right = zoom;
+  // light.shadow.camera.top = zoom;
+  // light.shadow.camera.bottom = -zoom;
+  // light.shadow.camera.near = 1;
+  // light.shadow.camera.far = 50;
+  // light.shadow.camera.updateProjectionMatrix();
+  // scene.add(light);
 
   //#endregion
 

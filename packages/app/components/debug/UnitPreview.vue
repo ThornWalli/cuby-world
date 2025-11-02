@@ -49,7 +49,7 @@ import { useRouter } from '#imports';
 import type Renderer from '../../lib/classes/Renderer';
 
 import type Unit from '../../lib/classes/Unit';
-import Ground from '../../lib/classes/Ground';
+import Ground, { createMaterial } from '../../lib/classes/Ground';
 
 import units from './units';
 
@@ -185,10 +185,16 @@ async function setupScene(renderer: Renderer) {
     texture: groundTextureMap.get('default_base')
   });
   const geometry = groundTile.createGeometry(geometryMap);
-  const material = await groundTile.createMaterial({
-    assetLoader,
-    textureMap: groundTextureMap
-  });
+  const material = await createMaterial(
+    groundTile.texture,
+    groundTile.type,
+    groundTile.color,
+    groundTile.opacity,
+    {
+      assetLoader,
+      textureMap: groundTextureMap
+    }
+  );
   const groundMesh = new Mesh(geometry, material);
   groundMesh.material.side = DoubleSide;
   groundMesh.receiveShadow = true;

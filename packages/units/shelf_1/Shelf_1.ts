@@ -64,6 +64,10 @@ export default class Shelf_1<
 
     meshRoot.add(obj);
 
+    meshRoot.traverse(child => {
+      child.castShadow = true;
+    });
+
     return meshRoot;
   }
 }

@@ -1240,8 +1240,6 @@ export function createWallMesh(
 
   const mesh = new Mesh(preparedGeometry, materials);
 
-  mesh.castShadow = true;
-
   return mesh;
 }
 

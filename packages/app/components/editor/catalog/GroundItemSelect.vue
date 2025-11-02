@@ -59,6 +59,8 @@ export interface GroundItem<Item extends CatalogItem> extends BaseSelectItem {
 
 <style lang="postcss" scoped>
 .cw-panel-catalog-ground-item-select {
+  --preview-width: 96px;
+
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

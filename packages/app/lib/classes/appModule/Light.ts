@@ -116,7 +116,7 @@ function createLights() {
   dirLight.position.set(80, 100, 80);
   dirLight.castShadow = true;
 
-  dirLight.shadow.mapSize.set(2048, 2048);
+  dirLight.shadow.mapSize.set(512, 512);
 
   // Bias gegen Streifen
   dirLight.shadow.bias = -0.001;

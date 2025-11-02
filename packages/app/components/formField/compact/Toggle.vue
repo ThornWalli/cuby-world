@@ -1,11 +1,16 @@
 <template>
-  <cw-form-field mode="compact" hide-colon class="cw-form-field-compact-toggle">
+  <cw-form-field
+    :disabled="disabled ? true : undefined"
+    mode="compact"
+    hide-colon
+    class="cw-form-field-compact-toggle">
     <template #label="{ label }">
       <slot>{{ label }}</slot>
     </template>
     <template #default="ctx">
       <input
         :id="ctx.id"
+        :disabled="disabled"
         :checked="modelValue"
         type="checkbox"
         @change="onChange" />
@@ -24,6 +29,7 @@ import SvgIndicatorFalse from '../../../assets/icons/indicator/false.svg';
 
 defineProps<{
   modelValue?: boolean;
+  disabled?: boolean;
 }>();
 
 const $emit = defineEmits<{
@@ -82,6 +88,15 @@ function onChange(e: Event) {
 
     & .checked {
       opacity: 1;
+    }
+  }
+
+  &[disabled] {
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    & .indicator {
+      background-color: var(--color-black);
     }
   }
 

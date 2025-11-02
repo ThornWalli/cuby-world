@@ -137,7 +137,7 @@ export default class EditorGroundModule extends AppModule<State, Observables> {
 
     const groundStyleMap = groundModule.getGroundStyleMap();
     this.lastGroundData.forEach(data => {
-      console.log('data', data);
+      // console.log('data', data);
       groundStyleMap.set(
         data.position.x,
         data.position.y,

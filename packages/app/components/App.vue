@@ -165,7 +165,7 @@ async function setupPlayer(app: App) {
       skin: playerSettings.skin || DEFAULT_PLAYER_SKIN_ID
     });
   }
-  app.modules.player.addPlayer(player);
+  app.modules.player.addPlayer(markRaw(player));
   hasPlayer.value = true;
 }
 

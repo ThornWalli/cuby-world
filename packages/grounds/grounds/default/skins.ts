@@ -62,33 +62,23 @@ const skins: DefaultSkinDescription[] = [
     }
   },
   {
-    id: 'default_grass_2',
-    name: 'Grass 2',
+    id: 'default_stone_1',
+    name: 'Stone 1',
     tags: [SKIN_TAG.TEXTURE],
     options: {
       cost: GROUND_COST.SLOW,
       color: '#ffffff',
-      texture: { id: 'grass_2' }
+      texture: { id: 'stone_1' }
     }
   },
   {
-    id: 'default_grass_3',
-    name: 'Grass 3',
+    id: 'default_tile_1',
+    name: 'Tile 1',
     tags: [SKIN_TAG.TEXTURE],
     options: {
       cost: GROUND_COST.SLOW,
       color: '#ffffff',
-      texture: { id: 'grass_3' }
-    }
-  },
-  {
-    id: 'default_grass_4',
-    name: 'Grass 4',
-    tags: [SKIN_TAG.TEXTURE],
-    options: {
-      cost: GROUND_COST.SLOW,
-      color: '#ffffff',
-      texture: { id: 'grass_4' }
+      texture: { id: 'tile_1' }
     }
   },
   {

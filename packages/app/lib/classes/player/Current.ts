@@ -19,6 +19,6 @@ export default class CurrentPlayer extends Player {
   override async setSettings(settings: Partial<PlayerSettings>) {
     await super.setSettings(settings);
 
-    this.playerSettings$.next(this.getSettings());
+    this.observables.playerSettings$.next(this.getSettings());
   }
 }

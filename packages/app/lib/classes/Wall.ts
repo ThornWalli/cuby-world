@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import { WALL_EXTENSION_TYPE, type WallExtensionState } from './WallExtension';
 
 import {
@@ -541,6 +542,9 @@ export default class Wall {
       }
     );
     largeWall.name = MESH_WALL_NAME.LARGE_WALL;
+    largeWall.userData[OBJECT_USER_DATA.IGNORE_RAYCASTER] = true;
+    largeWall.castShadow = true;
+    largeWall.receiveShadow = false;
 
     this.wallMeshes[WALL_SIZE.LARGE] = largeWall;
     this.addToWallWrapper(largeWall);
@@ -561,6 +565,7 @@ export default class Wall {
       }
     );
     smallWall.name = MESH_WALL_NAME.SMALL_WALL;
+    smallWall.userData[OBJECT_USER_DATA.IGNORE_RAYCASTER] = true;
     smallWall.visible = this.size === WALL_SIZE.SMALL;
 
     this.wallMeshes[WALL_SIZE.SMALL] = smallWall;
@@ -580,18 +585,27 @@ export default class Wall {
     if (this.state.skins.length) {
       await Promise.all(
         this.state.skins.map(async (style, index: number) => {
-          let url: string | undefined = undefined;
+          let path: string | undefined = undefined;
           const texture = skinMap.get(style || 'default')?.options.texture;
+          let normal, disaplacement, specular;
           if (texture) {
-            url = texture.path;
+            path = texture.path;
+            normal = texture.normal;
+            disaplacement = texture.displacement;
+            specular = texture.specular;
           }
-          if (url) {
+          if (path) {
             return [
               await setupMaterial(
                 {
                   index: 0,
                   direction: this.direction,
-                  url,
+                  maps: {
+                    color: path,
+                    normal,
+                    disaplacement,
+                    specular
+                  },
                   options: {
                     position: new Vector2(0, 0),
                     dimension: new Vector2(512, 1024)
@@ -604,7 +618,12 @@ export default class Wall {
                 {
                   index: 0,
                   direction: this.direction,
-                  url,
+                  maps: {
+                    color: path,
+                    normal,
+                    disaplacement,
+                    specular
+                  },
                   options: {
                     position: new Vector2(512, 0),
                     dimension: new Vector2(512, 205)
@@ -665,12 +684,18 @@ async function setupMaterial(
   {
     index = 0,
     direction = WALL_DIRECTION.HORIZONTAL,
-    url,
+    maps,
     options
   }: {
     index: number;
     direction: WALL_DIRECTION;
-    url: string;
+    maps: {
+      color: string;
+      ambient?: string | null;
+      normal?: string | null;
+      disaplacement?: string | null;
+      specular?: string | null;
+    };
     options: {
       density?: number;
       position: Vector2;
@@ -684,16 +709,52 @@ async function setupMaterial(
     geometry: geometry?.id,
     index,
     direction,
-    url,
+    maps,
     options
   });
 
   if (!materialsMap.has(key)) {
     const texture = await assetLoader.add<Texture, SpriteLoadDescription>({
       loader: LOADER.SPRITE,
-      value: url,
+      value: maps.color,
       options: { density: 2, ...options }
     });
+
+    let ambientMap = null;
+    if (maps.ambient) {
+      ambientMap = await assetLoader.add<Texture, SpriteLoadDescription>({
+        loader: LOADER.SPRITE,
+        value: maps.ambient,
+        options: { density: 2, ...options }
+      });
+    }
+
+    let normalMap = null;
+    if (maps.normal) {
+      normalMap = await assetLoader.add<Texture, SpriteLoadDescription>({
+        loader: LOADER.SPRITE,
+        value: maps.normal,
+        options: { density: 2, ...options }
+      });
+    }
+
+    let displacementMap = null;
+    if (maps.disaplacement) {
+      displacementMap = await assetLoader.add<Texture, SpriteLoadDescription>({
+        loader: LOADER.SPRITE,
+        value: maps.disaplacement,
+        options: { density: 2, ...options }
+      });
+    }
+
+    let specularMap = null;
+    if (maps.specular) {
+      specularMap = await assetLoader.add<Texture, SpriteLoadDescription>({
+        loader: LOADER.SPRITE,
+        value: maps.specular,
+        options: { density: 2, ...options }
+      });
+    }
 
     const { min, size } = getGroupBounds(geometry!, index)!;
     const pos = geometry!.attributes.position!;
@@ -721,6 +782,10 @@ async function setupMaterial(
 
     const material = new MeshPhongMaterial({
       map: texture,
+      aoMap: ambientMap,
+      normalMap: normalMap,
+      displacementMap: displacementMap,
+      specularMap: specularMap,
       transparent: true,
       side: DoubleSide
     });
@@ -742,6 +807,7 @@ function createShadowHelper(geometry: BufferGeometry) {
   shadowHelper.name = 'shadow_helper';
   shadowHelper.visible = true;
   shadowHelper.raycast = () => void 0;
+  shadowHelper.userData[OBJECT_USER_DATA.IGNORE_RAYCASTER] = true;
 
   return shadowHelper;
 }

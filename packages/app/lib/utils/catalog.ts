@@ -3,7 +3,8 @@ import type { WallExtensionItem } from '../types/wall/extension/catalog';
 
 export enum CATALOG_TAG {
   LIGHT = 'light',
-  FURNITURE = 'furniture'
+  FURNITURE = 'furniture',
+  HIDE = 'hide'
 }
 
 export async function getWallExtensionMap<Item extends WallExtensionItem>(

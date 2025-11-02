@@ -1,6 +1,9 @@
+/* eslint-disable complexity */
 import { GROUND_GEOMETRY, type GroundGeometryMap } from './../types/ground';
 import {
+  ClampToEdgeWrapping,
   DoubleSide,
+  LinearFilter,
   type Mesh,
   MeshPhongMaterial,
   SRGBColorSpace,
@@ -58,40 +61,228 @@ export default class Ground {
     return geometryMap.get(this.type)!.clone()!;
   }
 
-  async createMaterial({
+  // async createMaterial({
+  //   assetLoader,
+  //   textureMap
+  // }: {
+  //   assetLoader: AssetLoader;
+  //   textureMap: GroundTextureMap;
+  // }) {
+  //   const opacity = this.opacity;
+  //   let texture: Texture | null = null;
+  //   let normalMap: Texture | null = null;
+  //   let ambientMap: Texture | null = null;
+  //   let displacementMap: Texture | null = null;
+  //   let specularMap: Texture | null = null;
+
+  //   if ((this.texture as InternalGroundSkinTexture)?.id) {
+  //     const asset = textureMap.get(
+  //       (this.texture as InternalGroundSkinTexture).id
+  //     );
+  //     if (!asset) {
+  //       throw new Error(
+  //         `Texture with id ${(this.texture as InternalGroundSkinTexture).id} not found in groundTextureMap`
+  //       );
+  //     }
+  //     texture = await assetLoader.add<Texture>({
+  //       loader: LOADER.TEXTURE,
+  //       value:
+  //         this.type === GROUND_GEOMETRY.SMALL
+  //           ? asset.color.small
+  //           : asset.color.medium,
+  //       options: { density: 1 }
+  //     });
+  //     //#region normal
+  //     if (asset.normal) {
+  //       normalMap = await assetLoader.add<Texture>({
+  //         loader: LOADER.TEXTURE,
+  //         value:
+  //           this.type === GROUND_GEOMETRY.SMALL
+  //             ? asset.normal?.small
+  //             : asset.normal?.medium,
+  //         options: { density: 1 }
+  //       });
+  //     }
+  //     //#endregion
+
+  //     //#region ambient
+  //     if (asset.ambient) {
+  //       ambientMap = await assetLoader.add<Texture>({
+  //         loader: LOADER.TEXTURE,
+  //         value:
+  //           this.type === GROUND_GEOMETRY.SMALL
+  //             ? asset.ambient?.small
+  //             : asset.ambient?.medium,
+  //         options: { density: 1 }
+  //       });
+  //     }
+  //     //#endregion
+
+  //     //#region displacement
+  //     if (asset.displacement) {
+  //       displacementMap = await assetLoader.add<Texture>({
+  //         loader: LOADER.TEXTURE,
+  //         value:
+  //           this.type === GROUND_GEOMETRY.SMALL
+  //             ? asset.displacement?.small
+  //             : asset.displacement?.medium,
+  //         options: { density: 1 }
+  //       });
+  //     }
+  //     //#endregion
+
+  //     //#region specular
+  //     if (asset.specular) {
+  //       specularMap = await assetLoader.add<Texture>({
+  //         loader: LOADER.TEXTURE,
+  //         value:
+  //           this.type === GROUND_GEOMETRY.SMALL
+  //             ? asset.specular?.small
+  //             : asset.specular?.medium,
+  //         options: { density: 1 }
+  //       });
+  //     }
+  //     //#endregion
+
+  //     texture.flipY = false;
+  //     texture.colorSpace = SRGBColorSpace;
+  //   }
+  //   return new MeshPhongMaterial({
+  //     color: this.color,
+  //     opacity,
+  //     alphaTest: 0.1,
+  //     transparent: opacity < 1,
+  //     side: DoubleSide,
+  //     map: texture ?? null,
+  //     normalMap: normalMap,
+  //     aoMap: ambientMap,
+  //     displacementMap: displacementMap,
+  //     specularMap: specularMap
+  //   });
+  // }
+}
+
+const cacheMap = new Map<string, MeshPhongMaterial>();
+
+export async function createMaterial(
+  groundTexture: ExternalGroundSkinTexture | InternalGroundSkinTexture | null,
+  type: GROUND_GEOMETRY,
+  color: string | number,
+  opacity: number,
+  {
     assetLoader,
     textureMap
   }: {
     assetLoader: AssetLoader;
     textureMap: GroundTextureMap;
-  }) {
-    let texture: Texture | null = null;
-    const opacity = this.opacity;
-    if ((this.texture as InternalGroundSkinTexture)?.id) {
-      const asset = textureMap.get(
-        (this.texture as InternalGroundSkinTexture).id
+  }
+) {
+  const key = `${type}_${color}_${(groundTexture as InternalGroundSkinTexture)?.id || (groundTexture as ExternalGroundSkinTexture)?.url}`;
+
+  if (cacheMap.has(key)) {
+    return cacheMap.get(key)!.clone();
+  }
+
+  let texture: Texture | null = null;
+  let normalMap: Texture | null = null;
+  let ambientMap: Texture | null = null;
+  let displacementMap: Texture | null = null;
+  let specularMap: Texture | null = null;
+
+  if ((groundTexture as InternalGroundSkinTexture)?.id) {
+    const asset = textureMap.get(
+      (groundTexture as InternalGroundSkinTexture).id
+    );
+    if (!asset) {
+      throw new Error(
+        `Texture with id ${(groundTexture as InternalGroundSkinTexture).id} not found in groundTextureMap`
       );
-      if (!asset) {
-        throw new Error(
-          `Texture with id ${(this.texture as InternalGroundSkinTexture).id} not found in groundTextureMap`
-        );
-      }
-      texture = await assetLoader.add<Texture>({
+    }
+    texture = await assetLoader.add<Texture>({
+      loader: LOADER.TEXTURE,
+      value:
+        type === GROUND_GEOMETRY.SMALL ? asset.color.small : asset.color.medium,
+      options: { density: 1 }
+    });
+    //#region normal
+    if (asset.normal) {
+      normalMap = await assetLoader.add<Texture>({
         loader: LOADER.TEXTURE,
         value:
-          this.type === GROUND_GEOMETRY.SMALL ? asset?.small : asset?.medium,
+          type === GROUND_GEOMETRY.SMALL
+            ? asset.normal?.small
+            : asset.normal?.medium,
         options: { density: 1 }
       });
-      texture.flipY = false;
-      texture.colorSpace = SRGBColorSpace;
     }
-    return new MeshPhongMaterial({
-      color: this.color,
-      opacity,
-      alphaTest: 0.1,
-      transparent: opacity < 1,
-      side: DoubleSide,
-      map: texture ?? null
-    });
+    //#endregion
+
+    //#region ambient
+    if (asset.ambient) {
+      ambientMap = await assetLoader.add<Texture>({
+        loader: LOADER.TEXTURE,
+        value:
+          type === GROUND_GEOMETRY.SMALL
+            ? asset.ambient?.small
+            : asset.ambient?.medium,
+        options: { density: 1 }
+      });
+    }
+    //#endregion
+
+    //#region displacement
+    if (asset.displacement) {
+      displacementMap = await assetLoader.add<Texture>({
+        loader: LOADER.TEXTURE,
+        value:
+          type === GROUND_GEOMETRY.SMALL
+            ? asset.displacement?.small
+            : asset.displacement?.medium,
+        options: { density: 1 }
+      });
+    }
+    //#endregion
+
+    //#region specular
+    if (asset.specular) {
+      specularMap = await assetLoader.add<Texture>({
+        loader: LOADER.TEXTURE,
+        value:
+          type === GROUND_GEOMETRY.SMALL
+            ? asset.specular?.small
+            : asset.specular?.medium,
+        options: { density: 1 }
+      });
+    }
+    //#endregion
   }
+
+  [texture, normalMap, ambientMap, displacementMap, specularMap]
+    .filter(v => v !== null)
+    .forEach(map => {
+      map.flipY = false;
+      map.wrapS = ClampToEdgeWrapping;
+      map.wrapT = ClampToEdgeWrapping;
+      map.minFilter = LinearFilter;
+      map.magFilter = LinearFilter;
+      map.colorSpace = SRGBColorSpace;
+    });
+
+  const material = new MeshPhongMaterial({
+    color,
+    opacity,
+    alphaTest: 0.1,
+    transparent: opacity < 1,
+    side: DoubleSide,
+
+    map: texture ?? null,
+    normalMap: normalMap,
+    aoMap: ambientMap,
+    displacementMap: displacementMap,
+    specularMap: specularMap
+  });
+
+  cacheMap.set(key, material);
+
+  return material;
 }

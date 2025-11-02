@@ -29,7 +29,7 @@ import type {
   GroundSkinDescription,
   GroundSkinIdentifier
 } from '../../../lib/types/ground/skins';
-import type { SKIN_TAG } from '@cuby-world/app/lib/types/skin';
+import { SKIN_TAG } from '@cuby-world/app/lib/types/skin';
 import { catalog as groundCatalog } from '@cuby-world/grounds/grounds/catalog';
 
 const tag = ref<SKIN_TAG | 'all'>('all');
@@ -54,7 +54,10 @@ const items = computed<GroundItem<GroundSkinDescription>[]>(() =>
 const filteredSkins = computed(() =>
   skins.filter(item => {
     return (
-      item.tags == null || tag.value === 'all' || item.tags.includes(tag.value)
+      !item.tags?.includes(SKIN_TAG.HIDE) &&
+      (item.tags == null ||
+        tag.value === 'all' ||
+        item.tags.includes(tag.value))
     );
   })
 );

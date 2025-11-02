@@ -5,8 +5,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 
-import type { Observable } from 'rxjs';
-import { fromEvent, ReplaySubject } from 'rxjs';
+import { ReplaySubject, type Observable } from 'rxjs';
+import { fromEvent } from 'rxjs';
 import {
   type AmbientLight,
   type DirectionalLight,
@@ -62,14 +62,11 @@ export default class Renderer<
     pointerDown$: Observable<PointerEvent>;
     pointerMove$: Observable<PointerEvent>;
     pointerUp$: Observable<PointerEvent>;
-  } = {
-    animationLoop$: new ReplaySubject<{
-      time: number;
-      delta: number;
-    }>(0),
-    pointerDown$: undefined!,
-    pointerMove$: undefined!,
-    pointerUp$: undefined!
+    controls$: ReplaySubject<{
+      pen: boolean;
+      zoom: boolean;
+      rotate: boolean;
+    }>;
   };
 
   clock = new Clock();
@@ -116,15 +113,20 @@ export default class Renderer<
       modules.push(DebugRendererModule);
     }
 
-    this.observables.pointerDown$ = fromEvent<PointerEvent>(
-      canvas,
-      'pointerdown'
-    );
-    this.observables.pointerMove$ = fromEvent<PointerEvent>(
-      canvas,
-      'pointermove'
-    );
-    this.observables.pointerUp$ = fromEvent<PointerEvent>(canvas, 'pointerup');
+    this.observables = {
+      animationLoop$: new ReplaySubject<{
+        time: number;
+        delta: number;
+      }>(0),
+      pointerDown$: fromEvent<PointerEvent>(canvas, 'pointerdown'),
+      pointerMove$: fromEvent<PointerEvent>(canvas, 'pointermove'),
+      pointerUp$: fromEvent<PointerEvent>(canvas, 'pointerup'),
+      controls$: new ReplaySubject<{
+        pen: boolean;
+        zoom: boolean;
+        rotate: boolean;
+      }>(1)
+    };
 
     this.dimension = dimension;
     this._debug = options.debug ?? false;
@@ -216,15 +218,46 @@ export default class Renderer<
     this.controls?.update();
   }
 
-  enableControls(fullControl = false) {
-    this.controls.enablePan = true;
-    this.controls.enableZoom = true;
-    this.controls.enableRotate = fullControl;
+  getControlsOptions() {
+    return {
+      pan: this.controls.enablePan,
+      zoom: this.controls.enableZoom,
+      rotate: this.controls.enableRotate
+    };
+  }
+
+  setControlsOptions({
+    pan = true,
+    zoom = true,
+    rotate = true
+  }: {
+    pan?: boolean;
+    zoom?: boolean;
+    rotate?: boolean;
+  }) {
+    this.controls.enablePan = pan;
+    this.controls.enableZoom = zoom;
+    this.controls.enableRotate = rotate;
+    this.observables.controls$.next({
+      pen: this.controls.enablePan,
+      zoom: this.controls.enableZoom,
+      rotate: this.controls.enableRotate
+    });
+  }
+
+  enableControls() {
+    this.setControlsOptions({
+      pan: true,
+      zoom: true,
+      rotate: false
+    });
   }
   disableControls() {
-    this.controls.enablePan = true;
-    this.controls.enableZoom = true;
-    this.controls.enableRotate = false;
+    this.setControlsOptions({
+      pan: true,
+      zoom: true,
+      rotate: false
+    });
   }
 
   get aspectRatio() {
@@ -242,15 +275,12 @@ export default class Renderer<
   initControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    // this.setCameraClamp(true);
-
-    // this.controls.enableDamping = true;
-    // this.controls.dampingFactor = 0.1;controls.enableDamping = true;
     this.controls.dampingFactor = 0.05; // kleiner Wert = smoother
     this.controls.zoomSpeed = 1.0;
     this.controls.zoomSpeed = 1.0;
     this.controls.panSpeed = 1.0;
 
+    this.enableControls();
     this.controls.update();
   }
 
@@ -384,7 +414,6 @@ export default class Renderer<
     if (selectedObjects) {
       if (!selectedObjects.includes(object)) {
         this.unregisterAllOutlinesObject(object);
-        console.log('register outline object', object);
         selectedObjects.push(object);
       }
     }

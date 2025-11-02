@@ -340,10 +340,14 @@ export default class GroundModule extends RoomModule<State, Observables> {
       }
     );
 
+    const listener =
+      this.room.app.renderer.modules.intersection!.globalListener;
+    listener?.removeMeshes(removes.map(chunk => chunk.mesh));
+
     this.state.groundChunks = chunks;
 
     removes.forEach(({ mesh }) => {
-      disposeObject3D(mesh);
+      mesh.remove();
       this.state.groundMesh?.remove(mesh);
     });
   }

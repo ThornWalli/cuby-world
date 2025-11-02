@@ -1,7 +1,8 @@
 import type { Vector3 } from 'three';
 import type Unit from './Unit';
 import PlayerUnitModule from './unitModule/Player';
-import { ReplaySubject, Subject } from 'rxjs';
+import type { SubscriptionLike } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 import Cuby from '@cuby-world/units/cuby/Cuby';
 import { catalog } from '@cuby-world/units';
 import Character from '@cuby-world/units/character/Character';
@@ -46,6 +47,14 @@ export interface PlayerConstructorOptions {
   skin?: PlayerSkinIdentifier;
 }
 
+export interface Observables {
+  playerSettings$: ReplaySubject<PlayerSettings>;
+  unit$: ReplaySubject<{
+    lastUnit?: Unit;
+    unit: Unit;
+  }>;
+}
+
 export default class Player {
   private _client: boolean = false;
   get client() {
@@ -58,11 +67,7 @@ export default class Player {
   id: string;
   unit?: Unit;
 
-  playerSettings$ = new Subject<PlayerSettings>();
-  unit$ = new ReplaySubject<{
-    lastUnit?: Unit;
-    unit: Unit;
-  }>(1);
+  observables: Observables = {} as Observables;
 
   constructor({
     client,
@@ -80,13 +85,21 @@ export default class Player {
       name,
       skin: skin ?? DEFAULT_PLAYER_SKIN_ID
     };
+
+    this.observables = {
+      playerSettings$: new ReplaySubject<PlayerSettings>(1),
+      unit$: new ReplaySubject<{
+        lastUnit?: Unit;
+        unit: Unit;
+      }>(1)
+    };
   }
 
   destroy() {
     this.unit?.destroy();
-    this.unit$.unsubscribe();
-
-    this.playerSettings$.unsubscribe();
+    Object.values(this.observables).forEach(o =>
+      (o as SubscriptionLike).unsubscribe()
+    );
   }
 
   setUnit(unit: Unit) {
@@ -97,8 +110,7 @@ export default class Player {
       this.unit.modules.player.setPlayer(this);
     }
 
-    this.unit$.next({ unit, lastUnit });
-    console.log('Player unit set:', this.unit.name);
+    this.observables.unit$.next({ unit, lastUnit });
   }
 
   async moveTo(position: Vector3) {

@@ -213,7 +213,11 @@ function createListener() {
     clickIntersect$,
     clickIntersects$,
     addMeshes: (newMeshes: Object3D[]) => {
-      listener.meshes.push(...newMeshes);
+      listener.meshes.push(
+        ...newMeshes.filter(
+          mesh => !mesh.userData[OBJECT_USER_DATA.IGNORE_RAYCASTER]
+        )
+      );
     },
     removeMeshes: (removeMeshes: Object3D[]) => {
       listener.meshes = listener.meshes.filter(

@@ -89,6 +89,10 @@ export default class Standard extends DoorWallExtension<StandardState> {
     }
     this.addToRoot(object);
 
+    object.traverse(child => {
+      child.castShadow = true;
+    });
+
     this.subscription.add(
       this.observables.action$
         .pipe(

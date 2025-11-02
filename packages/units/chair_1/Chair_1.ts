@@ -59,6 +59,10 @@ export default class Chair_1 extends Unit<
 
     meshRoot.add(object);
 
+    meshRoot.traverse(child => {
+      child.castShadow = true;
+    });
+
     return meshRoot;
   }
 }

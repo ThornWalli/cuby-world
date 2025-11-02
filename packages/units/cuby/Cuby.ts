@@ -42,6 +42,7 @@ import textureSleep2 from './assets/uv/sleep_2.svg?url';
 import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
 import { DEFAULT_PLAYER_SKIN_ID } from '@cuby-world/app/lib/classes/Player';
 import { skinsMap } from './skins';
+import type { TextureMaps } from '@cuby-world/app/lib/types/textures';
 
 declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
@@ -175,7 +176,7 @@ export default class Cuby extends Unit<
   }
 
   textureByCubyState?: {
-    [key: string]: Texture;
+    [key: string]: TextureMaps;
   };
   assetsByCubyState?: { [key in CUBY_STATE]: MeshPhongMaterial[] };
   private _sleepPlain?: Mesh;
@@ -216,8 +217,8 @@ export default class Cuby extends Unit<
     return meshRoot;
   }
 
-  override setTexture(texture: Texture, group?: Object3D) {
-    super.setTexture(texture, group, (mesh: Mesh) => {
+  override setTexture(textureMaps: TextureMaps, group?: Object3D) {
+    super.setTexture(textureMaps, group, (mesh: Mesh) => {
       (mesh.material as MeshPhongMaterial).onBeforeCompile = (
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         shader: any
@@ -241,9 +242,8 @@ export default class Cuby extends Unit<
     if (!this.textureByCubyState) {
       throw new Error('Cuby materials not ready yet');
     }
-    console.log('setCubyState', state);
-    const texture = this.textureByCubyState![state]!;
-    this.setTexture(texture);
+    const textureMaps = this.textureByCubyState![state]!;
+    this.setTexture(textureMaps);
   }
 
   private setColor(color: string | number, _group?: Object3D) {
@@ -340,31 +340,33 @@ async function setupSleepMaterials(assetLoader: AssetLoader) {
   );
 }
 
-function loadUVTextures(assetLoader: AssetLoader) {
+function loadUVTextures(
+  assetLoader: AssetLoader
+): Promise<{ [key in CUBY_STATE]: TextureMaps }> {
   return Promise.all([
     assetLoader
       .add<Texture>({
         loader: LOADER.TEXTURE,
         value: textureDefault
       })
-      .then(t => [CUBY_STATE.DEFAULT, t]),
+      .then(colorMap => [CUBY_STATE.DEFAULT, { colorMap }]),
     assetLoader
       .add<Texture>({
         loader: LOADER.TEXTURE,
         value: textureSpeak
       })
-      .then(t => [CUBY_STATE.SPEAK_1, t]),
+      .then(colorMap => [CUBY_STATE.SPEAK_1, { colorMap }]),
     assetLoader
       .add<Texture>({
         loader: LOADER.TEXTURE,
         value: textureSleep1
       })
-      .then(t => [CUBY_STATE.SLEEP_1, t]),
+      .then(colorMap => [CUBY_STATE.SLEEP_1, { colorMap }]),
     assetLoader
       .add<Texture>({
         loader: LOADER.TEXTURE,
         value: textureSleep2
       })
-      .then(t => [CUBY_STATE.SLEEP_2, t])
+      .then(colorMap => [CUBY_STATE.SLEEP_2, { colorMap }])
   ]).then(Object.fromEntries);
 }

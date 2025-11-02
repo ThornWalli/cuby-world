@@ -1,5 +1,5 @@
 import type { Texture } from 'three';
-import { Object3D } from 'three';
+import { Object3D, Vector3 } from 'three';
 import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
@@ -11,6 +11,10 @@ import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 
 import glbBase from './assets/doormate_1.glb?url';
 import image_doormate_1 from './assets/uv/doormate_1.png?url';
+import image_doormate_1_normal from './assets/uv/doormate_1_normal.png?url';
+import image_doormate_1_displacement from './assets/uv/doormate_1_displacement.png?url';
+import image_doormate_1_ambient from './assets/uv/doormate_1_ambient.png?url';
+import image_doormate_1_specular from './assets/uv/doormate_1_specular.png?url';
 
 export type DoormateOptions = UnitOptions;
 export default class Doormate_1 extends Unit<DoormateOptions> {
@@ -28,7 +32,8 @@ export default class Doormate_1 extends Unit<DoormateOptions> {
       name: 'Doormate_1',
       accessible: true,
       selectable: true,
-      placeable: true
+      placeable: true,
+      size: new Vector3(1, 0.1, 1)
     });
   }
 
@@ -42,15 +47,42 @@ export default class Doormate_1 extends Unit<DoormateOptions> {
     }
     meshRoot.add(object);
 
-    assetLoader
-      .add<Texture>({
+    Promise.all([
+      assetLoader.add<Texture>({
         loader: LOADER.TEXTURE,
         value: image_doormate_1
+      }),
+      assetLoader.add<Texture>({
+        loader: LOADER.TEXTURE,
+        value: image_doormate_1_normal
+      }),
+      assetLoader.add<Texture>({
+        loader: LOADER.TEXTURE,
+        value: image_doormate_1_displacement
+      }),
+      assetLoader.add<Texture>({
+        loader: LOADER.TEXTURE,
+        value: image_doormate_1_ambient
+      }),
+      assetLoader.add<Texture>({
+        loader: LOADER.TEXTURE,
+        value: image_doormate_1_specular
       })
-      .then(texture => {
-        this.setTexture(texture, meshRoot);
+    ]).then(
+      ([colorMap, normalMap, displacementMap, ambientMap, specularMap]) => {
+        this.setTexture(
+          {
+            colorMap,
+            normalMap,
+            displacementMap,
+            ambientMap,
+            specularMap
+          },
+          meshRoot
+        );
         this.observables.materialReady$.next();
-      });
+      }
+    );
 
     return meshRoot;
   }

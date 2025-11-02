@@ -1,3 +1,4 @@
+import type { Vector3 } from 'three';
 import { Euler } from 'three';
 
 export enum ROTATION {
@@ -115,5 +116,40 @@ export function getRadByRotation(rotation: ROTATION): number {
       return -Math.PI / 2;
     default:
       return 0;
+  }
+}
+
+export function getRotationByPosition(
+  startPosition: Vector3,
+  targetPosition: Vector3
+): ROTATION {
+  const deltaX = targetPosition.x - startPosition.x;
+  const deltaZ = targetPosition.z - startPosition.z;
+
+  if (Math.abs(deltaX) > Math.abs(deltaZ)) {
+    // Horizontal movement is greater
+    if (deltaX > 0) {
+      return ROTATION.EAST;
+    } else {
+      return ROTATION.WEST;
+    }
+  } else if (Math.abs(deltaZ) > Math.abs(deltaX)) {
+    // Vertical movement is greater
+    if (deltaZ > 0) {
+      return ROTATION.SOUTH;
+    } else {
+      return ROTATION.NORTH;
+    }
+  } else {
+    // Diagonal movement
+    if (deltaX > 0 && deltaZ > 0) {
+      return ROTATION.SOUTH_EAST;
+    } else if (deltaX > 0 && deltaZ < 0) {
+      return ROTATION.NORTH_EAST;
+    } else if (deltaX < 0 && deltaZ > 0) {
+      return ROTATION.SOUTH_WEST;
+    } else {
+      return ROTATION.NORTH_WEST;
+    }
   }
 }

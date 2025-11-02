@@ -20,6 +20,9 @@ export interface WallStyleTexture {
    * Internal or External path to the texture image
    */
   path: string;
+  normal?: string;
+  displacement?: string;
+  specular?: string;
   options?: {
     position: Vector2;
     dimension: Vector2;

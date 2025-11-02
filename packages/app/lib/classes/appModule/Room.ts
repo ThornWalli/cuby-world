@@ -137,9 +137,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
      * Player Unit
      */
 
-    player.unit$.subscribe(async ({ unit, lastUnit }) => {
-      console.log('Player unit changed from', lastUnit, 'to', unit);
-
+    player.observables.unit$.subscribe(async ({ unit, lastUnit }) => {
       if (lastUnit) {
         await room.modules.units.remove(lastUnit);
         lastUnit.destroy();
@@ -446,7 +444,6 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         return;
       }
 
-      console.log(preparedPositions);
       if (
         preparedPositions[0] &&
         preparedPositions[0].wallExtension &&

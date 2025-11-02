@@ -20,7 +20,7 @@ import type App from '../../lib/classes/App';
 
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 import CwObjectPreview, { type ObjectPreview } from '../ObjectPreview.vue';
-import Ground from '@cuby-world/app/lib/classes/Ground';
+import Ground, { createMaterial } from '@cuby-world/app/lib/classes/Ground';
 import { loadGroundGeometries } from '@cuby-world/app/lib/utils/ground';
 import assetLoader from '@cuby-world/app/services/assetLoader';
 import {
@@ -63,10 +63,16 @@ async function setup(data: GroundPreview) {
   });
 
   const geometry = ground.createGeometry(geometryMap);
-  const material = await ground.createMaterial({
-    assetLoader,
-    textureMap: groundTextureMap
-  });
+  const material = await createMaterial(
+    ground.texture,
+    ground.type,
+    ground.color,
+    ground.opacity,
+    {
+      assetLoader,
+      textureMap: groundTextureMap
+    }
+  );
   const groundMesh = new Mesh(geometry, material);
   groundMesh.receiveShadow = true;
   const root = new Object3D();

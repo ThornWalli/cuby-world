@@ -1,12 +1,6 @@
-import Ground from '../classes/Ground';
-import { type Mesh, type BufferGeometry, Vector2 } from 'three';
-import {
-  InstancedMesh,
-  MeshPhongMaterial,
-  Vector3,
-  DoubleSide,
-  Object3D
-} from 'three';
+import Ground, { createMaterial } from '../classes/Ground';
+import { type Mesh, type BufferGeometry, Vector2, FrontSide } from 'three';
+import { InstancedMesh, MeshPhongMaterial, Vector3, Object3D } from 'three';
 
 import type AssetLoader from '../classes/AssetLoader';
 import {
@@ -117,19 +111,17 @@ export function createGroundChunks(
         instancedMesh.userData[OBJECT_USER_DATA.IGNORE_GROUND_INTERSECTION] =
           editMode ? false : !tile.accessible;
 
-        tile
-          .createMaterial({
-            assetLoader,
-            textureMap: groundTextureMap
-          })
-          .then(material => {
-            // material.onBeforeCompile = shader => useGroundTileShader(shader);
-            instancedMesh.material = material;
-            instancedMesh.material.needsUpdate = true;
-          });
+        createMaterial(tile.texture, tile.type, tile.color, tile.opacity, {
+          assetLoader,
+          textureMap: groundTextureMap
+        }).then(material => {
+          // material.onBeforeCompile = shader => useGroundTileShader(shader);
+          instancedMesh.material = material;
+          instancedMesh.material.needsUpdate = true;
+        });
 
         instancedMesh.instanceColor = null;
-        instancedMesh.material.side = DoubleSide;
+        instancedMesh.material.side = FrontSide;
         instancedMesh.castShadow = false;
         instancedMesh.receiveShadow = true;
 

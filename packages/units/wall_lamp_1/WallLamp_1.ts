@@ -69,7 +69,7 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
     light.decay = 2;
     light.castShadow = true;
     // light.shadow.bias = -0.001;
-    light.shadow.mapSize.set(128, 128);
+    light.shadow.mapSize.set(64, 64);
     light.shadow.radius = 2;
     light.position.set(0.4, 0, 0);
 

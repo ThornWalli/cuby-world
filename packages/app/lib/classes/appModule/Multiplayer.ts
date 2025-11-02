@@ -137,7 +137,7 @@ export default class MultiplayerAppModule extends AppModule<
         playerSubscription?.unsubscribe();
         playerSubscription = new Subscription();
         playerSubscription.add(
-          player.unit$
+          player.observables.unit$
             .pipe(
               switchMap(
                 ({ unit }) => unit.modules.movement.observables.moveStart$
@@ -158,7 +158,7 @@ export default class MultiplayerAppModule extends AppModule<
             .subscribe(void 0)
         );
         playerSubscription.add(
-          player.playerSettings$.subscribe(playerSettings => {
+          player.observables.playerSettings$.subscribe(playerSettings => {
             this.sendPlayerInfo(playerSettings);
           })
         );

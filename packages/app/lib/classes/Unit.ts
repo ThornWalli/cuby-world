@@ -1,7 +1,7 @@
 /* eslint-disable complexity */
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 import { ReplaySubject, Subscription, type SubscriptionLike } from 'rxjs';
-import type { MeshPhongMaterial, Texture, Object3D } from 'three';
+import type { Object3D, MeshPhongMaterial } from 'three';
 import {
   Box3,
   ClampToEdgeWrapping,
@@ -43,6 +43,7 @@ import {
   rotationDirections
 } from '../utils/rotation';
 import type { UnitDescription, UnitType } from '../types/unit';
+import type { TextureMaps } from '../types/textures';
 
 declare module '../../lib/utils/object' {
   interface ObjectUserData {
@@ -347,7 +348,39 @@ export default class Unit<
     return this.root.rotation;
   }
 
-  setRootRotation(rotation: Euler) {
+  setRootRotation(rotation: ROTATION) {
+    switch (rotation) {
+      case ROTATION.WEST:
+        this.setRootRotationByEuler(new Euler(0, Math.PI, 0));
+        break;
+      case ROTATION.EAST:
+        this.setRootRotationByEuler(new Euler(0, 0, 0));
+        break;
+      case ROTATION.NORTH_WEST:
+        this.setRootRotationByEuler(new Euler(0, (3 * Math.PI) / 4, 0));
+        break;
+      case ROTATION.SOUTH_WEST:
+        this.setRootRotationByEuler(new Euler(0, -(3 * Math.PI) / 4, 0));
+        break;
+      case ROTATION.NORTH_EAST:
+        this.setRootRotationByEuler(new Euler(0, Math.PI / 4, 0));
+        break;
+      case ROTATION.SOUTH_EAST:
+        this.setRootRotationByEuler(new Euler(0, -Math.PI / 4, 0));
+        break;
+      case ROTATION.NORTH:
+        this.setRootRotationByEuler(new Euler(0, Math.PI / 2, 0));
+        break;
+      case ROTATION.SOUTH:
+        this.setRootRotationByEuler(new Euler(0, -Math.PI / 2, 0));
+        break;
+      default:
+        this.setRootRotationByEuler(new Euler(0, 0, 0));
+        break;
+    }
+  }
+
+  setRootRotationByEuler(rotation: Euler) {
     this.root.rotation.copy(rotation);
   }
 
@@ -384,31 +417,31 @@ export default class Unit<
     this.rotation = rotation;
     switch (rotation) {
       case ROTATION.WEST:
-        this.setRootRotation(new Euler(0, Math.PI, 0));
+        this.setRootRotationByEuler(new Euler(0, Math.PI, 0));
         break;
       case ROTATION.EAST:
-        this.setRootRotation(new Euler(0, 0, 0));
+        this.setRootRotationByEuler(new Euler(0, 0, 0));
         break;
       case ROTATION.NORTH_WEST:
-        this.setRootRotation(new Euler(0, (3 * Math.PI) / 4, 0));
+        this.setRootRotationByEuler(new Euler(0, (3 * Math.PI) / 4, 0));
         break;
       case ROTATION.SOUTH_WEST:
-        this.setRootRotation(new Euler(0, -(3 * Math.PI) / 4, 0));
+        this.setRootRotationByEuler(new Euler(0, -(3 * Math.PI) / 4, 0));
         break;
       case ROTATION.NORTH_EAST:
-        this.setRootRotation(new Euler(0, Math.PI / 4, 0));
+        this.setRootRotationByEuler(new Euler(0, Math.PI / 4, 0));
         break;
       case ROTATION.SOUTH_EAST:
-        this.setRootRotation(new Euler(0, -Math.PI / 4, 0));
+        this.setRootRotationByEuler(new Euler(0, -Math.PI / 4, 0));
         break;
       case ROTATION.NORTH:
-        this.setRootRotation(new Euler(0, Math.PI / 2, 0));
+        this.setRootRotationByEuler(new Euler(0, Math.PI / 2, 0));
         break;
       case ROTATION.SOUTH:
-        this.setRootRotation(new Euler(0, -Math.PI / 2, 0));
+        this.setRootRotationByEuler(new Euler(0, -Math.PI / 2, 0));
         break;
       default:
-        this.setRootRotation(new Euler(0, 0, 0));
+        this.setRootRotationByEuler(new Euler(0, 0, 0));
         break;
     }
 
@@ -589,7 +622,7 @@ export default class Unit<
   }
 
   setTexture(
-    texture: Texture,
+    textureMaps: TextureMaps,
     group?: Object3D,
     prepare: (mesh: Mesh) => void = () => void 0
   ) {
@@ -600,14 +633,38 @@ export default class Unit<
       }
     });
     meshes.forEach(mesh => {
-      texture.flipY = false;
-      texture.wrapS = ClampToEdgeWrapping;
-      texture.wrapT = ClampToEdgeWrapping;
-      texture.minFilter = LinearFilter;
-      texture.magFilter = LinearFilter;
-      texture.colorSpace = SRGBColorSpace;
-      (mesh.material as MeshPhongMaterial).map = texture;
-      (mesh.material as MeshPhongMaterial).needsUpdate = true;
+      const { colorMap, normalMap, ambientMap, displacementMap, specularMap } =
+        textureMaps;
+
+      Object.values(textureMaps)
+        .filter(v => v !== null)
+        .forEach(map => {
+          map.flipY = false;
+          map.wrapS = ClampToEdgeWrapping;
+          map.wrapT = ClampToEdgeWrapping;
+          map.minFilter = LinearFilter;
+          map.magFilter = LinearFilter;
+          map.colorSpace = SRGBColorSpace;
+        });
+
+      const material = mesh.material as MeshPhongMaterial;
+      material.map = colorMap;
+      if (normalMap) {
+        // material.normalMap = normalMap;
+      }
+      if (ambientMap) {
+        material.aoMap = ambientMap;
+      }
+      if (displacementMap) {
+        // material.displacementMap = displacementMap;
+        // material.displacementScale = 0;
+      }
+      if (specularMap) {
+        // debugger;
+        // material.specularMap = specularMap;
+      }
+
+      material.needsUpdate = true;
       prepare?.(mesh);
     });
   }
