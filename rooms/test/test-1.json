@@ -42,7 +42,7 @@
   "walls": [],
   "units": [
     {
-      "unit": "cardboardBox",
+      "unit": "cardboard_box_1",
       "options": {
         "position": {
           "type": "Vector3",
@@ -67,7 +67,7 @@
       }
     },
     {
-      "unit": "cardboardBox",
+      "unit": "cardboard_box_1",
       "options": {
         "position": {
           "type": "Vector3",
@@ -92,7 +92,7 @@
       }
     },
     {
-      "unit": "cardboardBox",
+      "unit": "cardboard_box_1",
       "options": {
         "position": {
           "type": "Vector3",
@@ -117,7 +117,7 @@
       }
     },
     {
-      "unit": "cardboardBox",
+      "unit": "cardboard_box_1",
       "options": {
         "position": {
           "type": "Vector3",
@@ -142,7 +142,7 @@
       }
     },
     {
-      "unit": "cardboardBox",
+      "unit": "cardboard_box_1",
       "options": {
         "position": {
           "type": "Vector3",
@@ -167,7 +167,7 @@
       }
     },
     {
-      "unit": "cardboardBox",
+      "unit": "cardboard_box_1",
       "options": {
         "position": {
           "type": "Vector3",
@@ -192,7 +192,7 @@
       }
     },
     {
-      "unit": "cardboardBox",
+      "unit": "cardboard_box_1",
       "options": {
         "position": {
           "type": "Vector3",
@@ -220,7 +220,7 @@
   "groundStyles": [
     {
       "type": "default",
-      "skinId": "default_grass_3",
+      "skinId": "default_grass_1",
       "positions": [
         {
           "type": "Vector3",
