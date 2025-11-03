@@ -199,6 +199,8 @@ export default class Cuby extends Unit<
     const meshes: Mesh[] = [];
     obj.traverse(mesh => {
       if (mesh instanceof Mesh) {
+        mesh.receiveShadow = false;
+        mesh.castShadow = true;
         (mesh.material as MeshPhongMaterial).color.set(this.options.color);
         meshes.push(mesh);
       }

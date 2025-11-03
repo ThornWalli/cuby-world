@@ -10,7 +10,8 @@ import {
   DoubleSide,
   ShadowMaterial,
   PlaneGeometry,
-  MeshBasicMaterial
+  MeshBasicMaterial,
+  FrontSide
 } from 'three';
 import {
   Box3,
@@ -390,25 +391,7 @@ export default class Wall {
 
   setVisible(visible: boolean) {
     this.visible = visible;
-
     this.wallWrapper.visible = visible;
-    // this.clickHelper!.visible = true;
-
-    // this.toggleVisibility(
-    //   visible && this.size === WALL_SIZE.LARGE,
-    //   this.wallMeshes[WALL_SIZE.LARGE]
-    // );
-
-    // this.wallMeshes[WALL_SIZE.SMALL]!.visible = visible;
-
-    // /**
-    //  * Damit der Raycaster die Wand ignoriert wenn sie unsichtbar ist.
-    //  */
-    // this.wallMeshes[WALL_SIZE.LARGE]!.userData[
-    //   OBJECT_USER_DATA.IGNORE_RAYCASTER
-    // ] = !visible;
-
-    // this.extensions.forEach(ext => ext.setVisible(visible));
   }
 
   getTmpBox() {
@@ -778,16 +761,13 @@ async function setupMaterial(
     texture.wrapS = ClampToEdgeWrapping;
     texture.wrapT = ClampToEdgeWrapping;
 
-    texture.needsUpdate = true;
-
     const material = new MeshPhongMaterial({
       map: texture,
       aoMap: ambientMap,
       normalMap: normalMap,
       displacementMap: displacementMap,
       specularMap: specularMap,
-      transparent: true,
-      side: DoubleSide
+      side: FrontSide
     });
     materialsMap.set(key, material);
   }
@@ -851,27 +831,4 @@ function createClickHelper({ direction }: { direction: WALL_DIRECTION }) {
   }
 
   return group;
-  // const geometry = new BoxGeometry(1, 2.2, 0.22);
-  // geometry.rotateY(Math.PI / 2);
-  // geometry.translate(0, 1.1, 0);
-
-  // if (direction === WALL_DIRECTION.VERTICAL) {
-  //   geometry.translate(-0.5, 0, 0);
-  // } else {
-  //   geometry.translate(0, 0, -1);
-  //   geometry.rotateY(Math.PI / 2);
-  //   geometry.translate(1, 0, -0.5);
-  // }
-
-  // const clickHelper = new Mesh(
-  //   geometry,
-  //   new MeshPhongMaterial({
-  //     color: 0x333333
-  //   })
-  // );
-  // clickHelper.material.wireframe = false;
-  // clickHelper.name = 'click_helper';
-  // clickHelper.visible = true;
-  // clickHelper.raycast = Mesh.prototype.raycast;
-  // return clickHelper;
 }

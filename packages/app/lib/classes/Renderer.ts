@@ -8,14 +8,13 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ReplaySubject, type Observable } from 'rxjs';
 import { fromEvent } from 'rxjs';
 import {
-  type AmbientLight,
-  type DirectionalLight,
-  type HemisphereLight,
   ACESFilmicToneMapping,
   Clock,
   SRGBColorSpace,
   Vector3,
-  type Object3D
+  type Object3D,
+  BasicShadowMap,
+  PCFShadowMap
 } from 'three';
 
 import {
@@ -48,6 +47,13 @@ interface Passes {
   output: OutputPass;
 }
 
+export enum ShadowQuality {
+  HIGH = 'high',
+  MEDIUM = 'medium',
+  LOW = 'low',
+  OFF = 'off'
+}
+
 export type AnimationLoopValue = {
   time: number;
   delta: number;
@@ -58,6 +64,7 @@ export default class Renderer<
   Modules extends RendererModules = RendererModules
 > {
   observables: {
+    shadowQuality$: ReplaySubject<ShadowQuality>;
     animationLoop$: AnimationLoopSubject;
     pointerDown$: Observable<PointerEvent>;
     pointerMove$: Observable<PointerEvent>;
@@ -68,6 +75,7 @@ export default class Renderer<
       rotate: boolean;
     }>;
   };
+  shadowQuality: ShadowQuality = ShadowQuality.OFF;
 
   clock = new Clock();
   renderer: WebGLRenderer;
@@ -81,12 +89,6 @@ export default class Renderer<
 
   modules: Modules;
   private passes!: Passes;
-
-  lights!: {
-    ambient: AmbientLight;
-    hemiLight: HemisphereLight;
-    dirLight: DirectionalLight;
-  };
 
   private _debug: boolean;
   get debug() {
@@ -114,6 +116,7 @@ export default class Renderer<
     }
 
     this.observables = {
+      shadowQuality$: new ReplaySubject<ShadowQuality>(1),
       animationLoop$: new ReplaySubject<{
         time: number;
         delta: number;
@@ -140,10 +143,9 @@ export default class Renderer<
       antialias: options.pixelated ? false : true
     });
 
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = PCFSoftShadowMap; // oder PCFShadowMap
     renderer.shadowMap.autoUpdate = true;
     this.renderer = renderer;
+    this.setShadowQuality(ShadowQuality.MEDIUM);
 
     // renderer.toneMapping = ACESFilmicToneMapping;
 
@@ -189,6 +191,28 @@ export default class Renderer<
           });
         });
     });
+  }
+
+  setShadowQuality(quality: ShadowQuality) {
+    this.renderer.shadowMap.enabled = true;
+    switch (quality) {
+      case ShadowQuality.HIGH:
+        this.renderer.shadowMap.type = PCFSoftShadowMap;
+        break;
+      case ShadowQuality.MEDIUM:
+        this.renderer.shadowMap.type = PCFShadowMap;
+        break;
+      case ShadowQuality.LOW:
+        this.renderer.shadowMap.type = BasicShadowMap;
+        break;
+      case ShadowQuality.OFF:
+        this.renderer.shadowMap.enabled = false;
+        break;
+    }
+
+    this.renderer.shadowMap.needsUpdate = true;
+    this.shadowQuality = quality;
+    this.observables.shadowQuality$.next(quality);
   }
 
   destroy() {

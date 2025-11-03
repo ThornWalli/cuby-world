@@ -78,13 +78,6 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     );
 
     //#region units
-    // const unitClasses = catalog.values().reduce(
-    //   (result, unitClass) => {
-    //     result[unitClass.KEY] = unitClass as (typeof allUnits)[0];
-    //     return result;
-    //   },
-    //   {} as Record<string, (typeof allUnits)[0]>
-    // );
 
     const units = [];
     for (const {

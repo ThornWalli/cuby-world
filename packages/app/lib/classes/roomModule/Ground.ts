@@ -401,21 +401,20 @@ export default class GroundModule extends RoomModule<State, Observables> {
   }
 
   getTileCostMap() {
-    return this.room.modules.ground
-      .getGroundStyleMap()
-      .values()
-      .reduce((result, { type, skinId }, index) => {
-        const key = this.getTileCostKey(type, skinId);
-        if (!result.has(key)) {
-          const ground = groundCatalog.get(type);
-          const skin = ground?.skins?.find(s => s.id === skinId);
-          result.set(key, {
-            index: index + 1,
-            cost: skin?.options.cost ?? GRID_BLOCKED
-          });
-        }
-        return result;
-      }, new Map<string, TileCostDescription>());
+    return Array.from(
+      this.room.modules.ground.getGroundStyleMap().values()
+    ).reduce((result, { type, skinId }, index) => {
+      const key = this.getTileCostKey(type, skinId);
+      if (!result.has(key)) {
+        const ground = groundCatalog.get(type);
+        const skin = ground?.skins?.find(s => s.id === skinId);
+        result.set(key, {
+          index: index + 1,
+          cost: skin?.options.cost ?? GRID_BLOCKED
+        });
+      }
+      return result;
+    }, new Map<string, TileCostDescription>());
   }
 
   private updateVisibility(camera: Camera) {

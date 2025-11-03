@@ -39,11 +39,12 @@ import { Vector2 } from 'three';
 import type Renderer from '../lib/classes/Renderer';
 import Player, {
   CHARACHTER_TYPE,
-  DEFAULT_PLAYER_SKIN_ID,
-  type PlayerSettings
+  DEFAULT_PLAYER_SKIN_ID
 } from '../lib/classes/Player';
 import type { RoomDescription } from '../lib/types/room';
 import type { Cursor } from '../lib/classes/appModule/Cursor';
+import type { PlayerSettings } from '../lib/types/player';
+import { STORAGE_PLAYER_KEY } from '../lib/utils/storage';
 
 setupFonts();
 const $props = defineProps<{
@@ -95,8 +96,6 @@ async function setup() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).cubyWorld = app;
 }
-
-const STORAGE_PLAYER_KEY = 'cuby-world:player';
 
 const currentCursor = ref<Cursor>();
 
@@ -160,9 +159,11 @@ async function setupPlayer(app: App) {
   } else {
     player = new Player({
       client: true,
-      name: playerSettings.name,
-      characterType: playerSettings.characterType || CHARACHTER_TYPE.CUBY,
-      skin: playerSettings.skin || DEFAULT_PLAYER_SKIN_ID
+      settings: {
+        name: playerSettings.name,
+        characterType: playerSettings.characterType || CHARACHTER_TYPE.CUBY,
+        skin: playerSettings.skin || DEFAULT_PLAYER_SKIN_ID
+      }
     });
   }
   app.modules.player.addPlayer(markRaw(player));

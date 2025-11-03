@@ -797,7 +797,7 @@ function splitWallsByFloors(walls: Wall[]) {
     return result;
   }, new Map<number, Wall[]>());
 
-  return map.values();
+  return Array.from(map.values());
   // Nur die Wände des niedrigsten Stockwerks zurückgeben
   // const minFloor = Math.min(...Array.from(map.keys()));
   // return map.get(minFloor) ?? [];

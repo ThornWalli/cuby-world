@@ -9,8 +9,7 @@ import { selfId, type DataPayload, type Room as TrysteroRoom } from 'trystero';
 
 import type { FirebaseApp } from 'firebase/app';
 import { concatMap, Subject, Subscription, switchMap } from 'rxjs';
-import type { PlayerSettings } from '../Player';
-import Player, { DEFAULT_PLAYER_SKIN_ID } from '../Player';
+import Player from '../Player';
 import { Vector3 } from 'three';
 // import {
 //   createUser,
@@ -20,6 +19,7 @@ import { Vector3 } from 'three';
 // } from './multiplayer/database';
 import CurrentPlayer from '../player/Current';
 import type App from '../App';
+import type { PlayerSettings } from '../../types/player';
 
 export interface Message {
   id: string;
@@ -60,7 +60,6 @@ type MoveToPayload = DataPayload & {
   position: [number, number, number];
 };
 type MessagePayload = DataPayload & Message;
-type PlayerInfoPayload = DataPayload & Partial<PlayerInfo>;
 
 export const DEFAULT_ROOM_ID = 'lobby';
 
@@ -68,6 +67,8 @@ interface PlayerInfo extends PlayerSettings {
   // peerId: string;
   position: [number, number, number];
 }
+type PlayerInfoPayload = DataPayload & Partial<PlayerInfo>;
+
 export default class MultiplayerAppModule extends AppModule<
   State,
   Observables
@@ -192,7 +193,9 @@ export default class MultiplayerAppModule extends AppModule<
           concatMap(async peerId => {
             const player = new Player({
               id: peerId,
-              name: peerId
+              settings: {
+                name: peerId
+              }
             });
             const currentPlayer = this.app.modules.player.getCurrentPlayer();
             if (currentPlayer && this.actions.sendPlayerInfo) {
@@ -278,9 +281,7 @@ export default class MultiplayerAppModule extends AppModule<
 
     const player = new CurrentPlayer({
       id: selfId,
-      characterType: playerSettings.characterType,
-      name: playerSettings.name || 'Unknown',
-      skin: playerSettings.skin || DEFAULT_PLAYER_SKIN_ID
+      settings: playerSettings
       // firebase: {
       //   userId: userCredential.user.uid
       // }
@@ -326,12 +327,14 @@ export default class MultiplayerAppModule extends AppModule<
 
   sendPlayerInfo(playerSettings: PlayerSettings) {
     console.log(this.getOtherPlayers());
-    this.actions.sendPlayerInfo?.(
-      {
-        ...playerSettings
-      },
-      this.getOtherPlayers()
-    );
+    if (this.actions.sendPlayerInfo) {
+      this.actions.sendPlayerInfo(
+        {
+          ...playerSettings
+        } as unknown as PlayerInfoPayload,
+        this.getOtherPlayers()
+      );
+    }
   }
 
   setupRoomEvents(room: TrysteroRoom) {

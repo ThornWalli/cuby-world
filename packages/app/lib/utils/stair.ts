@@ -7,7 +7,7 @@ export async function resolveStairs(
 ): Promise<Array<[typeof Stair, StairDescription]>> {
   const instanceMap = new Map(
     await Promise.all(
-      stairCatalog.values().map(async stair => {
+      Array.from(stairCatalog.values()).map(async stair => {
         const instance = await stair.instance();
         return [instance.KEY, instance] as [string, typeof Stair];
       })

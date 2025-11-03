@@ -119,6 +119,7 @@ function onChange(e: Event) {
       position: absolute;
       top: 50%;
       left: 50%;
+      width: 14px;
       opacity: 0;
       transform: translate(-50%, -50%);
 

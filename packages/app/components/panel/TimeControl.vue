@@ -151,8 +151,8 @@ onMounted(() => {
 
   //#region debug
 
-  // console.warn('Setting time to noon for debug purposes');
-  // $props.app.modules.time.setDayTime(0.5);
+  console.warn('Setting time to noon for debug purposes');
+  $props.app.modules.time.setDayTime(0.62);
 
   //#endregion
 });

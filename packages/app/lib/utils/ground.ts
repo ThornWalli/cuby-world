@@ -130,7 +130,7 @@ export function createGroundChunks(
 
       const instancesMeshByType = new Map<string, InstancedMesh>(instanceMap);
 
-      positionsByType.entries().forEach(([type, tiles]) => {
+      Array.from(positionsByType.entries()).forEach(([type, tiles]) => {
         const instancedMesh = instancesMeshByType.get(type)!;
 
         tiles.forEach((tile, index) => {

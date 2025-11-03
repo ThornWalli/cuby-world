@@ -72,13 +72,23 @@ const skins: DefaultSkinDescription[] = [
     }
   },
   {
-    id: 'default_tile_1',
-    name: 'Tile 1',
+    id: 'default_tile_small_1',
+    name: 'Tile Small 1',
     tags: [SKIN_TAG.TEXTURE],
     options: {
-      cost: GROUND_COST.SLOW,
+      cost: GROUND_COST.NORMAL,
       color: '#ffffff',
-      texture: { id: 'tile_1' }
+      texture: { id: 'tile_small_1' }
+    }
+  },
+  {
+    id: 'default_tile_large_terracota_1',
+    name: 'Tile Large Terracota 1',
+    tags: [SKIN_TAG.TEXTURE],
+    options: {
+      cost: GROUND_COST.NORMAL,
+      color: '#ffffff',
+      texture: { id: 'tile_large_terracota_1' }
     }
   },
   {

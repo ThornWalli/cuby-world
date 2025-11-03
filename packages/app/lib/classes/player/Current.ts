@@ -1,7 +1,5 @@
-import Player, {
-  type PlayerConstructorOptions,
-  type PlayerSettings
-} from '../Player';
+import type { PlayerSettings } from '../../types/player';
+import Player, { type PlayerConstructorOptions } from '../Player';
 
 export default class CurrentPlayer extends Player {
   firebase?: {

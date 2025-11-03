@@ -14,6 +14,7 @@ import { onUnmounted, ref } from 'vue';
 import { Subscription } from 'rxjs';
 import CwDialogUserSettings from '../dialogs/UserSettings.vue';
 import type App from '../../lib/classes/App';
+import { STORAGE_PLAYER_KEY } from '@cuby-world/app/lib/utils/storage';
 
 const $props = defineProps<{
   app: App;
@@ -33,13 +34,16 @@ async function onClickUserSettings() {
     throw new Error('Dialog not ready');
   }
 
-  const data = await dialogUserSettings.value?.open(player?.getSettings());
+  const playerSettings = await dialogUserSettings.value?.open(
+    player?.getSettings()
+  );
 
-  if (data) {
-    $props.app.modules.player.state.currentPlayer?.setSettings({
-      name: data.name,
-      skin: data.skin
-    });
+  if (playerSettings) {
+    $props.app.modules.player.state.currentPlayer?.setSettings(playerSettings);
+    window.sessionStorage.setItem(
+      STORAGE_PLAYER_KEY,
+      JSON.stringify(playerSettings)
+    );
   }
 }
 

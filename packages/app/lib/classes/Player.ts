@@ -2,11 +2,13 @@ import type { Vector3 } from 'three';
 import type Unit from './Unit';
 import PlayerUnitModule from './unitModule/Player';
 import type { SubscriptionLike } from 'rxjs';
-import { ReplaySubject } from 'rxjs';
+import { ReplaySubject, Subscription } from 'rxjs';
 import Cuby from '@cuby-world/units/cuby/Cuby';
 import { catalog } from '@cuby-world/units';
 import Character from '@cuby-world/units/character/Character';
 import PolyMan from '@cuby-world/units/poly_man/PolyMan';
+import { ShadowQuality } from './Renderer';
+import type { PlayerSettings } from '../types/player';
 
 export type PlayerSkinIdentifier = string;
 
@@ -18,12 +20,6 @@ export enum CHARACHTER_TYPE {
   POLY_CHARACTER = 'poly_character'
 }
 
-export interface PlayerSettings {
-  characterType: CHARACHTER_TYPE | null;
-  name: string;
-  skin: PlayerSkinIdentifier;
-}
-
 export enum PLAYER_STATE {
   IDLE = 'idle',
   SLEEP_1 = 'sleep_1',
@@ -32,19 +28,14 @@ export enum PLAYER_STATE {
   DEAD = 'dead'
 }
 
-export interface PlayerState {
+export interface PlayerState extends PlayerSettings {
   state: PLAYER_STATE;
-  characterType: CHARACHTER_TYPE | null;
-  name: string;
-  skin: PlayerSkinIdentifier;
 }
 
 export interface PlayerConstructorOptions {
   client?: boolean;
   id?: string;
-  name: string;
-  characterType?: CHARACHTER_TYPE | null;
-  skin?: PlayerSkinIdentifier;
+  settings: Partial<PlayerSettings>;
 }
 
 export interface Observables {
@@ -68,22 +59,20 @@ export default class Player {
   unit?: Unit;
 
   observables: Observables = {} as Observables;
+  subscription = new Subscription();
 
-  constructor({
-    client,
-    id,
-    characterType,
-    name,
-    skin
-  }: PlayerConstructorOptions) {
+  constructor({ client, id, settings }: PlayerConstructorOptions) {
     this._client = client ?? false;
     this.id = id || crypto.randomUUID();
-
     this.state = {
-      characterType: characterType ?? null,
+      characterType: settings.characterType ?? null,
       state: PLAYER_STATE.IDLE,
-      name,
-      skin: skin ?? DEFAULT_PLAYER_SKIN_ID
+      name: settings.name || '',
+      skin: settings.skin || DEFAULT_PLAYER_SKIN_ID,
+      graphic: {
+        shadowQuality: ShadowQuality.OFF
+      },
+      ...settings
     };
 
     this.observables = {
@@ -93,6 +82,7 @@ export default class Player {
         unit: Unit;
       }>(1)
     };
+    this.observables.playerSettings$.next(this.getSettings());
   }
 
   destroy() {
@@ -100,6 +90,7 @@ export default class Player {
     Object.values(this.observables).forEach(o =>
       (o as SubscriptionLike).unsubscribe()
     );
+    this.subscription.unsubscribe();
   }
 
   setUnit(unit: Unit) {
@@ -161,11 +152,14 @@ export default class Player {
     }
   }
 
-  getSettings() {
+  getSettings(): PlayerSettings {
     return {
       characterType: this.state.characterType,
       name: this.state.name,
-      skin: this.state.skin
+      skin: this.state.skin,
+      graphic: {
+        shadowQuality: this.state.graphic.shadowQuality
+      }
     };
   }
 
@@ -181,5 +175,10 @@ export default class Player {
     if (settings.skin !== undefined) {
       this.setSkin(settings.skin);
     }
+    if (settings.graphic?.shadowQuality !== undefined) {
+      this.state.graphic.shadowQuality = settings.graphic.shadowQuality;
+    }
+
+    this.observables.playerSettings$.next(this.getSettings());
   }
 }

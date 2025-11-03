@@ -12,6 +12,7 @@ import type { AppModuleState } from '../AppModule';
 import AppModule from '../AppModule';
 import { ReplaySubject } from 'rxjs';
 import type App from '../App';
+import { ShadowQuality } from '../Renderer';
 
 // 0 → Mitternacht
 // 0.25 → 6 Uhr
@@ -63,10 +64,13 @@ export default class LightAppModule extends AppModule<State, Observables> {
 
   override setup(): void {
     this.subscription.add(
-      this.app.modules.time.observables.dayTime$.subscribe(
-        (dayTime: number) => {
-          this.updateDayNightCycle(dayTime);
-        }
+      this.app.modules.time.observables.dayTime$.subscribe((dayTime: number) =>
+        this.updateDayNightCycle(dayTime)
+      )
+    );
+    this.subscription.add(
+      this.app.renderer.observables.shadowQuality$.subscribe(shadowQuality =>
+        this.setShadowQuality(shadowQuality)
       )
     );
   }
@@ -106,6 +110,27 @@ export default class LightAppModule extends AppModule<State, Observables> {
     dirLight.color.copy(sunColor);
     hemiLight.color.copy(sunColor);
   }
+
+  setShadowQuality(quality: ShadowQuality) {
+    switch (quality) {
+      case ShadowQuality.HIGH:
+        this.lights.dirLight.shadow.mapSize.set(2048, 2048);
+        break;
+      case ShadowQuality.MEDIUM:
+        this.lights.dirLight.shadow.mapSize.set(1024, 1024);
+        break;
+      case ShadowQuality.LOW:
+        this.lights.dirLight.shadow.mapSize.set(512, 512);
+        break;
+    }
+
+    // Reinitialize shadow buffer
+    if (this.lights.dirLight.shadow.map) {
+      this.lights.dirLight.shadow.map.dispose();
+      this.lights.dirLight.shadow.map = null;
+    }
+    this.lights.dirLight.shadow.needsUpdate = true;
+  }
 }
 
 function createLights() {
@@ -116,7 +141,7 @@ function createLights() {
   dirLight.position.set(80, 100, 80);
   dirLight.castShadow = true;
 
-  dirLight.shadow.mapSize.set(512, 512);
+  dirLight.shadow.mapSize.set(2048, 2048);
 
   // Bias gegen Streifen
   dirLight.shadow.bias = -0.001;

@@ -742,10 +742,8 @@ export default class WallModule extends RoomModule<
     const activeWallRooms = new Set<WallRoom>();
     [this.selectionPosition.clone().ceil()]
       .concat(
-        Array.from(
-          this.state.trackingUnits
-            .values()
-            .map(unit => unit.getPosition().ceil())
+        Array.from(this.state.trackingUnits.values()).map(unit =>
+          unit.getPosition().ceil()
         )
       )
       .forEach(position => {
@@ -760,11 +758,13 @@ export default class WallModule extends RoomModule<
     const noChanges =
       this.state.activeWallRooms.size === activeWallRooms.size &&
       Array.from(
-        this.state.activeWallRooms.values().filter(a => activeWallRooms.has(a))
+        Array.from(this.state.activeWallRooms.values()).filter(a =>
+          activeWallRooms.has(a)
+        )
       ).length === activeWallRooms.size;
 
     if (!noChanges) {
-      this.state.activeWallRooms.values().forEach(wallRoom => {
+      Array.from(this.state.activeWallRooms.values()).forEach(wallRoom => {
         if (!activeWallRooms.has(wallRoom)) {
           wallRoom.untrack();
           this.state.activeWallRooms.delete(wallRoom.id);

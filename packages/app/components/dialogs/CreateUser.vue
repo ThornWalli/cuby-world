@@ -68,14 +68,15 @@ import BaseButton from '../base/Button.vue';
 import CwButton from '../Button.vue';
 import {
   CHARACHTER_TYPE,
-  DEFAULT_PLAYER_SKIN_ID,
-  type PlayerSettings
+  DEFAULT_PLAYER_SKIN_ID
 } from '@cuby-world/app/lib/classes/Player';
 import type App from '@cuby-world/app/lib/classes/App';
 
 import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
 import { catalog } from '@cuby-world/units';
 import { Vector3 } from 'three';
+import { ShadowQuality } from '@cuby-world/app/lib/classes/Renderer';
+import type { PlayerSettings } from '@cuby-world/app/lib/types/player';
 
 const formEl = ref<HTMLFormElement | null>(null);
 
@@ -111,13 +112,12 @@ defineProps<{
 
 const skinOptions = computed(() => {
   const skins = Array.from(
-    catalog
-      .get(characterType.value)!
-      .skinMap!.values()
-      .map(skin => ({
+    Array.from(catalog.get(characterType.value)!.skinMap!.values()).map(
+      skin => ({
         label: skin.name,
         value: skin.id
-      })) || []
+      })
+    ) || []
   );
 
   if (skins.length < 1) {
@@ -143,7 +143,10 @@ function onSubmit(
   close<PlayerSettings>({
     name: name.value,
     characterType: characterType.value,
-    skin: skin.value
+    skin: skin.value,
+    graphic: {
+      shadowQuality: ShadowQuality.MEDIUM
+    }
   });
 }
 

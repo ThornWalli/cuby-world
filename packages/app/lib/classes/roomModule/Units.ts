@@ -167,16 +167,6 @@ export default class UnitsModule extends RoomModule<State, Observables> {
     }
   }
 
-  // updateVisiblity(frustum: Frustum, projScreenMatrix: Matrix4) {
-  //   frustum.setFromProjectionMatrix(projScreenMatrix);
-  //   return this.state.units.values().reduce((result, unit) => {
-  //     const box = new Box3().setFromObject(unit.root);
-  //     unit.root.visible = frustum.intersectsBox(box);
-  //     result.push(unit);
-  //     return result;
-  //   }, [] as Unit[]);
-  // }
-
   //#endregion
 }
 

@@ -175,10 +175,9 @@ export async function findBestPathByStairs(
   // debugger;
   // let match;
   for (const start of startStairs) {
-    const test = stairConnections
-      .get(start)
-      ?.values()
-      .find(s => endStairs.has(s));
+    const test = Array.from(stairConnections.get(start)?.values() || []).find(
+      s => endStairs.has(s)
+    );
 
     if (test) {
       stairConnections = new Map([[start, new Set([test])]]);

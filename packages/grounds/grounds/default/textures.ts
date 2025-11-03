@@ -35,14 +35,25 @@ import image_ground_texture_medium_stone_1_specular from './texture/stone_1/medi
 //#endregion
 
 //#region tile_1
-import image_ground_texture_small_tile_1 from './texture/tile_1/small.png?url';
-import image_ground_texture_medium_tile_1 from './texture/tile_1/medium.png?url';
-import image_ground_texture_small_tile_1_normal from './texture/tile_1/small_normal.png?url';
-import image_ground_texture_medium_tile_1_normal from './texture/tile_1/medium_normal.png?url';
-import image_ground_texture_small_tile_1_ambient from './texture/tile_1/small_ambient.png?url';
-import image_ground_texture_medium_tile_1_ambient from './texture/tile_1/medium_ambient.png?url';
-import image_ground_texture_small_tile_1_specular from './texture/tile_1/small_specular.png?url';
-import image_ground_texture_medium_tile_1_specular from './texture/tile_1/medium_specular.png?url';
+import image_ground_texture_small_tile_small_1 from './texture/tile_small/1/small.png?url';
+import image_ground_texture_medium_tile_small_1 from './texture/tile_small/1/medium.png?url';
+import image_ground_texture_small_tile_small_1_normal from './texture/tile_small/1/small_normal.png?url';
+import image_ground_texture_medium_tile_small_1_normal from './texture/tile_small/1/medium_normal.png?url';
+import image_ground_texture_small_tile_small_1_ambient from './texture/tile_small/1/small_ambient.png?url';
+import image_ground_texture_medium_tile_small_1_ambient from './texture/tile_small/1/medium_ambient.png?url';
+import image_ground_texture_small_tile_small_1_specular from './texture/tile_small/1/small_specular.png?url';
+import image_ground_texture_medium_tile_small_1_specular from './texture/tile_small/1/medium_specular.png?url';
+//#endregion
+
+//#region tile_large_terracota_1
+import image_ground_texture_small_tile_large_terracota_1 from './texture/tile_large/terracota_1/small.png?url';
+import image_ground_texture_medium_tile_large_terracota_1 from './texture/tile_large/terracota_1/medium.png?url';
+import image_ground_texture_small_tile_large_terracota_1_normal from './texture/tile_large/terracota_1/small_normal.png?url';
+import image_ground_texture_medium_tile_large_terracota_1_normal from './texture/tile_large/terracota_1/medium_normal.png?url';
+import image_ground_texture_small_tile_large_terracota_1_ambient from './texture/tile_large/terracota_1/small_ambient.png?url';
+import image_ground_texture_medium_tile_large_terracota_1_ambient from './texture/tile_large/terracota_1/medium_ambient.png?url';
+import image_ground_texture_small_tile_large_terracota_1_specular from './texture/tile_large/terracota_1/small_specular.png?url';
+import image_ground_texture_medium_tile_large_terracota_1_specular from './texture/tile_large/terracota_1/medium_specular.png?url';
 //#endregion
 
 export interface GroundTexture {
@@ -129,23 +140,43 @@ const textures = [
     }
   },
   {
-    id: 'tile_1',
-    name: 'Tile 1',
+    id: 'tile_small_1',
+    name: 'Tile Small 1',
     color: {
-      small: image_ground_texture_small_tile_1,
-      medium: image_ground_texture_medium_tile_1
+      small: image_ground_texture_small_tile_small_1,
+      medium: image_ground_texture_medium_tile_small_1
     },
     ambient: {
-      small: image_ground_texture_small_tile_1_ambient,
-      medium: image_ground_texture_medium_tile_1_ambient
+      small: image_ground_texture_small_tile_small_1_ambient,
+      medium: image_ground_texture_medium_tile_small_1_ambient
     },
     normal: {
-      small: image_ground_texture_small_tile_1_normal,
-      medium: image_ground_texture_medium_tile_1_normal
+      small: image_ground_texture_small_tile_small_1_normal,
+      medium: image_ground_texture_medium_tile_small_1_normal
     },
     specular: {
-      small: image_ground_texture_small_tile_1_specular,
-      medium: image_ground_texture_medium_tile_1_specular
+      small: image_ground_texture_small_tile_small_1_specular,
+      medium: image_ground_texture_medium_tile_small_1_specular
+    }
+  },
+  {
+    id: 'tile_large_terracota_1',
+    name: 'Tile Large Terracota 1',
+    color: {
+      small: image_ground_texture_small_tile_large_terracota_1,
+      medium: image_ground_texture_medium_tile_large_terracota_1
+    },
+    ambient: {
+      small: image_ground_texture_small_tile_large_terracota_1_ambient,
+      medium: image_ground_texture_medium_tile_large_terracota_1_ambient
+    },
+    normal: {
+      small: image_ground_texture_small_tile_large_terracota_1_normal,
+      medium: image_ground_texture_medium_tile_large_terracota_1_normal
+    },
+    specular: {
+      small: image_ground_texture_small_tile_large_terracota_1_specular,
+      medium: image_ground_texture_medium_tile_large_terracota_1_specular
     }
   },
   {

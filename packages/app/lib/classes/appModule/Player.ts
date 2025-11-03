@@ -50,30 +50,43 @@ export default class PlayerAppModule extends AppModule<State, Observables> {
   setCurrentPlayer(player: Player) {
     this.state.currentPlayer = player;
     this.observables.currentPlayer$.next(player);
-
     // TODO: Ist das hier richtig platziert?
-    this.state.currentPlayer.observables.unit$
-      .pipe(switchMap(({ unit }) => unit.modules.movement.observables.moveEnd$))
-      .subscribe(() => {
-        const unit = this.state.currentPlayer!.unit!;
-        const room = this.app.modules.room.getRoom()!;
+    this.subscription.add(
+      this.state.currentPlayer.observables.unit$
+        .pipe(
+          switchMap(({ unit }) => unit.modules.movement.observables.moveEnd$)
+        )
+        .subscribe(() => {
+          const unit = this.state.currentPlayer!.unit!;
+          const room = this.app.modules.room.getRoom()!;
 
-        //#region teleport
-        const teleport = room.modules.teleport.getTeleportByPosition(
-          unit.getPosition()
-        );
-        console.log('Player moved!', teleport);
+          //#region teleport
+          const teleport = room.modules.teleport.getTeleportByPosition(
+            unit.getPosition()
+          );
+          console.log('Player moved!', teleport);
 
-        this.app.modules.teleport.resolveTeleport(teleport);
-        //#endregion
-      });
+          this.app.modules.teleport.resolveTeleport(teleport);
+          //#endregion
+        })
+    );
+
+    this.subscription.add(
+      this.state.currentPlayer.observables.playerSettings$.subscribe(
+        playerSettings => {
+          this.app.renderer.setShadowQuality(
+            playerSettings.graphic.shadowQuality
+          );
+        }
+      )
+    );
   }
 
   getPlayers() {
     return this.state.players;
   }
 
-  addPlayer(player: Player) {
+  async addPlayer(player: Player) {
     this.state.players.push(player);
     this.observables.addPlayer$.next(player);
     if (player.client) {

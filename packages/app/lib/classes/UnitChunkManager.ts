@@ -74,8 +74,7 @@ export default class UnitChunkManager {
 
     this.chunks.forEach(chunk => {
       chunk.visible = false;
-      chunk.units
-        .values()
+      Array.from(chunk.units.values())
         .filter(unit => !unit.modules.player.player?.client)
         .forEach(unit => unit.setChunkVisible(false));
     });
