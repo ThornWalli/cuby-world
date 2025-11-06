@@ -33,6 +33,7 @@ import { getRadByRotation, getRotationByPosition } from '../../utils/rotation';
 
 import ChairUnitModule, { type ChairUnitOptions } from './Chair';
 import CharacterUnitModule from './Character';
+import BedUnitModule, { type BedUnitOptions } from './Bed';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -83,7 +84,7 @@ interface MovementDescription {
 interface Observables extends UnitModuleObservables {
   moveStart$: Subject<Vector3>;
   moveStep$: Subject<Vector3>;
-  moveEnd$: Subject<void>;
+  moveEnd$: Subject<Vector3>;
   moveAbort$: Subject<void>;
 }
 
@@ -103,7 +104,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
     this.observables.moveStart$ = new Subject<Vector3>();
     this.observables.moveStep$ = new Subject<Vector3>();
-    this.observables.moveEnd$ = new Subject<void>();
+    this.observables.moveEnd$ = new Subject<Vector3>();
     this.observables.moveAbort$ = new Subject<void>();
   }
 
@@ -119,10 +120,12 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     return false;
   }
 
-  async moveTo(position: Vector3): Promise<boolean> {
+  async moveTo(position: Vector3): Promise<{
+    position: Vector3;
+  } | null> {
     if (this.abortMovement()) {
       this.observables.moveAbort$.next();
-      return false;
+      return null;
     }
 
     const grid = createRoomGrid(this.unit);
@@ -143,22 +146,25 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         position.clone().round(),
         grid
       );
+
       console.log('movements', JSON.parse(JSON.stringify(this.movements)));
+
       if (this.movements.length) {
         this.observables.moveStart$.next(position);
       }
 
-      return new Promise<boolean>(resolve => {
+      return new Promise<{ position: Vector3 } | null>(resolve => {
         const subscription = new Subscription();
         subscription.add(
           this.observables.moveAbort$.subscribe(() => {
-            resolve(false);
+            resolve(null);
             subscription.unsubscribe();
           })
         );
         subscription.add(
-          this.observables.moveEnd$.subscribe(() => {
-            resolve(true);
+          this.observables.moveEnd$.subscribe(position => {
+            console.log('MovementUnitModule moveTo finished at', position);
+            resolve({ position });
             subscription.unsubscribe();
           })
         );
@@ -170,7 +176,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         grid.width,
         grid.height
       );
-      return false;
+      return null;
     }
   }
 
@@ -188,9 +194,35 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
   }
 
   async resolveMoveTo(position: Vector3) {
-    if (await this.moveTo(position)) {
-      await this.applyPosition(position);
+    const characterModule = this.unit.getModule<CharacterUnitModule>(
+      CharacterUnitModule.TYPE
+    );
+
+    position = this.preparePosition(position);
+
+    characterModule.wrapper.position.set(0, 0, 0);
+    const result = await this.moveTo(position);
+    if (result) {
+      await this.applyPosition(result.position);
     }
+  }
+
+  preparePosition(position: Vector3) {
+    const units =
+      this.unit.modules
+        .room!.getRoom()
+        ?.modules.units.getUnitsByPosition(position) || [];
+
+    //#region bed
+    const bedUnit = units.find(
+      u => !u.equal(this.unit) && BedUnitModule.TYPE in u.modules
+    ) as Unit<BedUnitOptions>;
+    if (bedUnit) {
+      return bedUnit.getPosition();
+    }
+    //#endregion
+
+    return position;
   }
 
   applyPosition(position: Vector3) {
@@ -198,15 +230,32 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
       this.unit.modules
         .room!.getRoom()
         ?.modules.units.getUnitsByPosition(position) || [];
+
+    const characterModule = this.unit.getModule<CharacterUnitModule>(
+      CharacterUnitModule.TYPE
+    );
+
+    //#region bed
+    const bedUnit = units.find(
+      u => !u.equal(this.unit) && BedUnitModule.TYPE in u.modules
+    ) as Unit<BedUnitOptions>;
+    if (bedUnit) {
+      characterModule.useBed(bedUnit);
+      return;
+    }
+    //#endregion
+
+    //#region chair
     const chairUnit = units.find(
       u => !u.equal(this.unit) && ChairUnitModule.TYPE in u.modules
     ) as Unit<ChairUnitOptions>;
     if (chairUnit) {
-      const characterModule = this.unit.getModule<CharacterUnitModule>(
-        CharacterUnitModule.TYPE
-      );
-      characterModule.sit(chairUnit);
-    } else if ((this.unit as Unit<ChairUnitOptions>).modules.animation) {
+      characterModule.useChair(chairUnit);
+      return;
+    }
+    //#endregion
+
+    if ((this.unit as Unit<ChairUnitOptions>).modules.animation) {
       (
         this.unit as Unit<ChairUnitOptions>
       ).modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
@@ -391,7 +440,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         if (!moveOptions.nextPosition) {
           moveOptions.nextPosition = null;
           this.currentMovement = null;
-          this.observables.moveEnd$.next();
+          this.observables.moveEnd$.next(unit.getPosition());
           return;
         }
 
@@ -507,7 +556,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
              */
             this.currentMovement = null;
             this.setUnitAnimation(ANIMATION_ACTION.IDLE);
-            this.observables.moveEnd$.next();
+            this.observables.moveEnd$.next(this.unit.getPosition());
           }
         }
       }

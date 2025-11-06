@@ -11,18 +11,13 @@ import {
   OBJECT_NAME,
   OBJECT_USER_DATA
 } from '@cuby-world/app/lib/utils/object';
-import Unit, {
-  type PreviewOptions,
-  type SetupContext,
-  type UnitConstructorOptions,
-  type UnitModuleList,
-  type UnitModules,
-  type UnitOptions
+import type {
+  PreviewOptions,
+  SetupContext,
+  UnitConstructorOptions,
+  UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
-import {
-  ANIMATION_ACTION,
-  AnimationUnitModule
-} from '@cuby-world/app/lib/classes/unitModule/Animation';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
 import image_spritesheet_sleep from './assets/spritesheet/sleep.png';
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import {
@@ -31,7 +26,6 @@ import {
 } from '@cuby-world/app/lib/classes/AssetLoader';
 import { defaultMaterial } from '../utils/material';
 import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
-import CharacterUnitModule from '@cuby-world/app/lib/classes/unitModule/Character';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/cuby.glb?url';
 import assetLoader from '@cuby-world/app/services/assetLoader';
@@ -43,6 +37,7 @@ import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
 import { DEFAULT_PLAYER_SKIN_ID } from '@cuby-world/app/lib/classes/Player';
 import { skinsMap } from './skins';
 import type { TextureMaps } from '@cuby-world/app/lib/types/textures';
+import CharacterUnit from '@cuby-world/app/lib/classes/unit/Character';
 
 declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
@@ -57,17 +52,7 @@ export interface CubyOptions extends UnitOptions<MovementModuleOptions> {
   color: string | number;
 }
 
-type CubyUnitModules = UnitModules & {
-  character: CharacterUnitModule;
-  animation: AnimationUnitModule;
-};
-
-type CubyUnitModuleList = (typeof CharacterUnitModule)[] & UnitModuleList;
-export default class Cuby extends Unit<
-  CubyOptions,
-  CubyUnitModules,
-  CubyUnitModuleList
-> {
+export default class Cuby extends CharacterUnit<CubyOptions> {
   static override KEY = 'cuby';
   static override NAME = 'Cuby';
 
@@ -84,30 +69,24 @@ export default class Cuby extends Unit<
       'name' | 'selectable'
     > = {}
   ) {
-    super(
-      {
-        ...options,
-        name: 'Cuby',
-        selectable: true,
-        placeable: true,
-        options: {
-          hasControls: false,
-          movement: {
-            diagonalMovement: true,
-            stepDuration: 550,
-            stairStepDuration: 1100,
-            rotationDuration: 125
-          },
-          color: skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options.color,
-          state: CUBY_STATE.DEFAULT,
-          ...options.options
-        }
-      },
-      [
-        CharacterUnitModule,
-        AnimationUnitModule
-      ] as unknown as CubyUnitModuleList
-    );
+    super({
+      ...options,
+      name: 'Cuby',
+      selectable: true,
+      placeable: true,
+      options: {
+        hasControls: false,
+        movement: {
+          diagonalMovement: true,
+          stepDuration: 550,
+          stairStepDuration: 1100,
+          rotationDuration: 125
+        },
+        color: skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options.color,
+        state: CUBY_STATE.DEFAULT,
+        ...options.options
+      }
+    });
 
     this.clock = new Clock();
   }
@@ -121,7 +100,13 @@ export default class Cuby extends Unit<
   override async setup(context: SetupContext) {
     await super.setup(context);
 
-    this.modules.character.offsets.sitting_idle = new Vector3(0.075, 0, 0);
+    this.modules.character.offsets.laying_sleeping = new Vector3(
+      0.075,
+      0.75,
+      0
+    );
+
+    this.modules.character.offsets.sitting_idle = new Vector3(0, 0, 0);
     if (this.root.getObjectByName(OBJECT_NAME.MESH_ANIMATION)) {
       const sleepPlain = createSleepPlain();
       sleepPlain.rotateY(Math.PI / 2);
@@ -180,10 +165,9 @@ export default class Cuby extends Unit<
   };
   assetsByCubyState?: { [key in CUBY_STATE]: MeshPhongMaterial[] };
   private _sleepPlain?: Mesh;
-  private meshRoot!: Group;
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Group();
-    this.meshRoot = meshRoot;
+    this.setMeshRoot(meshRoot);
 
     const { scene, object, animations } = await loadGltf(glbBase);
 

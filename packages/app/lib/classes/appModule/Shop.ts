@@ -16,6 +16,7 @@ interface ItemDescription {
 
 interface Observables extends AppModuleObservables {
   currentItem$: ReplaySubject<ItemDescription>;
+  purchased$: ReplaySubject<ItemDescription>;
 }
 
 interface State extends AppModuleState {
@@ -29,6 +30,7 @@ export default class ShopAppModule extends AppModule<State, Observables> {
     super(app);
     //#region observables
     this.observables.currentItem$ = new ReplaySubject<ItemDescription>(1);
+    this.observables.purchased$ = new ReplaySubject<ItemDescription>();
     //#endregion
   }
   private placeSubscription: Subscription | null = null;
@@ -67,6 +69,7 @@ export default class ShopAppModule extends AppModule<State, Observables> {
                    * Übernehmen der Unit
                    */
                   this.tmpUnit = null;
+                  this.observables.purchased$.next(item);
                   subscription.unsubscribe();
                 })
               );

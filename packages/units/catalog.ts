@@ -75,6 +75,17 @@ export const items: UnitItem[] = [
     options: {}
   },
   {
+    id: 'bed_1',
+    name: 'Bed Basic',
+    description: 'A basic bed for seating.',
+    tags: [CATALOG_TAG.FURNITURE],
+    defaultSkinId: 'default',
+    skinMap: new Map(),
+    skins: [],
+    instance: () => import('./bed_1/Bed_1').then(m => m.default as typeof Unit),
+    options: {}
+  },
+  {
     id: 'chair_1',
     name: 'Chair Basic',
     description: 'A basic chair for seating.',

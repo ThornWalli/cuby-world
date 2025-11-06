@@ -29,6 +29,7 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
       accessible: true,
       selectable: true,
       placeable: true,
+      size: new Vector3(1, 0.1, 1),
       options: {
         canRotate: false,
         color: 0xffeeaa,

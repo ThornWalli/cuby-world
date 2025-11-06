@@ -19,6 +19,7 @@ import TeleportAppModule from './appModule/Teleport';
 import ShopAppModule from './appModule/Shop';
 import TimeAppModule from './appModule/Time';
 import LightAppModule from './appModule/Light';
+import { TELEPORT_TYPE } from '../types/teleport';
 
 type AppModuleList = (
   | typeof CursorAppModule
@@ -157,6 +158,14 @@ export class BaseApp<
 
   async enterRoom(roomDescription: ImportRoomDescription) {
     const room = await this.loadRoom(roomDescription);
+
+    const teleport = room.modules.teleport.getTeleportsByType(
+      TELEPORT_TYPE.ENTRANCE
+    )[0];
+
+    if (teleport) {
+      this.renderer.updateCamera(teleport.position);
+    }
 
     console.log('Joining default room', room.id);
     if ('multiplayer' in this.modules) {

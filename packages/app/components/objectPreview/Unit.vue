@@ -8,15 +8,14 @@
     :mode="mode"
     :width="width ?? 'auto'"
     :ratio="ratio"
-    :size="size"
+    :size="unitInstance?.getSize() || size"
     :hydrate-when-visible="hydrateWhenVisible"
     class="cw-object-preview-unit"
     @animation-loop="animationLoop$.next($event)" />
 </template>
 
 <script lang="ts" setup>
-import type { Vector3 } from 'three';
-import { Object3D } from 'three';
+import { Vector3, Object3D } from 'three';
 import { markRaw, onUnmounted, ref, type Raw } from 'vue';
 import { Subscription, Subject } from 'rxjs';
 
@@ -91,6 +90,9 @@ async function setup(data: UnitPreview) {
             );
           }
         }
+        const position = instance.centerInTile(new Vector3(0, 0, 0));
+        console.log('unitInstance', position);
+        instance.root.position.set(position.z, position.y, position.x);
         resolve(instance.root);
       })
     );

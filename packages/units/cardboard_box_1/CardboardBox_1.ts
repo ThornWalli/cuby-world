@@ -97,6 +97,7 @@ export default class CardboardBox_1 extends Unit<CardboardBoxOptions> {
 
     meshRoot.traverse(child => {
       child.castShadow = true;
+      // child.receiveShadow = true;
     });
 
     return meshRoot;

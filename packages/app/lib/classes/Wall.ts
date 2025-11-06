@@ -10,8 +10,7 @@ import {
   DoubleSide,
   ShadowMaterial,
   PlaneGeometry,
-  MeshBasicMaterial,
-  FrontSide
+  MeshBasicMaterial
 } from 'three';
 import {
   Box3,
@@ -767,7 +766,7 @@ async function setupMaterial(
       normalMap: normalMap,
       displacementMap: displacementMap,
       specularMap: specularMap,
-      side: FrontSide
+      side: DoubleSide
     });
     materialsMap.set(key, material);
   }
@@ -782,8 +781,7 @@ function createShadowHelper(geometry: BufferGeometry) {
       color: 0x333333
     })
   );
-  shadowHelper.castShadow = true;
-  // shadowHelper.material.wireframe = true;
+  shadowHelper.castShadow = false;
   shadowHelper.name = 'shadow_helper';
   shadowHelper.visible = true;
   shadowHelper.raycast = () => void 0;

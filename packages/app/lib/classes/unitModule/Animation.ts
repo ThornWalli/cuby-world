@@ -15,7 +15,8 @@ export enum ANIMATION_ACTION {
   IDLE = 'idle',
   WALK = 'walk',
   STAIR_FALLBACK = 'stair_fallback',
-  SITTING_IDLE = 'sitting_idle'
+  SITTING_IDLE = 'sitting_idle',
+  LAYING_SLEEPING = 'laying_sleeping'
 }
 
 type Actions = { [key: string]: AnimationAction };

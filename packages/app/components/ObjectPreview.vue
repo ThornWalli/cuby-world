@@ -13,7 +13,6 @@
 
 <script lang="ts" setup>
 import {
-  type Object3D,
   type OrthographicCamera,
   type Scene,
   type WebGLRenderer,
@@ -21,6 +20,7 @@ import {
   Clock,
   Mesh,
   MeshBasicMaterial,
+  Object3D,
   Vector2,
   Vector3
 } from 'three';
@@ -47,6 +47,7 @@ const dimension = ref<Vector2>(new Vector2(0, 0));
 const currentWidth = ref<number>(0);
 
 const $props = defineProps<{
+  debug?: boolean;
   cacheKey?: string;
   mode?: 'static' | 'loop';
   app: App;
@@ -182,14 +183,19 @@ function setupRenderer() {
   previewScene.add(previewCamera);
 
   const size = $props.size;
-  if (size) {
+  if ($props.debug && size) {
     sizeIndicator = new Mesh(
-      new BoxGeometry(size.x, size.y, size.z),
-      new MeshBasicMaterial({ color: 0xff0000 })
+      new BoxGeometry(size.z, size.y, size.x),
+      new MeshBasicMaterial({
+        color: 0xff0000,
+        wireframe: true
+      })
     );
-    sizeIndicator.visible = false;
-    sizeIndicator.position.set(size.x / 2, size.y - 0.5, size.z / 2);
-    previewScene.add(sizeIndicator);
+    // sizeIndicator.visible = false;
+    sizeIndicator.position.set(0, size.y / 2, 0);
+    const indicatorWrapper = new Object3D();
+    indicatorWrapper.add(sizeIndicator);
+    previewScene.add(indicatorWrapper);
   }
 
   renderer.setAnimationLoop(time => {

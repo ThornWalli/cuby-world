@@ -134,6 +134,40 @@ export default class Unit<
   Observables extends UnitObservables = UnitObservables
 > implements UnitChunking
 {
+  setRotationByUnit(
+    unit: Unit<
+      {
+        rotationType?: ROTATION_TYPE;
+        canPlaced?: boolean;
+        canRotate?: boolean;
+        hasControls?: boolean;
+      },
+      UnitModules,
+      UnitModuleList,
+      UnitObservables
+    >
+  ) {
+    if (this.canRotate()) {
+      const rotation =
+        unit.id !== this.id && this.getRotationByPosition(unit.getPosition());
+      if (rotation) {
+        this.setRotation(rotation);
+      }
+    }
+  }
+
+  private disabledRotation = false;
+  enableRotation() {
+    this.disabledRotation = false;
+  }
+  disableRotation() {
+    this.disabledRotation = true;
+  }
+
+  canRotate() {
+    return !this.disabledRotation && this.options.canRotate;
+  }
+
   addType(type: UnitType | string) {
     return this.type.add(type as UnitType);
   }
@@ -158,6 +192,7 @@ export default class Unit<
 
   modules: Modules = {} as Modules;
   moduleList: ModuleList;
+  _updateModules: UnitModule[] = [];
 
   assetLoader?: AssetLoader;
 
@@ -340,7 +375,8 @@ export default class Unit<
 
   setScenePosition(position: Vector3) {
     this.root.position.copy(
-      this.centerInTile(position).multiply(new Vector3(1, FLOOR_HEIGHT, 1))
+      // this.centerInTile(position).multiply(new Vector3(1, FLOOR_HEIGHT, 1))
+      position.multiply(new Vector3(1, FLOOR_HEIGHT, 1))
     );
   }
 
@@ -507,19 +543,25 @@ export default class Unit<
     for (let x = 0; x < size.x; x++) {
       for (let z = 0; z < size.z; z++) {
         let x_ = pos.x;
-        if (ROTATION.NORTH === this.rotation) {
-          x_ = x_ + x;
-        } else if (ROTATION.WEST === this.rotation) {
-          x_ = x_ - x;
-        } else {
-          x_ = x_ + x;
-        }
-
         let z_ = pos.z;
-        if (ROTATION.NORTH === this.rotation) {
-          z_ = z_ - z;
-        } else {
-          z_ = z_ + z;
+
+        switch (this.rotation) {
+          case ROTATION.NORTH:
+            x_ = x_ + z;
+            z_ = z_ + x;
+            break;
+          case ROTATION.WEST:
+            x_ = x_ + x;
+            z_ = z_ + z;
+            break;
+          case ROTATION.EAST:
+            x_ = x_ - x;
+            z_ = z_ - z;
+            break;
+          case ROTATION.SOUTH:
+            x_ = x_ + z;
+            z_ = z_ - x;
+            break;
         }
 
         positions.push(new Vector3(x_, 0, z_));
@@ -528,6 +570,35 @@ export default class Unit<
     return positions;
   }
 
+  // getMatrixPositions(): Vector3[] {
+  //   const positions: Vector3[] = [];
+  //   const pos = positionToMatrixPosition(this.getPosition());
+  //   const size = this.size;
+
+  //   for (let x = 0; x < size.x; x++) {
+  //     for (let z = 0; z < size.z; z++) {
+  //       let x_ = pos.x;
+  //       if (ROTATION.NORTH === this.rotation) {
+  //         x_ = x_ + x;
+  //       } else if (ROTATION.WEST === this.rotation) {
+  //         x_ = x_ - x;
+  //       } else {
+  //         x_ = x_ + x;
+  //       }
+
+  //       let z_ = pos.z;
+  //       if (ROTATION.NORTH === this.rotation) {
+  //         z_ = z_ - z;
+  //       } else {
+  //         z_ = z_ + z;
+  //       }
+
+  //       positions.push(new Vector3(x_, 0, z_));
+  //     }
+  //   }
+  //   return positions;
+  // }
+
   async setup(context: SetupContext) {
     this.assetLoader = context.assetLoader;
     let mesh = await this.createMesh(context);
@@ -535,9 +606,10 @@ export default class Unit<
     const modules: UnitModule[] = Object.values(this.modules);
 
     // center unit in tile
-    const position = this.centerInTile(
-      matrixPositionToPosition(this._position)
-    );
+    const position = matrixPositionToPosition(this._position);
+    // const position = this.centerInTile(
+    //   matrixPositionToPosition(this._position)
+    // );
 
     this.root.position.copy(position);
 
@@ -557,8 +629,6 @@ export default class Unit<
     this.observables.ready$.next(this);
   }
 
-  _updateModules: UnitModule[] = [];
-
   update(v: AnimationLoopValue) {
     this._updateModules.forEach(module => {
       module.update(v);
@@ -569,6 +639,10 @@ export default class Unit<
     const direction = target.clone().sub(this._position);
     direction.y = 0;
     return getRotationFromVector(direction, diagonal);
+  }
+
+  isIntersectByPosition(position: Vector3): unknown {
+    return this.getMatrixPositions().some(pos => pos.equals(position));
   }
 
   //#region visible

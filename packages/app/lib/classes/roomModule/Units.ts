@@ -72,12 +72,7 @@ export default class UnitsModule extends RoomModule<State, Observables> {
   }
 
   getUnitsByPosition(position: Vector3) {
-    return this.getUnits().filter(
-      unit =>
-        Math.floor(unit.position.x) === Math.floor(position.x) &&
-        Math.floor(unit.position.y) === Math.floor(position.y) &&
-        Math.floor(unit.position.z) === Math.floor(position.z)
-    );
+    return this.getUnits().filter(unit => unit.isIntersectByPosition(position));
   }
 
   async setupUnits(units: Unit[]) {

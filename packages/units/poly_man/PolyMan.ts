@@ -1,81 +1,54 @@
 import { type MeshPhongMaterial, Mesh, Vector3, type Object3D } from 'three';
 import { Group } from 'three';
-import Unit, {
-  type PreviewOptions,
-  type SetupContext,
-  type UnitConstructorOptions,
-  type UnitModuleList,
-  type UnitModules,
-  type UnitOptions
+import type {
+  SetupContext,
+  UnitConstructorOptions
 } from '@cuby-world/app/lib/classes/Unit';
-import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
-import CharacterUnitModule from '@cuby-world/app/lib/classes/unitModule/Character';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/poly_man.glb?url';
-import {
-  ANIMATION_ACTION,
-  AnimationUnitModule
-} from '@cuby-world/app/lib/classes/unitModule/Animation';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
 import { DEFAULT_PLAYER_SKIN_ID } from '@cuby-world/app/lib/classes/Player';
 import { skinsMap } from './skins';
+import type { CharacterUnitOptions } from '@cuby-world/app/lib/classes/unit/Character';
+import CharacterUnit from '@cuby-world/app/lib/classes/unit/Character';
 
-type PolyManUnitModules = UnitModules & {
-  character: CharacterUnitModule;
-  animation: AnimationUnitModule;
-};
-
-export interface PolyManOptions extends UnitOptions<MovementModuleOptions> {
+export interface Options extends CharacterUnitOptions {
   color: string | number;
 }
 
-type PolyManUnitModuleList = (typeof CharacterUnitModule)[] & UnitModuleList;
-export default class PolyMan extends Unit<
-  PolyManOptions,
-  PolyManUnitModules,
-  PolyManUnitModuleList
-> {
+export default class PolyMan extends CharacterUnit<Options> {
   static override KEY = 'poly_man';
   static override NAME = 'Poly Man';
 
-  override previewOptions: PreviewOptions = {
-    ground: false
-  };
-
   constructor(
     options: Omit<
-      UnitConstructorOptions<Partial<PolyManOptions>>,
+      UnitConstructorOptions<Partial<Options>>,
       'name' | 'selectable'
     > = {}
   ) {
-    super(
-      {
-        ...options,
-        size: new Vector3(1, 1.8, 1),
-        name: 'Poly Character',
-        selectable: true,
-        placeable: true,
-        options: {
-          hasControls: false,
-          movement: {
-            diagonalMovement: true,
-            // stepDuration: 700,
-            // stairStepDuration: 3000,
-            // rotationDuration: 125
-            stepDuration: 550,
-            stairStepDuration: 1100,
-            rotationDuration: 125
-          },
-          color: skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options.color,
-          ...options.options
-        }
-      },
-      [
-        CharacterUnitModule,
-        AnimationUnitModule
-      ] as unknown as PolyManUnitModuleList
-    );
+    super({
+      ...options,
+      size: new Vector3(1, 1.8, 1),
+      name: 'Poly Character',
+      selectable: true,
+      placeable: true,
+      options: {
+        hasControls: false,
+        movement: {
+          diagonalMovement: true,
+          // stepDuration: 700,
+          // stairStepDuration: 3000,
+          // rotationDuration: 125
+          stepDuration: 550,
+          stairStepDuration: 1100,
+          rotationDuration: 125
+        },
+        color: skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options.color,
+        ...options.options
+      }
+    });
   }
 
   override async setup(context: SetupContext) {
@@ -88,11 +61,9 @@ export default class PolyMan extends Unit<
     this.modules.animation.getAction(ANIMATION_ACTION.WALK)!.timeScale = 1.4;
   }
 
-  meshRoot!: Group;
-
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Group();
-    this.meshRoot = meshRoot;
+    this.setMeshRoot(meshRoot);
 
     const { scene, object, animations } = await loadGltf(glbBase);
 

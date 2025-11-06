@@ -72,7 +72,7 @@ const currentComponent = computed(() =>
 onMounted(() => {
   nextTick(async () => {
     await setup();
-    app.value!.enterRoom($props.roomDescription);
+    await app.value!.enterRoom($props.roomDescription);
   });
 });
 
@@ -104,7 +104,6 @@ async function setupApp(renderer: Renderer) {
 
   await app.value.setup();
   ready.value = true;
-
   subscription.add(
     app.value.modules.cursor.observables.current$.subscribe(cursor => {
       console.log('Cursor changed', cursor);

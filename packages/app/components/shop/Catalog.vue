@@ -18,8 +18,9 @@ import type App from '@cuby-world/app/lib/classes/App';
 import type { CatalogItemIdentifier } from '@cuby-world/app/lib/types/catalog';
 import CwShopCatalogItem from './catalog/Item.vue';
 import CwShopCatalogSkin from './catalog/Skin.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { catalog as unitCatalog } from '@cuby-world/units';
+import { concatMap, Subscription } from 'rxjs';
 
 const $props = defineProps<{
   app: App;
@@ -66,6 +67,19 @@ const skins = computed(() => {
     return unitCatalog.get(catalogItemId.value)!.skins ?? [];
   }
   return [];
+});
+
+const subscription = new Subscription();
+onMounted(() => {
+  subscription.add(
+    $props.app.modules.shop.observables.purchased$
+      .pipe(
+        concatMap(async () => {
+          catalogItemId.value = null;
+        })
+      )
+      .subscribe(void 0)
+  );
 });
 </script>
 

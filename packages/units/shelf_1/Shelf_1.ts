@@ -27,6 +27,7 @@ export default class Shelf_1<
     super({
       ...options,
       name: 'Shelf_1',
+      size: new Vector3(1, 1.8, 1),
       wallOnly: false,
       accessible: true,
       selectable: true,

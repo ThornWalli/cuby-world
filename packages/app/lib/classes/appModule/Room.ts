@@ -469,8 +469,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
           app.modules.selection.getSelectedUnit()?.id === unit?.id
         ) {
           const playerUnit = player.unit!;
-          await playerUnit.modules.movement.moveTo(worldPosition!);
-          await playerUnit.modules.movement.applyPosition(worldPosition!);
+          await playerUnit.modules.movement.resolveMoveTo(worldPosition!);
           app.modules.selection.setSelectedUnit(null);
         } else if (unit) {
           app.modules.selection.setSelectedUnit(unit);

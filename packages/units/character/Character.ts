@@ -1,45 +1,26 @@
 import { Mesh, Vector3, type Object3D } from 'three';
 import { Group } from 'three';
 
-import Unit, {
-  type PreviewOptions,
-  type SetupContext,
-  type UnitConstructorOptions,
-  type UnitModuleList,
-  type UnitModules,
-  type UnitOptions
+import type {
+  SetupContext,
+  UnitConstructorOptions
 } from '@cuby-world/app/lib/classes/Unit';
-import type { MovementModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Movement';
-import CharacterUnitModule from '@cuby-world/app/lib/classes/unitModule/Character';
+
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 
 import glbBase from './assets/character.glb?url';
-import {
-  ANIMATION_ACTION,
-  AnimationUnitModule
-} from '@cuby-world/app/lib/classes/unitModule/Animation';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
+import CharacterUnit, {
+  type CharacterUnitOptions
+} from '@cuby-world/app/lib/classes/unit/Character';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface CharacterOptions extends UnitOptions<MovementModuleOptions> {}
+export interface CharacterOptions extends CharacterUnitOptions {}
 
-type CharacterUnitModules = UnitModules & {
-  character: CharacterUnitModule;
-  animation: AnimationUnitModule;
-};
-
-type CharacterUnitModuleList = (typeof CharacterUnitModule)[] & UnitModuleList;
-export default class Character extends Unit<
-  CharacterOptions,
-  CharacterUnitModules,
-  CharacterUnitModuleList
-> {
+export default class Character extends CharacterUnit<CharacterOptions> {
   static override KEY = 'character';
   static override NAME = 'Character';
-
-  override previewOptions: PreviewOptions = {
-    ground: false
-  };
 
   constructor(
     options: Omit<
@@ -47,32 +28,26 @@ export default class Character extends Unit<
       'name' | 'selectable'
     > = {}
   ) {
-    super(
-      {
-        ...options,
-        size: new Vector3(1, 1.75, 1),
-        name: 'Character',
-        selectable: true,
-        placeable: true,
-        options: {
-          hasControls: false,
-          movement: {
-            diagonalMovement: true,
-            // stepDuration: 700,
-            // stairStepDuration: 3000,
-            // rotationDuration: 125
-            stepDuration: 550,
-            stairStepDuration: 1100,
-            rotationDuration: 125
-          },
-          ...options.options
-        }
-      },
-      [
-        CharacterUnitModule,
-        AnimationUnitModule
-      ] as unknown as CharacterUnitModuleList
-    );
+    super({
+      ...options,
+      size: new Vector3(1, 1.75, 1),
+      name: 'Character',
+      selectable: true,
+      placeable: true,
+      options: {
+        hasControls: false,
+        movement: {
+          diagonalMovement: true,
+          // stepDuration: 700,
+          // stairStepDuration: 3000,
+          // rotationDuration: 125
+          stepDuration: 550,
+          stairStepDuration: 1100,
+          rotationDuration: 125
+        },
+        ...options.options
+      }
+    });
   }
 
   override async setup(context: SetupContext) {
@@ -85,11 +60,9 @@ export default class Character extends Unit<
     this.modules.animation.getAction(ANIMATION_ACTION.WALK)!.timeScale = 1.4;
   }
 
-  meshRoot!: Group;
-
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Group();
-    this.meshRoot = meshRoot;
+    this.setMeshRoot(meshRoot);
 
     const { scene, object, animations } = await loadGltf(glbBase);
 

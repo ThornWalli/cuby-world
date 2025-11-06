@@ -55,12 +55,7 @@ export default class SelectionAppModule extends AppModule<State, Observables> {
       unit.modules.selection?.select();
       this.state.selectedUnit = unit;
 
-      const rotation =
-        unit.id !== playerUnit.id &&
-        playerUnit.getRotationByPosition(unit.getPosition());
-      if (rotation) {
-        playerUnit.setRotation(rotation);
-      }
+      playerUnit.setRotationByUnit(unit);
       this.app.renderer.registerOutlineObject(unit.root);
     } else {
       this.state.selectedUnit = null;
