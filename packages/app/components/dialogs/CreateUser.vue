@@ -28,13 +28,14 @@
             @click="onClickSelectCharacter(previewUnit.key)">
             <div>
               <cw-object-preview-unit
+                :key="previewUnit.selected ? skin : previewUnit.skin"
                 :app="app"
                 mode="loop"
                 :ratio="1"
                 :size="new Vector3(1, 1.8, 1)"
                 :model-value="{
                   type: previewUnit.key,
-                  skin: previewUnit.skin,
+                  skin: previewUnit.selected ? skin : previewUnit.skin,
                   action: previewUnit.selected
                     ? ANIMATION_ACTION.WALK
                     : ANIMATION_ACTION.IDLE

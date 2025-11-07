@@ -7,6 +7,7 @@ import UnitModule, {
 import { UNIT_TYPE } from '../../types/unit';
 import type { Vector3 } from 'three';
 import type { UnitOptions } from '../Unit';
+import type Unit from '../Unit';
 
 declare module '../../types/unit' {
   interface UnitType {
@@ -39,9 +40,19 @@ export default class ChairUnitModule extends UnitModule<
 > {
   static override TYPE = 'chair';
 
+  usedUnit: Unit | null = null;
+
   override async setup(context: UnitModuleSetupContext) {
     context.unit.addType(UNIT_TYPE.CHAIR);
     context.unit.root.userData[OBJECT_NAME.CHAIR] = true;
     return context.mesh;
+  }
+
+  getUsedUnit() {
+    return this.usedUnit;
+  }
+
+  setUsedUnit(unit: Unit | null) {
+    this.usedUnit = unit;
   }
 }

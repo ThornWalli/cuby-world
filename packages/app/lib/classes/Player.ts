@@ -114,20 +114,27 @@ export default class Player {
 
   async createUnit() {
     let UnitClass: typeof Unit;
+    let skinMap;
     switch (this.state.characterType) {
       case CHARACHTER_TYPE.POLY_CHARACTER:
         UnitClass = await catalog.get('poly_character')!.instance()!;
+        skinMap = catalog.get('poly_character')!.skinMap;
         break;
       case CHARACHTER_TYPE.CUBY:
         UnitClass = await catalog.get('cuby')!.instance()!;
+        skinMap = catalog.get('cuby')!.skinMap;
         break;
       default:
         UnitClass = Character as typeof Unit;
+        skinMap = catalog.get('character')!.skinMap;
         break;
     }
 
     const unit = new UnitClass({
-      name: UnitClass.NAME
+      name: UnitClass.NAME,
+      options: {
+        ...skinMap?.get(this.state.skin)?.options
+      }
     });
 
     return unit;

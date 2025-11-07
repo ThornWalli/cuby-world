@@ -26,6 +26,7 @@ import { OBJECT_NAME } from '../../utils/object';
 import { TELEPORT_TYPE } from '../../types/teleport';
 import type Unit from '../Unit';
 import type { IntersectionListener } from '../rendererModule/Intersection';
+import CharacterUnitModule from '../unitModule/Character';
 
 interface Observables extends AppModuleObservables {
   room$: Observable<Room | undefined>;
@@ -456,7 +457,12 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         preparedPositions = preparedPositions.filter(pos => !pos.wall);
         const { unit, worldPosition, object } = preparedPositions[0]!;
 
+        const usedUnit = player.unit
+          ?.getModule<CharacterUnitModule>(CharacterUnitModule.TYPE)
+          .getUsedUnit();
+
         if (object && isStair(object)) {
+          console.log('Stair selected');
           const stair = getStairFromObject(app, object);
           if (stair) {
             const position = Object.values(stair?.getEntryPositions()).find(
@@ -465,17 +471,26 @@ export default class RoomAppModule extends AppModule<State, Observables> {
             player.moveTo(position!);
           }
         } else if (
+          worldPosition &&
           unit &&
-          app.modules.selection.getSelectedUnit()?.id === unit?.id
+          app.modules.selection.getSelectedUnit()?.equal(unit) &&
+          player.unit &&
+          !usedUnit?.equals(player.unit) &&
+          !usedUnit?.getPosition().equals(worldPosition)
         ) {
           const playerUnit = player.unit!;
           await playerUnit.modules.movement.resolveMoveTo(worldPosition!);
           app.modules.selection.setSelectedUnit(null);
         } else if (unit) {
           app.modules.selection.setSelectedUnit(unit);
-        } else {
+        } else if (
+          worldPosition &&
+          player.unit &&
+          !usedUnit?.equals(player.unit) &&
+          !usedUnit?.getPosition().equals(worldPosition)
+        ) {
           app.modules.selection.setSelectedUnit(null);
-          player.moveTo(worldPosition!);
+          player.moveTo(worldPosition);
         }
       }
     } else {

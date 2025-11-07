@@ -69,6 +69,7 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
       'name' | 'selectable'
     > = {}
   ) {
+    debugger;
     super({
       ...options,
       name: 'Cuby',
@@ -105,8 +106,8 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
       0.75,
       0
     );
+    this.modules.character.offsets.sitting_idle = new Vector3(0.075, 0.75, 0);
 
-    this.modules.character.offsets.sitting_idle = new Vector3(0, 0, 0);
     if (this.root.getObjectByName(OBJECT_NAME.MESH_ANIMATION)) {
       const sleepPlain = createSleepPlain();
       sleepPlain.rotateY(Math.PI / 2);

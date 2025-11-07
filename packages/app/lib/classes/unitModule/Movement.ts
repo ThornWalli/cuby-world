@@ -133,10 +133,12 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     const startPosition = this.unit.getPosition().clone().round();
 
     if (
+      this.currentRoom &&
       position.x >= 0 &&
       position.z >= 0 &&
       position.x < grid.width &&
-      position.z < grid.depth
+      position.z < grid.depth &&
+      position.y < grid.height
     ) {
       this.moveOptions = getDefaultMoveOptions();
       this.rotateOptions = getDefaultRotateOptions();

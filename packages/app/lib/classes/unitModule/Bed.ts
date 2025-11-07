@@ -5,8 +5,9 @@ import UnitModule, {
   type UnitModuleState
 } from '../UnitModule';
 import { UNIT_TYPE } from '../../types/unit';
-import type { Vector3 } from 'three';
+import { Vector3 } from 'three';
 import type { UnitOptions } from '../Unit';
+import type Unit from '../Unit';
 
 declare module '../../types/unit' {
   interface UnitType {
@@ -36,9 +37,24 @@ export interface BedState extends UnitModuleState {}
 export default class BedUnitModule extends UnitModule<BedState, Obervables> {
   static override TYPE = 'bed';
 
+  override state: BedState = {
+    offset: new Vector3(0, 0, 0),
+    unit: null
+  };
+
+  usedUnit: Unit | null = null;
+
   override async setup(context: UnitModuleSetupContext) {
     context.unit.addType(UNIT_TYPE.BED);
     context.unit.root.userData[OBJECT_NAME.BED] = true;
     return context.mesh;
+  }
+
+  getUsedUnit() {
+    return this.usedUnit;
+  }
+
+  setUsedUnit(unit: Unit | null) {
+    this.usedUnit = unit;
   }
 }

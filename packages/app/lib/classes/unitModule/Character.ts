@@ -10,6 +10,8 @@ import type { ChairUnitOptions } from './Chair';
 import type { Vector3 } from 'three';
 import { Object3D } from 'three';
 import type { BedUnitOptions } from './Bed';
+import BedUnitModule from './Bed';
+import ChairUnitModule from './Chair';
 
 interface Obervables extends UnitModuleObservables {
   sitting$: ReplaySubject<Unit<ChairUnitOptions> | null>;
@@ -83,19 +85,19 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
 
       const subscription =
         this.unit.modules.movement.observables.moveStart$.subscribe(() => {
-          this.unsit();
+          this.cancelBed();
           subscription.unsubscribe();
         });
 
       const wrapper = this.wrapper!;
-      const sittingUnit = unit as Unit<BedUnitOptions>;
-      if (sittingUnit) {
+      const targetUnit = unit as Unit<BedUnitOptions>;
+      if (targetUnit) {
         this.unit.modules.animation!.setAnimationAction(
           ANIMATION_ACTION.LAYING_SLEEPING
         );
-        this.unit.setPosition(sittingUnit.getPosition());
-        this.unit.setRotation(sittingUnit.getRotation());
-        wrapper.position.copy(sittingUnit.options.offset);
+        this.unit.setPosition(targetUnit.getPosition());
+        this.unit.setRotation(targetUnit.getRotation());
+        wrapper.position.copy(targetUnit.options.offset);
         if (this.offsets.laying_sleeping) {
           wrapper.position.add(this.offsets.laying_sleeping);
         }
@@ -104,7 +106,11 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
         this.unit.modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
       }
 
-      this.state.usedUnit = sittingUnit;
+      targetUnit
+        .getModule<BedUnitModule>(BedUnitModule.TYPE)
+        .setUsedUnit(this.unit);
+
+      this.state.usedUnit = targetUnit;
       this.observables.lying$.next(unit);
 
       return true;
@@ -124,18 +130,18 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
 
       const subscription =
         this.unit.modules.movement.observables.moveStart$.subscribe(() => {
-          this.unsit();
+          this.cancelChair();
           subscription.unsubscribe();
         });
 
       const wrapper = this.wrapper!;
-      const sittingUnit = unit as Unit<ChairUnitOptions>;
-      if (sittingUnit) {
+      const targetUnit = unit as Unit<ChairUnitOptions>;
+      if (targetUnit) {
         this.unit.modules.animation!.setAnimationAction(
           ANIMATION_ACTION.SITTING_IDLE
         );
-        this.unit.setRotation(sittingUnit.getRotation());
-        wrapper.position.copy(sittingUnit.options.offset);
+        this.unit.setRotation(targetUnit.getRotation());
+        wrapper.position.copy(targetUnit.options.offset);
         if (this.offsets.sitting_idle) {
           wrapper.position.add(this.offsets.sitting_idle);
         }
@@ -144,6 +150,11 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
         this.unit.modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
       }
 
+      targetUnit
+        .getModule<ChairUnitModule>(ChairUnitModule.TYPE)
+        .setUsedUnit(this.unit);
+
+      this.state.usedUnit = targetUnit;
       this.observables.sitting$.next(unit);
       console.log('Sitting down', unit);
 
@@ -154,9 +165,24 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
     }
   }
 
-  unsit() {
+  cancelBed() {
+    this.wrapper!.position.y = 0;
+    this.state.lying = false;
+    this.state.usedUnit
+      ?.getModule<BedUnitModule>(BedUnitModule.TYPE)
+      .setUsedUnit(null);
+    this.state.usedUnit = null;
+    this.observables.lying$.next(null);
+    console.log('Standing up');
+  }
+
+  cancelChair() {
     this.wrapper!.position.y = 0;
     this.state.sitting = false;
+    this.state.usedUnit
+      ?.getModule<ChairUnitModule>(ChairUnitModule.TYPE)
+      .setUsedUnit(null);
+    this.state.usedUnit = null;
     this.observables.sitting$.next(null);
     console.log('Standing up');
   }

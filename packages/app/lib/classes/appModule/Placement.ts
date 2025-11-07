@@ -16,6 +16,8 @@ import { getYPositionByPosition } from '../../utils/room';
 import { WALL_EXTENSION_TYPE } from '../WallExtension';
 import { getRotationByPositionAndWall } from '../../utils/wall';
 import { invertRotation } from '../../utils/rotation';
+import BedUnitModule from '../unitModule/Bed';
+import ChairUnitModule from '../unitModule/Chair';
 
 interface Observables extends AppModuleObservables {
   abort$: Subject<Unit>;
@@ -182,6 +184,7 @@ export default class PlacementAppModule extends AppModule<State, Observables> {
     }
   }
 
+  // eslint-disable-next-line complexity
   setUnitPosition(unit: Unit, preparedPosition?: PreparedPosition) {
     if (!preparedPosition) return false;
 
@@ -206,13 +209,27 @@ export default class PlacementAppModule extends AppModule<State, Observables> {
       : null;
     unit.setPosition(worldPosition);
 
+    const ignoredUnits = [unit];
+
+    if (unit.getModule(BedUnitModule.TYPE)) {
+      ignoredUnits.push(
+        unit.getModule<BedUnitModule>(BedUnitModule.TYPE).getUsedUnit()!
+      );
+    }
+
+    if (unit.getModule(ChairUnitModule.TYPE)) {
+      ignoredUnits.push(
+        unit.getModule<BedUnitModule>(ChairUnitModule.TYPE).getUsedUnit()!
+      );
+    }
+
     const position = preparedPosition.matrixPosition!;
     const resolvedPos = unit.wallOnly
       ? worldPosition
       : matrixPositionToPosition(
           new Vector3(
             position.x,
-            getYPositionByPosition(room, position, [unit]),
+            getYPositionByPosition(room, position, ignoredUnits),
             position.z
           )
         );
