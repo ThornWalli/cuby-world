@@ -1,4 +1,10 @@
-import { ReplaySubject, type Subscription, type SubscriptionLike } from 'rxjs';
+import {
+  ReplaySubject,
+  Subscription,
+  switchMap,
+  EMPTY,
+  type SubscriptionLike
+} from 'rxjs';
 
 import type Renderer from './Renderer';
 
@@ -15,11 +21,10 @@ import EditorGroundAppModule from './appModule/editor/Ground';
 import type { ImportRoomDescription } from '../types/room';
 import EditorStairModule from './appModule/editor/Stair';
 import InventoryAppModule from './appModule/Inventory';
-import TeleportAppModule from './appModule/Teleport';
 import ShopAppModule from './appModule/Shop';
 import TimeAppModule from './appModule/Time';
 import LightAppModule from './appModule/Light';
-import { TELEPORT_TYPE } from '../types/teleport';
+import type { UnitIdentifier } from './Unit';
 
 type AppModuleList = (
   | typeof CursorAppModule
@@ -31,7 +36,6 @@ type AppModuleList = (
   | typeof MultiplayerAppModule
   | typeof InventoryAppModule
   | typeof ShopAppModule
-  | typeof TeleportAppModule
   | typeof TimeAppModule
   | typeof LightAppModule
   // editor
@@ -48,7 +52,6 @@ interface AppModules {
   placement: PlacementAppModule;
   inventory: InventoryAppModule;
   shop: ShopAppModule;
-  teleport: TeleportAppModule;
   time: TimeAppModule;
   light: LightAppModule;
   // editor
@@ -85,6 +88,8 @@ export class BaseApp<
 
   state: AppState = {};
 
+  subscription = new Subscription();
+
   //#region room
   roomSubscription?: Subscription;
   //#endregion
@@ -108,7 +113,6 @@ export class BaseApp<
       PlacementAppModule,
       InventoryAppModule,
       ShopAppModule,
-      TeleportAppModule,
       TimeAppModule,
       LightAppModule
     );
@@ -138,10 +142,26 @@ export class BaseApp<
       Object.values(this.modules).map(module => module.setup())
     );
 
+    this.subscription.add(
+      this.modules.room.observables.room$
+        .pipe(
+          switchMap(room => {
+            if (room) {
+              return this.modules.player.observables.addPlayer$;
+            }
+            return EMPTY;
+          })
+        )
+        .subscribe(({ player, teleporterUnitId }) => {
+          this.modules.room.addPlayer(player, teleporterUnitId);
+        })
+    );
+
     this.ready = true;
   }
 
   destroy() {
+    this.subscription.unsubscribe();
     Object.values(this.observables).forEach(o =>
       (o as SubscriptionLike).unsubscribe()
     );
@@ -156,21 +176,32 @@ export class BaseApp<
     this.renderer.resetCamera();
   }
 
-  async enterRoom(roomDescription: ImportRoomDescription) {
+  async enterRoom(
+    roomDescription: ImportRoomDescription,
+    targetTeleporterUnitId?: UnitIdentifier
+  ) {
+    const { player: playerModule, room: roomModule } = this.modules;
+
+    this.modules.room.removeRoom();
+
+    await Promise.all(
+      playerModule.getPlayers().map(player => player.recreateUnit())
+    );
+
     const room = await this.loadRoom(roomDescription);
 
-    const teleport = room.modules.teleport.getTeleportsByType(
-      TELEPORT_TYPE.ENTRANCE
-    )[0];
-
-    if (teleport) {
-      this.renderer.updateCamera(teleport.position);
-    }
+    playerModule.getPlayers().forEach(player => {
+      if (player.client) {
+        roomModule.addPlayer(player, targetTeleporterUnitId);
+      } else {
+        roomModule.addPlayer(player);
+      }
+    });
 
     console.log('Joining default room', room.id);
     if ('multiplayer' in this.modules) {
       const multiplayer = this.modules.multiplayer as MultiplayerAppModule;
-      await multiplayer.joinRoom(room!.id);
+      await multiplayer.joinRoom(room!.id, targetTeleporterUnitId);
     }
   }
 

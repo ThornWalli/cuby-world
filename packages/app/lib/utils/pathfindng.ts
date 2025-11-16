@@ -1,5 +1,5 @@
 import EasyStar from 'easystarjs';
-import { Vector3 } from 'three';
+import { Vector2, Vector3 } from 'three';
 import type Stair from '../classes/Stair';
 import type { FloorIndex } from '../types/floor';
 import type Wall from '../classes/Wall';
@@ -14,7 +14,44 @@ import {
 } from './wall';
 import { WALL_DIRECTION } from '../types/wall';
 import type { TileCostDescription } from '../types/ground';
-import { ANIMATION_ACTION } from '../classes/unitModule/Animation';
+import { ROTATION } from './rotation';
+import { ANIMATION_ACTION } from '../types/animation';
+import { GRID_TYPE } from '../classes/roomModule/Ground';
+
+export enum PATHFINDING_COSTS {
+  GROUND_VERY_SLOW = 10,
+  GROUND_SLOW = 5,
+  GROUND_NORMAL = 1,
+  GROUND_FAST = 0.5,
+  GROUND_VERY_FAST = 0.1,
+  UNIT = 20
+}
+
+export enum DIRECTION {
+  TOP = 'TOP',
+  TOP_RIGHT = 'TOP_RIGHT',
+  RIGHT = 'RIGHT',
+  BOTTOM_RIGHT = 'BOTTOM_RIGHT',
+  BOTTOM = 'BOTTOM',
+  BOTTOM_LEFT = 'BOTTOM_LEFT',
+  LEFT = 'LEFT',
+  TOP_LEFT = 'TOP_LEFT'
+}
+
+export interface ConditionDirectionsDescription {
+  position: Vector3;
+  directions: DIRECTION[];
+}
+
+// export type Direction =
+//   | 'TOP'
+//   | 'TOP_RIGHT'
+//   | 'RIGHT'
+//   | 'BOTTOM_RIGHT'
+//   | 'BOTTOM'
+//   | 'BOTTOM_LEFT'
+//   | 'LEFT'
+//   | 'TOP_LEFT';
 
 interface MatrixDescription {
   matrix: number[][];
@@ -57,10 +94,12 @@ type findPath = (
 export async function findBestPathByStairs(
   matrixList: MatrixDescription[],
   {
+    conditionalDirections,
     positions,
     options,
     functions
   }: {
+    conditionalDirections: ConditionDirectionsDescription[];
     positions: {
       start: Vector3;
       end: Vector3;
@@ -90,6 +129,7 @@ export async function findBestPathByStairs(
   ) =>
     findPath_(matrix, {
       positions,
+      conditionalDirections,
       options: {
         tileDescriptions: options.tileDescriptions,
         walls: functions.getWallsByFloor([floorIndex]),
@@ -104,6 +144,7 @@ export async function findBestPathByStairs(
    */
   if (positions.start.y === positions.end.y) {
     const result = await findPath_(matrixList[positions.start.y]!.matrix, {
+      conditionalDirections,
       positions: {
         startPosition: positions.start,
         endPosition: positions.end
@@ -130,8 +171,8 @@ export async function findBestPathByStairs(
         !(
           position.x >= 0 &&
           position.z >= 0 &&
-          position.x < matrixList[0]!.matrix.length &&
-          position.z < matrixList[0]!.matrix[0]!.length
+          position.z < matrixList[0]!.matrix.length &&
+          position.x < matrixList[0]!.matrix[0]!.length
         )
     );
   });
@@ -188,13 +229,13 @@ export async function findBestPathByStairs(
 
   const match = findStairMatch(stairConnections, startStairs, endStairs);
 
-  console.log({
-    matrixList,
-    match,
-    startStairs,
-    endStairs,
-    stairConnections
-  });
+  // console.log({
+  //   matrixList,
+  //   match,
+  //   startStairs,
+  //   endStairs,
+  //   stairConnections
+  // });
 
   const results = [];
   let startPosition = positions.start;
@@ -213,6 +254,7 @@ export async function findBestPathByStairs(
     );
 
     const result = await findPath_(matrixList[endPosition.y]!.matrix, {
+      conditionalDirections,
       positions: positions_,
       options: {
         tileDescriptions: options.tileDescriptions,
@@ -231,6 +273,7 @@ export async function findBestPathByStairs(
   }
 
   const result = await findPath_(matrixList[positions.end.y]!.matrix, {
+    conditionalDirections,
     positions: {
       startPosition,
       endPosition: positions.end
@@ -417,9 +460,11 @@ async function findPath_(
   matrix: number[][],
   {
     positions: { startPosition, endPosition },
+    conditionalDirections,
     options: { walls, tileDescriptions, diagonalMovement }
   }: {
     positions: { startPosition: Vector3; endPosition: Vector3 };
+    conditionalDirections: ConditionDirectionsDescription[];
     options: {
       walls: Wall[];
       tileDescriptions: TileCostDescription[];
@@ -445,16 +490,26 @@ async function findPath_(
     easystar.enableDiagonals();
   }
 
-  easystar.setAcceptableTiles(tileDescriptions.map(({ index }) => index));
+  easystar.setAcceptableTiles([
+    GRID_TYPE.NON_BLOCKED,
+    GRID_TYPE.UNIT,
+    ...tileDescriptions.map(({ index }) => index)
+  ]);
   tileDescriptions.forEach(({ index, cost }) =>
     easystar.setTileCost(index, cost)
   );
+
+  easystar.setTileCost(GRID_TYPE.UNIT, PATHFINDING_COSTS.UNIT);
 
   /**
    * Übernehme Wand-Daten in das Grid
    * Beispiel Wände nicht begehbar, Türen begehbar
    */
   setWallConditions(walls, easystar);
+
+  conditionalDirections.forEach(({ position, directions }) => {
+    easystar.setDirectionalCondition(position.x, position.z, directions);
+  });
 
   const path = await new Promise<number[][]>(resolve => {
     easystar.findPath(
@@ -576,4 +631,83 @@ export function canWalkBetweenPositions(
     (checkPosA?.directions.size ?? 0) > 0 &&
     (checkPosB?.directions.size ?? 0) > 0
   );
+}
+
+export function getEntryConditionDirections(
+  position: Vector3,
+  rotation: ROTATION
+): ConditionDirectionsDescription[] {
+  const topLeft = new Vector2(-1, -1);
+  const top = new Vector2(0, -1);
+  const topRight = new Vector2(1, -1);
+  const left = new Vector2(-1, 0);
+  const bottomLeft = new Vector2(-1, 1);
+  const bottom = new Vector2(0, 1);
+  const bottomRight = new Vector2(1, 1);
+  const right = new Vector2(1, 0);
+
+  const directions = Object.values(DIRECTION);
+
+  function getDirectionFromRotation(rotation: ROTATION): DIRECTION {
+    switch (rotation) {
+      case ROTATION.SOUTH:
+        return DIRECTION.BOTTOM;
+      case ROTATION.WEST:
+        return DIRECTION.LEFT;
+      case ROTATION.NORTH:
+        return DIRECTION.TOP;
+      case ROTATION.EAST:
+        return DIRECTION.RIGHT;
+    }
+    return DIRECTION.TOP;
+  }
+
+  // default south
+  const directions_ = [
+    [DIRECTION.BOTTOM_RIGHT], // 0
+    [DIRECTION.BOTTOM], // 1
+    [DIRECTION.BOTTOM_LEFT], // 2
+    [DIRECTION.RIGHT], // 3
+    [DIRECTION.LEFT], // 4
+    [DIRECTION.TOP_RIGHT], // 5
+    [DIRECTION.TOP], // 6
+    [DIRECTION.TOP_LEFT] // 7
+  ];
+
+  switch (rotation) {
+    case ROTATION.SOUTH:
+      directions_[6] = [];
+      break;
+    case ROTATION.WEST:
+      directions_[3] = [];
+      break;
+    case ROTATION.NORTH:
+      directions_[1] = [];
+      break;
+    case ROTATION.EAST:
+      directions_[4] = [];
+      break;
+  }
+
+  const test: [Vector3, DIRECTION[]][] = [
+    [new Vector3(topLeft.x, 0, topLeft.y), directions_[0]!],
+    [new Vector3(top.x, 0, top.y), directions_[1]!],
+    [new Vector3(topRight.x, 0, topRight.y), directions_[2]!],
+    [new Vector3(left.x, 0, left.y), directions_[3]!],
+    [new Vector3(right.x, 0, right.y), directions_[4]!],
+    [new Vector3(bottomLeft.x, 0, bottomLeft.y), directions_[5]!],
+    [new Vector3(bottom.x, 0, bottom.y), directions_[6]!],
+    [new Vector3(bottomRight.x, 0, bottomRight.y), directions_[7]!],
+    [
+      new Vector3(0, 0, 0),
+      Object.values(DIRECTION).filter(
+        d => d !== getDirectionFromRotation(rotation)
+      )
+    ]
+  ];
+
+  return test.map(([pos, dirs]) => ({
+    position: position.clone().add(pos),
+    directions: directions.filter(d => !dirs.includes(d))
+  }));
 }

@@ -4,9 +4,14 @@
     :class="{ ['action-' + currentEditorAction]: !!currentEditorAction }">
     <template #[PANEL.TOP_LEFT]>
       <div class="panel-row">
+        <div class="panel-column">
+          <div class="panel-row stretch">
+            <cw-panel-wall-control key="wall-control" :app="app" />
+            <cw-panel-floor-control key="floor-control" :app="app" />
+          </div>
+          <cw-panel-rotation-control key="rotation-control" :app="app" />
+        </div>
         <cw-panel-camera-control key="camera-control" :app="app" />
-        <cw-panel-wall-control key="wall-control" :app="app" />
-        <cw-panel-floor-control key="floor-control" :app="app" />
       </div>
     </template>
     <template #[PANEL.TOP_RIGHT]>
@@ -81,6 +86,7 @@ import CwAppLayout, { PANEL } from '../AppLayout.vue';
 import CwPanelCameraControl from '../panel/CameraControl.vue';
 import CwPanelWallControl from '../panel/WallControl.vue';
 import CwPanelFloorControl from '../panel/FloorControl.vue';
+import CwPanelRotationControl from '../panel/RotateControl.vue';
 import CwPanelTimeControl from '../panel/TimeControl.vue';
 import CwPanelGeneral from '../panel/General.vue';
 import CwPanelExportImport from '../editor/panel/ExportImport.vue';

@@ -34,7 +34,8 @@ export default class Table_1 extends Unit<DoormateOptions> {
 
     meshRoot.position.set(0, 0, 0);
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
+
     meshRoot.add(object);
 
     meshRoot.traverse(child => {

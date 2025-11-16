@@ -28,5 +28,4 @@ export interface TextureMaps {
   ambientMap?: Texture;
   normalMap?: Texture;
   displacementMap?: Texture;
-  specularMap?: Texture;
 }

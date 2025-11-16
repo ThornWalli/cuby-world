@@ -1,48 +1,54 @@
 import { AnimationClip, type AnimationAction } from 'three';
-import { AnimationMixer, Clock, Object3D } from 'three';
+import { AnimationMixer, Object3D } from 'three';
 import UnitModule, {
   type UnitModuleObservables,
+  type UnitModuleOptions,
   type UnitModuleSetupContext,
   type UnitModuleState
 } from '../UnitModule';
 import { OBJECT_NAME } from '../../utils/object';
+import type { Subject } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import type Unit from '../Unit';
 import type { AnimationLoopValue } from '../Renderer';
-
-export enum ANIMATION_ACTION {
-  NONE = 'none',
-  IDLE = 'idle',
-  WALK = 'walk',
-  STAIR_FALLBACK = 'stair_fallback',
-  SITTING_IDLE = 'sitting_idle',
-  LAYING_SLEEPING = 'laying_sleeping'
-}
+import { ANIMATION_ACTION } from '../../types/animation';
 
 type Actions = { [key: string]: AnimationAction };
 
 interface Observables extends UnitModuleObservables {
   action$: ReplaySubject<ANIMATION_ACTION>;
+  addAction$: Subject<AnimationAction>;
 }
 
-interface State extends UnitModuleState {
-  action: ANIMATION_ACTION;
-}
+type Options = UnitModuleOptions;
 
-export class AnimationUnitModule extends UnitModule<State, Observables> {
+type State = UnitModuleState;
+
+export class AnimationUnitModule extends UnitModule<
+  Options,
+  State,
+  Observables
+> {
   static override TYPE = 'animation';
 
-  clock: Clock = new Clock();
   mixer!: AnimationMixer;
   actions: Actions = {};
   animations: AnimationClip[] = [];
+  private action: ANIMATION_ACTION;
 
-  constructor(unit: Unit, state: State, debug: boolean) {
-    state.action = ANIMATION_ACTION.NONE;
-    super(unit, state, debug);
+  getCurrentAction() {
+    return this.action;
+  }
+
+  constructor(unit: Unit, options: Options, state: State, debug: boolean) {
+    super(unit, options, state, debug);
+
+    this.action = ANIMATION_ACTION.NONE;
+
     //#region observables
     this.observables.action$ = new ReplaySubject<ANIMATION_ACTION>(1);
-    this.observables.action$.next(this.state.action);
+    this.observables.action$.next(this.action);
+    this.observables.addAction$ = new ReplaySubject<AnimationAction>(1);
     //#endregion
   }
 
@@ -71,11 +77,18 @@ export class AnimationUnitModule extends UnitModule<State, Observables> {
 
     return animationWrapper;
   }
+
+  override destroy(): void {
+    super.destroy();
+    this.mixer?.stopAllAction();
+  }
+
   getAction(name: string) {
     return this.actions[name];
   }
 
   private addAction(name: string, action: AnimationAction) {
+    this.observables.addAction$.next(action);
     this.actions[name] = action;
   }
 
@@ -84,8 +97,8 @@ export class AnimationUnitModule extends UnitModule<State, Observables> {
   }
 
   setAnimationAction(type: ANIMATION_ACTION, duration = 0.2) {
-    if (this.state.action === type) return;
-    this.state.action = type;
+    if (this.action === type) return;
+    this.action = type;
     this.fadeToAction(this.mixer ? this.actions : {}, type, duration);
     this.observables.action$.next(type);
   }

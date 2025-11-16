@@ -2,7 +2,7 @@ import {
   Vector3,
   DoubleSide,
   Mesh,
-  MeshPhongMaterial,
+  MeshStandardMaterial,
   Object3D,
   Vector2
 } from 'three';
@@ -18,9 +18,10 @@ import glbBase from './assets/stair_default_1x1.glb?url';
 import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import type { Default1x1SkinDescription } from './skins';
 import { stairCatalog } from '@cuby-world/stairs/catalog';
-import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
+
 import type { PathPartDescription } from '@cuby-world/app/lib/utils/pathfindng';
 import { ROTATION } from '@cuby-world/app/lib/utils/rotation';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/types/animation';
 
 export default class Default1x1Stair extends Stair {
   static override KEY = 'default_1x1';
@@ -31,7 +32,7 @@ export default class Default1x1Stair extends Stair {
     super({
       ...options,
       size: new Vector2(1, 1),
-      entryPositions: { start: new Vector2(-1, 0), end: new Vector2(-1, 0) }
+      entryPositions: { start: new Vector2(0, -1), end: new Vector2(0, -1) }
     });
   }
 
@@ -51,7 +52,9 @@ export default class Default1x1Stair extends Stair {
         if (skin?.options.color) {
           object.traverse(o => {
             if (o instanceof Mesh) {
-              o.material = new MeshPhongMaterial({
+              o.material = new MeshStandardMaterial({
+                roughness: 1.0,
+                metalness: 0.0,
                 color: skin.options.color,
                 side: DoubleSide
               });

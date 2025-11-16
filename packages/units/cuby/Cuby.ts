@@ -5,7 +5,13 @@ import {
   type Object3D,
   type Texture
 } from 'three';
-import { Mesh, MeshPhongMaterial, Clock, PlaneGeometry, Vector2 } from 'three';
+import {
+  Mesh,
+  MeshStandardMaterial,
+  Clock,
+  PlaneGeometry,
+  Vector2
+} from 'three';
 
 import {
   OBJECT_NAME,
@@ -17,7 +23,7 @@ import type {
   UnitConstructorOptions,
   UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
-import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
+
 import image_spritesheet_sleep from './assets/spritesheet/sleep.png';
 import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
 import {
@@ -38,6 +44,7 @@ import { DEFAULT_PLAYER_SKIN_ID } from '@cuby-world/app/lib/classes/Player';
 import { skinsMap } from './skins';
 import type { TextureMaps } from '@cuby-world/app/lib/types/textures';
 import CharacterUnit from '@cuby-world/app/lib/classes/unit/Character';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/types/animation';
 
 declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
@@ -69,14 +76,13 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
       'name' | 'selectable'
     > = {}
   ) {
-    debugger;
     super({
       ...options,
       name: 'Cuby',
       selectable: true,
       placeable: true,
+      controls: false,
       options: {
-        hasControls: false,
         movement: {
           diagonalMovement: true,
           stepDuration: 550,
@@ -99,14 +105,14 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
 
   sleepTimer?: number;
   override async setup(context: SetupContext) {
-    await super.setup(context);
-
     this.modules.character.offsets.laying_sleeping = new Vector3(
       0.075,
       0.75,
       0
     );
     this.modules.character.offsets.sitting_idle = new Vector3(0.075, 0.75, 0);
+
+    await super.setup(context);
 
     if (this.root.getObjectByName(OBJECT_NAME.MESH_ANIMATION)) {
       const sleepPlain = createSleepPlain();
@@ -164,7 +170,7 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
   textureByCubyState?: {
     [key: string]: TextureMaps;
   };
-  assetsByCubyState?: { [key in CUBY_STATE]: MeshPhongMaterial[] };
+  assetsByCubyState?: { [key in CUBY_STATE]: MeshStandardMaterial[] };
   private _sleepPlain?: Mesh;
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Group();
@@ -186,7 +192,7 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
       if (mesh instanceof Mesh) {
         mesh.receiveShadow = false;
         mesh.castShadow = true;
-        (mesh.material as MeshPhongMaterial).color.set(this.options.color);
+        (mesh.material as MeshStandardMaterial).color.set(this.options.color);
         meshes.push(mesh);
       }
     });
@@ -195,7 +201,7 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
       this.textureByCubyState = loadedTextures;
       const texture = this.textureByCubyState![this.options.state]!;
       this.setTexture(texture, meshRoot);
-      this.observables.materialReady$.next();
+      this.setMaterialReady();
     });
 
     meshRoot.name = OBJECT_NAME.MESH;
@@ -206,7 +212,7 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
 
   override setTexture(textureMaps: TextureMaps, group?: Object3D) {
     super.setTexture(textureMaps, group, (mesh: Mesh) => {
-      (mesh.material as MeshPhongMaterial).onBeforeCompile = (
+      (mesh.material as MeshStandardMaterial).onBeforeCompile = (
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         shader: any
       ) => {
@@ -236,7 +242,7 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
   private setColor(color: string | number, _group?: Object3D) {
     this.root.traverse(child => {
       if (child instanceof Mesh) {
-        (child.material as MeshPhongMaterial).color.set(color);
+        (child.material as MeshStandardMaterial).color.set(color);
       }
     });
   }
@@ -315,13 +321,13 @@ async function setupSleepMaterials(assetLoader: AssetLoader) {
         options: { density: 2, ...options }
       });
 
-      return new MeshPhongMaterial({
+      return new MeshStandardMaterial({
+        roughness: 1.0,
+        metalness: 0.0,
         transparent: true,
         side: 2,
         map: texture,
-        color: 0xffffff,
-        shininess: 100,
-        specular: 0xffffff
+        color: 0xffffff
       });
     })
   );

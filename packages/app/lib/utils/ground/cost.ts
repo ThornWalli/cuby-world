@@ -1,3 +1,5 @@
+import { PATHFINDING_COSTS } from '../pathfindng';
+
 export interface GroundCost {
   VERY_SLOW: number;
   SLOW: number;
@@ -7,9 +9,9 @@ export interface GroundCost {
 }
 
 export const GROUND_COST: GroundCost = {
-  VERY_SLOW: 10,
-  SLOW: 5,
-  NORMAL: 1,
-  FAST: 0.5,
-  VERY_FAST: 0.1
+  VERY_SLOW: PATHFINDING_COSTS.GROUND_VERY_SLOW,
+  SLOW: PATHFINDING_COSTS.GROUND_SLOW,
+  NORMAL: PATHFINDING_COSTS.GROUND_NORMAL,
+  FAST: PATHFINDING_COSTS.GROUND_FAST,
+  VERY_FAST: PATHFINDING_COSTS.GROUND_VERY_FAST
 };

@@ -1,4 +1,4 @@
-import { fromEvent, ReplaySubject } from 'rxjs';
+import { fromEvent, Subject } from 'rxjs';
 import type { Object3D, Intersection as ThreeIntersection } from 'three';
 import { Raycaster, Vector2 } from 'three';
 import type Renderer from '../Renderer';
@@ -26,15 +26,15 @@ OBJECT_USER_DATA.IGNORE_RAYCASTER = 'ignoreRaycaster';
 export interface IntersectionListener {
   id: string;
   meshes: Object3D[];
-  clickIntersect$: ReplaySubject<Intersection>;
-  clickIntersects$: ReplaySubject<Intersection[]>;
-  hoverIntersect$: ReplaySubject<Intersection[]>;
+  clickIntersect$: Subject<Intersection>;
+  clickIntersects$: Subject<Intersection[]>;
+  hoverIntersect$: Subject<Intersection[]>;
   //
-  pointerdown$: ReplaySubject<PointerEvent>;
-  pointerup$: ReplaySubject<PointerEvent>;
-  pointermove$: ReplaySubject<PointerEvent>;
-  pointerenter$: ReplaySubject<PointerEvent>;
-  pointerout$: ReplaySubject<PointerEvent>;
+  pointerdown$: Subject<PointerEvent>;
+  pointerup$: Subject<PointerEvent>;
+  pointermove$: Subject<PointerEvent>;
+  pointerenter$: Subject<PointerEvent>;
+  pointerout$: Subject<PointerEvent>;
 
   addMeshes: (newMeshes: Object3D[]) => void;
   removeMeshes: (removeMeshes: Object3D[]) => void;
@@ -194,16 +194,16 @@ function prepareIntersections(
 }
 
 function createListener() {
-  const hoverIntersect$ = new ReplaySubject<Intersection[]>(0);
-  const clickIntersect$ = new ReplaySubject<Intersection>(0);
-  const clickIntersects$ = new ReplaySubject<Intersection[]>(0);
+  const hoverIntersect$ = new Subject<Intersection[]>();
+  const clickIntersect$ = new Subject<Intersection>();
+  const clickIntersects$ = new Subject<Intersection[]>();
 
   // pointer events
-  const pointerdown$ = new ReplaySubject<PointerEvent>(0);
-  const pointerup$ = new ReplaySubject<PointerEvent>(0);
-  const pointermove$ = new ReplaySubject<PointerEvent>(0);
-  const pointerenter$ = new ReplaySubject<PointerEvent>(0);
-  const pointerout$ = new ReplaySubject<PointerEvent>(0);
+  const pointerdown$ = new Subject<PointerEvent>();
+  const pointerup$ = new Subject<PointerEvent>();
+  const pointermove$ = new Subject<PointerEvent>();
+  const pointerenter$ = new Subject<PointerEvent>();
+  const pointerout$ = new Subject<PointerEvent>();
 
   const id = crypto.randomUUID();
   const listener: IntersectionListener = {

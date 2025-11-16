@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 import { Mesh, Object3D, Vector3 } from 'three';
-import { markRaw, ref, watch } from 'vue';
+import { markRaw, onUnmounted, ref, watch } from 'vue';
 import { ReplaySubject } from 'rxjs';
 
 import type App from '../../lib/classes/App';
@@ -42,6 +42,7 @@ const root = ref<Object3D>(new Object3D());
 const animationLoop$ = new ReplaySubject<AnimationLoopValue>(1);
 animationLoop$.next({ time: 0, delta: 0 });
 
+const ground = ref<Ground>();
 async function setup(data: GroundPreview) {
   const geometryMap = await loadGroundGeometries(assetLoader, groundGlb);
   const skin = groundCatalog
@@ -52,7 +53,7 @@ async function setup(data: GroundPreview) {
     throw new Error(`Ground skin ${data.skin} not found in catalog`);
   }
 
-  const ground = new Ground({
+  ground.value = new Ground({
     position: new Vector3(0, 0, 0),
     color: skin.color,
     texture:
@@ -62,12 +63,12 @@ async function setup(data: GroundPreview) {
       )
   });
 
-  const geometry = ground.createGeometry(geometryMap);
+  const geometry = ground.value.createGeometry(geometryMap);
   const material = await createMaterial(
-    ground.texture,
-    ground.type,
-    ground.color,
-    ground.opacity,
+    ground.value.texture,
+    ground.value.type,
+    ground.value.color,
+    ground.value.opacity,
     {
       assetLoader,
       textureMap: groundTextureMap
@@ -88,6 +89,12 @@ watch(
     root.value = markRaw(await setup(data));
   }
 );
+
+onUnmounted(() => {
+  ground.value?.destroy();
+  root.value.remove();
+  animationLoop$.unsubscribe();
+});
 </script>
 
 <script lang="ts">

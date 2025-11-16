@@ -1,15 +1,7 @@
 import type { Observable } from 'rxjs';
 import { concatMap, ReplaySubject, Subscription } from 'rxjs';
-import type { Vector2 } from 'three';
-import {
-  CubeTexture,
-  Texture,
-  CubeTextureLoader,
-  NearestFilter,
-  SRGBColorSpace,
-  TextureLoader,
-  CanvasTexture
-} from 'three';
+import type { Vector2, CubeTexture, Texture } from 'three';
+import { CubeTextureLoader, TextureLoader, CanvasTexture } from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
@@ -191,11 +183,11 @@ function loadTexture(loaders: Loaders) {
             }
           }
 
-          if (result instanceof Texture || result instanceof CubeTexture) {
-            result.colorSpace = SRGBColorSpace;
-            result.minFilter = NearestFilter;
-            result.magFilter = NearestFilter;
-          }
+          // if (result instanceof Texture || result instanceof CubeTexture) {
+          //   result.colorSpace = SRGBColorSpace;
+          //   result.minFilter = NearestFilter;
+          //   result.magFilter = NearestFilter;
+          // }
           resolve(result);
           return [id, result] as [string, Texture | CubeTexture];
         }

@@ -49,6 +49,7 @@ const preparedId = computed(() => $props.id || defaultId);
   }
 
   & label {
+    font-size: 14px;
     user-select: none;
 
     &.colon {
@@ -63,7 +64,10 @@ const preparedId = computed(() => $props.id || defaultId);
   }
 
   &.mode-compact {
-    font-size: 12px;
+    & label {
+      font-size: 12px;
+    }
+
     color: #fff;
   }
 }

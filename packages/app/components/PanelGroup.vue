@@ -47,14 +47,18 @@ export enum PANEL_GROUP_DIRECTION {
   container-type: size;
   pointer-events: none;
 
-  & > :deep(.panel-row) {
+  & :deep(.panel-row) {
     display: flex;
     flex-direction: row;
     gap: var(--panel-gap);
     align-items: flex-start;
+
+    &:deep(.stretch) {
+      align-items: stretch;
+    }
   }
 
-  & > :deep(.panel-column) {
+  & :deep(.panel-column) {
     display: flex;
     flex-direction: column;
     gap: var(--panel-gap);

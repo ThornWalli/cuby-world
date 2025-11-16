@@ -14,7 +14,7 @@
 
 <script lang="ts" setup>
 import { Object3D, Vector3 } from 'three';
-import { markRaw, ref, watch } from 'vue';
+import { markRaw, onUnmounted, ref, watch } from 'vue';
 import { ReplaySubject } from 'rxjs';
 
 import type App from '../../lib/classes/App';
@@ -72,7 +72,7 @@ function getWallDescription({
 const animationLoop$ = new ReplaySubject<AnimationLoopValue>(1);
 animationLoop$.next({ time: 0, delta: 1000 });
 
-let wall: Wall;
+const wall = ref<Wall>();
 const description = ref<WallDescription>();
 async function setupWall({
   extensions,
@@ -84,8 +84,8 @@ async function setupWall({
   }[];
   skins?: [string, string];
 }) {
-  if (wall) {
-    wall.destroy();
+  if (wall.value) {
+    wall.value.destroy();
   }
 
   extensions = extensions ?? [];
@@ -106,13 +106,15 @@ async function setupWall({
         [ext.extension, ext.state] as [typeof WallExtension, WallExtensionState]
     );
 
-  wall = new Wall({
-    center: true,
-    ...description.value,
-    extensions: preparedExtensions
-  } as WallConstructorOptions);
+  wall.value = markRaw(
+    new Wall({
+      center: true,
+      ...description.value,
+      extensions: preparedExtensions
+    } as WallConstructorOptions)
+  );
 
-  wall.update([
+  wall.value.update([
     {
       ...getWallDescription({ skins }),
       position: new Vector3(0, 0, -1)
@@ -123,12 +125,12 @@ async function setupWall({
     }
   ]);
 
-  await wall.setup({
+  await wall.value.setup({
     animationLoop$,
     wallGeometryMap
   });
 
-  const root = wall.root;
+  const root = wall.value.root;
 
   root.position.set(0, 0, 0);
   root.rotation.set(0, -Math.PI / 2, 0);
@@ -146,6 +148,12 @@ watch(
     root.value = await setupWall(data);
   }
 );
+
+onUnmounted(() => {
+  wall.value?.destroy();
+  root.value.remove();
+  animationLoop$.unsubscribe();
+});
 </script>
 
 <script lang="ts">

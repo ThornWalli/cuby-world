@@ -23,10 +23,16 @@ import { catalog } from '@cuby-world/units';
 import type { RoomDescription } from '../../types/room';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 import { OBJECT_NAME } from '../../utils/object';
-import { TELEPORT_TYPE } from '../../types/teleport';
 import type Unit from '../Unit';
 import type { IntersectionListener } from '../rendererModule/Intersection';
 import CharacterUnitModule from '../unitModule/Character';
+import TeleporterUnit from '../unit/Teleporter';
+import type { UnitIdentifier } from '../Unit';
+import BedUnitModule from '../unitModule/Bed';
+import ChairUnitModule from '../unitModule/Chair';
+import { TELEPORTER_TYPE } from '../unitModule/Teleporter';
+import BenchUnitModule from '../unitModule/Bench';
+import SlotUnitModule from '../unitModule/Slot';
 
 interface Observables extends AppModuleObservables {
   room$: Observable<Room | undefined>;
@@ -73,17 +79,16 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     await room.setupModules();
 
     await Promise.all(
-      Object.values(room.modules).map(async module => {
-        await module.setup();
-      })
+      Object.values(room.modules).map(module => module.setup())
     );
 
     //#region units
 
     const units = [];
     for (const {
+      id,
       unit: key,
-      options: { position, rotation, options, moduleStates }
+      options: { skin, position, rotation, moduleStates }
     } of roomDescription.units) {
       // }
       // const units = roomDescription.units.map(
@@ -97,9 +102,10 @@ export default class RoomAppModule extends AppModule<State, Observables> {
       }
       const unit = new UnitClass({
         name: UnitClass.NAME,
+        id,
+        skin,
         position,
         rotation,
-        options,
         moduleStates
       });
 
@@ -110,6 +116,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     //#endregion
 
     await room.modules.units.setupUnits(units);
+
     room.root.name = roomDescription.info.name;
     return room;
   }
@@ -118,45 +125,85 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     return this.state.room;
   }
 
-  async addPlayer(player: Player) {
+  async addPlayer(player: Player, teleportUnitId?: UnitIdentifier) {
     const room = this.getRoom()!;
-    const teleport = room.modules.teleport.getTeleportsByType(
-      TELEPORT_TYPE.ENTRANCE
-    )[0];
-    if (!teleport) {
-      throw new Error('No entrance teleport found in the room');
-    }
+
+    // await player.recreateUnit();
 
     /**
      * Player Unit
      */
 
-    player.observables.unit$.subscribe(async ({ unit, lastUnit }) => {
-      if (lastUnit) {
-        await room.modules.units.remove(lastUnit);
-        lastUnit.destroy();
-      }
+    this.roomSubscription?.add(
+      player.observables.unit$.subscribe(async ({ unit, lastUnit }) => {
+        if (lastUnit) {
+          await room.modules.units.remove(lastUnit);
+          lastUnit.destroy();
+        }
 
-      unit.setPosition(teleport.position);
-      unit.setRotation(teleport.rotation);
+        await room.modules.units.add(unit);
 
-      await room.modules.units.add(unit);
+        let unitTeleporter = null;
+        if (teleportUnitId) {
+          const teleportUnit =
+            room.modules.units.getById<TeleporterUnit>(teleportUnitId);
+          if (!teleportUnit) {
+            throw new Error(
+              `Teleporter unit with id ${teleportUnitId} not found in the room`
+            );
+          }
+          unitTeleporter = teleportUnit;
+        } else if (unit.getPosition().equals(new Vector3(0, 0, 0))) {
+          const entranceTeleporter = room.modules.units
+            .getUnits()
+            .filter(unit => unit instanceof TeleporterUnit)
+            .find(
+              teleporterUnit =>
+                teleporterUnit.modules.teleporter.state.type ==
+                TELEPORTER_TYPE.ENTRANCE
+            ) as TeleporterUnit;
 
-      if (player.client) {
-        this.app.modules.selection.setSelectedUnit(unit);
+          unitTeleporter = entranceTeleporter;
+        }
 
-        this.app.renderer.updateCamera(unit.getScenePosition());
-        this.app.renderer.controls.object.position.copy(
-          this.app.renderer.camera.position
-        );
-        this.app.renderer.controls.target.copy(unit.getScenePosition());
+        if (player.client) {
+          this.app.modules.selection.setSelectedUnit(unit);
+          this.app.renderer.updateCamera(
+            (unitTeleporter || unit).getScenePosition()
+          );
 
-        // this.app.modules.unitFocus.setFocusedUnit(unit);
-      }
-    });
+          this.app.renderer.controls.object.position.copy(
+            this.app.renderer.camera.position
+          );
+          this.app.renderer.controls.target.copy(
+            (unitTeleporter || unit).getScenePosition()
+          );
+
+          this.app.modules.unitFocus.setPlayerAsFocusedUnit();
+        }
+
+        if (unitTeleporter) {
+          await unitTeleporter.modules.teleporter.leave(unit);
+        }
+      })
+    );
 
     if (player.state.characterType) {
       await player.setCharacterType(player.state.characterType);
+    }
+  }
+
+  removeRoom() {
+    if (this.roomSubscription) {
+      const roomModule = this.app.modules.room;
+      const renderer = this.app.renderer;
+      this.roomSubscription.unsubscribe();
+      const lastRoom = roomModule.getRoom();
+      if (lastRoom) {
+        renderer.scene.remove(lastRoom.root);
+      }
+      lastRoom?.destroy();
+      roomModule.setRoom(undefined);
     }
   }
 
@@ -167,33 +214,17 @@ export default class RoomAppModule extends AppModule<State, Observables> {
   async fromDescription(roomDescription: RoomDescription) {
     const app = this.app;
     const renderer = app.renderer;
-    const {
-      room: roomModule,
-      player: playerModule,
-      unitFocus: unitFocusModule
-    } = app.modules!;
+    const { room: roomModule, unitFocus: unitFocusModule } = app.modules!;
+
     const room = await RoomAppModule.roomFromDescription(app, roomDescription);
-    // Clean up previous room if it exists
-    if (this.roomSubscription) {
-      this.roomSubscription.unsubscribe();
-      const lastRoom = roomModule.getRoom();
-      if (lastRoom) {
-        renderer.scene.remove(lastRoom.root);
-      }
-      lastRoom?.destroy();
-      roomModule.setRoom(undefined);
-    }
 
     roomModule.setRoom(room);
     renderer.scene.add(room.root);
 
     this.roomSubscription = this.registerRoomSubscriptions(app);
 
-    playerModule.observables.addPlayer$.subscribe(player => {
-      this.addPlayer(player);
-    });
-    playerModule.getPlayers().forEach(player => {
-      this.addPlayer(player);
+    room.modules.units.getUnits().forEach(unit => {
+      this.registerUnitIntersection(unit);
     });
 
     this.subscription.add(
@@ -438,14 +469,14 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         return;
       }
 
+      const room = app.modules.room.getRoom()!;
+
       if (
         preparedPositions[0] &&
         preparedPositions[0].wallExtension &&
         preparedPositions[0].wall
       ) {
-        const wall = app.modules.room
-          .getRoom()
-          ?.modules.wall.getWallById(preparedPositions[0].wall);
+        const wall = room.modules.wall.getWallById(preparedPositions[0].wall);
         const extension = wall?.getExtensionById(
           preparedPositions[0].wallExtension
         );
@@ -455,14 +486,15 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         }
       } else {
         preparedPositions = preparedPositions.filter(pos => !pos.wall);
-        const { unit, worldPosition, object } = preparedPositions[0]!;
+        let unit;
+        const { unit: u, worldPosition, object } = preparedPositions[0]!;
+        unit = u;
 
         const usedUnit = player.unit
           ?.getModule<CharacterUnitModule>(CharacterUnitModule.TYPE)
           .getUsedUnit();
 
         if (object && isStair(object)) {
-          console.log('Stair selected');
           const stair = getStairFromObject(app, object);
           if (stair) {
             const position = Object.values(stair?.getEntryPositions()).find(
@@ -478,9 +510,32 @@ export default class RoomAppModule extends AppModule<State, Observables> {
           !usedUnit?.equals(player.unit) &&
           !usedUnit?.getPosition().equals(worldPosition)
         ) {
-          const playerUnit = player.unit!;
-          await playerUnit.modules.movement.resolveMoveTo(worldPosition!);
+          const units = room.modules.units.getUnitsByPosition(worldPosition);
+          const slotUnit = units.find(u =>
+            u.getModuleByType<SlotUnitModule>(SlotUnitModule)
+          );
+
+          unit = slotUnit || unit;
           app.modules.selection.setSelectedUnit(null);
+          const playerUnit = player.unit!;
+          if (unit) {
+            const position =
+              unit
+                .getModuleByType<SlotUnitModule>(SlotUnitModule)
+                ?.findFreeSlotPosition(worldPosition) || unit.position;
+
+            await playerUnit.modules.movement.resolveMoveTo(
+              position || unit.getPosition(),
+              unit,
+              position
+            );
+          } else {
+            console.log('FFFFF', !!unit);
+            await playerUnit.modules.movement.resolveMoveTo(
+              worldPosition!,
+              unit
+            );
+          }
         } else if (unit) {
           app.modules.selection.setSelectedUnit(unit);
         } else if (
@@ -489,8 +544,35 @@ export default class RoomAppModule extends AppModule<State, Observables> {
           !usedUnit?.equals(player.unit) &&
           !usedUnit?.getPosition().equals(worldPosition)
         ) {
+          const units = room.modules.units.getUnitsByPosition(worldPosition);
+          const unit = units.find(u => {
+            console.log(
+              u,
+              BenchUnitModule.TYPE,
+              u.modules,
+              BenchUnitModule.TYPE in u.modules
+            );
+            return (
+              BedUnitModule.TYPE in u.modules ||
+              ChairUnitModule.TYPE in u.modules ||
+              BenchUnitModule.TYPE in u.modules
+            );
+          });
+
           app.modules.selection.setSelectedUnit(null);
-          player.moveTo(worldPosition);
+          if (unit) {
+            let position = unit
+              .getModuleByType<SlotUnitModule>(SlotUnitModule)
+              .findFreeSlotPosition(worldPosition);
+            if (!position) {
+              throw new Error('No free slot position found');
+            }
+            // position = position.clone().add(unit.getPosition());
+            position = position || unit.position;
+            player.moveTo(position || unit.getPosition(), unit, position);
+          } else {
+            player.moveTo(worldPosition, unit);
+          }
         }
       }
     } else {

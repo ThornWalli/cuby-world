@@ -42,12 +42,6 @@ export function parseRoomDescription(
     gridSize: Array.isArray(room.gridSize)
       ? new Vector2().fromArray(room.gridSize)
       : room.gridSize,
-    teleports: room.teleports.map(teleport => ({
-      ...teleport,
-      position: Array.isArray(teleport.position)
-        ? new Vector3().fromArray(teleport.position)
-        : teleport.position
-    })),
     walls: (room.walls ?? []).map(wall => ({
       ...wall,
       position: Array.isArray(wall.position)

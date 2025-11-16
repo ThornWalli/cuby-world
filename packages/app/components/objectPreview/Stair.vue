@@ -14,7 +14,7 @@
 
 <script lang="ts" setup>
 import { Object3D, Vector3 } from 'three';
-import { markRaw, ref, watch } from 'vue';
+import { markRaw, onUnmounted, ref, watch } from 'vue';
 import { ReplaySubject } from 'rxjs';
 
 import type App from '../../lib/classes/App';
@@ -24,6 +24,7 @@ import CwObjectPreview from '../ObjectPreview.vue';
 
 import { ROTATION } from '../../lib/utils/rotation';
 import { resolveStair } from '../../lib/utils/stair';
+import type Stair from '@cuby-world/app/lib/classes/Stair';
 
 const $props = defineProps<{
   app: App;
@@ -38,6 +39,7 @@ const root = ref<Object3D>(new Object3D());
 const animationLoop$ = new ReplaySubject<AnimationLoopValue>(1);
 animationLoop$.next({ time: 0, delta: 0 });
 
+const stair = ref<Stair>();
 async function setup(data: StairPreview) {
   const root = new Object3D();
 
@@ -48,14 +50,14 @@ async function setup(data: StairPreview) {
     rotation: ROTATION.EAST
   });
 
-  const stair = new Stair(description);
+  stair.value = markRaw(new Stair(description));
 
-  await stair.setup({
+  await stair.value.setup({
     animationLoop$
   });
-  root.position.set(0 - Math.round(stair.size.y / 3), 0, 0);
+  root.position.set(0 - Math.round(stair.value.size.y / 3), 0, 0);
 
-  root.add(stair.root);
+  root.add(stair.value.root);
   return root;
 }
 
@@ -67,6 +69,12 @@ watch(
     root.value = markRaw(await setup(data));
   }
 );
+
+onUnmounted(() => {
+  stair.value?.destroy();
+  root.value.remove();
+  animationLoop$.unsubscribe();
+});
 </script>
 
 <script lang="ts">

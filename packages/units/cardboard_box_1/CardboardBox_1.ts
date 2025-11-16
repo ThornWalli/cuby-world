@@ -43,21 +43,6 @@ export default class CardboardBox_1 extends Unit<CardboardBoxOptions> {
 
     meshRoot.add(object);
 
-    // assetLoader
-    //   .add<Texture>({
-    //     loader: LOADER.TEXTURE,
-    //     value: image_cuby_post
-    //   })
-    //   .then(texture => {
-    //     this.setTexture(
-    //       {
-    //         colorMap: texture
-    //       },
-    //       meshRoot
-    //     );
-    //     this.observables.materialReady$.next();
-    //   });
-
     Promise.all([
       assetLoader.add<Texture>({
         loader: LOADER.TEXTURE,
@@ -79,21 +64,18 @@ export default class CardboardBox_1 extends Unit<CardboardBoxOptions> {
         loader: LOADER.TEXTURE,
         value: image_cuby_post_specular
       })
-    ]).then(
-      ([colorMap, normalMap, displacementMap, ambientMap, specularMap]) => {
-        this.setTexture(
-          {
-            colorMap,
-            normalMap,
-            displacementMap,
-            ambientMap,
-            specularMap
-          },
-          meshRoot
-        );
-        this.observables.materialReady$.next();
-      }
-    );
+    ]).then(([colorMap, normalMap, displacementMap, ambientMap]) => {
+      this.setTexture(
+        {
+          colorMap,
+          normalMap,
+          displacementMap,
+          ambientMap
+        },
+        meshRoot
+      );
+      this.setMaterialReady();
+    });
 
     meshRoot.traverse(child => {
       child.castShadow = true;

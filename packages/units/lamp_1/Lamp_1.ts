@@ -95,7 +95,7 @@ export default class Lamp_1 extends Unit<
     mesh.position.set(0, 0.5, 0);
 
     setupMaterials(assetLoader, mesh, () => {
-      this.observables.materialReady$.next();
+      this.setMaterialReady();
     });
 
     const light = new PointLight(0xffeeaa, 1, 2);

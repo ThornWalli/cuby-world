@@ -1,4 +1,5 @@
-import { ReplaySubject, Subject, switchMap } from 'rxjs';
+import type { UnitIdentifier } from './../Unit';
+import { ReplaySubject, Subject } from 'rxjs';
 import AppModule, {
   type AppModuleObservables,
   type AppModuleState
@@ -8,7 +9,7 @@ import type App from '../App';
 
 interface Observables extends AppModuleObservables {
   currentPlayer$: ReplaySubject<Player>;
-  addPlayer$: Subject<Player>;
+  addPlayer$: Subject<{ player: Player; teleporterUnitId?: UnitIdentifier }>;
   removePlayer$: Subject<Player>;
 }
 
@@ -26,7 +27,10 @@ export default class PlayerAppModule extends AppModule<State, Observables> {
     super(app);
     //#region observables
     this.observables.currentPlayer$ = new ReplaySubject<Player>(0);
-    this.observables.addPlayer$ = new Subject<Player>();
+    this.observables.addPlayer$ = new Subject<{
+      player: Player;
+      teleporterUnitId?: UnitIdentifier;
+    }>();
     this.observables.removePlayer$ = new Subject<Player>();
     //#endregion
   }
@@ -51,25 +55,25 @@ export default class PlayerAppModule extends AppModule<State, Observables> {
     this.state.currentPlayer = player;
     this.observables.currentPlayer$.next(player);
     // TODO: Ist das hier richtig platziert?
-    this.subscription.add(
-      this.state.currentPlayer.observables.unit$
-        .pipe(
-          switchMap(({ unit }) => unit.modules.movement.observables.moveEnd$)
-        )
-        .subscribe(() => {
-          const unit = this.state.currentPlayer!.unit!;
-          const room = this.app.modules.room.getRoom()!;
+    // this.subscription.add(
+    //   this.state.currentPlayer.observables.unit$
+    //     .pipe(
+    //       switchMap(({ unit }) => unit.modules.movement.observables.moveEnd$)
+    //     )
+    //     .subscribe(() => {
+    //       const unit = this.state.currentPlayer!.unit!;
+    //       const room = this.app.modules.room.getRoom()!;
 
-          //#region teleport
-          const teleport = room.modules.teleport.getTeleportByPosition(
-            unit.getPosition()
-          );
-          console.log('Player moved!', teleport);
+    //       //#region teleport
+    //       const teleport = room.modules.teleport.getTeleportByPosition(
+    //         unit.getPosition()
+    //       );
+    //       console.log('Player moved!', teleport);
 
-          this.app.modules.teleport.resolveTeleport(teleport);
-          //#endregion
-        })
-    );
+    //       this.app.modules.teleport.resolveTeleport(teleport);
+    //       //#endregion
+    //     })
+    // );
 
     this.subscription.add(
       this.state.currentPlayer.observables.playerSettings$.subscribe(
@@ -86,9 +90,18 @@ export default class PlayerAppModule extends AppModule<State, Observables> {
     return this.state.players;
   }
 
-  async addPlayer(player: Player) {
+  async addPlayer({
+    player,
+    teleporterUnitId
+  }: {
+    player: Player;
+    teleporterUnitId?: UnitIdentifier;
+  }) {
     this.state.players.push(player);
-    this.observables.addPlayer$.next(player);
+    this.observables.addPlayer$.next({
+      player,
+      teleporterUnitId
+    });
     if (player.client) {
       this.setCurrentPlayer(player);
     }

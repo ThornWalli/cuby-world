@@ -103,6 +103,12 @@ export default class PlannerController<
     //#endregion
   }
 
+  override destroy(): void {
+    this.interactionSubscription.unsubscribe();
+    this.abort();
+    super.destroy();
+  }
+
   override setup() {
     super.setup();
 

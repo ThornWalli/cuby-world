@@ -299,9 +299,21 @@ export default class WallModule extends RoomModule<
     this.subscription.add(
       app.modules.player.observables.currentPlayer$
         .pipe(
-          switchMap(player => player.observables.unit$),
-          switchMap(({ unit }) => unit.observables.ready$),
-          switchMap(unit => unit.observables.position$),
+          switchMap(player => {
+            console.log('player.observables.unit$', player.observables.unit$);
+            return player.observables.unit$;
+          }),
+          switchMap(({ unit }) => {
+            console.log('unit.observables.ready$', unit.observables.ready$);
+            return unit.observables.ready$;
+          }),
+          switchMap(unit => {
+            console.log(
+              'unit.observables.position$',
+              unit.observables.position$
+            );
+            return unit.observables.position$;
+          }),
           map(position => position.clone().ceil()),
           distinctUntilChanged((a, b) => a.equals(b)),
           concatMap(async () => {
@@ -350,16 +362,18 @@ export default class WallModule extends RoomModule<
         })
     );
 
-    app.modules.player.observables.currentPlayer$
-      .pipe(
-        switchMap(player => player.observables.unit$),
-        switchMap(({ unit }) => unit.observables.ready$),
-        map(unit => unit.root),
-        filter(Boolean)
-      )
-      .subscribe(mesh => {
-        this.state.targets.push(mesh);
-      });
+    this.subscription.add(
+      app.modules.player.observables.currentPlayer$
+        .pipe(
+          switchMap(player => player.observables.unit$),
+          switchMap(({ unit }) => unit.observables.ready$),
+          map(unit => unit.root),
+          filter(Boolean)
+        )
+        .subscribe(mesh => {
+          this.state.targets.push(mesh);
+        })
+    );
 
     this.subscription.add(
       app.observables.mode$

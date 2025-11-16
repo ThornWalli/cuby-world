@@ -73,11 +73,11 @@ import {
 } from '@cuby-world/app/lib/classes/Player';
 import type App from '@cuby-world/app/lib/classes/App';
 
-import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
 import { catalog } from '@cuby-world/units';
 import { Vector3 } from 'three';
 import { ShadowQuality } from '@cuby-world/app/lib/classes/Renderer';
 import type { PlayerSettings } from '@cuby-world/app/lib/types/player';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/types/animation';
 
 const formEl = ref<HTMLFormElement | null>(null);
 

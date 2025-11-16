@@ -1,5 +1,5 @@
 import type { Color, Object3D } from 'three';
-import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
+import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 
 import Unit, {
   type UnitConstructorOptions,
@@ -37,7 +37,11 @@ export default class Block extends Unit<BlockOptions> {
   }
 
   override async createMesh() {
-    const material = new MeshPhongMaterial({ color: this.options.color });
+    const material = new MeshStandardMaterial({
+      roughness: 1.0,
+      metalness: 0.0,
+      color: this.options.color
+    });
 
     const size = this.getSize();
     const geometry = new BoxGeometry(size.z, size.y, size.x);
@@ -49,7 +53,8 @@ export default class Block extends Unit<BlockOptions> {
 
     // mesh.add(helper());
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
+
     return mesh;
   }
 }

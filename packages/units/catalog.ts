@@ -9,6 +9,9 @@ import { skinsMap as wallLamp_1_skinMap } from './wall_lamp_1/skins';
 import { skinsMap as doormate_1_skinMap } from './doormate_1/skins';
 import { skinsMap as lamp_1_skinMap } from './lamp_1/skins';
 import { skinsMap as cardboardBox_1_skinMap } from './cardboard_box_1/skins';
+import { skinsMap as sign_protest_1_skinMap } from './sign_protest_1/skins';
+import { skinsMap as sign_street_1_skinMap } from './sign_street_1/skins';
+import { skinsMap as teleporter_1_skinMap } from './teleporter_1/skins';
 
 export const items: UnitItem[] = [
   {
@@ -21,6 +24,32 @@ export const items: UnitItem[] = [
     skinMap: doormate_1_skinMap,
     instance: () =>
       import('./doormate_1/Doormate_1').then(m => m.default as typeof Unit),
+    options: {}
+  },
+  {
+    id: 'sign_protest_1',
+    name: 'Sign Protest 1',
+    tags: [CATALOG_TAG.DECORATION],
+    skins: Array.from(sign_protest_1_skinMap.values()),
+    defaultSkinId: sign_protest_1_skinMap.get('default')!.id,
+    skinMap: sign_protest_1_skinMap,
+    instance: () =>
+      import('./sign_protest_1/SignProtest_1').then(
+        m => m.default as typeof Unit
+      ),
+    options: {}
+  },
+  {
+    id: 'sign_street_1',
+    name: 'Sign Street 1',
+    tags: [CATALOG_TAG.DECORATION],
+    skins: Array.from(sign_street_1_skinMap.values()),
+    defaultSkinId: sign_street_1_skinMap.get('default')!.id,
+    skinMap: sign_street_1_skinMap,
+    instance: () =>
+      import('./sign_street_1/SignStreet_1').then(
+        m => m.default as typeof Unit
+      ),
     options: {}
   },
   {
@@ -98,6 +127,30 @@ export const items: UnitItem[] = [
     options: {}
   },
   {
+    id: 'bench_1x2_1',
+    name: 'Bench 1x2 Basic',
+    description: 'A basic bench for seating.',
+    tags: [CATALOG_TAG.FURNITURE],
+    defaultSkinId: 'default',
+    skinMap: new Map(),
+    skins: [],
+    instance: () =>
+      import('./bench_1x2_1/Bench_1x2_1').then(m => m.default as typeof Unit),
+    options: {}
+  },
+  {
+    id: 'bench_1x3_1',
+    name: 'Bench 1x3 Basic',
+    description: 'A basic bench for seating.',
+    tags: [CATALOG_TAG.FURNITURE],
+    defaultSkinId: 'default',
+    skinMap: new Map(),
+    skins: [],
+    instance: () =>
+      import('./bench_1x3_1/Bench_1x3_1').then(m => m.default as typeof Unit),
+    options: {}
+  },
+  {
     id: 'table_1',
     name: 'Table Basic',
     description: 'A basic table for various uses.',
@@ -147,6 +200,32 @@ export const items: UnitItem[] = [
     tags: ['player'],
     instance: () =>
       import('./poly_man/PolyMan').then(m => m.default as typeof Unit),
+    options: {}
+  },
+  {
+    id: 'teleporter_1',
+    name: 'Teleporter',
+    description: 'A teleporter for teleporting.',
+    tags: [CATALOG_TAG.FURNITURE],
+    skins: Array.from(teleporter_1_skinMap.values()),
+    defaultSkinId: teleporter_1_skinMap.get('default')!.id,
+    skinMap: teleporter_1_skinMap,
+    instance: () =>
+      import('./teleporter_1/Teleporter_1').then(m => m.default as typeof Unit),
+    options: {}
+  },
+  {
+    id: 'teleporter_default',
+    name: 'Teleporter Default',
+    description: 'A default teleporter for teleporting.',
+    tags: [CATALOG_TAG.FURNITURE],
+    defaultSkinId: 'default',
+    skinMap: new Map(),
+    skins: [],
+    instance: () =>
+      import('./teleporter_default/Teleporter_Default').then(
+        m => m.default as typeof Unit
+      ),
     options: {}
   }
 ];

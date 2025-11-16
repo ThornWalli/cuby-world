@@ -88,7 +88,8 @@ export type StickyWrapperValue = Object3D | Vector3 | null | undefined;
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 10;
+
+  /* z-index: 10; */
   transform: translate(100%, -125%)
     translate(
       calc(var(--translate-x, 0) * 1px),

@@ -1,5 +1,5 @@
 import type { Object3D } from 'three';
-import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
+import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 
 import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import Unit, {
@@ -28,7 +28,11 @@ export default class Box extends Unit<BoxOptions> {
   }
 
   override async createMesh() {
-    const material = new MeshPhongMaterial({ color: 0xff0000 });
+    const material = new MeshStandardMaterial({
+      roughness: 1.0,
+      metalness: 0.0,
+      color: 0xff0000
+    });
 
     const size = this.getSize();
     const ratio = 14 / 20;
@@ -39,7 +43,8 @@ export default class Box extends Unit<BoxOptions> {
     mesh.castShadow = true;
     mesh.position.set(0, (size.y * ratio) / 2, 0);
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
+
     return mesh;
   }
 }

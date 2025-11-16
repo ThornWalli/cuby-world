@@ -1,6 +1,7 @@
 import { ReplaySubject } from 'rxjs';
 import UnitModule, {
   type UnitModuleObservables,
+  type UnitModuleOptions,
   type UnitModuleState
 } from '../UnitModule';
 import { normalizeMaterialList } from '../../utils/material';
@@ -18,15 +19,20 @@ interface Observables extends UnitModuleObservables {
   abortPlace$: ReplaySubject<void>;
 }
 
+type Options = UnitModuleOptions;
 type State = UnitModuleState;
 
-export class PlacementUnitModule extends UnitModule<State, Observables> {
+export class PlacementUnitModule extends UnitModule<
+  Options,
+  State,
+  Observables
+> {
   static override TYPE = 'placement';
 
   lastMaterial = new Map<string, TransparentDescription>();
 
-  constructor(unit: Unit, state: State, debug: boolean) {
-    super(unit, state, debug);
+  constructor(unit: Unit, options: Options, state: State, debug: boolean) {
+    super(unit, options, state, debug);
     this.observables.startPlace$ = new ReplaySubject<void>(1);
     this.observables.stopPlace$ = new ReplaySubject<void>(1);
     this.observables.abortPlace$ = new ReplaySubject<void>(1);
@@ -57,7 +63,6 @@ export class PlacementUnitModule extends UnitModule<State, Observables> {
         normalizeMaterialList(obj.material).forEach(material => {
           const last = this.lastMaterial.get(material.uuid);
           if (last) {
-            console.log('XXXX', last);
             material.transparent = last.transparent;
             material.opacity = last.opacity;
           }

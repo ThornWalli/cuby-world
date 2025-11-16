@@ -1,4 +1,5 @@
 import type {
+  SetupContext,
   UnitConstructorOptions,
   UnitModuleList,
   UnitModules,
@@ -23,6 +24,21 @@ export default class WallUnit<
     moduleList: ModuleList = [] as unknown as ModuleList
   ) {
     moduleList.push(WallUnitModule);
-    super(options, moduleList);
+    super(
+      {
+        accessible: false,
+        ...options
+      },
+      moduleList
+    );
+  }
+
+  override async setup(context: SetupContext) {
+    await super.setup(context);
+    this.subscription.add(
+      this.modules.wall.observables.hasWall.subscribe(wall => {
+        this.accessible = wall;
+      })
+    );
   }
 }

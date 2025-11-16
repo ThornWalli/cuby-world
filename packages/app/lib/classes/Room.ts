@@ -10,11 +10,9 @@ import type { AnimationLoopValue } from './Renderer';
 import RoofModule from './roomModule/Roof';
 import FloorModule from './roomModule/Floor';
 import StairModule from './roomModule/Stair';
-import TeleportModule from './roomModule/Teleport';
 
 type RoomModuleList = (
   | typeof GroundModule
-  | typeof TeleportModule
   | typeof WallModule
   | typeof StairModule
   | typeof RoofModule
@@ -25,7 +23,6 @@ type RoomModuleList = (
 
 interface RoomModules {
   ground: GroundModule;
-  teleport: TeleportModule;
   wall: WallModule;
   stair: StairModule;
   roof: RoofModule;
@@ -61,16 +58,11 @@ export default class Room<Modules extends RoomModules = RoomModules> {
     const moduleList = this.moduleList;
     moduleList.push(GroundModule);
     moduleList.push(WallModule);
-    moduleList.push(TeleportModule);
     moduleList.push(SelectionMode);
     moduleList.push(StairModule);
     moduleList.push(UnitsModule);
     moduleList.push(FloorModule);
     moduleList.push(RoofModule);
-
-    //#region editor
-
-    //#endregion
 
     //#region Modules
     const preparedModules = moduleList.map(ModuleClass => {
@@ -82,10 +74,8 @@ export default class Room<Modules extends RoomModules = RoomModules> {
   }
 
   destroy() {
-    Object.values(this.modules).forEach(module => {
-      module.destroy();
-    });
     this.app.renderer.scene.remove(this.root);
+    Object.values(this.modules).forEach(module => module.destroy());
   }
 
   get id() {
@@ -129,9 +119,6 @@ export default class Room<Modules extends RoomModules = RoomModules> {
         description: this.description?.info.description ?? ''
       },
       gridSize: this.gridSize,
-      teleports: this.modules.teleport
-        .getTeleports()
-        .map(teleport => teleport.toDescription()),
       walls: this.modules.wall.getWalls().map(wall => wall.toDescription()),
       units: this.modules.units
         .getUnits()

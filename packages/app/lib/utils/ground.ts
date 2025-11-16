@@ -1,6 +1,12 @@
 import Ground, { createMaterial } from '../classes/Ground';
-import { type Mesh, type BufferGeometry, Vector2, FrontSide } from 'three';
-import { InstancedMesh, MeshPhongMaterial, Vector3, Object3D } from 'three';
+import {
+  type Mesh,
+  type BufferGeometry,
+  Vector2,
+  FrontSide,
+  MeshStandardMaterial
+} from 'three';
+import { InstancedMesh, Vector3, Object3D } from 'three';
 
 import type AssetLoader from '../classes/AssetLoader';
 import {
@@ -67,6 +73,7 @@ export function createGroundChunks(
       for (let r = z; r < z + chunkSize && r < cols; r++) {
         for (let c = x; c < x + chunkSize && c < rows; c++) {
           let skinId = (groundStyleMap.get(c, y, r) ?? {}).skinId;
+
           if (!skinId) {
             if (editMode) {
               skinId = 'default_editor_empty';
@@ -102,7 +109,7 @@ export function createGroundChunks(
 
         const instancedMesh = new InstancedMesh(
           geometry,
-          new MeshPhongMaterial({ color: tile.color }),
+          new MeshStandardMaterial({ color: tile.color }),
           positionsByType.get(type)!.length
         );
 
@@ -122,8 +129,8 @@ export function createGroundChunks(
 
         instancedMesh.instanceColor = null;
         instancedMesh.material.side = FrontSide;
-        instancedMesh.castShadow = false;
-        instancedMesh.receiveShadow = false;
+        instancedMesh.receiveShadow = true;
+        instancedMesh.castShadow = true;
 
         return [type, instancedMesh];
       });

@@ -19,6 +19,7 @@ export interface UnitModuleSetupContext extends SetupContext {
 export interface UnitModuleOptions {}
 
 export default abstract class UnitModule<
+  Options extends UnitModuleOptions = UnitModuleOptions,
   State extends UnitModuleState = UnitModuleState,
   Obervables extends UnitModuleObservables = UnitModuleObservables,
   U extends Unit = Unit
@@ -31,6 +32,7 @@ export default abstract class UnitModule<
 
   constructor(
     private _unit: U,
+    public options: Options = {} as Options,
     public state: State = {} as State,
     public readonly debug: boolean
   ) {}
@@ -56,6 +58,12 @@ export default abstract class UnitModule<
 
   update(_v: AnimationLoopValue) {
     // This method can be overridden by subclasses to handle updates
+  }
+
+  getOptions() {
+    return {
+      ...this.options
+    };
   }
 
   getState() {

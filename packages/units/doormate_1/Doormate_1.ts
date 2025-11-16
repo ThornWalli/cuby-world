@@ -33,7 +33,7 @@ export default class Doormate_1 extends Unit<DoormateOptions> {
       accessible: true,
       selectable: true,
       placeable: true,
-      size: new Vector3(1, 0.1, 1)
+      size: new Vector3(1, 0.02, 1)
     });
   }
 
@@ -68,21 +68,18 @@ export default class Doormate_1 extends Unit<DoormateOptions> {
         loader: LOADER.TEXTURE,
         value: image_doormate_1_specular
       })
-    ]).then(
-      ([colorMap, normalMap, displacementMap, ambientMap, specularMap]) => {
-        this.setTexture(
-          {
-            colorMap,
-            normalMap,
-            displacementMap,
-            ambientMap,
-            specularMap
-          },
-          meshRoot
-        );
-        this.observables.materialReady$.next();
-      }
-    );
+    ]).then(([colorMap, normalMap, displacementMap, ambientMap]) => {
+      this.setTexture(
+        {
+          colorMap,
+          normalMap,
+          displacementMap,
+          ambientMap
+        },
+        meshRoot
+      );
+      this.setMaterialReady();
+    });
 
     return meshRoot;
   }

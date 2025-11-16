@@ -5,15 +5,16 @@ import RoomModule, {
 } from '../RoomModule';
 import type Unit from '../Unit';
 import UnitChunkManager from '../UnitChunkManager';
-import { concatMap, distinctUntilChanged, map, ReplaySubject } from 'rxjs';
+import { Subject, concatMap, distinctUntilChanged, map } from 'rxjs';
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { AnimationLoopValue } from '../Renderer';
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import type Room from '../Room';
+import type { ConditionDirectionsDescription } from '../../utils/pathfindng';
 
 interface Observables extends RoomModuleObservables {
-  addUnit$: ReplaySubject<Unit>;
-  removeUnit$: ReplaySubject<Unit>;
+  addUnit$: Subject<Unit>;
+  removeUnit$: Subject<Unit>;
 }
 
 interface State extends RoomModuleState {
@@ -22,6 +23,12 @@ interface State extends RoomModuleState {
 }
 
 export default class UnitsModule extends RoomModule<State, Observables> {
+  getConditionalDirections(): ConditionDirectionsDescription[] {
+    return this.getUnits()
+      .map(unit => unit.getConditionDirections())
+      .flat();
+  }
+
   static override TYPE = 'units';
 
   /**
@@ -38,9 +45,14 @@ export default class UnitsModule extends RoomModule<State, Observables> {
   constructor(room: Room, debug: boolean) {
     super(room, debug);
     //#region observables
-    this.observables.addUnit$ = new ReplaySubject<Unit>();
-    this.observables.removeUnit$ = new ReplaySubject<Unit>();
+    this.observables.addUnit$ = new Subject<Unit>();
+    this.observables.removeUnit$ = new Subject<Unit>();
     //#endregion
+  }
+
+  override destroy(): void {
+    super.destroy();
+    this.state.units.forEach(unit => unit.destroy());
   }
 
   override setup() {
@@ -62,6 +74,10 @@ export default class UnitsModule extends RoomModule<State, Observables> {
     return Array.from(this.state.units.values());
   }
 
+  getUnitById(id: string) {
+    return this.state.units.get(id);
+  }
+
   /**
    * TODO: Ggf. muss hier noch eine Map aus performancegründen her
    */
@@ -72,15 +88,19 @@ export default class UnitsModule extends RoomModule<State, Observables> {
   }
 
   getUnitsByPosition(position: Vector3) {
-    return this.getUnits().filter(unit => unit.isIntersectByPosition(position));
+    function getFloorFromPosition(pos: Vector3) {
+      return Math.floor(pos.y);
+    }
+    const floor = getFloorFromPosition(position);
+    console.log('position', position.toArray(), floor);
+    const withoutFloor = position.clone().setY(0);
+    return this.getUnitsByFloor(floor).filter(unit =>
+      unit.isIntersectByPosition(withoutFloor)
+    );
   }
 
   async setupUnits(units: Unit[]) {
-    await Promise.all(
-      units.map(unit => {
-        this.add(unit);
-      })
-    );
+    await Promise.all(units.map(unit => this.add(unit)));
   }
 
   async add(unit: Unit) {
@@ -112,7 +132,6 @@ export default class UnitsModule extends RoomModule<State, Observables> {
     this.untiPositionMap.add(unit);
     this.room.addToRoot(unit.root);
     this.updateVisiblity(this.room.modules.floor.getFloor(), [unit]);
-
     this.observables.addUnit$.next(unit);
   }
 
@@ -126,8 +145,8 @@ export default class UnitsModule extends RoomModule<State, Observables> {
     this.untiPositionMap.remove(unit);
   }
 
-  getById(id: string): Unit | undefined {
-    return this.state.units.get(id);
+  getById<U extends Unit = Unit>(id: string): U | undefined {
+    return this.state.units.get(id) as U | undefined;
   }
 
   isPositionFree(position: Vector3, ignoredUnits?: Unit[]) {

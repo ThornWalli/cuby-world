@@ -2,7 +2,7 @@ import type { Object3D } from 'three';
 import {
   DoubleSide,
   Mesh,
-  MeshPhongMaterial,
+  MeshStandardMaterial,
   PlaneGeometry,
   Vector3
 } from 'three';
@@ -45,14 +45,19 @@ export default class Door extends BaseDoor<DoorOptions> {
     const geometry = new PlaneGeometry(0.8, 1);
     geometry.translate(0, 0.5, 0.5);
     geometry.rotateY(Math.PI / 2);
-    const material = new MeshPhongMaterial({ color: 0x333333 });
+    const material = new MeshStandardMaterial({
+      roughness: 1.0,
+      metalness: 0.0,
+      color: 0x333333
+    });
 
     const mesh: Object3D = new Mesh(geometry, material);
     mesh.name = OBJECT_NAME.MESH;
     mesh.castShadow = true;
     material.side = DoubleSide;
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
+
     return mesh;
   }
 }

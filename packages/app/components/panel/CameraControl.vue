@@ -1,20 +1,20 @@
 <template>
-  <cw-panel class="cw-panel-camera-control" title="Camera">
+  <cw-panel class="cw-panel-camera-control" title="Camera" hide-title>
     <cw-toggle
       style-type="dark"
       :model-value="focusedUnit"
       @update:model-value="onToggleFocused">
-      Focused Cuby
+      Focused Character
     </cw-toggle>
     <cw-toggle
-      :disabled="focusedUnit"
+      v-if="!focusedUnit"
       style-type="dark"
       :model-value="canRotate"
       @update:model-value="onToggleCanRotate">
       Can Rotate
     </cw-toggle>
-    <cw-button :disabled="focusedUnit" @click="app.resetCamera()">
-      Reset Camera
+    <cw-button v-if="!focusedUnit" @click="app.resetCamera()">
+      Focused Character
     </cw-button>
   </cw-panel>
 </template>

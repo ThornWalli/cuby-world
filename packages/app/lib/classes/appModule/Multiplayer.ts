@@ -8,7 +8,7 @@ import AppModule, {
 import { selfId, type DataPayload, type Room as TrysteroRoom } from 'trystero';
 
 import type { FirebaseApp } from 'firebase/app';
-import { concatMap, Subject, Subscription, switchMap } from 'rxjs';
+import { concatMap, filter, Subject, Subscription, switchMap } from 'rxjs';
 import Player from '../Player';
 import { Vector3 } from 'three';
 // import {
@@ -20,6 +20,7 @@ import { Vector3 } from 'three';
 import CurrentPlayer from '../player/Current';
 import type App from '../App';
 import type { PlayerSettings } from '../../types/player';
+import type { UnitIdentifier } from '../Unit';
 
 export interface Message {
   id: string;
@@ -34,6 +35,10 @@ interface Observables extends AppModuleObservables {
   peerLeave$: Subject<string>;
   moveTo$: Subject<{
     data: MoveToPayload;
+    peerId: string;
+  }>;
+  setPosition$: Subject<{
+    data: SetPositionPayload;
     peerId: string;
   }>;
   message$: Subject<{ data: MessagePayload; peerId: string }>;
@@ -58,6 +63,10 @@ declare module '../App' {
 
 type MoveToPayload = DataPayload & {
   position: [number, number, number];
+  unit?: string;
+};
+type SetPositionPayload = DataPayload & {
+  position: [number, number, number];
 };
 type MessagePayload = DataPayload & Message;
 
@@ -65,7 +74,9 @@ export const DEFAULT_ROOM_ID = 'lobby';
 
 interface PlayerInfo extends PlayerSettings {
   // peerId: string;
+  init?: boolean;
   position: [number, number, number];
+  teleporterUnitId: UnitIdentifier | null;
 }
 type PlayerInfoPayload = DataPayload & Partial<PlayerInfo>;
 
@@ -96,6 +107,10 @@ export default class MultiplayerAppModule extends AppModule<
       data: MoveToPayload;
       peerId: string;
     }>();
+    this.observables.setPosition$ = new Subject<{
+      data: SetPositionPayload;
+      peerId: string;
+    }>();
     this.observables.message$ = new Subject<{
       data: MessagePayload;
       peerId: string;
@@ -105,6 +120,7 @@ export default class MultiplayerAppModule extends AppModule<
 
   actions: {
     setMoveTo?: (data: MoveToPayload, targetPeers?: string[]) => void;
+    setPosition?: (data: SetPositionPayload, targetPeers?: string[]) => void;
     sendMessage?: (data: MessagePayload, targetPeers?: string[]) => void;
     sendPlayerInfo?: (data: PlayerInfoPayload, targetPeers?: string[]) => void;
   } = {};
@@ -143,27 +159,72 @@ export default class MultiplayerAppModule extends AppModule<
               switchMap(
                 ({ unit }) => unit.modules.movement.observables.moveStart$
               ),
-              concatMap(async position => {
+              filter(({ silence }) => !silence),
+              concatMap(async ({ position, unit }) => {
                 console.log('Player started moving');
                 if (!this.actions?.setMoveTo) {
                   throw new Error('No setMoveTo action available');
                 }
-                this.actions.setMoveTo(
-                  {
-                    position: position.toArray()
-                  },
-                  this.getOtherPlayers()
-                );
+                this.initPayload = undefined;
+                const data = {
+                  position: position.toArray(),
+                  unit: unit?.id
+                } as MoveToPayload;
+                this.actions.setMoveTo(data, this.getOtherPlayers());
+              })
+            )
+            .subscribe(void 0)
+        );
+
+        playerSubscription.add(
+          player.observables.unit$
+            .pipe(
+              switchMap(
+                ({ unit }) => unit.modules.movement.observables.moveEnd$
+              ),
+              concatMap(async position => {
+                console.log('Player stoped moving');
+                if (!this.actions?.setPosition) {
+                  throw new Error('No setMoveTo action available');
+                }
+                const data = {
+                  position: position.toArray()
+                } as SetPositionPayload;
+                this.actions.setPosition(data, this.getOtherPlayers());
               })
             )
             .subscribe(void 0)
         );
         playerSubscription.add(
           player.observables.playerSettings$.subscribe(playerSettings => {
-            this.sendPlayerInfo(playerSettings);
+            this.sendPlayerInfo({ ...playerSettings } as PlayerInfoPayload);
           })
         );
       })
+    );
+
+    this.subscription.add(
+      this.observables.setPosition$
+        .pipe(
+          concatMap(async ({ data, peerId }) => {
+            const player = this.players.get(peerId);
+            if (player && player.unit) {
+              console.log(
+                'Received setPosition from',
+                peerId,
+                data,
+                player.unit
+              );
+              await player.unit.modules.movement.abortMoveTo(true);
+              player.unit.setPosition(new Vector3().fromArray(data.position));
+
+              await player.unit.modules.movement.applyPosition(
+                new Vector3().fromArray(data.position)
+              );
+            }
+          })
+        )
+        .subscribe(void 0)
     );
 
     this.subscription.add(
@@ -173,11 +234,18 @@ export default class MultiplayerAppModule extends AppModule<
             const player = this.players.get(peerId);
             console.log('Received moveTo from', peerId, data);
             if (player && player.unit) {
-              await player.unit.modules.movement.moveTo(
-                new Vector3().fromArray(data.position)
+              const targetUnit = data.unit
+                ? player.unit.modules.room
+                    ?.getRoom()
+                    ?.modules.units.getUnitById(data.unit)
+                : undefined;
+              await player.unit.modules.movement.resolveMoveTo(
+                new Vector3().fromArray(data.position),
+                targetUnit
               );
               await player.unit.modules.movement.applyPosition(
-                new Vector3().fromArray(data.position)
+                new Vector3().fromArray(data.position),
+                targetUnit
               );
             }
           })
@@ -199,8 +267,9 @@ export default class MultiplayerAppModule extends AppModule<
             });
             const currentPlayer = this.app.modules.player.getCurrentPlayer();
             if (currentPlayer && this.actions.sendPlayerInfo) {
-              this.actions.sendPlayerInfo(
-                {
+              this.sendPlayerInfo(
+                this.getInitPayload() || {
+                  init: true,
                   name: currentPlayer.state.name,
                   characterType: currentPlayer.state.characterType || null,
                   skin: currentPlayer.state.skin,
@@ -212,8 +281,7 @@ export default class MultiplayerAppModule extends AppModule<
               );
             }
 
-            this.app.modules.player.addPlayer(player);
-            this.players.set(player.id, player);
+            this.newPlayers.set(player.id, player);
             console.log('Peer joined:', peerId);
           })
         )
@@ -290,8 +358,8 @@ export default class MultiplayerAppModule extends AppModule<
     return player;
   }
 
-  async joinRoom(roomId: string) {
-    console.log('Joining room', roomId);
+  async joinRoom(roomId: string, targetTeleporterUnitId?: UnitIdentifier) {
+    console.log('Joining room', roomId, targetTeleporterUnitId);
     if (this.state.room) {
       console.log('Leaving current room');
       this.state.room.leave();
@@ -302,38 +370,58 @@ export default class MultiplayerAppModule extends AppModule<
     if (!this.firebaseApp || !this.firebaseAppId) {
       throw new Error('Firebase not initialized');
     }
+
+    const currentPlayer = this.app.modules.player.getCurrentPlayer()!;
+
+    this.setInitPayload({
+      init: true,
+      characterType: currentPlayer.state.characterType,
+      name: currentPlayer.state.name || 'Unknown',
+      skin: currentPlayer.state.skin,
+      position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0],
+      teleporterUnitId: targetTeleporterUnitId || null
+    });
+
     const room = joinRoom(
       { firebaseApp: this.firebaseApp, appId: this.firebaseAppId },
       roomId
     );
 
     this.setupRoomEvents(room);
+    // if (targetTeleporterUnitId) {
+    //   this.app.modules.room
+    //   currentPlayer.unit?.setPosition();
 
-    const currentPlayer = this.app.modules.player.getCurrentPlayer()!;
-    this.actions.sendPlayerInfo?.(
-      {
-        peerId: this.state.playerId,
-        characterType: currentPlayer.state.characterType,
-        name: currentPlayer.state.name || 'Unknown',
-        skin: currentPlayer.state.skin,
-        position: currentPlayer.unit?.getPosition().toArray() || [0, 0, 0]
-      },
-      this.getOtherPlayers()
-    );
+    // if (targetTeleporterUnitId) {
+    //   const teleporterUnit = this.app.modules.room
+    //     .getRoom()
+    //     ?.modules.units.getById<TeleporterUnit>(targetTeleporterUnitId);
+
+    //   if (teleporterUnit) {
+    //     teleporterUnit.modules.teleporter.leave(currentPlayer.unit!);
+    //   }
+    // }
 
     this.setupRoomActions(room);
+
     this.state.room = room;
   }
 
-  sendPlayerInfo(playerSettings: PlayerSettings) {
-    console.log(this.getOtherPlayers());
+  private initPayload?: PlayerInfoPayload;
+  setInitPayload(payload: PlayerInfoPayload) {
+    this.initPayload = payload;
+  }
+  getInitPayload() {
+    return this.initPayload;
+  }
+
+  sendPlayerInfo(
+    payload: PlayerInfoPayload,
+    players: string[] = this.getOtherPlayers()
+  ) {
+    console.error('XXXXXXXMULTI SEND', payload, players);
     if (this.actions.sendPlayerInfo) {
-      this.actions.sendPlayerInfo(
-        {
-          ...playerSettings
-        } as unknown as PlayerInfoPayload,
-        this.getOtherPlayers()
-      );
+      this.actions.sendPlayerInfo(payload, players);
     }
   }
 
@@ -364,6 +452,19 @@ export default class MultiplayerAppModule extends AppModule<
 
     //#endregion
 
+    //#region player setPosition action
+
+    const [setPosition, getPosition] =
+      room.makeAction<SetPositionPayload>('playerSetPos');
+
+    getPosition((data, peerId) =>
+      this.observables.setPosition$.next({ data, peerId })
+    );
+
+    this.actions.setPosition = setPosition;
+
+    //#endregion
+
     //#region send message action
 
     const [sendMessage, getMessage] = room.makeAction<Message & DataPayload>(
@@ -384,9 +485,24 @@ export default class MultiplayerAppModule extends AppModule<
       room.makeAction<PlayerInfoPayload>('playerInfo');
 
     getPlayerInfo(async (data, peerId) => {
+      console.error('XXXXXXXMULTI GWT', data, peerId);
+
+      if (this.newPlayers.has(peerId)) {
+        const player = this.newPlayers.get(peerId)!;
+
+        await this.app.modules.player.addPlayer({
+          player,
+          teleporterUnitId: data.teleporterUnitId!
+        });
+        this.players.set(player.id, player);
+        this.newPlayers.delete(peerId);
+      }
+
       const player = this.players.get(peerId);
       if (player) {
-        await this.setPlayerInfo(player, data as PlayerInfo);
+        if (player && data.init) {
+          await this.setPlayerInfo(player, data as PlayerInfo);
+        }
       }
     });
 
@@ -395,17 +511,18 @@ export default class MultiplayerAppModule extends AppModule<
     //#endregion
   }
 
+  newPlayers = new Map<string, Player>();
+
   async setPlayerInfo(player: Player, info: PlayerInfo) {
     await player.setSettings({
       characterType: info.characterType,
       name: info.name,
       skin: info.skin
     });
-    // set position if available
-    if (info.position) {
-      const position = new Vector3().fromArray(info.position);
-      player.unit?.setPosition(position);
+    if (!player.isReady()) {
+      player.unit?.setPosition(new Vector3().fromArray(info.position));
     }
+    player.setReady(true);
   }
 
   sendMessage(message: Omit<Message, 'timestamp' | 'playerId'>) {

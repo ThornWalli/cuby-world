@@ -1,44 +1,53 @@
 import UnitModule, {
   type UnitModuleObservables,
+  type UnitModuleOptions,
   type UnitModuleSetupContext,
   type UnitModuleState
 } from '../UnitModule';
 import type Unit from '../Unit';
 import { concatMap, EMPTY, merge, ReplaySubject, switchMap } from 'rxjs';
-import { ANIMATION_ACTION } from './Animation';
-import type { ChairUnitOptions } from './Chair';
 import type { Vector3 } from 'three';
 import { Object3D } from 'three';
-import type { BedUnitOptions } from './Bed';
-import BedUnitModule from './Bed';
-import ChairUnitModule from './Chair';
+import type TeleporterUnit from '../unit/Teleporter';
+import { ANIMATION_ACTION } from '../../types/animation';
+import { loadRoomById } from '../../utils/rooms';
+import SlotUnitModule from './Slot';
+import type { ChairUnitOptions } from '../unit/Chair';
+import type { BenchUnitOptions } from '../unit/Bench';
+import type { BedOptions } from './Bed';
 
 interface Obervables extends UnitModuleObservables {
-  sitting$: ReplaySubject<Unit<ChairUnitOptions> | null>;
-  lying$: ReplaySubject<Unit<BedUnitOptions> | null>;
+  sitting$: ReplaySubject<Unit<BenchUnitOptions | ChairUnitOptions> | null>;
+  lying$: ReplaySubject<Unit<BedOptions> | null>;
 }
 
+type Options = UnitModuleOptions;
 type State = {
   sitting: boolean;
   lying: boolean;
   usedUnit: Unit | null;
 } & UnitModuleState;
 
-export default class CharacterUnitModule extends UnitModule<State, Obervables> {
+export default class CharacterUnitModule extends UnitModule<
+  Options,
+  State,
+  Obervables
+> {
   static override TYPE = 'character';
 
   offsets: Partial<Record<ANIMATION_ACTION, Vector3>> = {};
   wrapper: Object3D;
 
-  constructor(unit: Unit, state: State, debug: boolean) {
+  constructor(unit: Unit, options: Options, state: State, debug: boolean) {
     state = { ...state, sitting: state.sitting ?? false };
-    super(unit, state, debug);
+    super(unit, options, state, debug);
 
     //#region observables
-    this.observables.sitting$ =
-      new ReplaySubject<Unit<ChairUnitOptions> | null>(1);
+    this.observables.sitting$ = new ReplaySubject<Unit<
+      BenchUnitOptions | ChairUnitOptions
+    > | null>(1);
     this.observables.sitting$.next(null);
-    this.observables.lying$ = new ReplaySubject<Unit<BedUnitOptions> | null>(1);
+    this.observables.lying$ = new ReplaySubject<Unit<BedOptions> | null>(1);
     this.observables.lying$.next(null);
     //#endregion
 
@@ -79,8 +88,33 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
     return this.wrapper;
   }
 
-  useBed(unit: Unit<BedUnitOptions>) {
-    if (isBed(unit)) {
+  async useTeleporter(unit: TeleporterUnit) {
+    await unit.modules.teleporter.enter(this.unit);
+
+    // Nur der Client führt den Raumwechsel durch
+    if (this.unit.modules.player.isClient()) {
+      if (unit.modules.teleporter.state.targetRoomId) {
+        // Raum wechsel
+        await this.unit.modules.room?.currentRoom?.app.enterRoom(
+          await loadRoomById(unit.modules.teleporter.state.targetRoomId),
+          unit.modules.teleporter.state.targetRoomTeleporterId
+        );
+      } else {
+        const teleporterUnit =
+          this.unit.modules.room?.currentRoom?.modules.units.getById(
+            unit.modules.teleporter.state.targetRoomTeleporterId!
+          ) as TeleporterUnit;
+
+        await teleporterUnit.modules.teleporter.leave(this.unit);
+      }
+    }
+  }
+
+  useBed(unit: Unit<BedOptions>) {
+    if (this.state.lying) {
+      console.log('Is already lying down');
+      return false;
+    } else if (isBed(unit)) {
       this.state.lying = true;
 
       const subscription =
@@ -90,7 +124,7 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
         });
 
       const wrapper = this.wrapper!;
-      const targetUnit = unit as Unit<BedUnitOptions>;
+      const targetUnit = unit as Unit<BedOptions>;
       if (targetUnit) {
         this.unit.modules.animation!.setAnimationAction(
           ANIMATION_ACTION.LAYING_SLEEPING
@@ -102,18 +136,21 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
           wrapper.position.add(this.offsets.laying_sleeping);
         }
       } else {
-        wrapper.position.set(0, 0, 0);
+        // wrapper.position.set(0, 0, 0);
         this.unit.modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
       }
 
-      targetUnit
-        .getModule<BedUnitModule>(BedUnitModule.TYPE)
-        .setUsedUnit(this.unit);
+      if (
+        targetUnit
+          .getModuleByType<SlotUnitModule>(SlotUnitModule)
+          .addUsedUnit(this.unit)
+      ) {
+        this.state.usedUnit = targetUnit;
+        this.observables.lying$.next(unit);
 
-      this.state.usedUnit = targetUnit;
-      this.observables.lying$.next(unit);
-
-      return true;
+        return true;
+      }
+      return false;
     } else {
       console.log('Cannot sit down, not a bed', unit);
       return false;
@@ -124,23 +161,30 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
     return this.state.usedUnit;
   }
 
-  useChair(unit: Unit<ChairUnitOptions>) {
-    if (isChair(unit)) {
+  useSitSlot(
+    unit: Unit<BenchUnitOptions | ChairUnitOptions>,
+    position: Vector3
+  ) {
+    const slot = unit
+      .getModuleByType<SlotUnitModule>(SlotUnitModule)
+      .findFreeSlot(position);
+
+    if (isSitable(unit)) {
       this.state.sitting = true;
 
       const subscription =
         this.unit.modules.movement.observables.moveStart$.subscribe(() => {
-          this.cancelChair();
+          this.cancelSit();
           subscription.unsubscribe();
         });
 
       const wrapper = this.wrapper!;
-      const targetUnit = unit as Unit<ChairUnitOptions>;
+      const targetUnit = unit as Unit<BenchUnitOptions | ChairUnitOptions>;
       if (targetUnit) {
         this.unit.modules.animation!.setAnimationAction(
           ANIMATION_ACTION.SITTING_IDLE
         );
-        this.unit.setRotation(targetUnit.getRotation());
+        this.unit.setRotation(slot?.rotation ?? targetUnit.getRotation());
         wrapper.position.copy(targetUnit.options.offset);
         if (this.offsets.sitting_idle) {
           wrapper.position.add(this.offsets.sitting_idle);
@@ -150,38 +194,82 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
         this.unit.modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
       }
 
-      targetUnit
-        .getModule<ChairUnitModule>(ChairUnitModule.TYPE)
-        .setUsedUnit(this.unit);
+      if (
+        targetUnit
+          .getModuleByType<SlotUnitModule>(SlotUnitModule)
+          .addUsedUnit(this.unit)
+      ) {
+        this.state.usedUnit = targetUnit;
+        this.observables.sitting$.next(unit);
+        console.log('Sitting down', unit);
 
-      this.state.usedUnit = targetUnit;
-      this.observables.sitting$.next(unit);
-      console.log('Sitting down', unit);
-
-      return true;
+        return true;
+      }
+      return false;
     } else {
       console.log('Cannot sit down, not a chair', unit);
       return false;
     }
   }
 
+  // useChair(unit: Unit<ChairUnitOptions>) {
+  //   if (isSitable(unit)) {
+  //     this.state.sitting = true;
+
+  //     const subscription =
+  //       this.unit.modules.movement.observables.moveStart$.subscribe(() => {
+  //         this.cancelChair();
+  //         subscription.unsubscribe();
+  //       });
+
+  //     const wrapper = this.wrapper!;
+  //     const targetUnit = unit as Unit<ChairUnitOptions>;
+  //     if (targetUnit) {
+  //       this.unit.modules.animation!.setAnimationAction(
+  //         ANIMATION_ACTION.SITTING_IDLE
+  //       );
+  //       this.unit.setRotation(targetUnit.getRotation());
+  //       wrapper.position.copy(targetUnit.options.offset);
+  //       if (this.offsets.sitting_idle) {
+  //         wrapper.position.add(this.offsets.sitting_idle);
+  //       }
+  //     } else {
+  //       wrapper.position.y = 0;
+  //       this.unit.modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
+  //     }
+
+  //     targetUnit
+  //       .getModule<ChairUnitModule>(ChairUnitModule.TYPE)
+  //       .setUsedUnit(this.unit);
+
+  //     this.state.usedUnit = targetUnit;
+  //     this.observables.sitting$.next(unit);
+  //     console.log('Sitting down', unit);
+
+  //     return true;
+  //   } else {
+  //     console.log('Cannot sit down, not a chair', unit);
+  //     return false;
+  //   }
+  // }
+
   cancelBed() {
-    this.wrapper!.position.y = 0;
+    this.wrapper.position.set(0, 0, 0);
     this.state.lying = false;
     this.state.usedUnit
-      ?.getModule<BedUnitModule>(BedUnitModule.TYPE)
-      .setUsedUnit(null);
+      ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
+      .removeUsedUnit(this.unit);
     this.state.usedUnit = null;
     this.observables.lying$.next(null);
     console.log('Standing up');
   }
 
-  cancelChair() {
+  cancelSit() {
     this.wrapper!.position.y = 0;
     this.state.sitting = false;
     this.state.usedUnit
-      ?.getModule<ChairUnitModule>(ChairUnitModule.TYPE)
-      .setUsedUnit(null);
+      ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
+      .removeUsedUnit(this.unit);
     this.state.usedUnit = null;
     this.observables.sitting$.next(null);
     console.log('Standing up');
@@ -191,8 +279,8 @@ export default class CharacterUnitModule extends UnitModule<State, Obervables> {
 /**
  * Überprüft ob die Unit ein Stuhl ist
  */
-function isChair(unit: Unit) {
-  return 'chair' in unit.modules && unit.modules.chair;
+function isSitable(unit: Unit) {
+  return unit.hasModuleType(SlotUnitModule);
 }
 
 /**

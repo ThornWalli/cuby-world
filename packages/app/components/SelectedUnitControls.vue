@@ -1,13 +1,20 @@
 <template>
   <cw-sticky-controls
-    v-if="selectedUnit?.options.hasControls && target"
+    v-if="selectedUnit?.hasControls() && target"
     :app="app"
     :value="target"
     :items="items" />
+  <teleport to="body">
+    <component
+      :is="dialogComponent"
+      :unit="selectedUnit"
+      force-open
+      @close="dialogComponent = null" />
+  </teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, shallowRef, type Component } from 'vue';
 import type App from '../lib/classes/App';
 import { concatMap, EMPTY, Subscription, switchMap } from 'rxjs';
 import type { Object3D, Vector3 } from 'three';
@@ -22,6 +29,7 @@ const $props = defineProps<{
 
 const target = ref<Vector3 | Object3D | null>(null);
 const selectedUnit = ref<Unit | null>(null);
+const dialogComponent = shallowRef<Component | null>(null);
 
 const subscription = new Subscription();
 
@@ -54,42 +62,52 @@ onMounted(() => {
 });
 
 const canDelete = computed(() => selectedUnit.value?.canDelete());
-const canPlaced = computed(() => selectedUnit.value?.options.canPlaced);
-const canRotate = computed(() => selectedUnit.value?.options.canRotate);
+const canPlaced = computed(() => selectedUnit.value?.canPlace());
+const canRotate = computed(() => selectedUnit.value?.canRotate());
 
-const items = computed<StickyControlItem[]>(
-  () =>
-    [
-      canDelete.value && {
-        color: 'red',
-        label: 'Remove',
-        icon: 'trash',
-        action: async () => {
-          await $props.app.modules.selection.remove();
-        }
-      },
-      canPlaced.value && {
-        label: 'Move',
-        icon: 'move',
-        action: async () => {
-          await $props.app.modules.selection.move();
-        }
-      },
-      canRotate.value && {
-        label: 'Rotate',
-        icon: 'rotate',
-        action: async () => {
-          await $props.app.modules.selection.rotate();
-        }
-      },
-      {
-        color: 'green',
-        label: 'Apply',
-        icon: 'apply',
-        action: async () => {
-          await $props.app.modules.selection.apply();
-        }
+const items = computed<StickyControlItem[]>(() => {
+  const unitControls =
+    selectedUnit.value?.getSettingControls().map(control => ({
+      label: control.title || 'Settings',
+      icon: 'settings',
+      action: async () => {
+        const component = await control.component();
+        dialogComponent.value = component.default;
       }
-    ].filter(Boolean) as StickyControlItem[]
-);
+    })) || [];
+
+  return [
+    canDelete.value && {
+      color: 'red',
+      label: 'Remove',
+      icon: 'trash',
+      action: async () => {
+        await $props.app.modules.selection.remove();
+      }
+    },
+    canPlaced.value && {
+      label: 'Move',
+      icon: 'move',
+      action: async () => {
+        await $props.app.modules.selection.move();
+      }
+    },
+    canRotate.value && {
+      label: 'Rotate',
+      icon: 'rotate',
+      action: async () => {
+        await $props.app.modules.selection.rotate();
+      }
+    },
+    ...unitControls,
+    {
+      color: 'green',
+      label: 'Apply',
+      icon: 'apply',
+      action: async () => {
+        await $props.app.modules.selection.apply();
+      }
+    }
+  ].filter(Boolean) as StickyControlItem[];
+});
 </script>

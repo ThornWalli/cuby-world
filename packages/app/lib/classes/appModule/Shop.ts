@@ -107,12 +107,13 @@ export default class ShopAppModule extends AppModule<State, Observables> {
 async function createTmpUnit(item: ItemDescription) {
   const catalogItem = catalog.get(item.catalogItemId)!;
   const UnitClass = await catalogItem.instance();
-  const skin = catalogItem.skinMap?.get(item.skinId);
   const unit = new UnitClass({
     name: UnitClass.NAME,
-    options: {
-      ...(skin ?? { options: {} }).options
-    }
+    skin: item.skinId
+    // const skin = catalogItem.skinMap?.get(item.skinId);
+    // options: {
+    //   ...(skin ?? { options: {} }).options
+    // }
   });
   return unit;
 }

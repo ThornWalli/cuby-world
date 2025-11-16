@@ -1,4 +1,3 @@
-/* eslint-disable complexity */
 import { WALL_EXTENSION_TYPE, type WallExtensionState } from './WallExtension';
 
 import {
@@ -15,9 +14,8 @@ import {
 import {
   Box3,
   Vector2,
-  MeshPhongMaterial,
+  MeshStandardMaterial,
   Object3D,
-  ClampToEdgeWrapping,
   BufferAttribute
 } from 'three';
 
@@ -52,6 +50,8 @@ import {
 } from '../utils/object';
 import { catalog as wallCatalog } from '@cuby-world/walls/walls/catalog';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
+import { concatMap, Subscription } from 'rxjs';
+import { prepareTexture } from '../utils/texture';
 // import { skinMap } from '@cuby-world/walls/skins';
 
 declare module '../utils/object' {
@@ -99,6 +99,8 @@ export default class Wall {
   static KEY = 'default';
 
   readonly key = Wall.KEY;
+
+  subscription = new Subscription();
 
   extensions: WallExtension[] = [];
 
@@ -150,6 +152,7 @@ export default class Wall {
   }
 
   destroy() {
+    this.subscription.unsubscribe();
     this.extensions.forEach(ext => ext.destroy());
     this.root.removeFromParent();
     this.root.traverse(mesh => {
@@ -193,7 +196,18 @@ export default class Wall {
       wallGeometryMap
     });
 
-    await this.setupExtensions(this.extensions, animationLoop$);
+    await this.setupExtensions(this.extensions);
+
+    this.subscription.add(
+      animationLoop$
+        .pipe(
+          concatMap(async context => {
+            this.extensions.forEach(ext => ext.update(context));
+          })
+        )
+        .subscribe(void 0)
+    );
+
     prepareForRaycast(this.root);
     this.tmpBox.setFromObject(this.root);
   }
@@ -263,7 +277,7 @@ export default class Wall {
   ) {
     const ext = new ExtClass({ wall: this, state });
     this.extensions.push(ext);
-    await this.setupExtensions([ext], animationLoop$);
+    await this.setupExtensions([ext]);
     return ext;
   }
 
@@ -277,14 +291,11 @@ export default class Wall {
     }
   }
 
-  async setupExtensions(
-    extensions: WallExtension[],
-    animationLoop$: AnimationLoopSubject
-  ) {
+  async setupExtensions(extensions: WallExtension[]) {
     const resolvedExts = await Promise.all(
-      extensions.map(async ext => {
-        await ext.setup({ animationLoop$ });
-        return ext;
+      extensions.map(async wallExtension => {
+        await wallExtension.setup();
+        return wallExtension;
       })
     );
 
@@ -449,48 +460,62 @@ export default class Wall {
     });
     const wireframe = false;
     const materials = [
-      new MeshPhongMaterial({
+      new MeshStandardMaterial({
         wireframe,
+        metalness: 0.0,
+        roughness: 1.0,
         transparent: true,
         side: DoubleSide,
         color:
           skinMap.get(this.state.skins[0] || 'default')?.options.color ||
           0x333333
       }), // Front
-      new MeshPhongMaterial({
+      new MeshStandardMaterial({
         wireframe,
+        metalness: 0.0,
+        roughness: 1.0,
         transparent: true,
         side: DoubleSide,
         color:
           skinMap.get(this.state.skins[1] || 'default')?.options.color ||
           0x333333
       }), // Back
-      new MeshPhongMaterial({
+      new MeshStandardMaterial({
         wireframe,
+        metalness: 0.0,
+        roughness: 1.0,
         transparent: true,
         side: DoubleSide,
         color: 0x333333
       }),
-      new MeshPhongMaterial({
+      new MeshStandardMaterial({
         wireframe,
+        metalness: 0.0,
+        roughness: 1.0,
         transparent: true,
         side: DoubleSide,
         color: 0x333333
       }),
-      new MeshPhongMaterial({
+      new MeshStandardMaterial({
         wireframe,
+        metalness: 0.0,
+        roughness: 1.0,
         transparent: true,
         side: DoubleSide,
         color: 0x333333
       }),
-      new MeshPhongMaterial({
+      new MeshStandardMaterial({
         wireframe,
+        metalness: 0.0,
+        roughness: 1.0,
         transparent: true,
         side: DoubleSide,
         color: 0x333333
       }),
-      new MeshPhongMaterial({
+      new MeshStandardMaterial({
         wireframe,
+        metalness: 0.0,
+        roughness: 1.0,
         transparent: true,
         side: DoubleSide,
         color: 0x333333
@@ -569,12 +594,11 @@ export default class Wall {
         this.state.skins.map(async (style, index: number) => {
           let path: string | undefined = undefined;
           const texture = skinMap.get(style || 'default')?.options.texture;
-          let normal, disaplacement, specular;
+          let normal, disaplacement;
           if (texture) {
             path = texture.path;
             normal = texture.normal;
             disaplacement = texture.displacement;
-            specular = texture.specular;
           }
           if (path) {
             return [
@@ -585,8 +609,7 @@ export default class Wall {
                   maps: {
                     color: path,
                     normal,
-                    disaplacement,
-                    specular
+                    disaplacement
                   },
                   options: {
                     position: new Vector2(0, 0),
@@ -603,8 +626,7 @@ export default class Wall {
                   maps: {
                     color: path,
                     normal,
-                    disaplacement,
-                    specular
+                    disaplacement
                   },
                   options: {
                     position: new Vector2(512, 0),
@@ -625,12 +647,12 @@ export default class Wall {
         const largeMaterials = [...(largeWall.material as Material[])];
         largeMaterials[0] = styleA?.[0] || largeMaterials[0]!;
         largeMaterials[1] = styleB?.[0] || largeMaterials[1]!;
-        largeWall.material = largeMaterials as MeshPhongMaterial[];
+        largeWall.material = largeMaterials as MeshStandardMaterial[];
 
         const smallMaterials = [...(smallWall.material as Material[])];
         smallMaterials[0] = styleA?.[1] || smallMaterials[0]!;
         smallMaterials[1] = styleB?.[1] || smallMaterials[1]!;
-        smallWall.material = smallMaterials as MeshPhongMaterial[];
+        smallWall.material = smallMaterials as MeshStandardMaterial[];
 
         this.toggleVisibility(this.size === WALL_SIZE.LARGE, largeWall);
       });
@@ -661,7 +683,7 @@ export default class Wall {
   }
 }
 
-const materialsMap = new Map<string, MeshPhongMaterial>();
+const materialsMap = new Map<string, MeshStandardMaterial>();
 async function setupMaterial(
   {
     index = 0,
@@ -676,7 +698,6 @@ async function setupMaterial(
       ambient?: string | null;
       normal?: string | null;
       disaplacement?: string | null;
-      specular?: string | null;
     };
     options: {
       density?: number;
@@ -729,15 +750,6 @@ async function setupMaterial(
       });
     }
 
-    let specularMap = null;
-    if (maps.specular) {
-      specularMap = await assetLoader.add<Texture, SpriteLoadDescription>({
-        loader: LOADER.SPRITE,
-        value: maps.specular,
-        options: { density: 2, ...options }
-      });
-    }
-
     const { min, size } = getGroupBounds(geometry!, index)!;
     const pos = geometry!.attributes.position!;
     const uv = new Float32Array(pos.count * 2);
@@ -757,15 +769,13 @@ async function setupMaterial(
 
     geometry!.setAttribute('uv', new BufferAttribute(uv, 2));
 
-    texture.wrapS = ClampToEdgeWrapping;
-    texture.wrapT = ClampToEdgeWrapping;
+    prepareTexture(texture, { pixelrated: true });
 
-    const material = new MeshPhongMaterial({
+    const material = new MeshStandardMaterial({
       map: texture,
       aoMap: ambientMap,
       normalMap: normalMap,
       displacementMap: displacementMap,
-      specularMap: specularMap,
       side: DoubleSide
     });
     materialsMap.set(key, material);

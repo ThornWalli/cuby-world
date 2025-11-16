@@ -18,17 +18,11 @@
       </form>
       <teleport to="#teleports">
         <cw-room-editor-dialog-room-grid-resize ref="dialogRoomGridResize" />
-        <cw-room-editor-dialog-room-entrance-position
-          ref="dialogRoomEntrancePosition"
-          :grid-size="model.gridSize" />
       </teleport>
     </template>
     <template #actions>
       <cw-button style-type="tertiary" @click="onClickRoomGridResize()">
         Grid Resize
-      </cw-button>
-      <cw-button style-type="tertiary" @click="onClickEntrancePosition()">
-        Entrance Position
       </cw-button>
       <span class="spacer"></span>
       <cw-button @click="onClickSave()"> Save </cw-button>
@@ -43,24 +37,15 @@ import CwFormFieldTextfield from '../../../components/formField/Textfield.vue';
 import CwFormFieldTextarea from '../../../components/formField/Textarea.vue';
 import CwButton from '../../../components/Button.vue';
 import CwRoomEditorDialogRoomGridResize from './RoomGridResize.vue';
-import CwRoomEditorDialogRoomEntrancePosition from './RoomEntrancePosition.vue';
 
 import type App from '@cuby-world/app/lib/classes/App';
 import { resizeRoom } from '@cuby-world/app/lib/utils/editor/room';
-import {
-  TELEPORT_TYPE,
-  type EntranceTeleportDescription
-} from '@cuby-world/app/lib/types/teleport';
 import type { RoomDescription } from '@cuby-world/app/lib/types/room';
 
 const formEl = ref<HTMLFormElement | null>(null);
 
 const dialogRoomGridResize = ref<InstanceType<
   typeof CwRoomEditorDialogRoomGridResize
-> | null>(null);
-
-const dialogRoomEntrancePosition = ref<InstanceType<
-  typeof CwRoomEditorDialogRoomEntrancePosition
 > | null>(null);
 
 const model = ref<RoomDescription>({} as RoomDescription);
@@ -90,31 +75,6 @@ async function onClickRoomGridResize() {
       $props.app.enterRoom(description);
     }
   }
-}
-
-async function onClickEntrancePosition() {
-  const description = model.value;
-  let entranceTeleport: EntranceTeleportDescription | undefined =
-    description.teleports.find(
-      teleport => teleport.type === TELEPORT_TYPE.ENTRANCE
-    ) as EntranceTeleportDescription | undefined;
-
-  const newTeleport = !entranceTeleport;
-  entranceTeleport =
-    await dialogRoomEntrancePosition.value!.open(entranceTeleport);
-
-  if (newTeleport && entranceTeleport) {
-    description.teleports.push(entranceTeleport);
-  } else {
-    description.teleports = description!.teleports.map(teleport => {
-      if (teleport.type === TELEPORT_TYPE.ENTRANCE) {
-        return entranceTeleport!;
-      }
-      return teleport;
-    });
-  }
-
-  $props.app.enterRoom(description);
 }
 
 function onSubmit(

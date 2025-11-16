@@ -1,4 +1,4 @@
-import { Vector3, Mesh, MeshPhongMaterial, Vector2 } from 'three';
+import { Vector3, Mesh, MeshStandardMaterial, Vector2 } from 'three';
 import type { AnimationLoopSubject } from '@cuby-world/app/lib/classes/Renderer';
 import Stair, {
   type StairConstructorOptions
@@ -11,7 +11,7 @@ import type { Default3x1SkinDescription } from './skins';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import type { PathPartDescription } from '@cuby-world/app/lib/utils/pathfindng';
 import { ROTATION } from '@cuby-world/app/lib/utils/rotation';
-import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/types/animation';
 
 export default class Default1x3Stair extends Stair {
   static override KEY = 'default_3x1';
@@ -22,7 +22,7 @@ export default class Default1x3Stair extends Stair {
     super({
       ...options,
       size: new Vector2(3, 1),
-      entryPositions: { start: new Vector2(-1, 0), end: new Vector2(3, 0) }
+      entryPositions: { start: new Vector2(0, -1), end: new Vector2(0, 3) }
     });
   }
 
@@ -41,7 +41,9 @@ export default class Default1x3Stair extends Stair {
       if ('color' in skin.options && skin?.options.color) {
         object.traverse(o => {
           if (o instanceof Mesh) {
-            o.material = new MeshPhongMaterial({
+            o.material = new MeshStandardMaterial({
+              roughness: 1.0,
+              metalness: 0.0,
               color: skin.options.color
             });
           }

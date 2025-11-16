@@ -165,7 +165,9 @@ async function setupPlayer(app: App) {
       }
     });
   }
-  app.modules.player.addPlayer(markRaw(player));
+  app.modules.player.addPlayer({
+    player: markRaw(player)
+  });
   hasPlayer.value = true;
 }
 

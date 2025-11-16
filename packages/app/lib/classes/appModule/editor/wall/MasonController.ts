@@ -12,7 +12,7 @@ import {
   MeshBasicMaterial,
   Vector2,
   Vector3,
-  MeshPhongMaterial
+  MeshStandardMaterial
 } from 'three';
 import type App from '../../../App';
 import {
@@ -401,11 +401,16 @@ export default class MasonController extends AppModuleController<
         color = '#00ff00';
       }
     }
-    (this.indicatorMeshes.start.material as MeshPhongMaterial).color.set(color);
-    (this.indicatorMeshes.start.material as MeshPhongMaterial).needsUpdate =
+    (this.indicatorMeshes.start.material as MeshStandardMaterial).color.set(
+      color
+    );
+    (this.indicatorMeshes.start.material as MeshStandardMaterial).needsUpdate =
       true;
-    (this.indicatorMeshes.end.material as MeshPhongMaterial).color.set(color);
-    (this.indicatorMeshes.end.material as MeshPhongMaterial).needsUpdate = true;
+    (this.indicatorMeshes.end.material as MeshStandardMaterial).color.set(
+      color
+    );
+    (this.indicatorMeshes.end.material as MeshStandardMaterial).needsUpdate =
+      true;
   }
 
   //#endregion
@@ -473,7 +478,7 @@ function createWallCreatorMesh(): Mesh {
 
   geometry.translate(0, height / 2, 0);
   geometry.translate(-0.5, 0, -0.5);
-  const material = new MeshPhongMaterial();
+  const material = new MeshStandardMaterial();
 
   const subMeshPlane = new Mesh(
     new BoxGeometry(1, height, 1),

@@ -8,12 +8,14 @@ export interface UnitType {}
 export const UNIT_TYPE: UnitType = {} as UnitType;
 
 export interface RawUnitDescription<Rotation = string, Position = number[]> {
+  id: string;
   unit: string;
   options: {
+    skin: string;
     accessible?: boolean;
     position: Position;
     rotation: Rotation;
-    options: { [key: string]: unknown };
+    // options: { [key: string]: unknown };
     moduleStates: { [key: string]: UnitModuleState };
     [key: string]: unknown;
   };

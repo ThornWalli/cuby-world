@@ -1,5 +1,5 @@
 /* eslint-disable complexity */
-import type { Object3D, BufferAttribute, MeshPhongMaterial } from 'three';
+import type { Object3D, BufferAttribute, MeshStandardMaterial } from 'three';
 import { Vector2, Vector3, BoxGeometry, BufferGeometry, Mesh } from 'three';
 import EasyStar from 'easystarjs';
 import Wall, { type WallIdentifier } from '../classes/Wall';
@@ -1207,7 +1207,7 @@ export function createWallMesh(
     windowSize?: WALL_WINDOW_SIZE;
     small: boolean;
     direction: WALL_DIRECTION;
-    materials: MeshPhongMaterial[];
+    materials: MeshStandardMaterial[];
   },
   {
     center,

@@ -1,8 +1,8 @@
 import type { Vector3 } from 'three';
 import type Unit from './Unit';
 import PlayerUnitModule from './unitModule/Player';
-import type { SubscriptionLike } from 'rxjs';
-import { ReplaySubject, Subscription } from 'rxjs';
+import { ReplaySubject, Subject, type SubscriptionLike } from 'rxjs';
+import { Subscription } from 'rxjs';
 import Cuby from '@cuby-world/units/cuby/Cuby';
 import { catalog } from '@cuby-world/units';
 import Character from '@cuby-world/units/character/Character';
@@ -39,7 +39,7 @@ export interface PlayerConstructorOptions {
 }
 
 export interface Observables {
-  playerSettings$: ReplaySubject<PlayerSettings>;
+  playerSettings$: Subject<PlayerSettings>;
   unit$: ReplaySubject<{
     lastUnit?: Unit;
     unit: Unit;
@@ -47,12 +47,18 @@ export interface Observables {
 }
 
 export default class Player {
+  setReady(value: boolean) {
+    this.ready = value;
+  }
+  isReady() {
+    return this.ready;
+  }
   private _client: boolean = false;
   get client() {
     return this._client;
   }
 
-  ready: boolean = false;
+  private ready: boolean = false;
   state: PlayerState;
 
   id: string;
@@ -76,7 +82,7 @@ export default class Player {
     };
 
     this.observables = {
-      playerSettings$: new ReplaySubject<PlayerSettings>(1),
+      playerSettings$: new Subject<PlayerSettings>(),
       unit$: new ReplaySubject<{
         lastUnit?: Unit;
         unit: Unit;
@@ -104,9 +110,13 @@ export default class Player {
     this.observables.unit$.next({ unit, lastUnit });
   }
 
-  async moveTo(position: Vector3) {
+  async moveTo(position: Vector3, targetUnit?: Unit, targetPosition?: Vector3) {
     if (this.unit) {
-      await this.unit.modules.movement.resolveMoveTo(position);
+      await this.unit.modules.movement.resolveMoveTo(
+        position,
+        targetUnit,
+        targetPosition
+      );
     } else {
       throw new Error('Player unit is not set, cannot move to position');
     }
@@ -131,6 +141,7 @@ export default class Player {
     }
 
     const unit = new UnitClass({
+      id: this.id,
       name: UnitClass.NAME,
       options: {
         ...skinMap?.get(this.state.skin)?.options
@@ -138,6 +149,12 @@ export default class Player {
     });
 
     return unit;
+  }
+
+  async recreateUnit() {
+    const newUnit = await this.createUnit();
+    this.setUnit(newUnit);
+    return newUnit;
   }
 
   async setCharacterType(characterType: CHARACHTER_TYPE) {

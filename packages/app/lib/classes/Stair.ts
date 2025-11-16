@@ -20,8 +20,9 @@ import {
 } from '@cuby-world/app/lib/utils/object';
 import type Room from './Room';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
-import { ANIMATION_ACTION } from './unitModule/Animation';
 import type { PathPartDescription } from '../utils/pathfindng';
+import { rotateVector2 } from '../utils/vector';
+import { ANIMATION_ACTION } from '../types/animation';
 
 declare module '../../lib/utils/object' {
   interface ObjectName {
@@ -46,7 +47,7 @@ export interface StairConstructorOptions {
 
 export default class Stair {
   id: string = crypto.randomUUID();
-  debug = true;
+  debug = false;
   /**
    * Der Typ muss eindeutig sein und dem Muster "<Kategorie>_<Name>" folgen, z.B. "stair_default"
    */
@@ -169,16 +170,16 @@ export default class Stair {
       new BoxGeometry(0.1, 0.1, 0.1),
       new MeshBasicMaterial({ color: 0x00ff00 })
     );
-    startMesh.position.set(-entryPositions.start.x, 0, -entryPositions.start.y);
+    startMesh.position.set(-entryPositions.start.y, 0, -entryPositions.start.x);
 
     const endMesh = new Mesh(
       new BoxGeometry(0.1, 0.1, 0.1),
       new MeshBasicMaterial({ color: 0xff0000 })
     );
     endMesh.position.set(
-      -entryPositions.end.x,
+      -entryPositions.end.y,
       1 * FLOOR_HEIGHT,
-      -entryPositions.end.y
+      -entryPositions.end.x
     );
 
     return [startMesh, endMesh];
@@ -234,56 +235,6 @@ export default class Stair {
   }
 
   getEntryPositionsByRotation(rotation: ROTATION = this.rotation) {
-    const rotateVector2 = (vec: Vector2, rotation: ROTATION): Vector2 => {
-      const { x, y } = vec.clone();
-      let rx = x;
-      let rz = y;
-
-      switch (rotation) {
-        case ROTATION.NORTH:
-          rx = y;
-          rz = -x;
-          break;
-        case ROTATION.SOUTH:
-          rx = y;
-          rz = x;
-          break;
-
-        case ROTATION.EAST:
-          rx = x;
-          rz = y;
-          break;
-        case ROTATION.WEST:
-          rx = -x;
-          rz = y;
-          break;
-
-        // case ROTATION.EAST_UP:
-        //   rx = y;
-        //   rz = -x;
-        //   break;
-        // case ROTATION.WEST_UP:
-        //   rx = -y;
-        //   rz = x;
-        //   break;
-        // case ROTATION.EAST_DOWN:
-        //   rx = y;
-        //   rz = -x;
-        //   break;
-        // case ROTATION.WEST_DOWN:
-        //   rx = -y;
-        //   rz = x;
-        //   break;
-
-        default:
-          rx = x;
-          rz = y;
-          break;
-      }
-
-      return new Vector2(rx, rz);
-    };
-
     return {
       start: rotateVector2(this.entryPositions.start, rotation),
       end: rotateVector2(this.entryPositions.end, rotation)

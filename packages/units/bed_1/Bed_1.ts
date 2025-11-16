@@ -1,4 +1,4 @@
-import { Object3D, Vector3 } from 'three';
+import { Object3D, Vector2, Vector3 } from 'three';
 import Unit, {
   type SetupContext,
   type UnitConstructorOptions,
@@ -8,7 +8,7 @@ import Unit, {
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/bed_1.glb?url';
 import BedUnitModule from '@cuby-world/app/lib/classes/unitModule/Bed';
-import type { BedUnitOptions } from '@cuby-world/app/lib/classes/unitModule/Bed';
+import type { BedOptions as BedModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Bed';
 
 type BedUnitModules = UnitModules & {
   bed: BedUnitModules;
@@ -16,7 +16,7 @@ type BedUnitModules = UnitModules & {
 
 type BedUnitModuleList = (typeof BedUnitModule)[] & UnitModuleList;
 
-export type BedOptions = BedUnitOptions;
+export type BedOptions = BedModuleOptions;
 export default class Bed_1 extends Unit<
   BedOptions,
   BedUnitModules,
@@ -40,6 +40,7 @@ export default class Bed_1 extends Unit<
         placeable: true,
         size: new Vector3(2, 0.3, 1),
         options: {
+          slots: [{ position: new Vector2(0, 0) }],
           offset: new Vector3(-0.6, -0.45, 0)
         }
       },
@@ -47,6 +48,9 @@ export default class Bed_1 extends Unit<
     );
   }
 
+  override getEntryPosition(): Vector2 {
+    return new Vector2(0, 0);
+  }
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Object3D();
 
@@ -54,7 +58,7 @@ export default class Bed_1 extends Unit<
 
     meshRoot.position.set(0, 0, 0);
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
 
     meshRoot.add(object);
 

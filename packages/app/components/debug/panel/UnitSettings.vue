@@ -74,7 +74,7 @@ onUnmounted(() => {
 const debugInfo = ref();
 function refreshDebugInfo(unit: Unit) {
   const position = unit.getPosition();
-  const rotation = unit.rotation;
+  const rotation = unit.getRotation();
   const size = unit.getSize();
 
   const info = {

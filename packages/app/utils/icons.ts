@@ -238,5 +238,15 @@ export default {
     defineAsyncComponent(
       () => import('../assets/icons/actions/pause.svg?component')
     )
+  ),
+  rotate_left: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/actions/rotate_left.svg?component')
+    )
+  ),
+  rotate_right: markRaw(
+    defineAsyncComponent(
+      () => import('../assets/icons/actions/rotate_right.svg?component')
+    )
   )
 };

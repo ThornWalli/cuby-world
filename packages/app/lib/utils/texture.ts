@@ -1,4 +1,12 @@
-import { CanvasTexture, RepeatWrapping } from 'three';
+import type { Texture } from 'three';
+import {
+  CanvasTexture,
+  ClampToEdgeWrapping,
+  LinearFilter,
+  NearestFilter,
+  RepeatWrapping,
+  SRGBColorSpace
+} from 'three';
 import { createCheckerboardCanvas } from './canvas';
 
 export function checkerboardTexture(
@@ -21,4 +29,32 @@ export function checkerboardTexture(
   checkerboardTexture.wrapT = RepeatWrapping;
   checkerboardTexture.repeat.set(repeatX, repeatY);
   return checkerboardTexture;
+}
+
+export function prepareTexture(
+  texture: Texture,
+  options: {
+    pixelrated?: boolean;
+    repeat?: boolean;
+  } = {}
+) {
+  texture.colorSpace = SRGBColorSpace;
+  texture.flipY = false;
+  if (options.pixelrated) {
+    texture.minFilter = NearestFilter;
+    texture.magFilter = NearestFilter;
+    // texture.generateMipmaps = false;
+  } else {
+    texture.minFilter = LinearFilter;
+    texture.magFilter = LinearFilter;
+  }
+  if (!options.repeat) {
+    texture.wrapS = RepeatWrapping;
+    texture.wrapT = RepeatWrapping;
+  } else {
+    texture.wrapS = ClampToEdgeWrapping;
+    texture.wrapT = ClampToEdgeWrapping;
+  }
+  texture.needsUpdate = true;
+  return texture;
 }

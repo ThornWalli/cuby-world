@@ -55,18 +55,6 @@ export function resizeRoom(
       break;
   }
 
-  //#region teleports
-  const teleports = description.teleports
-    .map(teleport => ({
-      ...teleport,
-      position: teleport.position.clone().add(offset)
-    }))
-    .filter(
-      teleport =>
-        teleport.position.x < gridSize.x && teleport.position.y < gridSize.y
-    );
-  //#endregion
-
   //#region groundstyles
   const groundStyles = description.groundStyles.map(groundStyle => ({
     ...groundStyle,
@@ -118,7 +106,6 @@ export function resizeRoom(
   return {
     id: crypto.randomUUID(),
     info: description.info,
-    teleports,
     gridSize,
     //
     groundStyles,

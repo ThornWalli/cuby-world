@@ -3,7 +3,6 @@ import type { WallDescription } from './wall';
 import type { GroundStyleDescription } from './ground';
 import type { ROTATION } from '../utils/rotation';
 import type { StairDescription } from './stair';
-import type { TeleportDescription } from './teleport';
 import type { UnitDescription } from './unit';
 
 export type Grid = number[][];
@@ -29,7 +28,6 @@ export interface RoomDescription<
     description?: string;
   };
   gridSize: GridSize;
-  teleports: TeleportDescription[];
 
   units: UnitDescription<Rotation, Position>[];
   walls: WallDescription<Position>[];

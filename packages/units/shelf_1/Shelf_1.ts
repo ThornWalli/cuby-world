@@ -1,6 +1,6 @@
 import type { UnitOptions } from './../../app/lib/classes/Unit';
 import { MATERIAL_NAME } from './../../app/lib/utils/material';
-import { DoubleSide, MeshPhongMaterial, Object3D, Vector3 } from 'three';
+import { DoubleSide, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import type {
   SetupContext,
   UnitConstructorOptions
@@ -10,6 +10,7 @@ import glbBase from './assets/shelf_1.glb?url';
 import { replaceMaterialByName } from '@cuby-world/app/lib/utils/material';
 import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
 import WallUnit from '@cuby-world/app/lib/classes/unit/Wall';
+import { skinsMap } from './skins';
 
 export type ShelfOptions = UnitOptions & {
   color: number | string;
@@ -29,14 +30,9 @@ export default class Shelf_1<
       name: 'Shelf_1',
       size: new Vector3(1, 1.8, 1),
       wallOnly: false,
-      accessible: true,
       selectable: true,
       placeable: true,
-      options: {
-        color: 0xffeeaa,
-        ...options.options
-      } as Options,
-      moduleStates: {
+      moduleOptions: {
         wall: {
           offset: new Vector3(-0.275, 0, 0)
         }
@@ -51,17 +47,21 @@ export default class Shelf_1<
     obj.name = OBJECT_NAME.MESH;
     obj.position.set(0, 0, 0); // reset Position
 
+    const skin = skinsMap.get(this.getSkin())!;
+
     replaceMaterialByName(
       obj,
       MATERIAL_NAME.BASE,
-      new MeshPhongMaterial({
-        color: this.options.color,
+      new MeshStandardMaterial({
+        roughness: 1.0,
+        metalness: 0.0,
+        color: skin.options.color,
         side: DoubleSide,
         shadowSide: DoubleSide
       })
     );
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
 
     meshRoot.add(obj);
 

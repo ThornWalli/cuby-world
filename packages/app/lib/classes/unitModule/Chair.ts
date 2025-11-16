@@ -1,13 +1,10 @@
 import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
-import UnitModule, {
-  type UnitModuleObservables,
-  type UnitModuleSetupContext,
-  type UnitModuleState
-} from '../UnitModule';
+import type { UnitModuleSetupContext } from '../UnitModule';
 import { UNIT_TYPE } from '../../types/unit';
-import type { Vector3 } from 'three';
-import type { UnitOptions } from '../Unit';
 import type Unit from '../Unit';
+import type { SlotObervables, SlotUnitModuleOptions, SlotState } from './Slot';
+import SlotUnitModule from './Slot';
+import { Vector2 } from 'three';
 
 declare module '../../types/unit' {
   interface UnitType {
@@ -25,34 +22,41 @@ declare module '../../utils/object' {
 
 OBJECT_NAME.CHAIR = 'chair';
 
-export interface ChairUnitOptions extends UnitOptions {
-  offset: Vector3;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface Obervables extends UnitModuleObservables {}
+interface Obervables extends SlotObervables {}
 
+export type ChairOptions = SlotUnitModuleOptions;
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ChairState extends UnitModuleState {}
-export default class ChairUnitModule extends UnitModule<
+export interface ChairState extends SlotState {}
+export default class ChairUnitModule extends SlotUnitModule<
+  ChairOptions,
   ChairState,
   Obervables
 > {
   static override TYPE = 'chair';
 
   usedUnit: Unit | null = null;
+  constructor(
+    unit: Unit,
+    options: ChairOptions,
+    state: ChairState,
+    debug: boolean
+  ) {
+    options = {
+      ...options,
+      slots: options.slots ?? [
+        {
+          position: new Vector2(0, 0)
+        }
+      ]
+    };
+    super(unit, options, state, debug);
+  }
 
   override async setup(context: UnitModuleSetupContext) {
+    const root = await super.setup(context);
     context.unit.addType(UNIT_TYPE.CHAIR);
     context.unit.root.userData[OBJECT_NAME.CHAIR] = true;
-    return context.mesh;
-  }
-
-  getUsedUnit() {
-    return this.usedUnit;
-  }
-
-  setUsedUnit(unit: Unit | null) {
-    this.usedUnit = unit;
+    return root;
   }
 }

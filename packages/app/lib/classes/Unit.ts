@@ -1,17 +1,12 @@
+import {
+  DEFAULT_UNIT_SKIN,
+  type UnitSkinIdentifier
+} from './../utils/unit/skins';
 /* eslint-disable complexity */
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
 import { ReplaySubject, Subscription, type SubscriptionLike } from 'rxjs';
-import type { Object3D, MeshPhongMaterial } from 'three';
-import {
-  Box3,
-  ClampToEdgeWrapping,
-  Euler,
-  Group,
-  LinearFilter,
-  Mesh,
-  SRGBColorSpace,
-  Vector3
-} from 'three';
+import { type Object3D, Vector2, type MeshStandardMaterial } from 'three';
+import { Box3, Euler, Group, Mesh, Vector3 } from 'three';
 import type Room from './Room';
 import MovementUnitModule from './unitModule/Movement';
 import PlayerUnitModule from './unitModule/Player';
@@ -27,7 +22,7 @@ import { PlacementUnitModule } from './unitModule/Placement';
 import { findAllMeshes } from '@cuby-world/units/utils/mesh';
 import RoomUnitModule from './unitModule/Room';
 import type { UnitChunking } from './UnitChunkManager';
-import type { UnitModuleState } from './UnitModule';
+import type { UnitModuleOptions, UnitModuleState } from './UnitModule';
 import type { AnimationLoopValue } from './Renderer';
 import {
   disposeObject3D,
@@ -44,7 +39,11 @@ import {
 } from '../utils/rotation';
 import type { UnitDescription, UnitType } from '../types/unit';
 import type { TextureMaps } from '../types/textures';
+import type { ConditionDirectionsDescription } from '../utils/pathfindng';
+import { rotateVector2 } from '../utils/vector';
+import { prepareTexture } from '../utils/texture';
 
+export type UnitIdentifier = string;
 declare module '../../lib/utils/object' {
   interface ObjectUserData {
     UNIT: string;
@@ -63,13 +62,7 @@ export type UnitModuleList = (
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type UnitOptionsPlaceholder = {};
-export type UnitOptions<OtherOptions = UnitOptionsPlaceholder> =
-  OtherOptions & {
-    rotationType?: ROTATION_TYPE;
-    canPlaced?: boolean;
-    canRotate?: boolean;
-    hasControls?: boolean;
-  };
+export type UnitOptions<OtherOptions = UnitOptionsPlaceholder> = OtherOptions;
 
 export interface AnimatedUnit {
   // animation: UnitModule;
@@ -79,10 +72,16 @@ export interface AnimatedUnit {
 export interface UnitConstructorOptions<
   Options extends UnitOptions = UnitOptions
 > {
+  id?: string;
   name: string;
   selectable?: boolean;
   placeable?: boolean;
+  skin?: UnitSkinIdentifier;
   accessible?: boolean;
+
+  controls?: boolean;
+  rotateable?: boolean;
+  rotationType?: ROTATION_TYPE;
   /**
    * Wenn gesetzt, kann die Unit nur an einer Wand platziert werden.
    */
@@ -92,6 +91,7 @@ export interface UnitConstructorOptions<
   rotation?: ROTATION;
   options?: Options;
   preview?: boolean;
+  moduleOptions?: { [key: string]: UnitModuleOptions };
   moduleStates?: { [key: string]: UnitModuleState };
 }
 
@@ -125,6 +125,7 @@ export interface UnitObservables {
   materialReady$: ReplaySubject<void>;
   position$: ReplaySubject<Vector3>;
   rotate$: ReplaySubject<ROTATION>;
+  visible$: ReplaySubject<boolean>;
 }
 
 export default class Unit<
@@ -138,9 +139,6 @@ export default class Unit<
     unit: Unit<
       {
         rotationType?: ROTATION_TYPE;
-        canPlaced?: boolean;
-        canRotate?: boolean;
-        hasControls?: boolean;
       },
       UnitModules,
       UnitModuleList,
@@ -165,7 +163,7 @@ export default class Unit<
   }
 
   canRotate() {
-    return !this.disabledRotation && this.options.canRotate;
+    return !this.disabledRotation && this.rotateable;
   }
 
   addType(type: UnitType | string) {
@@ -186,6 +184,8 @@ export default class Unit<
   static KEY = 'unit';
   static NAME = 'Unit';
 
+  id: UnitIdentifier;
+
   type: Set<UnitType> = new Set();
 
   observables: Observables = {} as Observables;
@@ -197,21 +197,23 @@ export default class Unit<
   assetLoader?: AssetLoader;
 
   subscription = new Subscription();
-  options: Options = {
-    hasControls: true,
-    canPlaced: true,
-    canRotate: true
-  } as Options;
+  options: Options = {} as Options;
   root: Group;
 
   wallOnly: boolean;
   accessible: boolean | ACCESSIBLE_TYPE[];
+  controls: boolean;
+  placeable: boolean;
+  rotateable: boolean;
+
+  rotationType: ROTATION_TYPE = ROTATION_TYPE.BASIC;
 
   private _position: Vector3 = new Vector3(0, 0, 0);
   get position() {
     return this._position;
   }
-  rotation: ROTATION = ROTATION.SOUTH;
+  private rotation: ROTATION = ROTATION.SOUTH;
+  private skin: UnitSkinIdentifier;
 
   private size: Vector3 = new Vector3(1, 1, 1);
   private visible = true;
@@ -219,6 +221,10 @@ export default class Unit<
 
   get key(): string {
     return (this.constructor as typeof Unit).KEY;
+  }
+
+  getSkin(): UnitSkinIdentifier {
+    return this.skin || DEFAULT_UNIT_SKIN;
   }
 
   equals(unit: Unit): boolean {
@@ -232,11 +238,12 @@ export default class Unit<
       })
     );
     return {
+      id: this.id,
       unit: this.key,
       options: {
+        skin: this.skin,
         position: this._position.clone(),
         rotation: this.rotation,
-        options: { ...this.options },
         moduleStates
       }
     };
@@ -246,22 +253,34 @@ export default class Unit<
     return this.toDescription();
   }
 
+  setMaterialReady() {
+    this.observables.materialReady$.next();
+    this.observables.materialReady$.complete();
+  }
+
   constructor(
     {
+      id,
       debug,
       name,
+      skin,
       selectable,
       placeable,
+      rotateable,
+      rotationType,
       wallOnly,
       accessible,
+      controls,
       position,
       size,
       rotation,
       options,
       preview,
+      moduleOptions,
       moduleStates
     }: UnitConstructorOptions<Options> & { debug?: boolean } = {
       name: 'Unit',
+      moduleOptions: {},
       moduleStates: {}
     },
     moduleList: ModuleList = [] as unknown as ModuleList
@@ -271,8 +290,11 @@ export default class Unit<
     this.observables.materialReady$ = new ReplaySubject<void>(1);
     this.observables.position$ = new ReplaySubject<Vector3>(1);
     this.observables.rotate$ = new ReplaySubject<ROTATION>(1);
+    this.observables.visible$ = new ReplaySubject<boolean>(1);
     //#endregion
 
+    this.id = id || crypto.randomUUID();
+    this.skin = skin || DEFAULT_UNIT_SKIN;
     this.debug = debug ?? false;
     this.preview = preview ?? false;
     this.options = {
@@ -283,6 +305,8 @@ export default class Unit<
     this.size = size || this.size;
     this.wallOnly = wallOnly ?? false;
     this.accessible = accessible ?? false;
+    this.controls = controls ?? true;
+    this.rotationType = rotationType || ROTATION_TYPE.BASIC;
 
     //#region modules
     moduleList.push(PlayerUnitModule, RoomUnitModule, MovementUnitModule);
@@ -294,12 +318,18 @@ export default class Unit<
       moduleList.push(PlacementUnitModule);
     }
 
+    this.placeable = placeable ?? true;
+    this.rotateable = rotateable ?? true;
+
     this.moduleList = moduleList;
 
     const preparedModules = moduleList.map(ModuleClass => {
+      const options = moduleOptions?.[ModuleClass.TYPE] ?? {};
       const state = moduleStates?.[ModuleClass.TYPE] ?? {};
       const moduleInstance = new ModuleClass(
         this,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        options as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state as any,
         this.debug
@@ -345,8 +375,29 @@ export default class Unit<
     findAllMeshes(this.root).forEach(mesh => {
       disposeObject3D(mesh);
     });
+    Object.values(this.modules).forEach(module => module.destroy());
     this.root.removeFromParent();
     this.root.remove();
+  }
+
+  getEntryPosition(_targetPosition?: Vector3): Vector2 {
+    return new Vector2(0, 0);
+  }
+
+  getRealEntryPosition(targetPosition?: Vector3) {
+    const { x, y } = rotateVector2(
+      this.getEntryPosition(targetPosition?.clone().sub(this.getPosition())),
+      this.rotation
+    );
+    return new Vector3(x, 0, y).add(this.getPosition());
+  }
+
+  hasControls() {
+    return this.controls;
+  }
+
+  canPlace() {
+    return this.placeable;
   }
 
   canDelete() {
@@ -357,16 +408,22 @@ export default class Unit<
     return this.root.name;
   }
 
-  get id() {
-    return this.root.uuid;
-  }
-
   isPreview() {
     return this.preview;
   }
 
   getModule<M extends UnitModule>(moduleType: string) {
     return this.modules[moduleType as keyof Modules] as M;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getModuleByType<M extends UnitModule>(ModuleClass: any): M {
+    return Object.values(this.modules).find(m => m instanceof ModuleClass);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  hasModuleType(ModuleClass: typeof UnitModule | any) {
+    return Object.values(this.modules).some(m => m instanceof ModuleClass);
   }
 
   getScenePosition(): Vector3 {
@@ -487,20 +544,18 @@ export default class Unit<
 
   rotateLeft() {
     const directions =
-      rotationDirections[this.options.rotationType || ROTATION_TYPE.BASIC];
+      rotationDirections[this.rotationType || ROTATION_TYPE.BASIC];
     const length = directions.length;
     const index = (directions.indexOf(this.rotation) - 1 + length) % length;
     this.setRotation(directions[index]!);
   }
   rotateRight() {
     const directions =
-      rotationDirections[this.options.rotationType || ROTATION_TYPE.BASIC];
+      rotationDirections[this.rotationType || ROTATION_TYPE.BASIC];
     const length = directions.length;
     const index = (directions.indexOf(this.rotation) + 1) % length;
     this.setRotation(
-      rotationDirections[this.options.rotationType || ROTATION_TYPE.BASIC][
-        index
-      ]!
+      rotationDirections[this.rotationType || ROTATION_TYPE.BASIC][index]!
     );
   }
   //#endregion
@@ -536,7 +591,11 @@ export default class Unit<
   }
 
   getMatrixPositions(): Vector3[] {
-    const positions: Vector3[] = [];
+    return Array.from(this.getMatrixPositionMap().values());
+  }
+
+  getMatrixPositionMap(): Map<string, Vector3> {
+    const map = new Map<string, Vector3>();
     const pos = positionToMatrixPosition(this.getPosition());
     const size = this.size;
 
@@ -552,22 +611,22 @@ export default class Unit<
             break;
           case ROTATION.WEST:
             x_ = x_ + x;
-            z_ = z_ + z;
+            z_ = z_ - z;
             break;
           case ROTATION.EAST:
             x_ = x_ - x;
-            z_ = z_ - z;
+            z_ = z_ + z;
             break;
           case ROTATION.SOUTH:
-            x_ = x_ + z;
+            x_ = x_ - z;
             z_ = z_ - x;
             break;
         }
 
-        positions.push(new Vector3(x_, 0, z_));
+        map.set(new Vector2(x, z).toArray().toString(), new Vector3(x_, 0, z_));
       }
     }
-    return positions;
+    return map;
   }
 
   // getMatrixPositions(): Vector3[] {
@@ -630,15 +689,14 @@ export default class Unit<
   }
 
   update(v: AnimationLoopValue) {
-    this._updateModules.forEach(module => {
-      module.update(v);
-    });
+    this._updateModules.forEach(module => module.update(v));
   }
 
   getRotationByPosition(target: Vector3, diagonal = true) {
-    const direction = target.clone().sub(this._position);
-    direction.y = 0;
-    return getRotationFromVector(direction, diagonal);
+    return getRotationFromVector(
+      target.clone().sub(this._position).setY(0),
+      diagonal
+    );
   }
 
   isIntersectByPosition(position: Vector3): unknown {
@@ -652,6 +710,7 @@ export default class Unit<
   setVisible(visible: boolean) {
     this.visible = visible;
     this.setRootVisible();
+    this.observables.visible$?.next(visible);
   }
   setChunkVisible(visible: boolean) {
     this.chunkVisible = visible;
@@ -662,9 +721,7 @@ export default class Unit<
     this.root.visible = visible;
   }
   //#endregion
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  createMesh(context: SetupContext): Promise<Object3D> {
+  createMesh(_context: SetupContext): Promise<Object3D> {
     // Override in subclasses to create a mesh
     throw new Error('createMesh method must be implemented in subclasses');
   }
@@ -707,21 +764,13 @@ export default class Unit<
       }
     });
     meshes.forEach(mesh => {
-      const { colorMap, normalMap, ambientMap, displacementMap, specularMap } =
-        textureMaps;
+      const { colorMap, normalMap, ambientMap, displacementMap } = textureMaps;
 
       Object.values(textureMaps)
         .filter(v => v !== null)
-        .forEach(map => {
-          map.flipY = false;
-          map.wrapS = ClampToEdgeWrapping;
-          map.wrapT = ClampToEdgeWrapping;
-          map.minFilter = LinearFilter;
-          map.magFilter = LinearFilter;
-          map.colorSpace = SRGBColorSpace;
-        });
+        .forEach(map => prepareTexture(map, { pixelrated: true }));
 
-      const material = mesh.material as MeshPhongMaterial;
+      const material = mesh.material as MeshStandardMaterial;
       material.map = colorMap;
       if (normalMap) {
         // material.normalMap = normalMap;
@@ -733,15 +782,31 @@ export default class Unit<
         // material.displacementMap = displacementMap;
         // material.displacementScale = 0;
       }
-      if (specularMap) {
-        // debugger;
-        // material.specularMap = specularMap;
-      }
 
       material.needsUpdate = true;
       prepare?.(mesh);
     });
   }
+
+  //#region Pathfinding / EasyStar
+  getConditionDirections(): ConditionDirectionsDescription[] {
+    // Override in subclasses to define pathfinding behavior
+    return [];
+  }
+  //#endregion
+
+  /**
+   * Array der Controls, die diese Unit bereitstellt.
+   */
+  getSettingControls(): SettingControlItem[] {
+    return [];
+  }
+}
+
+export interface SettingControlItem {
+  title: string;
+  description?: string;
+  component: CallableFunction;
 }
 
 function getRotationFromVector(direction: Vector3, diagonal = true) {

@@ -1,5 +1,5 @@
 import { checkerboardTexture } from '@cuby-world/app/lib/utils/texture';
-import { Color, MeshPhongMaterial, ShaderMaterial } from 'three';
+import { Color, MeshStandardMaterial, ShaderMaterial } from 'three';
 
 export function defaultMaterial(size: number = 16, tileSize: number = 8) {
   const texture = checkerboardTexture(
@@ -10,7 +10,12 @@ export function defaultMaterial(size: number = 16, tileSize: number = 8) {
     2,
     2
   );
-  return new MeshPhongMaterial({ map: texture, side: 2 });
+  return new MeshStandardMaterial({
+    roughness: 1.0,
+    metalness: 0.0,
+    map: texture,
+    side: 2
+  });
 }
 
 export function getRainbowMaterial() {

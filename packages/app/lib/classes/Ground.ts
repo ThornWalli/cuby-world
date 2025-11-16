@@ -1,12 +1,9 @@
 /* eslint-disable complexity */
 import { GROUND_GEOMETRY, type GroundGeometryMap } from './../types/ground';
 import {
-  ClampToEdgeWrapping,
   DoubleSide,
-  LinearFilter,
   type Mesh,
-  MeshPhongMaterial,
-  SRGBColorSpace,
+  MeshStandardMaterial,
   type Texture,
   Vector3
 } from 'three';
@@ -17,6 +14,7 @@ import type {
   InternalGroundSkinTexture
 } from '../types/ground/skins';
 import { LOADER } from './AssetLoader';
+import { prepareTexture } from '../utils/texture';
 
 export default class Ground {
   position: Vector3;
@@ -59,6 +57,15 @@ export default class Ground {
 
   createGeometry(geometryMap: GroundGeometryMap) {
     return geometryMap.get(this.type)!.clone()!;
+  }
+
+  destroy() {
+    this.mesh?.geometry.dispose();
+    if (this.mesh?.material instanceof Array) {
+      this.mesh.material.forEach(mat => mat.dispose());
+    } else {
+      this.mesh?.material.dispose();
+    }
   }
 
   // async createMaterial({
@@ -162,7 +169,7 @@ export default class Ground {
   // }
 }
 
-const cacheMap = new Map<string, MeshPhongMaterial>();
+const cacheMap = new Map<string, MeshStandardMaterial>();
 
 export async function createMaterial(
   groundTexture: ExternalGroundSkinTexture | InternalGroundSkinTexture | null,
@@ -187,7 +194,6 @@ export async function createMaterial(
   let normalMap: Texture | null = null;
   let ambientMap: Texture | null = null;
   let displacementMap: Texture | null = null;
-  let specularMap: Texture | null = null;
 
   if ((groundTexture as InternalGroundSkinTexture)?.id) {
     const asset = textureMap.get(
@@ -242,35 +248,17 @@ export async function createMaterial(
       });
     }
     //#endregion
-
-    //#region specular
-    if (asset.specular) {
-      specularMap = await assetLoader.add<Texture>({
-        loader: LOADER.TEXTURE,
-        value:
-          type === GROUND_GEOMETRY.SMALL
-            ? asset.specular?.small
-            : asset.specular?.medium,
-        options: { density: 1 }
-      });
-    }
-    //#endregion
   }
 
-  [texture, normalMap, ambientMap, displacementMap, specularMap]
+  [texture, normalMap, ambientMap, displacementMap]
     .filter(v => v !== null)
-    .forEach(map => {
-      map.flipY = false;
-      map.wrapS = ClampToEdgeWrapping;
-      map.wrapT = ClampToEdgeWrapping;
-      map.minFilter = LinearFilter;
-      map.magFilter = LinearFilter;
-      map.colorSpace = SRGBColorSpace;
-    });
+    .forEach(map => prepareTexture(map, { pixelrated: true }));
 
-  const material = new MeshPhongMaterial({
+  const material = new MeshStandardMaterial({
     color,
     opacity,
+    roughness: 1.0,
+    metalness: 0.0,
     alphaTest: 0.1,
     transparent: opacity < 1,
     side: DoubleSide,
@@ -278,8 +266,7 @@ export async function createMaterial(
     map: texture ?? null,
     normalMap: normalMap,
     aoMap: ambientMap,
-    displacementMap: displacementMap,
-    specularMap: specularMap
+    displacementMap: displacementMap
   });
 
   cacheMap.set(key, material);

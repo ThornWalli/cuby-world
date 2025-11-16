@@ -1,12 +1,20 @@
 import { Object3D } from 'three';
 import type Wall from './Wall';
 import { Subscription, type SubscriptionLike } from 'rxjs';
-import type { AnimationLoopSubject } from './Renderer';
 import {
   OBJECT_USER_DATA,
   setMainObjectRecursive
 } from '@cuby-world/app/lib/utils/object';
 import type { WallExtensionSkinIdentifier } from '../types/wall/extension/skins';
+import { AnimationWallExtensionModule } from './wallExtension/module/Animation';
+import type WallExtensionModule from './WallExtensionModule';
+import type { AnimationLoopValue } from './Renderer';
+
+type WallExtensionModuleList = (typeof AnimationWallExtensionModule)[];
+
+interface WallExtensionModules {
+  animation: AnimationWallExtensionModule;
+}
 
 declare module '@cuby-world/app/lib/utils/object' {
   interface ObjectUserData {
@@ -42,8 +50,15 @@ export type WallExtensionState = {
 
 export default class WallExtension<
   State extends WallExtensionState = WallExtensionState,
-  Observables extends WallExtensionObservables = WallExtensionObservables
+  Observables extends WallExtensionObservables = WallExtensionObservables,
+  Modules extends WallExtensionModules = WallExtensionModules
 > {
+  update(context: AnimationLoopValue): void {
+    Object.values(this.modules).forEach(module => {
+      module.update(context);
+    });
+  }
+  debug: boolean = false;
   id: string = crypto.randomUUID();
 
   /**
@@ -54,6 +69,8 @@ export default class WallExtension<
 
   private enabled = true;
 
+  modules: Modules = {} as Modules;
+
   observables: Observables = {} as Observables;
 
   wall: Wall;
@@ -63,11 +80,28 @@ export default class WallExtension<
   subscription = new Subscription();
   private visible = true;
 
-  constructor({ wall, state }: { wall: Wall; state?: State }) {
+  constructor(
+    { wall, state }: { wall: Wall; state?: State },
+    protected moduleList: WallExtensionModuleList = []
+  ) {
     this.wall = wall;
     if (state) {
       this.state = state;
     }
+    this.setupModules();
+  }
+
+  private setupModules() {
+    const moduleList = this.moduleList;
+    moduleList.push(AnimationWallExtensionModule);
+
+    //#region Modules
+    const preparedModules = moduleList.map(ModuleClass => {
+      const moduleInstance = new ModuleClass(this, this.debug);
+      return [ModuleClass.TYPE, moduleInstance];
+    });
+    this.modules = Object.fromEntries(preparedModules);
+    //#endregion
   }
 
   destroy() {
@@ -83,8 +117,22 @@ export default class WallExtension<
     return this.wall.position.clone();
   }
 
-  async setup(_context: { animationLoop$: AnimationLoopSubject }) {
+  createMesh() {
+    return Promise.resolve(new Object3D());
+  }
+
+  async setup() {
+    let mesh = await this.createMesh();
+
     this.setupRoot();
+
+    const modules: WallExtensionModule[] = Object.values(this.modules);
+
+    // Setup modules
+    mesh = await modules.reduce((result, module) => {
+      return result.then(mesh => module.setup({ mesh }));
+    }, Promise.resolve(mesh));
+    this.addToRoot(mesh);
   }
 
   private setupRoot() {

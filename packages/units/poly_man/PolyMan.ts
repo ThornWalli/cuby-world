@@ -1,4 +1,4 @@
-import { type MeshPhongMaterial, Mesh, Vector3, type Object3D } from 'three';
+import { type MeshStandardMaterial, Mesh, Vector3, type Object3D } from 'three';
 import { Group } from 'three';
 import type {
   SetupContext,
@@ -6,13 +6,14 @@ import type {
 } from '@cuby-world/app/lib/classes/Unit';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/poly_man.glb?url';
-import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
+
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
 import { DEFAULT_PLAYER_SKIN_ID } from '@cuby-world/app/lib/classes/Player';
 import { skinsMap } from './skins';
 import type { CharacterUnitOptions } from '@cuby-world/app/lib/classes/unit/Character';
 import CharacterUnit from '@cuby-world/app/lib/classes/unit/Character';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/types/animation';
 
 export interface Options extends CharacterUnitOptions {
   color: string | number;
@@ -34,8 +35,8 @@ export default class PolyMan extends CharacterUnit<Options> {
       name: 'Poly Character',
       selectable: true,
       placeable: true,
+      controls: false,
       options: {
-        hasControls: false,
         movement: {
           diagonalMovement: true,
           // stepDuration: 700,
@@ -52,9 +53,10 @@ export default class PolyMan extends CharacterUnit<Options> {
   }
 
   override async setup(context: SetupContext) {
+    this.modules.character.offsets.sitting_idle = new Vector3(-0.075, -0.06, 0);
+
     await super.setup(context);
 
-    this.modules.character.offsets.sitting_idle = new Vector3(-0.075, -0.06, 0);
     this.modules.animation.getAction(
       ANIMATION_ACTION.STAIR_FALLBACK
     )!.timeScale = 2.2;
@@ -80,12 +82,12 @@ export default class PolyMan extends CharacterUnit<Options> {
 
     obj.traverse(mesh => {
       if (mesh instanceof Mesh) {
-        (mesh.material as MeshPhongMaterial).color.set(this.options.color);
+        (mesh.material as MeshStandardMaterial).color.set(this.options.color);
         mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_HOVER] = true;
       }
     });
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
 
     meshRoot.add(obj);
     return meshRoot;
@@ -103,8 +105,7 @@ export default class PolyMan extends CharacterUnit<Options> {
   private setColor(color: string | number, _group?: Object3D) {
     this.root.traverse(child => {
       if (child instanceof Mesh) {
-        debugger;
-        (child.material as MeshPhongMaterial).color.set(color);
+        (child.material as MeshStandardMaterial).color.set(color);
       }
     });
   }

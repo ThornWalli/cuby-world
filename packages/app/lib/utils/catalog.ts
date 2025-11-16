@@ -4,6 +4,7 @@ import type { WallExtensionItem } from '../types/wall/extension/catalog';
 export enum CATALOG_TAG {
   LIGHT = 'light',
   FURNITURE = 'furniture',
+  DECORATION = 'decoration',
   HIDE = 'hide'
 }
 

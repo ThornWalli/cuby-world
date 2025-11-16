@@ -8,13 +8,14 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ReplaySubject, type Observable } from 'rxjs';
 import { fromEvent } from 'rxjs';
 import {
-  ACESFilmicToneMapping,
   Clock,
   SRGBColorSpace,
   Vector3,
   type Object3D,
   BasicShadowMap,
-  PCFShadowMap
+  PCFShadowMap,
+  NeutralToneMapping,
+  Quaternion
 } from 'three';
 
 import {
@@ -74,6 +75,7 @@ export default class Renderer<
       zoom: boolean;
       rotate: boolean;
     }>;
+    rotation$: ReplaySubject<number>;
   };
   shadowQuality: ShadowQuality = ShadowQuality.OFF;
 
@@ -128,7 +130,8 @@ export default class Renderer<
         pen: boolean;
         zoom: boolean;
         rotate: boolean;
-      }>(1)
+      }>(1),
+      rotation$: new ReplaySubject<number>(1)
     };
 
     this.dimension = dimension;
@@ -164,7 +167,7 @@ export default class Renderer<
     //#endregion
 
     renderer.outputColorSpace = SRGBColorSpace;
-    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMapping = NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -477,6 +480,25 @@ export default class Renderer<
     } else if (type === OUTLINE_TYPE.REMOVE) {
       return this.passes.removeOutline.selectedObjects;
     }
+  }
+
+  rotateCameraLeft() {
+    this.rotateCamera(-Math.PI / 2); // -90°
+  }
+
+  rotateCameraRight() {
+    this.rotateCamera(Math.PI / 2); // +90°
+  }
+
+  private rotation = 0;
+  rotateCamera(angle: number) {
+    const q = new Quaternion();
+    q.setFromAxisAngle(new Vector3(0, 1, 0), angle);
+    Renderer.ISOMETRIC_DIRECTION.applyQuaternion(q);
+    this.updateCamera(this.controls.target.clone());
+    this.controls.update();
+    this.rotation = (this.rotation + angle) % (Math.PI * 2);
+    this.observables.rotation$.next(this.rotation);
   }
 }
 

@@ -7,7 +7,7 @@ import {
   DodecahedronGeometry,
   IcosahedronGeometry,
   Mesh,
-  MeshPhongMaterial,
+  MeshStandardMaterial,
   OctahedronGeometry,
   SphereGeometry,
   TorusGeometry,
@@ -80,7 +80,9 @@ export default class Geometry extends Unit<GeometryOptions> {
 
     let material;
     if (this.options.color) {
-      material = new MeshPhongMaterial({
+      material = new MeshStandardMaterial({
+        roughness: 1.0,
+        metalness: 0.0,
         color: new Color(this.options.color)
       });
     } else {
@@ -106,7 +108,8 @@ export default class Geometry extends Unit<GeometryOptions> {
     }
     mesh.position.set(0, y, 0);
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
+
     return mesh;
   }
 }

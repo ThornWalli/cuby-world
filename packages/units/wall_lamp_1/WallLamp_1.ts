@@ -8,6 +8,7 @@ import type {
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/wall_lamp_1.glb?url';
 import WallUnit from '@cuby-world/app/lib/classes/unit/Wall';
+import { skinsMap } from './skins';
 
 export interface WallLampBoxOptions extends UnitOptions {
   color: number | string;
@@ -29,13 +30,9 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
       accessible: true,
       selectable: true,
       placeable: true,
+      rotateable: false,
       size: new Vector3(1, 0.1, 1),
-      options: {
-        canRotate: false,
-        color: 0xffeeaa,
-        ...options.options
-      },
-      moduleStates: {
+      moduleOptions: {
         wall: {
           offset: new Vector3(-0.4, 1.4, 0)
         }
@@ -60,9 +57,11 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
     lightBulb.castShadow = false;
     lightBulb.receiveShadow = false;
 
+    const skin = skinsMap.get(this.getSkin())!;
+
     (lightBulb as Mesh).material = new MeshStandardMaterial({
-      color: this.options.color,
-      emissive: this.options.color,
+      color: skin.options.color,
+      emissive: skin.options.color,
       emissiveIntensity: 1
     });
 
@@ -76,7 +75,7 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
 
     lightBulb.add(light);
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
     meshRoot.add(object);
     // _context.room?.app.renderer.scene.add(new PointLightHelper(light, 0.1));
     return meshRoot;

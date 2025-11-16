@@ -33,15 +33,27 @@ export default class SelectionAppModule extends AppModule<State, Observables> {
   getSelectedUnit() {
     return this.state.selectedUnit;
   }
+
+  clearSelection() {
+    this.state.selectedUnit = null;
+    this.observables.selectUnit$.next(null);
+  }
+  // eslint-disable-next-line complexity
   setSelectedUnit(unit: Unit | null) {
     if (unit && !unit.modules.selection) {
       throw new Error('Unit does not have selection module');
     }
 
     const player = this.app.modules.player.getCurrentPlayer()!;
-    const playerUnit = player!.unit!;
+    const playerUnit = player?.unit;
 
-    if (!unit && playerUnit.id === this.state.selectedUnit?.id) {
+    if (!playerUnit) {
+      this.state.selectedUnit = null;
+      this.observables.selectUnit$.next(null);
+      return;
+    }
+
+    if (!unit && playerUnit?.id === this.state.selectedUnit?.id) {
       return;
     }
 

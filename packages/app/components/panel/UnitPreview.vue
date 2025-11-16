@@ -17,7 +17,7 @@
     <p>
       <span>Pos.:</span>
       {{ unit.getPosition().clone().round().toArray().join(' / ') }}<br />
-      <span>Rot.:</span> {{ unit.rotation }}
+      <span>Rot.:</span> {{ unit.getRotation() }}
     </p>
   </cw-panel>
 </template>
@@ -26,12 +26,10 @@
 import type Unit from '../../lib/classes/Unit';
 import CwObjectPreviewUnit from '../objectPreview/Unit.vue';
 import { computed, markRaw, onMounted, onUnmounted, ref, type Raw } from 'vue';
-
 import CwPanel from '../Panel.vue';
 import type App from '../../lib/classes/App';
 import { Subscription } from 'rxjs';
-
-import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/types/animation';
 
 const $props = defineProps<{
   app: App;

@@ -16,8 +16,7 @@ import { getYPositionByPosition } from '../../utils/room';
 import { WALL_EXTENSION_TYPE } from '../WallExtension';
 import { getRotationByPositionAndWall } from '../../utils/wall';
 import { invertRotation } from '../../utils/rotation';
-import BedUnitModule from '../unitModule/Bed';
-import ChairUnitModule from '../unitModule/Chair';
+import SlotUnitModule from '../unitModule/Slot';
 
 interface Observables extends AppModuleObservables {
   abort$: Subject<Unit>;
@@ -183,8 +182,6 @@ export default class PlacementAppModule extends AppModule<State, Observables> {
       this.observables.apply$.next(unit);
     }
   }
-
-  // eslint-disable-next-line complexity
   setUnitPosition(unit: Unit, preparedPosition?: PreparedPosition) {
     if (!preparedPosition) return false;
 
@@ -211,17 +208,8 @@ export default class PlacementAppModule extends AppModule<State, Observables> {
 
     const ignoredUnits = [unit];
 
-    if (unit.getModule(BedUnitModule.TYPE)) {
-      ignoredUnits.push(
-        unit.getModule<BedUnitModule>(BedUnitModule.TYPE).getUsedUnit()!
-      );
-    }
-
-    if (unit.getModule(ChairUnitModule.TYPE)) {
-      ignoredUnits.push(
-        unit.getModule<BedUnitModule>(ChairUnitModule.TYPE).getUsedUnit()!
-      );
-    }
+    const usedUnits = getUsedUnit(unit);
+    ignoredUnits.push(...usedUnits);
 
     const position = preparedPosition.matrixPosition!;
     const resolvedPos = unit.wallOnly
@@ -248,4 +236,10 @@ export default class PlacementAppModule extends AppModule<State, Observables> {
   override onSceneSelect(_context: SceneSelectContext): boolean {
     return !!this.state.unit;
   }
+}
+
+function getUsedUnit(unit: Unit) {
+  return (
+    unit.getModuleByType<SlotUnitModule>(SlotUnitModule)?.getUsedUnits() || []
+  );
 }

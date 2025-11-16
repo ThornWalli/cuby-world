@@ -27,13 +27,20 @@ import {
   findBestPathByStairs,
   type PathPartDescription
 } from '../../utils/pathfindng';
-import { GRID_BLOCKED, GRID_NON_BLOCKED } from '../roomModule/Ground';
-import { ANIMATION_ACTION, type AnimationUnitModule } from './Animation';
+import { GRID_TYPE } from '../roomModule/Ground';
+import type { AnimationUnitModule } from './Animation';
 import { getRadByRotation, getRotationByPosition } from '../../utils/rotation';
 
-import ChairUnitModule, { type ChairUnitOptions } from './Chair';
+import TeleporterUnitModule, { TELEPORTER_TYPE } from './Teleporter';
 import CharacterUnitModule from './Character';
-import BedUnitModule, { type BedUnitOptions } from './Bed';
+import BedUnitModule, { type BedOptions } from './Bed';
+import TeleporterUnit from '../unit/Teleporter';
+import { ANIMATION_ACTION } from '../../types/animation';
+import SlotUnitModule from './Slot';
+import type { BenchUnitOptions } from '../unit/Bench';
+import type { ChairUnitOptions } from '../unit/Chair';
+import ChairUnitModule from './Chair';
+import BenchUnitModule from './Bench';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -82,15 +89,20 @@ interface MovementDescription {
 }
 
 interface Observables extends UnitModuleObservables {
-  moveStart$: Subject<Vector3>;
+  moveStart$: Subject<{ position: Vector3; unit?: Unit; silence?: boolean }>;
   moveStep$: Subject<Vector3>;
   moveEnd$: Subject<Vector3>;
   moveAbort$: Subject<void>;
 }
 
+type Options = UnitModuleOptions;
 type State = UnitModuleState;
 
-export default class MovementUnitModule extends UnitModule<State, Observables> {
+export default class MovementUnitModule extends UnitModule<
+  Options,
+  State,
+  Observables
+> {
   static override TYPE = 'movement';
 
   private moveOptions: MoveOptions | null = null;
@@ -99,35 +111,46 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
   movements: MovementDescription[] = [];
   currentMovement: MovementDescription | null = null;
 
-  constructor(unit: Unit, state: State, debug: boolean) {
-    super(unit, state, debug);
+  constructor(unit: Unit, options: Options, state: State, debug: boolean) {
+    super(unit, options, state, debug);
 
-    this.observables.moveStart$ = new Subject<Vector3>();
+    this.observables.moveStart$ = new Subject<{
+      position: Vector3;
+      unit?: Unit;
+    }>();
     this.observables.moveStep$ = new Subject<Vector3>();
     this.observables.moveEnd$ = new Subject<Vector3>();
     this.observables.moveAbort$ = new Subject<void>();
   }
 
+  canAbort = true;
+
   /**
    * Wenn Bewegung vorhanden, wird die aktuelle Bewegung abgebrochen.
    * Es wird die nächste Position als Ziel gesetzt.
    */
-  private abortMovement() {
+  private abortMovement(force = false) {
     if (this.currentMovement) {
-      this.currentMovement.path = this.currentMovement.path.slice(0, 1);
+      if (!force) {
+        this.currentMovement.path = this.currentMovement.path.slice(0, 1);
+      } else {
+        this.currentMovement = null;
+      }
       return true;
     }
     return false;
   }
 
-  async moveTo(position: Vector3): Promise<{
+  async moveTo(
+    position: Vector3,
+    targetUnit?: Unit,
+    options?: {
+      silence?: boolean;
+      ignoreAbort?: boolean;
+    }
+  ): Promise<{
     position: Vector3;
   } | null> {
-    if (this.abortMovement()) {
-      this.observables.moveAbort$.next();
-      return null;
-    }
-
     const grid = createRoomGrid(this.unit);
 
     const startPosition = this.unit.getPosition().clone().round();
@@ -149,10 +172,13 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         grid
       );
 
-      console.log('movements', JSON.parse(JSON.stringify(this.movements)));
-
       if (this.movements.length) {
-        this.observables.moveStart$.next(position);
+        this.canAbort = options?.ignoreAbort ? false : true;
+        this.observables.moveStart$.next({
+          position,
+          unit: targetUnit,
+          silence: options?.silence
+        });
       }
 
       return new Promise<{ position: Vector3 } | null>(resolve => {
@@ -165,7 +191,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         );
         subscription.add(
           this.observables.moveEnd$.subscribe(position => {
-            console.log('MovementUnitModule moveTo finished at', position);
+            console.log('EEEEEEND');
             resolve({ position });
             subscription.unsubscribe();
           })
@@ -182,6 +208,7 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     }
   }
 
+  lastMovement: MovementDescription | null = null;
   /**
    * Bewegt und animiert die Position des Einheitsobjekts.
    * @param time
@@ -190,77 +217,168 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
     this.currentMovement =
       this.currentMovement || this.movements.shift() || null;
 
+    if (!this.currentMovement && this.lastMovement) {
+      this.lastMovement = null;
+      this.observables.moveEnd$.next(this.unit.getPosition());
+    }
+
     if (this.currentMovement) {
       this.movementUpdate(v);
     }
   }
 
-  async resolveMoveTo(position: Vector3) {
+  abortMoveTo(force = false) {
+    return new Promise<boolean>(resolve => {
+      if (!this.canAbort) {
+        resolve(true);
+      } else if (this.abortMovement(force)) {
+        this.observables.moveAbort$.next();
+        const subscription = this.observables.moveEnd$.subscribe(() => {
+          subscription.unsubscribe();
+          resolve(true);
+        });
+        if (force) {
+          this.canAbort = true;
+          this.observables.moveEnd$.next(this.unit.getPosition());
+        }
+      } else {
+        resolve(false);
+      }
+    });
+  }
+
+  async resolveMoveTo(
+    position: Vector3,
+    targetUnit?: Unit,
+    targetPosition?: Vector3
+  ) {
+    if (await this.abortMoveTo()) {
+      return;
+    }
+
     const characterModule = this.unit.getModule<CharacterUnitModule>(
       CharacterUnitModule.TYPE
     );
 
-    position = this.preparePosition(position);
+    position = this.preparePosition(position, targetUnit, targetPosition);
 
-    characterModule.wrapper.position.set(0, 0, 0);
-    const result = await this.moveTo(position);
+    const isSamePosition = this.unit.getPosition().equals(position);
+
+    const result = isSamePosition || (await this.moveTo(position, targetUnit));
     if (result) {
-      await this.applyPosition(result.position);
+      characterModule.wrapper.position.set(0, 0, 0);
+      await this.applyPosition(
+        this.unit.getPosition(),
+        targetUnit,
+        targetPosition
+      );
     }
+
+    return true;
   }
 
-  preparePosition(position: Vector3) {
-    const units =
-      this.unit.modules
-        .room!.getRoom()
-        ?.modules.units.getUnitsByPosition(position) || [];
+  preparePosition(
+    position: Vector3,
+    targetUnit?: Unit,
+    targetPosition?: Vector3
+  ) {
+    // const units =
+    //   this.unit.modules
+    //     .room!.getRoom()
+    //     ?.modules.units.getUnitsByPosition(position) || [];
 
     //#region bed
-    const bedUnit = units.find(
-      u => !u.equal(this.unit) && BedUnitModule.TYPE in u.modules
-    ) as Unit<BedUnitOptions>;
-    if (bedUnit) {
-      return bedUnit.getPosition();
+    // if (targetUnit && BedUnitModule.TYPE in targetUnit.modules) {
+    //   return targetUnit.getPosition();
+    // }
+    // const bedUnit = units.find(
+    //   u => !u.equal(this.unit) && BedUnitModule.TYPE in u.modules
+    // ) as Unit<BedUnitOptions>;
+    // if (bedUnit) {
+    //   return bedUnit.getPosition();
+    // }
+    //#endregion
+
+    //#region entryPosition
+    if (targetUnit) {
+      return targetUnit.getRealEntryPosition(targetPosition);
+      // let entryPosition = targetUnit.getEntryPosition();
+
+      // entryPosition = rotateVector2(
+      //   targetUnit.getEntryPosition(),
+      //   targetUnit.getRotation()
+      // );
+      // return targetUnit
+      //   .getPosition()
+      //   .clone()
+      //   .add(new Vector3(entryPosition.x, 0, entryPosition.y));
     }
     //#endregion
 
     return position;
   }
 
-  applyPosition(position: Vector3) {
+  applyPosition(
+    position: Vector3,
+    targetUnit?: Unit,
+    targetPosition?: Vector3
+  ) {
     const units =
-      this.unit.modules
-        .room!.getRoom()
-        ?.modules.units.getUnitsByPosition(position) || [];
+      this.currentRoom?.modules.units.getUnitsByPosition(position) ?? [];
+    targetUnit =
+      targetUnit ||
+      units.find(
+        u =>
+          BedUnitModule.TYPE in u.modules ||
+          ChairUnitModule.TYPE in u.modules ||
+          BenchUnitModule.TYPE in u.modules
+      );
+
+    // const units =
+    //   this.unit.modules
+    //     .room!.getRoom()
+    //     ?.modules.units.getUnitsByPosition(position) || [];
 
     const characterModule = this.unit.getModule<CharacterUnitModule>(
       CharacterUnitModule.TYPE
     );
+    //#region teleporter
+    if (
+      targetUnit &&
+      targetUnit instanceof TeleporterUnit &&
+      targetUnit.modules.teleporter.getType() === TELEPORTER_TYPE.TELEPORTER
+    ) {
+      const teleporterUnit = targetUnit as TeleporterUnit;
+      characterModule.useTeleporter(teleporterUnit);
+      return;
+    }
+    //#endregion
 
     //#region bed
-    const bedUnit = units.find(
-      u => !u.equal(this.unit) && BedUnitModule.TYPE in u.modules
-    ) as Unit<BedUnitOptions>;
-    if (bedUnit) {
+    if (targetUnit && BedUnitModule.TYPE in targetUnit.modules) {
+      const bedUnit = targetUnit as Unit<BedOptions>;
       characterModule.useBed(bedUnit);
       return;
     }
     //#endregion
 
-    //#region chair
-    const chairUnit = units.find(
-      u => !u.equal(this.unit) && ChairUnitModule.TYPE in u.modules
-    ) as Unit<ChairUnitOptions>;
-    if (chairUnit) {
-      characterModule.useChair(chairUnit);
+    //#region slot unit
+    // debugger;
+    if (
+      targetUnit &&
+      targetUnit.hasModuleType(SlotUnitModule) &&
+      (targetPosition?.equals(position) ?? true)
+    ) {
+      characterModule.useSitSlot(
+        targetUnit as Unit<BenchUnitOptions | ChairUnitOptions>,
+        targetPosition || position
+      );
       return;
     }
     //#endregion
 
-    if ((this.unit as Unit<ChairUnitOptions>).modules.animation) {
-      (
-        this.unit as Unit<ChairUnitOptions>
-      ).modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
+    if (this.unit.modules.animation) {
+      this.unit.modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
     }
   }
 
@@ -286,8 +404,19 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
 
     const tileCostsMap = this.currentRoom.modules.ground.getTileCostMap();
 
+    // const directionalConditions =
+
+    // easystar.setDirectionalCondition(
+    //   x,
+    //   y,
+    //   defaultDirections.filter(d_ => !d.has(d_))
+    // );
+
+    const conditionalDirections = room.modules.units.getConditionalDirections();
+
     const paths = await findBestPathByStairs(matrixList, {
       positions: { start: startPosition, end: endPosition },
+      conditionalDirections,
       options: {
         tileDescriptions: Array.from(tileCostsMap.values()),
         diagonalMovement: movementOptions.diagonalMovement
@@ -442,19 +571,10 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
         if (!moveOptions.nextPosition) {
           moveOptions.nextPosition = null;
           this.currentMovement = null;
+          this.canAbort = true;
           this.observables.moveEnd$.next(unit.getPosition());
           return;
         }
-
-        // if (
-        //   !room?.modules.units?.isPositionFree(
-        //     moveOptions.nextPosition.position,
-        //     [unit]
-        //   )
-        // ) {
-        //   abort();
-        //   return;
-        // }
 
         //#region set start values
 
@@ -553,12 +673,14 @@ export default class MovementUnitModule extends UnitModule<State, Observables> {
           moveOptions.nextPosition = null;
           moveOptions.startDuration = time;
           if (!this.currentMovement.path.length) {
+            this.lastMovement = this.currentMovement;
             /**
              * Bewegung beendet
              */
             this.currentMovement = null;
             this.setUnitAnimation(ANIMATION_ACTION.IDLE);
-            this.observables.moveEnd$.next(this.unit.getPosition());
+            this.canAbort = true;
+            // this.observables.moveEnd$.next(this.unit.getPosition());
           }
         }
       }
@@ -650,15 +772,21 @@ function createRoomGrid(unit: Unit) {
 
   const grid = RoomGrid.fromData(data, room.gridSize.x);
 
-  room?.modules.teleport.getTeleports().forEach(teleport => {
-    const pos = teleport.position;
-    grid.set(pos.x, pos.y, pos.z, GRID_NON_BLOCKED);
-  });
-  room?.modules.units.getUnits().forEach(otherUnit => {
-    if (!otherUnit.accessible) {
-      const pos = otherUnit.getPosition();
-      grid.set(pos.x, pos.y, pos.z, GRID_BLOCKED);
-    }
+  room?.modules.units.getUnits().forEach(unit => {
+    unit.getMatrixPositions().forEach(pos => {
+      let gridType = unit.accessible
+        ? GRID_TYPE.NON_BLOCKED
+        : GRID_TYPE.BLOCKED;
+
+      if (
+        unit.hasModuleType(SlotUnitModule) ||
+        unit.hasModuleType(TeleporterUnitModule)
+      ) {
+        gridType = GRID_TYPE.UNIT;
+      }
+
+      grid.set(pos.x, pos.y, pos.z, gridType);
+    });
   });
 
   room.modules.stair.getStairs().forEach(stair => {
@@ -669,8 +797,8 @@ function createRoomGrid(unit: Unit) {
           p.x >= 0 && p.x < room.gridSize.x && p.z >= 0 && p.z < room.gridSize.y
       )
       .forEach(p => {
-        grid.set(p.x, p.y, p.z, GRID_BLOCKED);
-        grid.set(p.x, p.y + 1, p.z, GRID_BLOCKED);
+        grid.set(p.x, p.y, p.z, GRID_TYPE.BLOCKED);
+        grid.set(p.x, p.y + 1, p.z, GRID_TYPE.BLOCKED);
       });
   });
 

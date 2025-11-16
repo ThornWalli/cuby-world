@@ -1,5 +1,5 @@
 import type { Object3D } from 'three';
-import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
+import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 
 import Unit, {
   type UnitConstructorOptions,
@@ -27,7 +27,11 @@ export default class Debug extends Unit<DebugOptions> {
 
   override async createMesh() {
     const texture = checkerboardTexture(64, 32, '#ffffff', '#000000');
-    const material = new MeshPhongMaterial({ map: texture });
+    const material = new MeshStandardMaterial({
+      roughness: 1.0,
+      metalness: 0.0,
+      map: texture
+    });
 
     const size = this.getSize();
     const ratio = 19 / 20;
@@ -42,7 +46,7 @@ export default class Debug extends Unit<DebugOptions> {
 
     dir.normalize();
 
-    this.observables.materialReady$.next();
+    this.setMaterialReady();
 
     return mesh;
   }

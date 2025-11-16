@@ -11,7 +11,7 @@
     :size="unitInstance?.getSize() || size"
     :hydrate-when-visible="hydrateWhenVisible"
     class="cw-object-preview-unit"
-    @animation-loop="animationLoop$.next($event)" />
+    @animation-loop="!animationLoop$.closed && animationLoop$.next($event)" />
 </template>
 
 <script lang="ts" setup>
@@ -26,7 +26,7 @@ import CwObjectPreview from '../ObjectPreview.vue';
 
 import { catalog } from '@cuby-world/units';
 import type Unit from '@cuby-world/app/lib/classes/Unit';
-import { ANIMATION_ACTION } from '@cuby-world/app/lib/classes/unitModule/Animation';
+import { ANIMATION_ACTION } from '@cuby-world/app/lib/types/animation';
 
 const $props = defineProps<{
   app: App;
@@ -44,6 +44,8 @@ const root = ref<Object3D>(new Object3D());
 const animationLoop$ = new Subject<AnimationLoopValue>();
 
 onUnmounted(() => {
+  unitInstance.value?.destroy();
+  root.value.remove();
   animationLoop$.unsubscribe();
   unitSubscriptions?.unsubscribe();
 });
@@ -60,9 +62,7 @@ async function setup(data: UnitPreview) {
     new UnitClass({
       name: UnitClass.NAME,
       preview: true,
-      options: {
-        ...unitItem?.skinMap?.get(data.skin ?? '')?.options
-      }
+      skin: data.skin || unitItem!.defaultSkinId
     })
   );
 
@@ -73,6 +73,7 @@ async function setup(data: UnitPreview) {
   });
   unitSubscriptions?.unsubscribe();
   unitSubscriptions = new Subscription();
+
   return new Promise<Object3D>(resolve => {
     unitSubscriptions.add(
       instance.observables.materialReady$.subscribe(() => {
@@ -91,7 +92,7 @@ async function setup(data: UnitPreview) {
           }
         }
         const position = instance.centerInTile(new Vector3(0, 0, 0));
-        console.log('unitInstance', position);
+
         instance.root.position.set(position.z, position.y, position.x);
         resolve(instance.root);
       })

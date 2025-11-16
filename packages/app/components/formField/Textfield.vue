@@ -7,11 +7,13 @@
     :style-type="styleType"
     class="cw-form-field-textfield"
     :class="{
+      disabled,
       [`style-${styleType ?? 'light'}`]: true
     }">
     <div class="input">
       <input
         :id="ctx.id"
+        :disabled="disabled"
         :name="name"
         :value="modelValue"
         :type="type || 'text'"
@@ -31,6 +33,7 @@
 import CwFormField from '../base/FormField.vue';
 
 defineProps<{
+  disabled?: boolean;
   modelValue: string | number;
   id?: string;
   label?: string;
