@@ -103,7 +103,7 @@ export default defineNuxtConfig({
       svgLoader({
         defaultImport: 'component',
         svgo: true,
-        svgoConfig: svgoConfig
+        svgoConfig: svgoConfig as unknown as object
       })
     ]
   },
