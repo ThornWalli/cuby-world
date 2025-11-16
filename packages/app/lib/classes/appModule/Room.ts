@@ -1,5 +1,5 @@
 /* eslint-disable complexity */
-import { EMPTY, Subject, switchMap, type Observable } from 'rxjs';
+import { EMPTY, map, Subject, switchMap, type Observable } from 'rxjs';
 import {
   concatMap,
   from,
@@ -217,7 +217,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
   async fromDescription(roomDescription: RoomDescription) {
     const app = this.app;
     const renderer = app.renderer;
-    const { room: roomModule, unitFocus: unitFocusModule } = app.modules!;
+    const { room: roomModule } = app.modules!;
 
     const room = await RoomAppModule.roomFromDescription(app, roomDescription);
 
@@ -250,17 +250,6 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         .subscribe(v => {
           room.updateThrottle1Sec(v);
         })
-    );
-
-    this.subscription.add(
-      renderer.observables.animationLoop$.subscribe(v => {
-        room.update(v);
-        if (unitFocusModule?.focusedUnit) {
-          const position = unitFocusModule.focusedUnit.getScenePosition();
-          renderer.updateCamera(position);
-          // renderer.modules.light.updateLight(position);
-        }
-      })
     );
 
     console.log('Set room:', roomDescription.info.name, room);
@@ -341,6 +330,8 @@ export default class RoomAppModule extends AppModule<State, Observables> {
     const subscription = new Subscription();
     const renderer = app.renderer;
 
+    const { unitFocus: unitFocusModule } = app.modules!;
+
     if (!renderer.modules.intersection) {
       throw new Error('Intersection module is not available');
     }
@@ -397,6 +388,29 @@ export default class RoomAppModule extends AppModule<State, Observables> {
           })
         )
         .subscribe(this.onSelect.bind(this))
+    );
+
+    subscription.add(
+      this.observables.room$
+        .pipe(
+          switchMap(room =>
+            room
+              ? renderer.observables.animationLoop$.pipe(
+                  map(context => {
+                    return { room, context };
+                  })
+                )
+              : EMPTY
+          )
+        )
+        .subscribe(({ room, context }) => {
+          room.update(context);
+          if (unitFocusModule?.focusedUnit) {
+            const position = unitFocusModule.focusedUnit.getScenePosition();
+            renderer.updateCamera(position);
+            // renderer.modules.light.updateLight(position);
+          }
+        })
     );
 
     //#region intersection

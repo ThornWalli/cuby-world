@@ -53,6 +53,8 @@ export default class UnitsModule extends RoomModule<State, Observables> {
   override destroy(): void {
     super.destroy();
     this.state.units.forEach(unit => unit.destroy());
+    this.state.units.clear();
+    this.state.visibleUnits = [];
   }
 
   override setup() {

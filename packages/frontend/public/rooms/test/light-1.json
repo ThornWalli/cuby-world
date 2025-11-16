@@ -1,0 +1,929 @@
+{
+  "id": "9875c74a-8e83-4fdb-be63-1bbf093c1441",
+  "info": {
+    "name": "Default Room",
+    "description": "This is the default room. You can edit it to create your own room."
+  },
+  "gridSize": {
+    "type": "Vector2",
+    "value": [
+      9,
+      9
+    ]
+  },
+  "walls": [
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          2
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": [
+        {
+          "key": "door_standard",
+          "state": {
+            "hasDoor": true,
+            "skin": "white"
+          }
+        }
+      ]
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          3
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          4,
+          0,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          5,
+          0,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          6,
+          0,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "horizontal",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          7,
+          0,
+          4
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          0,
+          3
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          0,
+          2
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    },
+    {
+      "direction": "vertical",
+      "position": {
+        "type": "Vector3",
+        "value": [
+          8,
+          0,
+          1
+        ]
+      },
+      "skins": [
+        "default_base",
+        "default_base"
+      ],
+      "extensions": []
+    }
+  ],
+  "units": [
+    {
+      "id": "8842f497-8dc0-4l20-5efc-1e422feeaa2f",
+      "unit": "teleporter_default",
+      "options": {
+        "skin": "default",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            1
+          ]
+        },
+        "rotation": "east",
+        "moduleStates": {
+          "teleporter": {
+            "type": "entrance"
+          },
+          "animation": {},
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "id": "9b0c7754-6466-43l6-8edc-174e0271f48f",
+      "unit": "teleporter_1",
+      "options": {
+        "skin": "default",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            0
+          ]
+        },
+        "rotation": "south",
+        "moduleStates": {
+          "teleporter": {
+            "type": "teleporter",
+            "targetRoomId": "test",
+            "targetRoomTeleporterId": "b0a30201-4f15-43ac-bf67-eb4b4ef70ae1"
+          },
+          "animation": {},
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "id": "01361304-1393-449b-9e01-aacd4c70a6fe",
+      "unit": "wallLamp_1",
+      "options": {
+        "skin": "default",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            2
+          ]
+        },
+        "rotation": "west",
+        "moduleStates": {
+          "wall": {},
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    }
+  ],
+  "groundStyles": [
+    {
+      "type": "default",
+      "skinId": "default_grass_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "skinId": "default_wood_laminate_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            3
+          ]
+        }
+      ]
+    }
+  ],
+  "stairs": []
+}

@@ -42,7 +42,7 @@ export default class BillboardLarge_1 extends Unit<BillboardLargeOptions> {
       placeable: true,
       rotationType: ROTATION_TYPE.EXTENDED,
       options: {
-        defectLights: 1,
+        defectLights: Math.round(Math.random() * 2),
         ...options.options
       }
     });

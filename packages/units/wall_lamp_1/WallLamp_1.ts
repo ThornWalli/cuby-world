@@ -75,6 +75,9 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
 
     lightBulb.add(light);
 
+    // const helper = new PointLightHelper(light, 0.1);
+    // lightBulb.add(helper);
+
     this.setMaterialReady();
     meshRoot.add(object);
     // _context.room?.app.renderer.scene.add(new PointLightHelper(light, 0.1));
