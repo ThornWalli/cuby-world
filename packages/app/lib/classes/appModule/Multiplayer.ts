@@ -20,7 +20,7 @@ import { Vector3 } from 'three';
 import CurrentPlayer from '../player/Current';
 import type App from '../App';
 import type { PlayerSettings } from '../../types/player';
-import type { UnitIdentifier } from '../Unit';
+import type { UnitIdentifier } from '../../types/unit';
 
 export interface Message {
   id: string;

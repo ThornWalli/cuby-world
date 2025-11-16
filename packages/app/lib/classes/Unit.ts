@@ -37,13 +37,12 @@ import {
   ROTATION_TYPE,
   rotationDirections
 } from '../utils/rotation';
-import type { UnitDescription, UnitType } from '../types/unit';
+import type { UnitDescription, UnitIdentifier, UnitType } from '../types/unit';
 import type { TextureMaps } from '../types/textures';
 import type { ConditionDirectionsDescription } from '../utils/pathfindng';
 import { rotateVector2 } from '../utils/vector';
 import { prepareTexture } from '../utils/texture';
 
-export type UnitIdentifier = string;
 declare module '../../lib/utils/object' {
   interface ObjectUserData {
     UNIT: string;

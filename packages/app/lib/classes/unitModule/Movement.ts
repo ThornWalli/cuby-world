@@ -34,7 +34,7 @@ import { getRadByRotation, getRotationByPosition } from '../../utils/rotation';
 import TeleporterUnitModule, { TELEPORTER_TYPE } from './Teleporter';
 import CharacterUnitModule from './Character';
 import BedUnitModule, { type BedOptions } from './Bed';
-import TeleporterUnit from '../unit/Teleporter';
+import type TeleporterUnit from '../unit/Teleporter';
 import { ANIMATION_ACTION } from '../../types/animation';
 import SlotUnitModule from './Slot';
 import type { BenchUnitOptions } from '../unit/Bench';
@@ -345,8 +345,10 @@ export default class MovementUnitModule extends UnitModule<
     //#region teleporter
     if (
       targetUnit &&
-      targetUnit instanceof TeleporterUnit &&
-      targetUnit.modules.teleporter.getType() === TELEPORTER_TYPE.TELEPORTER
+      targetUnit.hasModuleType(TeleporterUnitModule) &&
+      targetUnit
+        .getModuleByType<TeleporterUnitModule>(TeleporterUnitModule)
+        .getType() === TELEPORTER_TYPE.TELEPORTER
     ) {
       const teleporterUnit = targetUnit as TeleporterUnit;
       characterModule.useTeleporter(teleporterUnit);

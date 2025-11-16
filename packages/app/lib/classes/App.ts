@@ -24,7 +24,7 @@ import InventoryAppModule from './appModule/Inventory';
 import ShopAppModule from './appModule/Shop';
 import TimeAppModule from './appModule/Time';
 import LightAppModule from './appModule/Light';
-import type { UnitIdentifier } from './Unit';
+import type { UnitIdentifier } from '../types/unit';
 
 type AppModuleList = (
   | typeof CursorAppModule

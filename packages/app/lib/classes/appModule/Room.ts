@@ -26,11 +26,13 @@ import { OBJECT_NAME } from '../../utils/object';
 import type Unit from '../Unit';
 import type { IntersectionListener } from '../rendererModule/Intersection';
 import CharacterUnitModule from '../unitModule/Character';
-import TeleporterUnit from '../unit/Teleporter';
-import type { UnitIdentifier } from '../Unit';
+import type TeleporterUnit from '../unit/Teleporter';
+import type { UnitIdentifier } from '../../types/unit';
 import BedUnitModule from '../unitModule/Bed';
 import ChairUnitModule from '../unitModule/Chair';
-import { TELEPORTER_TYPE } from '../unitModule/Teleporter';
+import TeleporterUnitModule, {
+  TELEPORTER_TYPE
+} from '../unitModule/Teleporter';
 import BenchUnitModule from '../unitModule/Bench';
 import SlotUnitModule from '../unitModule/Slot';
 
@@ -156,11 +158,12 @@ export default class RoomAppModule extends AppModule<State, Observables> {
         } else if (unit.getPosition().equals(new Vector3(0, 0, 0))) {
           const entranceTeleporter = room.modules.units
             .getUnits()
-            .filter(unit => unit instanceof TeleporterUnit)
+            .filter(unit => unit.hasModuleType(TeleporterUnitModule))
             .find(
               teleporterUnit =>
-                teleporterUnit.modules.teleporter.state.type ==
-                TELEPORTER_TYPE.ENTRANCE
+                teleporterUnit.getModuleByType<TeleporterUnitModule>(
+                  TeleporterUnitModule
+                ).state.type == TELEPORTER_TYPE.ENTRANCE
             ) as TeleporterUnit;
 
           unitTeleporter = entranceTeleporter;

@@ -7,7 +7,7 @@ import UnitModule, {
 } from '../UnitModule';
 import { UNIT_TYPE } from '../../types/unit';
 import type Unit from '../Unit';
-import type { UnitIdentifier } from '../Unit';
+import type { UnitIdentifier } from '../../types/unit';
 import type TeleporterUnit from '../unit/Teleporter';
 
 declare module '../../types/unit' {

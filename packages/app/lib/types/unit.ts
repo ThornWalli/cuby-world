@@ -2,6 +2,8 @@ import type { Vector3 } from 'three';
 import type { UnitModuleState } from '../classes/UnitModule';
 import type { ROTATION } from '../utils/rotation';
 
+export type UnitIdentifier = string;
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UnitType {}
 

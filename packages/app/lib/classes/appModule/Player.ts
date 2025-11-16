@@ -1,4 +1,4 @@
-import type { UnitIdentifier } from './../Unit';
+import type { UnitIdentifier } from '../../types/unit';
 import { ReplaySubject, Subject } from 'rxjs';
 import AppModule, {
   type AppModuleObservables,
