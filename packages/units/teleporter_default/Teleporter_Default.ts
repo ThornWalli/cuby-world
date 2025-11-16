@@ -43,7 +43,6 @@ export default class Teleporter_Default extends TeleporterUnit<TeleporterOptions
     const meshRoot = new Object3D();
 
     const { object, animations } = await loadGltf(glbBase);
-    console.log(animations);
     this.modules.animation?.setAnimations(animations);
 
     meshRoot.position.set(0, 0, 0);

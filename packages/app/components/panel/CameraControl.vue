@@ -13,7 +13,11 @@
       @update:model-value="onToggleCanRotate">
       Can Rotate
     </cw-toggle>
-    <cw-button v-if="!focusedUnit" @click="app.resetCamera()">
+    <cw-button
+      v-if="!focusedUnit"
+      @click="
+        app.resetCamera(app.modules.player.getCurrentPlayer().unit?.position)
+      ">
       Focused Character
     </cw-button>
   </cw-panel>

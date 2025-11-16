@@ -266,7 +266,7 @@ export default class MovementUnitModule extends UnitModule<
 
     const result = isSamePosition || (await this.moveTo(position, targetUnit));
     if (result) {
-      characterModule.wrapper.position.set(0, 0, 0);
+      characterModule.root.position.set(0, 0, 0);
       await this.applyPosition(
         this.unit.getPosition(),
         targetUnit,

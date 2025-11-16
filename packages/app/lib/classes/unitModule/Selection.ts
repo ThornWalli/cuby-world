@@ -27,10 +27,6 @@ export default class SelectionUnitModule extends UnitModule<
   }
 
   select() {
-    console.log(
-      'select this.observables.select$',
-      this.observables.select$.closed
-    );
     this.observables.select$.next(true);
   }
 

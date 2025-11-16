@@ -12,11 +12,9 @@ import assetLoader from '@cuby-world/app/services/assetLoader';
 import type { Mesh, Texture } from 'three';
 import { ROTATION_TYPE } from '@cuby-world/app/lib/utils/rotation';
 import { prepareTexture } from '@cuby-world/app/lib/utils/texture';
-import { skinsMap, type TexturePath } from './skins';
+import { skinsMap } from './skins';
 
-export interface SignStreetOptions extends UnitOptions {
-  texture: TexturePath;
-}
+export type SignStreetOptions = UnitOptions;
 export default class SignStreet_1 extends Unit<SignStreetOptions> {
   static override KEY = 'sign_street_1';
   static override NAME = 'SignStreet 1';

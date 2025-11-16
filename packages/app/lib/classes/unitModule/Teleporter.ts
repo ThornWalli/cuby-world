@@ -122,14 +122,12 @@ export default class TeleporterUnitModule extends UnitModule<
     if (this.debug) {
       console.debug('TELEPORTER', 'before enter', this.unit);
     }
-
     await (this.unit as TeleporterUnit).beforeEnter();
   }
   async afterEnter(_unit: Unit) {
     if (this.debug) {
       console.debug('TELEPORTER', 'after enter', this.unit);
     }
-
     await (this.unit as TeleporterUnit).afterEnter();
   }
 

@@ -1,1 +1,709 @@
-{"id":"54f7ba21-e052-47fe-b109-214ef5bd927d","info":{"name":"Default Room","description":"This is the default room. You can edit it to create your own room."},"gridSize":{"type":"Vector2","value":[4,6]},"walls":[],"units":[{"id":"8842f497-8dc0-4120-5efc-1e422feeaa2f","unit":"teleporter_default","options":{"skin":"default","position":{"type":"Vector3","value":[0,0,1]},"rotation":"east","moduleStates":{"teleporter":{"type":"entrance"},"animation":{},"player":{},"room":{},"movement":{},"selection":{},"placement":{}}}},{"id":"11571c53-dcbb-4f1e-8ba8-9ea1a8fd4fab","unit":"sign_street_1","options":{"skin":"no_smoking","position":{"type":"Vector3","value":[1,0,4]},"rotation":"east","moduleStates":{"player":{},"room":{},"movement":{},"selection":{},"placement":{}}}},{"id":"67b09906-00d4-43fd-916b-c41fd73a048f","unit":"sign_street_1","options":{"skin":"no_unauthorized_access","position":{"type":"Vector3","value":[1,0,5]},"rotation":"east","moduleStates":{"player":{},"room":{},"movement":{},"selection":{},"placement":{}}}},{"id":"5c4f46d9-1ea4-4e54-970a-de6cf5ea479f","unit":"sign_protest_1","options":{"skin":"cuby","position":{"type":"Vector3","value":[1,0,0]},"rotation":"south","moduleStates":{"player":{},"room":{},"movement":{},"selection":{},"placement":{}}}},{"id":"7ec6ddb2-d616-4174-9e1a-f8d3598a7155","unit":"sign_protest_1","options":{"skin":"lenna","position":{"type":"Vector3","value":[2,0,0]},"rotation":"south","moduleStates":{"player":{},"room":{},"movement":{},"selection":{},"placement":{}}}}],"groundStyles":[{"type":"default","skinId":"default_grass_1","positions":[{"type":"Vector3","value":[0,0,1]},{"type":"Vector3","value":[1,0,0]},{"type":"Vector3","value":[1,0,1]},{"type":"Vector3","value":[1,0,2]},{"type":"Vector3","value":[1,0,3]},{"type":"Vector3","value":[1,0,4]},{"type":"Vector3","value":[1,0,5]},{"type":"Vector3","value":[2,0,0]},{"type":"Vector3","value":[2,0,1]},{"type":"Vector3","value":[2,0,2]},{"type":"Vector3","value":[2,0,3]},{"type":"Vector3","value":[2,0,4]},{"type":"Vector3","value":[2,0,5]},{"type":"Vector3","value":[3,0,0]},{"type":"Vector3","value":[3,0,1]},{"type":"Vector3","value":[3,0,2]},{"type":"Vector3","value":[3,0,3]},{"type":"Vector3","value":[3,0,4]},{"type":"Vector3","value":[3,0,5]}]}],"stairs":[]}
+{
+  "id": "57406e72-6549-4b46-a739-f0c026632a6a",
+  "info": {
+    "name": "Default Room",
+    "description": "This is the default room. You can edit it to create your own room."
+  },
+  "gridSize": {
+    "type": "Vector2",
+    "value": [
+      9,
+      8
+    ]
+  },
+  "walls": [],
+  "units": [
+    {
+      "id": "8842f497-8dc0-4120-5efc-1e422feeaa2f",
+      "unit": "teleporter_default",
+      "options": {
+        "skin": "default",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            7
+          ]
+        },
+        "rotation": "north",
+        "moduleStates": {
+          "teleporter": {
+            "type": "entrance"
+          },
+          "animation": {},
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "id": "494b0655-d943-45dc-8453-761ad3b052ab",
+      "unit": "teleporter_1",
+      "options": {
+        "skin": "default",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            0
+          ]
+        },
+        "rotation": "south",
+        "moduleStates": {
+          "teleporter": {
+            "type": "teleporter",
+            "targetRoomId": "test",
+            "targetRoomTeleporterId": ""
+          },
+          "animation": {},
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "id": "11571c53-dcbb-4f1e-8ba8-9ea1a8fd4fab",
+      "unit": "sign_street_1",
+      "options": {
+        "skin": "no_smoking",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            5
+          ]
+        },
+        "rotation": "east",
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "id": "67b09906-00d4-43fd-916b-c41fd73a048f",
+      "unit": "sign_street_1",
+      "options": {
+        "skin": "no_unauthorized_access",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            6
+          ]
+        },
+        "rotation": "east",
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "id": "5c4f46d9-1ea4-4e54-970a-de6cf5ea479f",
+      "unit": "sign_protest_1",
+      "options": {
+        "skin": "cuby",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            0
+          ]
+        },
+        "rotation": "east",
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "id": "7ec6ddb2-d616-4174-9e1a-f8d3598a7155",
+      "unit": "sign_protest_1",
+      "options": {
+        "skin": "lenna",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            1
+          ]
+        },
+        "rotation": "east",
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    },
+    {
+      "id": "4990a7aa-6612-44a9-8c3a-c0b2767d6fe4",
+      "unit": "billboard_large_1",
+      "options": {
+        "skin": "your_ad_here",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            3
+          ]
+        },
+        "rotation": "south",
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    }
+  ],
+  "groundStyles": [
+    {
+      "type": "default",
+      "skinId": "default_grass_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            6
+          ]
+        }
+      ]
+    }
+  ],
+  "stairs": []
+}

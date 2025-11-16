@@ -69,7 +69,7 @@ const previewOptions = computed(() => {
 
   return {
     type: unit.value.key,
-    skin: player.value?.state.skin || '',
+    skin: player.value?.state.skin || unit.value.getSkin(),
     action: ANIMATION_ACTION.IDLE
   };
 });

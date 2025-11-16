@@ -161,7 +161,6 @@ export default class MultiplayerAppModule extends AppModule<
               ),
               filter(({ silence }) => !silence),
               concatMap(async ({ position, unit }) => {
-                console.log('Player started moving');
                 if (!this.actions?.setMoveTo) {
                   throw new Error('No setMoveTo action available');
                 }
@@ -183,7 +182,6 @@ export default class MultiplayerAppModule extends AppModule<
                 ({ unit }) => unit.modules.movement.observables.moveEnd$
               ),
               concatMap(async position => {
-                console.log('Player stoped moving');
                 if (!this.actions?.setPosition) {
                   throw new Error('No setMoveTo action available');
                 }

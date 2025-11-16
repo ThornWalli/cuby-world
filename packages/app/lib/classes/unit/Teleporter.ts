@@ -72,17 +72,17 @@ export default class TeleporterUnit<
     return root;
   }
 
-  beforeEnter() {
-    console.log('before enter');
+  async beforeEnter() {
+    // can be overridden
   }
-  afterEnter() {
-    console.log('after enter');
+  async afterEnter() {
+    // can be overridden
   }
-  beforeLeave() {
-    console.log('before leave');
+  async beforeLeave() {
+    // can be overridden
   }
-  afterLeave() {
-    console.log('after leave');
+  async afterLeave() {
+    // can be overridden
   }
 
   override getSettingControls() {

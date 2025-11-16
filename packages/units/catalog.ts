@@ -11,6 +11,7 @@ import { skinsMap as lamp_1_skinMap } from './lamp_1/skins';
 import { skinsMap as cardboardBox_1_skinMap } from './cardboard_box_1/skins';
 import { skinsMap as sign_protest_1_skinMap } from './sign_protest_1/skins';
 import { skinsMap as sign_street_1_skinMap } from './sign_street_1/skins';
+import { skinsMap as billboard_large_1_skinMap } from './billboard_large_1/skins';
 import { skinsMap as teleporter_1_skinMap } from './teleporter_1/skins';
 
 export const items: UnitItem[] = [
@@ -48,6 +49,19 @@ export const items: UnitItem[] = [
     skinMap: sign_street_1_skinMap,
     instance: () =>
       import('./sign_street_1/SignStreet_1').then(
+        m => m.default as typeof Unit
+      ),
+    options: {}
+  },
+  {
+    id: 'billboard_large_1',
+    name: 'Billboard Large 1',
+    tags: [CATALOG_TAG.DECORATION],
+    skins: Array.from(billboard_large_1_skinMap.values()),
+    defaultSkinId: billboard_large_1_skinMap.get('default')!.id,
+    skinMap: billboard_large_1_skinMap,
+    instance: () =>
+      import('./billboard_large_1/BillboardLarge_1').then(
         m => m.default as typeof Unit
       ),
     options: {}

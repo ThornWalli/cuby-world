@@ -90,7 +90,6 @@ export default class StairModule extends RoomModule<State, Observables> {
       );
       this.room.addToRoot(stair.root!);
     }
-    console.log('resolvedStairs', resolvedStairs);
 
     this.state.stairs = [...this.state.stairs, ...resolvedStairs];
     this.updateVisiblity();

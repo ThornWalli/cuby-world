@@ -36,7 +36,7 @@ export default class CharacterUnitModule extends UnitModule<
   static override TYPE = 'character';
 
   offsets: Partial<Record<ANIMATION_ACTION, Vector3>> = {};
-  wrapper: Object3D;
+  root: Object3D;
 
   constructor(unit: Unit, options: Options, state: State, debug: boolean) {
     state = { ...state, sitting: state.sitting ?? false };
@@ -51,8 +51,7 @@ export default class CharacterUnitModule extends UnitModule<
     this.observables.lying$.next(null);
     //#endregion
 
-    const wrapper = new Object3D();
-    this.wrapper = wrapper;
+    this.root = new Object3D();
   }
 
   override async setup(context: UnitModuleSetupContext) {
@@ -84,8 +83,9 @@ export default class CharacterUnitModule extends UnitModule<
         .subscribe(void 0)
     );
 
-    this.wrapper.add(context.mesh);
-    return this.wrapper;
+    this.root.add(context.mesh);
+
+    return this.root;
   }
 
   async useTeleporter(unit: TeleporterUnit) {
@@ -123,7 +123,7 @@ export default class CharacterUnitModule extends UnitModule<
           subscription.unsubscribe();
         });
 
-      const wrapper = this.wrapper!;
+      const wrapper = this.root!;
       const targetUnit = unit as Unit<BedOptions>;
       if (targetUnit) {
         this.unit.modules.animation!.setAnimationAction(
@@ -178,7 +178,7 @@ export default class CharacterUnitModule extends UnitModule<
           subscription.unsubscribe();
         });
 
-      const wrapper = this.wrapper!;
+      const wrapper = this.root!;
       const targetUnit = unit as Unit<BenchUnitOptions | ChairUnitOptions>;
       if (targetUnit) {
         this.unit.modules.animation!.setAnimationAction(
@@ -254,7 +254,7 @@ export default class CharacterUnitModule extends UnitModule<
   // }
 
   cancelBed() {
-    this.wrapper.position.set(0, 0, 0);
+    this.root.position.set(0, 0, 0);
     this.state.lying = false;
     this.state.usedUnit
       ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
@@ -265,7 +265,7 @@ export default class CharacterUnitModule extends UnitModule<
   }
 
   cancelSit() {
-    this.wrapper!.position.y = 0;
+    this.root!.position.y = 0;
     this.state.sitting = false;
     this.state.usedUnit
       ?.getModuleByType<SlotUnitModule>(SlotUnitModule)

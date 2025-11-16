@@ -25,6 +25,7 @@ import ShopAppModule from './appModule/Shop';
 import TimeAppModule from './appModule/Time';
 import LightAppModule from './appModule/Light';
 import type { UnitIdentifier } from '../types/unit';
+import type { Vector3 } from 'three';
 
 type AppModuleList = (
   | typeof CursorAppModule
@@ -172,8 +173,8 @@ export class BaseApp<
     this.renderer.destroy();
   }
 
-  resetCamera() {
-    this.renderer.resetCamera();
+  resetCamera(position?: Vector3) {
+    this.renderer.resetCamera(position);
   }
 
   async enterRoom(

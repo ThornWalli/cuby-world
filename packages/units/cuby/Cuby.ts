@@ -1,10 +1,4 @@
-import {
-  Group,
-  Vector3,
-  type AnimationMixer,
-  type Object3D,
-  type Texture
-} from 'three';
+import { Group, Vector3, type Object3D, type Texture } from 'three';
 import {
   Mesh,
   MeshStandardMaterial,
@@ -64,7 +58,6 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
   static override NAME = 'Cuby';
 
   clock: Clock = new Clock();
-  mixer?: AnimationMixer;
 
   override previewOptions: PreviewOptions = {
     ground: false

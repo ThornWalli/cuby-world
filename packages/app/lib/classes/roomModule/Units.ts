@@ -92,7 +92,7 @@ export default class UnitsModule extends RoomModule<State, Observables> {
       return Math.floor(pos.y);
     }
     const floor = getFloorFromPosition(position);
-    console.log('position', position.toArray(), floor);
+
     const withoutFloor = position.clone().setY(0);
     return this.getUnitsByFloor(floor).filter(unit =>
       unit.isIntersectByPosition(withoutFloor)
