@@ -83,7 +83,7 @@ export default class WallLamp_1 extends WallLightUnit<WallLampBoxOptions> {
       emissiveIntensity: 1
     });
 
-    const light = new PointLight(this.options.color, 3, 4);
+    const light = new PointLight(this.options.color, 3, 3);
     this.light = light;
     light.decay = 0;
     light.visible = false;

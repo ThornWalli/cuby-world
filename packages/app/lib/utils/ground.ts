@@ -130,7 +130,7 @@ export function createGroundChunks(
         instancedMesh.instanceColor = null;
         instancedMesh.material.side = FrontSide;
         instancedMesh.receiveShadow = true;
-        instancedMesh.castShadow = true;
+        instancedMesh.castShadow = false;
 
         return [type, instancedMesh];
       });

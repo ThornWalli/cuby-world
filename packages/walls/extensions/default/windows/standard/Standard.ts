@@ -69,8 +69,8 @@ async function loadGltf(
   model.name = OBJECT_NAME.MESH;
   model.traverse(object => {
     if (object instanceof Mesh) {
-      object.castShadow = true;
-      object.receiveShadow = true;
+      object.castShadow = false;
+      object.receiveShadow = false;
     }
   });
 

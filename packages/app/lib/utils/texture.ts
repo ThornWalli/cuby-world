@@ -40,10 +40,10 @@ export function prepareTexture(
 ) {
   texture.colorSpace = SRGBColorSpace;
   texture.flipY = false;
+  texture.generateMipmaps = true;
   if (options.pixelrated) {
     texture.minFilter = NearestFilter;
     texture.magFilter = NearestFilter;
-    // texture.generateMipmaps = false;
   } else {
     texture.minFilter = LinearFilter;
     texture.magFilter = LinearFilter;
