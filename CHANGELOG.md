@@ -1,5 +1,12 @@
 # Project Changelog
 
+# [1.0.0-beta.34](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.33...v1.0.0-beta.34) (2025-11-17)
+
+
+### Bug Fixes
+
+* **textures:** remove unused texture files ([bc4a19d](https://github.com/ThornWalli/cuby-world/commit/bc4a19d28c42d5c7530b27194cdd338d3d9c31e7))
+
 # [1.0.0-beta.33](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.32...v1.0.0-beta.33) (2025-11-17)
 
 
