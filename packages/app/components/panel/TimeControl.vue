@@ -1,20 +1,22 @@
 <template>
   <cw-panel class="cw-panel-time-control" hide-title title="Time Control">
-    <span class="time">
-      <input
-        size="5"
-        :value="preparedTime"
-        @focus="pause()"
-        @blur="onBlurInput" />
-      Uhr
-    </span>
-
-    <cw-button @click="onClickSpeed">
-      {{ availableSpeeds[lastSpeedIndex]?.title }}
-    </cw-button>
-    <cw-button @click="onClickTogglePlayPause">
-      <base-icon size="very-small" :name="paused ? 'play' : 'pause'" />
-    </cw-button>
+    <div class="controls">
+      <span class="time">
+        <input
+          size="5"
+          :value="preparedTime"
+          @focus="pause()"
+          @blur="onBlurInput" />
+        Uhr
+      </span>
+      <cw-button @click="onClickSpeed">
+        {{ availableSpeeds[lastSpeedIndex]?.title }}
+      </cw-button>
+      <cw-button @click="onClickTogglePlayPause">
+        <base-icon size="very-small" :name="paused ? 'play' : 'pause'" />
+      </cw-button>
+    </div>
+    <div class="timezone">{{ timezone }}</div>
   </cw-panel>
 </template>
 
@@ -51,6 +53,13 @@ const $props = defineProps<{
 const dayTime = ref(0);
 const paused = ref(false);
 const subscription = new Subscription();
+
+const timezone = ref($props.app.modules.time.state.timezone);
+subscription.add(
+  $props.app.modules.time.observables.timezone$.subscribe(tz => {
+    timezone.value = tz;
+  })
+);
 
 const preparedTime = computed(() => {
   const totalMinutes = dayTime.value * 24 * 60;
@@ -149,12 +158,12 @@ onMounted(() => {
       .subscribe(void 0)
   );
 
-  //#region debug
+  // //#region debug
 
-  console.warn('Setting time to noon for debug purposes');
-  $props.app.modules.time.setDayTime(0.62);
+  // console.warn('Setting time to noon for debug purposes');
+  // $props.app.modules.time.setDayTime(0.62);
 
-  //#endregion
+  // //#endregion
 });
 
 onUnmounted(() => {
@@ -199,9 +208,7 @@ function onClickTogglePlayPause() {
 <style lang="postcss" scoped>
 .cw-panel-time-control {
   & :deep(.content) {
-    display: flex;
-    flex-direction: row;
-    gap: var(--cw-spacing-medium);
+    gap: var(--cw-spacing-small);
   }
 
   & .time {
@@ -223,6 +230,19 @@ function onClickTogglePlayPause() {
       background: none;
       border: none;
     }
+  }
+
+  & .controls {
+    display: flex;
+    flex-direction: row;
+    gap: var(--cw-spacing-medium);
+  }
+
+  & .timezone {
+    flex: 1;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
   }
 }
 </style>

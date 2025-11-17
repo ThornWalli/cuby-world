@@ -27,6 +27,8 @@ import LightAppModule from './appModule/Light';
 import type { UnitIdentifier } from '../types/unit';
 import type { Vector3 } from 'three';
 
+const DEFAULT_TIMEZONE = 'UTC';
+
 type AppModuleList = (
   | typeof CursorAppModule
   | typeof UnitFocusAppModule
@@ -190,6 +192,10 @@ export class BaseApp<
     );
 
     const room = await this.loadRoom(roomDescription);
+
+    this.modules.time.setTimezone(
+      room.description.info.timezone ?? DEFAULT_TIMEZONE
+    );
 
     playerModule.getPlayers().forEach(player => {
       if (player.client) {

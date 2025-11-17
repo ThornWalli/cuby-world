@@ -5,6 +5,7 @@ import { concatMap, ReplaySubject } from 'rxjs';
 
 interface Observables extends AppModuleObservables {
   dayTime$: ReplaySubject<number>;
+  timezone$: ReplaySubject<string | null>;
   speed$: ReplaySubject<number>;
   paused$: ReplaySubject<boolean>;
 }
@@ -15,6 +16,7 @@ interface State extends AppModuleState {
   auto: boolean;
   dayTime: number;
   speed: number;
+  timezone: string | null;
 }
 
 const DAY_LENGTH_SECONDS = 24 * 60 * 60; // 5 Minuten
@@ -27,13 +29,15 @@ export default class TimeAppModule extends AppModule<State, Observables> {
     auto: true,
     dayLengthSeconds: DAY_LENGTH_SECONDS,
     dayTime: 0,
-    speed: 1
+    speed: 1,
+    timezone: null
   };
 
   constructor(app: App) {
     super(app);
     //#region observables
     this.observables.dayTime$ = new ReplaySubject<number>(1);
+    this.observables.timezone$ = new ReplaySubject<string | null>(1);
     this.observables.speed$ = new ReplaySubject<number>(1);
     this.observables.paused$ = new ReplaySubject<boolean>(1);
     //#endregion
@@ -45,11 +49,7 @@ export default class TimeAppModule extends AppModule<State, Observables> {
         .pipe(concatMap(this.onUpdate.bind(this)))
         .subscribe(void 0)
     );
-    const currentDate = new Date();
-    const hours = currentDate.getHours();
-    const minutes = currentDate.getMinutes();
-    const dayTime = (hours * 60 + minutes) / (24 * 60);
-    this.state.dayTime = dayTime;
+    this.state.dayTime = this.getTimeInTimezone(this.state.timezone);
   }
 
   setSpeed(speed: number) {
@@ -91,5 +91,39 @@ export default class TimeAppModule extends AppModule<State, Observables> {
     } else {
       this.lastTime = time;
     }
+  }
+
+  setTimezone(tz: string | null) {
+    this.state.timezone = tz;
+
+    this.state.dayTime = this.getTimeInTimezone(tz);
+    this.observables.timezone$.next(this.state.timezone);
+    this.observables.dayTime$.next(this.state.dayTime);
+  }
+
+  private getTimeInTimezone(tz: string | null): number {
+    const date = new Date();
+
+    let hours: number;
+    let minutes: number;
+
+    if (tz) {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+      });
+
+      const parts = formatter.formatToParts(date);
+      hours = Number(parts.find(p => p.type === 'hour')?.value);
+      minutes = Number(parts.find(p => p.type === 'minute')?.value);
+    } else {
+      // local fallback
+      hours = date.getHours();
+      minutes = date.getMinutes();
+    }
+
+    return (hours * 60 + minutes) / (24 * 60);
   }
 }

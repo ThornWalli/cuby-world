@@ -15,6 +15,17 @@
           name="description"
           label="Description"
           @update:model-value="val => (model!.info.description = val)" />
+        <cww-form-field-select
+          v-model="model!.info.timezone"
+          label="Timezone"
+          name="timezone">
+          <option
+            v-for="option in timezoneOptions"
+            :key="option.value"
+            :value="option.value">
+            {{ option.label }}
+          </option>
+        </cww-form-field-select>
       </form>
       <teleport to="#teleports">
         <cw-room-editor-dialog-room-grid-resize ref="dialogRoomGridResize" />
@@ -31,10 +42,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import CwDialog from '../../../components/Dialog.vue';
 import CwFormFieldTextfield from '../../../components/formField/Textfield.vue';
 import CwFormFieldTextarea from '../../../components/formField/Textarea.vue';
+import CwwFormFieldSelect from '../../formField/Select.vue';
 import CwButton from '../../../components/Button.vue';
 import CwRoomEditorDialogRoomGridResize from './RoomGridResize.vue';
 
@@ -56,6 +68,13 @@ const $props = defineProps<{
 
 defineOptions({
   inheritAttrs: false
+});
+
+const timezoneOptions = computed(() => {
+  return Intl.supportedValuesOf('timeZone').map(tz => ({
+    label: tz,
+    value: tz
+  }));
 });
 
 function onClickSave() {
@@ -85,8 +104,10 @@ function onSubmit(
   const formData = new FormData(e.target as HTMLFormElement);
   model.value.info = {
     name: String(formData.get('name')),
-    description: String(formData.get('description'))
+    description: String(formData.get('description')),
+    timezone: String(formData.get('timezone'))
   };
+  $props.app.enterRoom(model.value);
   close<RoomDescription>(model.value);
 }
 

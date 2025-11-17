@@ -26,6 +26,7 @@ export interface RoomDescription<
   info: {
     name: string;
     description?: string;
+    timezone: string;
   };
   gridSize: GridSize;
 

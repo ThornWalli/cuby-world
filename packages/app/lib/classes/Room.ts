@@ -116,7 +116,8 @@ export default class Room<Modules extends RoomModules = RoomModules> {
       id: description.id,
       info: {
         name: this.description?.info.name ?? '',
-        description: this.description?.info.description ?? ''
+        description: this.description?.info.description ?? '',
+        timezone: this.description.info.timezone ?? ''
       },
       gridSize: this.gridSize,
       walls: this.modules.wall.getWalls().map(wall => wall.toDescription()),
