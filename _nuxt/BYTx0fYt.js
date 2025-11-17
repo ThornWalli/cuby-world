@@ -1,0 +1,1 @@
+import{a as o,j as t,k as l}from"./DYAMdhHD.js";const n={xmlns:"http://www.w3.org/2000/svg",viewBox:"0 0 154 154"};function r(s,e){return t(),o("svg",n,[...e[0]||(e[0]=[l("path",{"fill-rule":"evenodd",d:"M123 154H31V0h92zm-88-4h84V4H35z","clip-rule":"evenodd"},null,-1)])])}const d={render:r};export{d as default,r as render};
