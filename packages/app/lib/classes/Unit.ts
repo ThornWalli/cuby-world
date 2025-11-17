@@ -763,7 +763,7 @@ export default class Unit<
       }
     });
     meshes.forEach(mesh => {
-      const { colorMap, normalMap, ambientMap, displacementMap } = textureMaps;
+      const { colorMap, normalMap, ambientMap } = textureMaps;
 
       Object.values(textureMaps)
         .filter(v => v !== null)
@@ -776,10 +776,6 @@ export default class Unit<
       }
       if (ambientMap) {
         material.aoMap = ambientMap;
-      }
-      if (displacementMap) {
-        // material.displacementMap = displacementMap;
-        // material.displacementScale = 0;
       }
 
       material.needsUpdate = true;

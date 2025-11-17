@@ -27,5 +27,4 @@ export interface TextureMaps {
   colorMap: Texture;
   ambientMap?: Texture;
   normalMap?: Texture;
-  displacementMap?: Texture;
 }
