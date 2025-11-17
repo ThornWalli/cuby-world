@@ -1,5 +1,12 @@
 # Project Changelog
 
+# [1.0.0-beta.33](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.32...v1.0.0-beta.33) (2025-11-17)
+
+
+### Bug Fixes
+
+* **update:** improve shadow ([7926151](https://github.com/ThornWalli/cuby-world/commit/79261518e8bcfbe5254082ebf55252a82d25a5dc))
+
 # [1.0.0-beta.32](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.31...v1.0.0-beta.32) (2025-11-17)
 
 
