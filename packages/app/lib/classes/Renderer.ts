@@ -5,8 +5,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 
-import { ReplaySubject, type Observable } from 'rxjs';
-import { fromEvent } from 'rxjs';
+import { Observable, ReplaySubject, fromEvent } from 'rxjs';
 import {
   Clock,
   SRGBColorSpace,
@@ -28,6 +27,7 @@ import {
 } from 'three';
 import IntersectionRendererModule from './rendererModule/Intersection';
 import DebugRendererModule from './rendererModule/Debug';
+import type { HasEventTargetAddRemove } from 'rxjs/internal/observable/fromEvent';
 
 export type RendererModuleList = (
   | typeof DebugRendererModule
@@ -76,6 +76,7 @@ export default class Renderer<
       rotate: boolean;
     }>;
     rotation$: ReplaySubject<number>;
+    controlsChange$: Observable<Event>;
   };
   shadowQuality: ShadowQuality = ShadowQuality.OFF;
 
@@ -131,7 +132,8 @@ export default class Renderer<
         zoom: boolean;
         rotate: boolean;
       }>(1),
-      rotation$: new ReplaySubject<number>(1)
+      rotation$: new ReplaySubject<number>(1),
+      controlsChange$: new Observable<Event>()
     };
 
     this.dimension = dimension;
@@ -155,6 +157,10 @@ export default class Renderer<
     this.initComposer();
     if (options.controls) {
       this.initControls();
+      this.observables.controlsChange$ = fromEvent<Event>(
+        this.controls as HasEventTargetAddRemove<Event>,
+        'change'
+      );
     }
 
     //#region Modules

@@ -182,20 +182,23 @@ export default class MovementUnitModule extends UnitModule<
       }
 
       return new Promise<{ position: Vector3 } | null>(resolve => {
-        const subscription = new Subscription();
-        subscription.add(
-          this.observables.moveAbort$.subscribe(() => {
-            resolve(null);
-            subscription.unsubscribe();
-          })
-        );
-        subscription.add(
-          this.observables.moveEnd$.subscribe(position => {
-            console.log('EEEEEEND');
-            resolve({ position });
-            subscription.unsubscribe();
-          })
-        );
+        if (this.movements.length) {
+          const subscription = new Subscription();
+          subscription.add(
+            this.observables.moveAbort$.subscribe(() => {
+              resolve(null);
+              subscription.unsubscribe();
+            })
+          );
+          subscription.add(
+            this.observables.moveEnd$.subscribe(position => {
+              resolve({ position });
+              subscription.unsubscribe();
+            })
+          );
+        } else {
+          resolve(null);
+        }
       });
     } else {
       console.warn(
@@ -219,6 +222,7 @@ export default class MovementUnitModule extends UnitModule<
 
     if (!this.currentMovement && this.lastMovement) {
       this.lastMovement = null;
+
       this.observables.moveEnd$.next(this.unit.getPosition());
     }
 

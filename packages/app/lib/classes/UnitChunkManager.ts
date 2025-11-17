@@ -71,25 +71,23 @@ export default class UnitChunkManager {
 
   updateVisibility(camera: Camera) {
     const visibleChunks = this.findVisibleChunks(camera); // Finde alle sichtbaren Chunks
-
-    this.chunks.forEach(chunk => {
-      chunk.visible = false;
-      Array.from(chunk.units.values())
-        .filter(unit => !unit.modules.player.player?.client)
-        .forEach(unit => unit.setChunkVisible(false));
-    });
-
     const visibleUnits = new Set<Unit>();
-    visibleChunks.forEach(key => {
-      if (this.chunks.has(key)) {
-        const chunk = this.chunks.get(key)!;
+
+    Array.from(this.chunks.entries()).forEach(([key, chunk]) => {
+      if (visibleChunks.has(key)) {
         chunk.visible = true;
         chunk.units.forEach(unit => {
           unit.setChunkVisible(true);
           visibleUnits.add(unit);
         });
+      } else {
+        chunk.visible = false;
+        Array.from(chunk.units.values())
+          .filter(unit => !unit.modules.player.player?.client)
+          .forEach(unit => unit.setChunkVisible(false));
       }
     });
+
     return visibleUnits;
   }
 
@@ -112,7 +110,6 @@ export default class UnitChunkManager {
     frustum.setFromProjectionMatrix(projScreenMatrix);
 
     const visibleChunkKeys = new Set<string>();
-
     const allChunkPositions = this.getChunkPositions();
 
     for (const pos of allChunkPositions) {

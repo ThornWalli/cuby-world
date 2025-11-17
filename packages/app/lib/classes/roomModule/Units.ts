@@ -1,16 +1,26 @@
-import type { Vector3, Camera } from 'three';
+import type { Vector3 } from 'three';
 import RoomModule, {
   type RoomModuleObservables,
   type RoomModuleState
 } from '../RoomModule';
 import type Unit from '../Unit';
 import UnitChunkManager from '../UnitChunkManager';
-import { Subject, concatMap, distinctUntilChanged, map } from 'rxjs';
+import {
+  EMPTY,
+  Subject,
+  concatMap,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  merge,
+  switchMap
+} from 'rxjs';
 import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { AnimationLoopValue } from '../Renderer';
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import type Room from '../Room';
 import type { ConditionDirectionsDescription } from '../../utils/pathfindng';
+import { getFloorRange } from '../../utils/floor';
 
 interface Observables extends RoomModuleObservables {
   addUnit$: Subject<Unit>;
@@ -67,6 +77,23 @@ export default class UnitsModule extends RoomModule<State, Observables> {
           })
         )
         .subscribe(void 0)
+    );
+
+    this.subscription.add(
+      merge(
+        this.room.app.renderer.observables.controlsChange$,
+        this.room.app.modules.player.observables.currentPlayer$.pipe(
+          switchMap(player => player?.observables.unit$ || EMPTY),
+          switchMap(({ unit }) => unit.observables.position$)
+        )
+      )
+        .pipe(debounceTime(20))
+        .subscribe(() => {
+          const units = this.chunkManager.updateVisibility(
+            this.room.app.renderer.camera
+          );
+          this.state.visibleUnits = Array.from(units);
+        })
     );
   }
 
@@ -162,27 +189,29 @@ export default class UnitsModule extends RoomModule<State, Observables> {
   }
 
   override update(v: AnimationLoopValue) {
-    this.state.visibleUnits.forEach(unit => {
-      unit.update(v);
-    });
+    this.state.visibleUnits.forEach(unit => unit.update(v));
   }
 
-  override updateThrottle(time: number, { camera }: { camera: Camera }) {
-    const units = this.chunkManager.updateVisibility(camera);
-    this.state.visibleUnits = Array.from(units);
-  }
+  // override updateThrottle(time: number, { camera }: { camera: Camera }) {
+  //   const units = this.chunkManager.updateVisibility(camera);
+  //   this.state.visibleUnits = Array.from(units);
+  // }
 
+  private _updateVisiblity_lastFloorIndex: number | null = null;
   updateVisiblity(
     floorIndex?: number,
     units: Unit[] = Array.from(this.state.units.values())
   ) {
-    units.forEach(unit => unit.setVisible(false));
     floorIndex = floorIndex ?? this.room.modules.floor.getFloor();
-    for (let f = 0; f <= floorIndex; f++) {
-      this.getUnitsByFloor(f).forEach(unit => unit.setVisible(true));
-    }
-  }
 
+    if (this._updateVisiblity_lastFloorIndex !== floorIndex) {
+      const floors = getFloorRange(floorIndex);
+      units.forEach(unit =>
+        unit.setVisible(floors.includes(Math.floor(unit.position.y)))
+      );
+    }
+    this._updateVisiblity_lastFloorIndex = floorIndex;
+  }
   //#endregion
 }
 
