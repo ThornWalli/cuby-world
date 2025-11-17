@@ -7,15 +7,18 @@ import type {
 } from '@cuby-world/app/lib/classes/Unit';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/wall_lamp_1.glb?url';
-import WallUnit from '@cuby-world/app/lib/classes/unit/Wall';
 import { skinsMap } from './skins';
+import WallLightUnit from '@cuby-world/app/lib/classes/unit/wall/Light';
 
 export interface WallLampBoxOptions extends UnitOptions {
   color: number | string;
 }
-export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
+export default class WallLamp_1 extends WallLightUnit<WallLampBoxOptions> {
   static override KEY = 'wallLamp_1';
   static override NAME = 'WallLamp_1';
+
+  private light?: PointLight;
+  private lightBulb?: Mesh;
 
   constructor(
     options: Omit<
@@ -40,6 +43,20 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
     });
   }
 
+  override setup(context: SetupContext): Promise<void> {
+    this.subscription.add(
+      this.modules.light.observables.active$.subscribe((active: boolean) => {
+        if (this.light && this.lightBulb) {
+          this.light.visible = active;
+          (this.lightBulb.material as MeshStandardMaterial).emissiveIntensity =
+            active ? 1 : 0;
+        }
+      })
+    );
+
+    return super.setup(context);
+  }
+
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Object3D();
 
@@ -50,23 +67,27 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
     if (this.isPreview()) {
       const obj = object.getObjectByName('empty')!;
       obj.position.set(-0.025, 0, -0.025);
-      // obj?.rotateY(Math.PI);
     }
 
-    const lightBulb = object.getObjectByName('light_bulb')!;
+    const lightBulb = object.getObjectByName('light_bulb')! as Mesh;
+    this.lightBulb = lightBulb;
+
     lightBulb.castShadow = false;
     lightBulb.receiveShadow = false;
 
     const skin = skinsMap.get(this.getSkin())!;
 
-    (lightBulb as Mesh).material = new MeshStandardMaterial({
+    lightBulb.material = new MeshStandardMaterial({
       color: skin.options.color,
       emissive: skin.options.color,
       emissiveIntensity: 1
     });
 
-    const light = new PointLight(this.options.color, 0.4, 1);
-    light.decay = 2;
+    const light = new PointLight(this.options.color, 3, 4);
+    this.light = light;
+    light.decay = 0;
+    light.visible = false;
+
     light.castShadow = true;
     // light.shadow.bias = -0.001;
     light.shadow.mapSize.set(64, 64);
@@ -75,12 +96,11 @@ export default class WallLamp_1 extends WallUnit<WallLampBoxOptions> {
 
     lightBulb.add(light);
 
-    // const helper = new PointLightHelper(light, 0.1);
-    // lightBulb.add(helper);
-
     this.setMaterialReady();
     meshRoot.add(object);
+
     // _context.room?.app.renderer.scene.add(new PointLightHelper(light, 0.1));
+
     return meshRoot;
   }
 }

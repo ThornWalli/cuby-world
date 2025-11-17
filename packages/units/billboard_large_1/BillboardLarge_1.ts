@@ -5,10 +5,10 @@ import {
   SpotLightHelper,
   Vector3
 } from 'three';
-import Unit, {
-  type SetupContext,
-  type UnitConstructorOptions,
-  type UnitOptions
+import type {
+  SetupContext,
+  UnitConstructorOptions,
+  UnitOptions
 } from '@cuby-world/app/lib/classes/Unit';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/billboard_large_1.glb?url';
@@ -20,13 +20,18 @@ import { ROTATION_TYPE } from '@cuby-world/app/lib/utils/rotation';
 import { prepareTexture } from '@cuby-world/app/lib/utils/texture';
 import { skinsMap } from './skins';
 import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
+import LightUnit from '@cuby-world/app/lib/classes/unit/Light';
 
 export interface BillboardLargeOptions extends UnitOptions {
   defectLights: number;
 }
-export default class BillboardLarge_1 extends Unit<BillboardLargeOptions> {
+export default class BillboardLarge_1 extends LightUnit<BillboardLargeOptions> {
   static override KEY = 'billboard_large_1';
   static override NAME = 'Billboard Large 1';
+
+  lightActive = false;
+  lights: { mesh: Mesh; spot: SpotLight; defect: boolean }[] = [];
+  flickerTimer = 0;
 
   constructor(
     options: Omit<
@@ -46,6 +51,24 @@ export default class BillboardLarge_1 extends Unit<BillboardLargeOptions> {
         ...options.options
       }
     });
+  }
+
+  override setup(context: SetupContext): Promise<void> {
+    this.subscription.add(
+      this.modules.light.observables.active$.subscribe((active: boolean) => {
+        console.log('Billboard Large 1 light active:', active);
+        this.lights.forEach(({ spot, mesh }) => {
+          this.lightActive = active;
+          spot.visible = active;
+
+          (mesh.material as MeshStandardMaterial).emissiveIntensity = active
+            ? 1
+            : 0;
+        });
+      })
+    );
+
+    return super.setup(context);
   }
 
   override async createMesh(_context: SetupContext) {
@@ -100,13 +123,17 @@ export default class BillboardLarge_1 extends Unit<BillboardLargeOptions> {
       spot.angle = Math.PI / 3;
       spot.penumbra = 0.3;
       spot.castShadow = true;
-
-      this.lights.push({ inner: inner[i]!, spot, defect: defectLights[i] });
+      const mesh = inner[i]!;
+      this.lights.push({ mesh, spot, defect: defectLights[i] });
 
       const worldPos = new Vector3();
       lamp.getWorldPosition(worldPos);
       spot.position.copy(worldPos.clone().add(new Vector3(0, 0, 0)));
       spot.target.position.set(-2, 4, worldPos.z);
+
+      spot.visible = this.lightActive;
+      (mesh.material as MeshStandardMaterial).emissiveIntensity = 0;
+
       meshRoot.add(spot.target);
 
       lamp.lookAt(spot.target.position);
@@ -120,17 +147,16 @@ export default class BillboardLarge_1 extends Unit<BillboardLargeOptions> {
 
     return meshRoot;
   }
-  lights: { inner: Mesh; spot: SpotLight; defect: boolean }[] = [];
-  flickerTimer = 0;
+
   override update({ delta }: AnimationLoopValue): void {
     const seconds = 0.05;
     const flackerMax = 0.3;
     this.flickerTimer += delta;
-    if (this.flickerTimer > seconds) {
+    if (this.flickerTimer > seconds && this.lightActive) {
       this.flickerTimer = 0;
       this.lights
         .filter(({ defect }) => defect)
-        .forEach(({ inner, spot }) => {
+        .forEach(({ mesh: inner, spot }) => {
           if (Math.random() < flackerMax) {
             const material = inner.material as MeshStandardMaterial;
             spot.intensity = Math.random() < 0.5 ? 0 : 8;

@@ -8,7 +8,7 @@ export function getDefaultPlayerSettings(): PlayerSettings {
     characterType: CHARACHTER_TYPE.DEFAULT,
     skin: DEFAULT_PLAYER_SKIN_ID,
     graphic: {
-      shadowQuality: ShadowQuality.MEDIUM
+      shadowQuality: ShadowQuality.LOW
     }
   };
 }

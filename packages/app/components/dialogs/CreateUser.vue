@@ -146,7 +146,7 @@ function onSubmit(
     characterType: characterType.value,
     skin: skin.value,
     graphic: {
-      shadowQuality: ShadowQuality.MEDIUM
+      shadowQuality: ShadowQuality.LOW
     }
   });
 }

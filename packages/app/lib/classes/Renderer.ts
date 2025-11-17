@@ -148,7 +148,7 @@ export default class Renderer<
 
     renderer.shadowMap.autoUpdate = true;
     this.renderer = renderer;
-    this.setShadowQuality(ShadowQuality.MEDIUM);
+    this.setShadowQuality(ShadowQuality.LOW);
 
     // renderer.toneMapping = ACESFilmicToneMapping;
 
