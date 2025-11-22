@@ -1,5 +1,12 @@
 # Project Changelog
 
+# [1.0.0-beta.38](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.37...v1.0.0-beta.38) (2025-11-22)
+
+
+### Bug Fixes
+
+* **update:** many updates ([5e413da](https://github.com/ThornWalli/cuby-world/commit/5e413dad18d974bb141702e8aec3b97245ff5399))
+
 # [1.0.0-beta.37](https://github.com/ThornWalli/cuby-world/compare/v1.0.0-beta.36...v1.0.0-beta.37) (2025-11-17)
 
 
