@@ -1,4 +1,4 @@
-import { ConeGeometry, Mesh, MeshStandardMaterial } from 'three';
+import { ConeGeometry, Mesh, MeshStandardMaterial, Object3D } from 'three';
 import type Player from '../Player';
 import UnitModule, {
   type UnitModuleOptions,
@@ -7,6 +7,7 @@ import UnitModule, {
 } from '../UnitModule';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { AnimationLoopValue } from '../Renderer';
+import type Unit from '../Unit';
 
 type Options = UnitModuleOptions;
 type State = UnitModuleState;
@@ -17,19 +18,27 @@ export default class PlayerUnitModule extends UnitModule<Options, State> {
   }
   static override TYPE = 'player';
 
+  root: Object3D;
   player?: Player;
 
   setPlayer(player: Player) {
     this.player = player;
   }
 
+  constructor(unit: Unit, options: Options, state: State, debug: boolean) {
+    super(unit, options, state, debug);
+
+    this.root = new Object3D();
+  }
+
   override async setup(context: UnitModuleSetupContext) {
-    const root = await super.setup(context);
+    const mesh = await super.setup(context);
     if (!this.unit.isPreview() && this.player?.client) {
       this.indicatorMesh = this.createIndicator();
-      root.add(this.indicatorMesh);
+      this.root.add(this.indicatorMesh);
     }
-    return root;
+    this.root.add(mesh);
+    return this.root;
   }
 
   createIndicator() {

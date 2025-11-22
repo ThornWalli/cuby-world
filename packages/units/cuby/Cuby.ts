@@ -98,12 +98,15 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
 
   sleepTimer?: number;
   override async setup(context: SetupContext) {
+    this.modules.character.offsets.toilet_idle = new Vector3(0.05, 0.75, 0);
+    this.modules.character.offsets.sink_idle = new Vector3(-0.25, 0.75, 0);
     this.modules.character.offsets.laying_sleeping = new Vector3(
       0.075,
       0.75,
       0
     );
     this.modules.character.offsets.sitting_idle = new Vector3(0.075, 0.75, 0);
+    this.modules.character.offsets.shelf_idle = new Vector3(-0.075, 0, 0);
 
     await super.setup(context);
 

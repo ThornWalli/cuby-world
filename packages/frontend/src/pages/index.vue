@@ -53,6 +53,9 @@ const config = ref<AppConfig>({
   firebase: runtimeConfig.public.firebase,
   multiplayer: {
     enabled: runtimeConfig.public.cubyWorld.multiplayerEnabled
+  },
+  debug: {
+    dayytime: runtimeConfig.public.cubyWorld.debug?.daytime || null
   }
 });
 </script>

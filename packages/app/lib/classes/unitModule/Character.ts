@@ -5,7 +5,7 @@ import UnitModule, {
   type UnitModuleState
 } from '../UnitModule';
 import type Unit from '../Unit';
-import { concatMap, EMPTY, merge, ReplaySubject, switchMap } from 'rxjs';
+import { concatMap, delay, EMPTY, merge, ReplaySubject, switchMap } from 'rxjs';
 import type { Vector3 } from 'three';
 import { Object3D } from 'three';
 import type TeleporterUnit from '../unit/Teleporter';
@@ -15,15 +15,22 @@ import SlotUnitModule from './Slot';
 import type { ChairUnitOptions } from '../unit/Chair';
 import type { BenchUnitOptions } from '../unit/Bench';
 import type { BedOptions } from './Bed';
+import { invertRotation } from '../../utils/rotation';
+import type { Options as SinkUnitOptions } from '../unit/Sink';
+import WallUnitModule from './Wall';
 
 interface Obervables extends UnitModuleObservables {
-  sitting$: ReplaySubject<Unit<BenchUnitOptions | ChairUnitOptions> | null>;
+  slotted$: ReplaySubject<boolean>;
+  sitting$: ReplaySubject<Unit | null>;
+  standing$: ReplaySubject<Unit | null>;
   lying$: ReplaySubject<Unit<BedOptions> | null>;
 }
 
 type Options = UnitModuleOptions;
 type State = {
+  slotted: boolean;
   sitting: boolean;
+  standing: boolean;
   lying: boolean;
   usedUnit: Unit | null;
 } & UnitModuleState;
@@ -43,10 +50,12 @@ export default class CharacterUnitModule extends UnitModule<
     super(unit, options, state, debug);
 
     //#region observables
-    this.observables.sitting$ = new ReplaySubject<Unit<
-      BenchUnitOptions | ChairUnitOptions
-    > | null>(1);
+    this.observables.slotted$ = new ReplaySubject<boolean>(1);
+    this.observables.slotted$.next(false);
+    this.observables.sitting$ = new ReplaySubject<Unit | null>(1);
     this.observables.sitting$.next(null);
+    this.observables.standing$ = new ReplaySubject<Unit | null>(1);
+    this.observables.standing$.next(null);
     this.observables.lying$ = new ReplaySubject<Unit<BedOptions> | null>(1);
     this.observables.lying$.next(null);
     //#endregion
@@ -111,12 +120,10 @@ export default class CharacterUnitModule extends UnitModule<
   }
 
   useBed(unit: Unit<BedOptions>) {
-    if (this.state.lying) {
+    if (this.isLying()) {
       console.log('Is already lying down');
       return false;
     } else if (isBed(unit)) {
-      this.state.lying = true;
-
       const subscription =
         this.unit.modules.movement.observables.moveStart$.subscribe(() => {
           this.cancelBed();
@@ -140,13 +147,10 @@ export default class CharacterUnitModule extends UnitModule<
         this.unit.modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
       }
 
-      if (
-        targetUnit
-          .getModuleByType<SlotUnitModule>(SlotUnitModule)
-          .addUsedUnit(this.unit)
-      ) {
-        this.state.usedUnit = targetUnit;
-        this.observables.lying$.next(unit);
+      if (targetUnit.getModuleByType(SlotUnitModule)?.addUsedUnit(this.unit)) {
+        this.setUsedUnit(targetUnit);
+        this.setLying(unit);
+        this.setSlotted(true);
 
         return true;
       }
@@ -157,59 +161,163 @@ export default class CharacterUnitModule extends UnitModule<
     }
   }
 
+  useStandSlot(unit: Unit, position: Vector3) {
+    if (this.isStanding()) {
+      console.log('Is already lying down');
+      return false;
+    } else {
+      const slotModule = unit.getModuleByType<SlotUnitModule>(SlotUnitModule);
+      if (!slotModule) {
+        throw new Error('Unit has no slot module');
+      }
+      const slot = slotModule.findFreeSlot(position);
+
+      if (isSitable(unit)) {
+        const subscription =
+          this.unit.modules.movement.observables.moveStart$.subscribe(() => {
+            this.cancelStand();
+            subscription.unsubscribe();
+          });
+
+        const root = this.root!;
+        const targetUnit = unit as Unit<SinkUnitOptions>; // TODO: ???
+        if (targetUnit) {
+          this.unit.modules.animation!.setAnimationAction(
+            slotModule.getAnimationAction()
+          );
+          this.unit.setRotation(
+            slot?.rotation ?? invertRotation(targetUnit.getRotation())
+          );
+          const wallModule = targetUnit.getModule<WallUnitModule>(
+            WallUnitModule.TYPE
+          );
+          const position = targetUnit.options.offset.clone();
+          if (wallModule) {
+            position.add(wallModule.options.offset).divideScalar(2);
+          }
+          root.position.copy(position);
+          if (this.offsets[slotModule.getAnimationAction()]) {
+            root.position.add(this.offsets[slotModule.getAnimationAction()]!);
+          }
+        } else {
+          root.position.y = 0;
+          this.unit.modules.animation!.setAnimationAction(
+            ANIMATION_ACTION.IDLE
+          );
+        }
+
+        if (slotModule.addUsedUnit(this.unit)) {
+          this.setUsedUnit(targetUnit);
+          this.setStanding(unit);
+          this.setSlotted(true);
+
+          return true;
+        }
+        return false;
+      } else {
+        console.log('Cannot sit down, not a chair', unit);
+        return false;
+      }
+    }
+  }
+
+  useSeatSlot(unit: Unit, position: Vector3) {
+    if (this.isSitting()) {
+      console.log('Is already sitting');
+      return false;
+    } else {
+      const slotModule = unit.getModuleByType<SlotUnitModule>(SlotUnitModule);
+
+      if (!slotModule) {
+        throw new Error('Unit has no slot module');
+      }
+
+      const slot = slotModule.findFreeSlot(position);
+
+      if (isSitable(unit)) {
+        this.state.sitting = true;
+
+        const subscription = this.unit.modules.movement.observables.moveStart$
+          .pipe(delay(300))
+          .subscribe(() => {
+            this.cancelSit();
+            subscription.unsubscribe();
+          });
+
+        const root = this.root!;
+        const targetUnit = unit as Unit<BenchUnitOptions | ChairUnitOptions>;
+        if (targetUnit) {
+          this.unit.modules.animation!.setAnimationAction(
+            slotModule.getAnimationAction()
+          );
+          this.unit.setRotation(slot?.rotation ?? targetUnit.getRotation());
+          root.position.copy(targetUnit.options.offset);
+          if (this.offsets[slotModule.getAnimationAction()]) {
+            root.position.add(this.offsets[slotModule.getAnimationAction()]!);
+          }
+        } else {
+          root.position.y = 0;
+          this.unit.modules.animation!.setAnimationAction(
+            ANIMATION_ACTION.IDLE
+          );
+        }
+
+        if (slotModule.addUsedUnit(this.unit)) {
+          this.setUsedUnit(targetUnit);
+          this.setSitting(unit);
+          this.setSlotted(true);
+
+          return true;
+        }
+        return false;
+      } else {
+        console.log('Cannot sit down, not a chair', unit);
+        return false;
+      }
+    }
+  }
+
+  hasUsedUnit() {
+    return !!this.state.usedUnit;
+  }
   getUsedUnit() {
     return this.state.usedUnit;
   }
+  setUsedUnit(unit: Unit | null) {
+    this.state.usedUnit = unit;
+  }
 
-  useSitSlot(
-    unit: Unit<BenchUnitOptions | ChairUnitOptions>,
-    position: Vector3
-  ) {
-    const slot = unit
-      .getModuleByType<SlotUnitModule>(SlotUnitModule)
-      .findFreeSlot(position);
+  isSlotted() {
+    return this.state.slotted;
+  }
+  setSlotted(slotted: boolean) {
+    this.state.slotted = slotted;
+    this.observables.slotted$.next(slotted);
+  }
 
-    if (isSitable(unit)) {
-      this.state.sitting = true;
+  isStanding() {
+    return this.state.standing;
+  }
+  setStanding(unit: Unit | null) {
+    this.state.standing = !!unit;
+    this.observables.standing$.next(unit);
+  }
 
-      const subscription =
-        this.unit.modules.movement.observables.moveStart$.subscribe(() => {
-          this.cancelSit();
-          subscription.unsubscribe();
-        });
+  isLying() {
+    return this.state.lying;
+  }
+  setLying(unit: Unit<BedOptions> | null) {
+    this.state.lying = !!unit;
+    this.observables.lying$.next(unit);
+  }
 
-      const wrapper = this.root!;
-      const targetUnit = unit as Unit<BenchUnitOptions | ChairUnitOptions>;
-      if (targetUnit) {
-        this.unit.modules.animation!.setAnimationAction(
-          ANIMATION_ACTION.SITTING_IDLE
-        );
-        this.unit.setRotation(slot?.rotation ?? targetUnit.getRotation());
-        wrapper.position.copy(targetUnit.options.offset);
-        if (this.offsets.sitting_idle) {
-          wrapper.position.add(this.offsets.sitting_idle);
-        }
-      } else {
-        wrapper.position.y = 0;
-        this.unit.modules.animation!.setAnimationAction(ANIMATION_ACTION.IDLE);
-      }
-
-      if (
-        targetUnit
-          .getModuleByType<SlotUnitModule>(SlotUnitModule)
-          .addUsedUnit(this.unit)
-      ) {
-        this.state.usedUnit = targetUnit;
-        this.observables.sitting$.next(unit);
-        console.log('Sitting down', unit);
-
-        return true;
-      }
-      return false;
-    } else {
-      console.log('Cannot sit down, not a chair', unit);
-      return false;
-    }
+  isSitting() {
+    return this.state.sitting;
+  }
+  setSitting(unit: Unit | null) {
+    this.state.sitting = !!unit;
+    this.observables.sitting$.next(unit);
+    console.log('Sitting down', unit);
   }
 
   // useChair(unit: Unit<ChairUnitOptions>) {
@@ -258,18 +366,29 @@ export default class CharacterUnitModule extends UnitModule<
     this.state.lying = false;
     this.state.usedUnit
       ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
-      .removeUsedUnit(this.unit);
+      ?.removeUsedUnit(this.unit);
     this.state.usedUnit = null;
     this.observables.lying$.next(null);
     console.log('Standing up');
   }
 
-  cancelSit() {
-    this.root!.position.y = 0;
+  cancelStand() {
+    this.root!.position.set(0, 0, 0);
     this.state.sitting = false;
     this.state.usedUnit
       ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
-      .removeUsedUnit(this.unit);
+      ?.removeUsedUnit(this.unit);
+    this.state.usedUnit = null;
+    this.observables.standing$.next(null);
+    console.log('Standing up');
+  }
+
+  cancelSit() {
+    this.root!.position.set(0, 0, 0);
+    this.state.sitting = false;
+    this.state.usedUnit
+      ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
+      ?.removeUsedUnit(this.unit);
     this.state.usedUnit = null;
     this.observables.sitting$.next(null);
     console.log('Standing up');

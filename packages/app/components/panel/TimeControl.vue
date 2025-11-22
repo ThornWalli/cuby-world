@@ -157,13 +157,6 @@ onMounted(() => {
       )
       .subscribe(void 0)
   );
-
-  // //#region debug
-
-  // console.warn('Setting time to noon for debug purposes');
-  // $props.app.modules.time.setDayTime(0.62);
-
-  // //#endregion
 });
 
 onUnmounted(() => {

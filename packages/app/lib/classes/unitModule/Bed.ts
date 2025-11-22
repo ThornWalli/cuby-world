@@ -3,8 +3,9 @@ import type { UnitModuleSetupContext } from '../UnitModule';
 import { UNIT_TYPE } from '../../types/unit';
 import type Unit from '../Unit';
 import type { SlotObervables, SlotUnitModuleOptions, SlotState } from './Slot';
-import SlotUnitModule from './Slot';
+import SlotUnitModule, { SLOT_TYPE } from './Slot';
 import { Vector2, Vector3 } from 'three';
+import { ANIMATION_ACTION } from '../../types/animation';
 
 declare module '../../types/unit' {
   interface UnitType {
@@ -49,6 +50,7 @@ export default class BedUnitModule extends SlotUnitModule<
       offset: new Vector3(0, 0, 0),
       slots: options.slots ?? [
         {
+          type: SLOT_TYPE.LIE,
           position: new Vector2(0, 0)
         }
       ]
@@ -61,5 +63,9 @@ export default class BedUnitModule extends SlotUnitModule<
     context.unit.addType(UNIT_TYPE.BED);
     context.unit.root.userData[OBJECT_NAME.BED] = true;
     return root;
+  }
+
+  override getAnimationAction() {
+    return ANIMATION_ACTION.LAYING_SLEEPING;
   }
 }

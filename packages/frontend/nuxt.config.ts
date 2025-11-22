@@ -58,7 +58,10 @@ export default defineNuxtConfig({
       cubyWorld: {
         multiplayerEnabled:
           String(process.env.MODULE_MULTIPLAYER_ENABLED).toLowerCase() ===
-          'true'
+          'true',
+        debug: {
+          daytime: process.env.DEBUG_DAYTIME
+        }
       },
       firebase: {
         appCheck: {

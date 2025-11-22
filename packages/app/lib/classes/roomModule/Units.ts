@@ -8,19 +8,21 @@ import UnitChunkManager from '../UnitChunkManager';
 import {
   EMPTY,
   Subject,
-  concatMap,
   debounceTime,
   distinctUntilChanged,
   map,
   merge,
   switchMap
 } from 'rxjs';
-import { ArrayKeyMap } from '../ArrayKeyMap';
 import type { AnimationLoopValue } from '../Renderer';
 import { FLOOR_HEIGHT } from '../../utils/ground';
 import type Room from '../Room';
-import type { ConditionDirectionsDescription } from '../../utils/pathfindng';
+import {
+  mergeDirectionalConditions,
+  type ConditionDirectionsDescription
+} from '../../utils/pathfindng';
 import { getFloorRange } from '../../utils/floor';
+import UnitPositionMap from '../UnitPositionMap';
 
 interface Observables extends RoomModuleObservables {
   addUnit$: Subject<Unit>;
@@ -33,12 +35,6 @@ interface State extends RoomModuleState {
 }
 
 export default class UnitsModule extends RoomModule<State, Observables> {
-  getConditionalDirections(): ConditionDirectionsDescription[] {
-    return this.getUnits()
-      .map(unit => unit.getConditionDirections())
-      .flat();
-  }
-
   static override TYPE = 'units';
 
   /**
@@ -70,17 +66,13 @@ export default class UnitsModule extends RoomModule<State, Observables> {
   override setup() {
     super.setup();
     this.subscription.add(
-      this.room.modules.floor.observables.floor$
-        .pipe(
-          concatMap(async floorIndex => {
-            this.updateVisiblity(floorIndex);
-          })
-        )
-        .subscribe(void 0)
+      this.room.modules.floor.observables.floor$.subscribe(floorIndex =>
+        this.updateUnitVisiblity(floorIndex)
+      )
     );
-
     this.subscription.add(
       merge(
+        this.observables.addUnit$.pipe(map(() => null)),
         this.room.app.renderer.observables.controlsChange$,
         this.room.app.modules.player.observables.currentPlayer$.pipe(
           switchMap(player => player?.observables.unit$ || EMPTY),
@@ -89,10 +81,9 @@ export default class UnitsModule extends RoomModule<State, Observables> {
       )
         .pipe(debounceTime(20))
         .subscribe(() => {
-          const units = this.chunkManager.updateVisibility(
-            this.room.app.renderer.camera
+          this.state.visibleUnits = Array.from(
+            this.chunkManager.updateVisibility(this.room.app.renderer.camera)
           );
-          this.state.visibleUnits = Array.from(units);
         })
     );
   }
@@ -148,19 +139,18 @@ export default class UnitsModule extends RoomModule<State, Observables> {
         .subscribe(() => {
           this.untiPositionMap.add(unit);
           this.chunkManager.assignToChunk(unit);
-          this.updateVisiblity(this.room.modules.floor.getFloor(), [unit]);
+          this.updateUnitVisiblity(this.room.modules.floor.getFloor(), [unit]);
         })
     );
     this.state.units.set(unit.id, unit);
-    this.chunkManager.assignToChunk(unit);
     unit.root.position.set(
       unit.position.x,
       unit.position.y * FLOOR_HEIGHT,
       unit.position.z
     );
-    this.untiPositionMap.add(unit);
+
     this.room.addToRoot(unit.root);
-    this.updateVisiblity(this.room.modules.floor.getFloor(), [unit]);
+
     this.observables.addUnit$.next(unit);
   }
 
@@ -198,13 +188,12 @@ export default class UnitsModule extends RoomModule<State, Observables> {
   // }
 
   private _updateVisiblity_lastFloorIndex: number | null = null;
-  updateVisiblity(
-    floorIndex?: number,
-    units: Unit[] = Array.from(this.state.units.values())
-  ) {
+  updateUnitVisiblity(floorIndex?: number, units?: Unit[]) {
+    const force = !!units;
+    units = units || Array.from(this.state.units.values());
     floorIndex = floorIndex ?? this.room.modules.floor.getFloor();
 
-    if (this._updateVisiblity_lastFloorIndex !== floorIndex) {
+    if (force || this._updateVisiblity_lastFloorIndex !== floorIndex) {
       const floors = getFloorRange(floorIndex);
       units.forEach(unit =>
         unit.setVisible(floors.includes(Math.floor(unit.position.y)))
@@ -213,45 +202,12 @@ export default class UnitsModule extends RoomModule<State, Observables> {
     this._updateVisiblity_lastFloorIndex = floorIndex;
   }
   //#endregion
-}
 
-class UnitPositionMap {
-  data = new ArrayKeyMap<[number, number, number], Unit[]>();
-  listsByUnits = new Map<string, Unit[][]>();
-
-  getKey(position: Vector3) {
-    return position.clone().floor().toArray().toString();
-  }
-
-  getByPosition(position: Vector3) {
-    return this.data.get(position.toArray()) || [];
-  }
-
-  remove(unit: Unit) {
-    if (this.listsByUnits.has(unit.id)) {
-      const lists = this.listsByUnits.get(unit.id)!;
-      lists.forEach(list => {
-        const index = list.indexOf(unit);
-        if (index !== -1) {
-          list.splice(index, 1);
-        }
-      });
-    }
-  }
-
-  add(unit: Unit) {
-    // Entferne die Unit aus allen vorherigen Positionen
-    this.remove(unit);
-
-    unit.getMatrixPositions().forEach(pos => {
-      const list = this.data.get(pos.toArray()) || [];
-      list.push(unit);
-      if (!this.listsByUnits.has(unit.id)) {
-        this.listsByUnits.set(unit.id, []);
-      }
-      this.listsByUnits.get(unit.id)?.push(list);
-
-      this.data.set(pos.toArray(), list);
-    });
+  getConditionalDirections(): ConditionDirectionsDescription[] {
+    return mergeDirectionalConditions(
+      this.getUnits()
+        .map(unit => unit.getConditionDirections())
+        .flat()
+    );
   }
 }

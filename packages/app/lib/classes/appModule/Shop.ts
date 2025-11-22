@@ -49,6 +49,11 @@ export default class ShopAppModule extends AppModule<State, Observables> {
               const unit = await createTmpUnit(item);
               this.tmpUnit = unit;
 
+              if (this.app.modules.player.getCurrentPlayer().unit?.position) {
+                unit.position.copy(
+                  this.app.modules.player.getCurrentPlayer().unit!.position
+                );
+              }
               await room.modules.units.add(unit);
 
               this.app.modules.selection.setSelectedUnit(unit);

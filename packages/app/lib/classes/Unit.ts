@@ -4,7 +4,12 @@ import {
 } from './../utils/unit/skins';
 /* eslint-disable complexity */
 import { FLOOR_HEIGHT } from '@cuby-world/app/lib/utils/ground';
-import { ReplaySubject, Subscription, type SubscriptionLike } from 'rxjs';
+import {
+  ReplaySubject,
+  Subject,
+  Subscription,
+  type SubscriptionLike
+} from 'rxjs';
 import { type Object3D, Vector2, type MeshStandardMaterial } from 'three';
 import { Box3, Euler, Group, Mesh, Vector3 } from 'three';
 import type Room from './Room';
@@ -125,6 +130,7 @@ export interface UnitObservables {
   position$: ReplaySubject<Vector3>;
   rotate$: ReplaySubject<ROTATION>;
   visible$: ReplaySubject<boolean>;
+  destroy$?: Subject<void>;
 }
 
 export default class Unit<
@@ -290,6 +296,7 @@ export default class Unit<
     this.observables.position$ = new ReplaySubject<Vector3>(1);
     this.observables.rotate$ = new ReplaySubject<ROTATION>(1);
     this.observables.visible$ = new ReplaySubject<boolean>(1);
+    this.observables.destroy$ = new Subject<void>();
     //#endregion
 
     this.id = id || crypto.randomUUID();
@@ -308,7 +315,7 @@ export default class Unit<
     this.rotationType = rotationType || ROTATION_TYPE.BASIC;
 
     //#region modules
-    moduleList.push(PlayerUnitModule, RoomUnitModule, MovementUnitModule);
+    moduleList.unshift(PlayerUnitModule, RoomUnitModule, MovementUnitModule);
     if (selectable) {
       moduleList.push(SelectionUnitModule);
     }
@@ -366,7 +373,12 @@ export default class Unit<
     setMainObjectRecursive(object, this.root);
   }
 
+  private destroyed = false;
   destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+
+    this.observables.destroy$?.next();
     Object.values(this.observables).forEach(o =>
       (o as SubscriptionLike).unsubscribe()
     );
@@ -415,9 +427,12 @@ export default class Unit<
     return this.modules[moduleType as keyof Modules] as M;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getModuleByType<M extends UnitModule>(ModuleClass: any): M {
-    return Object.values(this.modules).find(m => m instanceof ModuleClass);
+  getModuleByType<T extends UnitModule>(
+    ModuleClass: AbstractConstructor<T>
+  ): T | undefined {
+    return Object.values(this.modules).find(m => m instanceof ModuleClass) as
+      | T
+      | undefined;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -673,7 +688,9 @@ export default class Unit<
 
     // Setup modules
     mesh = await modules.reduce((result, module) => {
-      return result.then(mesh => module.setup({ mesh, ...context }));
+      return result.then(mesh =>
+        module.setup({ mesh, root: this.root, ...context })
+      );
     }, Promise.resolve(mesh));
     this.addToRoot(mesh);
     // Filter modules that have update method
@@ -825,3 +842,5 @@ function getRotationFromVector(direction: Vector3, diagonal = true) {
     return direction.z > 0 ? ROTATION.SOUTH : ROTATION.NORTH;
   }
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AbstractConstructor<T = any> = abstract new (...args: any[]) => T;

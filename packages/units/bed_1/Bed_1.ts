@@ -9,6 +9,7 @@ import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/bed_1.glb?url';
 import BedUnitModule from '@cuby-world/app/lib/classes/unitModule/Bed';
 import type { BedOptions as BedModuleOptions } from '@cuby-world/app/lib/classes/unitModule/Bed';
+import { SLOT_TYPE } from '@cuby-world/app/lib/classes/unitModule/Slot';
 
 type BedUnitModules = UnitModules & {
   bed: BedUnitModules;
@@ -40,7 +41,7 @@ export default class Bed_1 extends Unit<
         placeable: true,
         size: new Vector3(2, 0.3, 1),
         options: {
-          slots: [{ position: new Vector2(0, 0) }],
+          slots: [{ type: SLOT_TYPE.LIE, position: new Vector2(0, 0) }],
           offset: new Vector3(-0.6, -0.45, 0)
         }
       },

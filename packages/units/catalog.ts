@@ -129,6 +129,34 @@ export const items: UnitItem[] = [
     options: {}
   },
   {
+    id: 'bathroom_sink_1',
+    name: 'Bathroom Sink Basic',
+    description: 'A basic sink.',
+    tags: [CATALOG_TAG.FURNITURE],
+    defaultSkinId: 'default',
+    skinMap: new Map(),
+    skins: [],
+    instance: () =>
+      import('./bathroom_sink_1/BathroomSink_1').then(
+        m => m.default as typeof Unit
+      ),
+    options: {}
+  },
+  {
+    id: 'bathroom_toilet_1',
+    name: 'Bathroom Toilet Basic',
+    description: 'A basic toilet.',
+    tags: [CATALOG_TAG.FURNITURE],
+    defaultSkinId: 'default',
+    skinMap: new Map(),
+    skins: [],
+    instance: () =>
+      import('./bathroom_toilet_1/BathroomToilet_1').then(
+        m => m.default as typeof Unit
+      ),
+    options: {}
+  },
+  {
     id: 'chair_1',
     name: 'Chair Basic',
     description: 'A basic chair for seating.',

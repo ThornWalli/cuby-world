@@ -34,6 +34,7 @@ import assetLoader from '@cuby-world/app/services/assetLoader';
 import type { FloorIndex } from '../types/floor';
 import { OBJECT_USER_DATA } from '@cuby-world/app/lib/utils/object';
 import { ROTATION } from '../utils/rotation';
+import type { ConditionDirectionsDescription, DIRECTION } from './pathfindng';
 
 export function getWallIdentifierFromObject(
   object?: Object3D | null
@@ -124,11 +125,159 @@ export function getWallDoorExtensionsByPosition(walls: Wall[]) {
   }, new ArrayKeyMap<[number, number], DoorWallExtension>());
 }
 
-/**
- * Legt die Wandbedingungen für den Pfadfinder fest.
- * Beispiel: Wenn Türen vorhanden sind, können Einheiten durch diese hindurchgehen.
- */
-export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
+// /**
+//  * Legt die Wandbedingungen für den Pfadfinder fest.
+//  * Beispiel: Wenn Türen vorhanden sind, können Einheiten durch diese hindurchgehen.
+//  */
+// export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
+//   const preparedWalls = prepareWalls(walls);
+
+//   const doorMap = new ArrayKeyMap<
+//     [number, number, WALL_DIRECTION],
+//     {
+//       type: WALL_TYPE;
+//       originDirection: WALL_DIRECTION;
+//       directions: Set<WALL_ACCESIBLE_DIRECTIONS>;
+//       position: Vector3;
+//     }
+//   >();
+//   preparedWalls.forEach(wall => {
+//     if (wall.type === WALL_TYPE.DOOR) {
+//       doorMap.set(
+//         [wall.position.x, wall.position.z, wall.originDirection],
+//         wall
+//       );
+//     }
+//   });
+//   const directionMap = new ArrayKeyMap<
+//     [number, number],
+//     Set<EasyStar.Direction>
+//   >();
+
+//   Array.from(preparedWalls.values()).forEach(({ position, directions }) => {
+//     if (directions.has(WALL_ACCESIBLE_DIRECTIONS.WEST)) {
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x,
+//         position.z,
+//         [EasyStar.LEFT, EasyStar.TOP_LEFT, EasyStar.BOTTOM_LEFT],
+//         easystar,
+//         doorMap.get([position.x, position.z, WALL_DIRECTION.VERTICAL])
+//           ? [EasyStar.LEFT]
+//           : []
+//       );
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x - 1,
+//         position.z,
+//         [EasyStar.RIGHT, EasyStar.TOP_RIGHT, EasyStar.BOTTOM_RIGHT],
+//         easystar,
+//         doorMap.get([position.x - 1, position.z, WALL_DIRECTION.VERTICAL])
+//           ? [EasyStar.RIGHT]
+//           : []
+//       );
+//     }
+//     if (directions.has(WALL_ACCESIBLE_DIRECTIONS.EAST)) {
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x,
+//         position.z,
+//         [EasyStar.RIGHT, EasyStar.TOP_RIGHT, EasyStar.BOTTOM_RIGHT],
+//         easystar,
+//         doorMap.get([position.x, position.z, WALL_DIRECTION.VERTICAL])
+//           ? [EasyStar.RIGHT]
+//           : []
+//       );
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x + 1,
+//         position.z,
+//         [EasyStar.LEFT, EasyStar.TOP_LEFT, EasyStar.BOTTOM_LEFT],
+//         easystar,
+//         doorMap.get([position.x + 1, position.z, WALL_DIRECTION.VERTICAL])
+//           ? [EasyStar.LEFT]
+//           : []
+//       );
+//     }
+//     if (directions.has(WALL_ACCESIBLE_DIRECTIONS.NORTH)) {
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x,
+//         position.z,
+//         [EasyStar.TOP, EasyStar.TOP_LEFT, EasyStar.TOP_RIGHT],
+//         easystar,
+//         doorMap.get([position.x, position.z, WALL_DIRECTION.HORIZONTAL])
+//           ? [EasyStar.TOP]
+//           : []
+//       );
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x,
+//         position.z - 1,
+//         [EasyStar.BOTTOM, EasyStar.BOTTOM_LEFT, EasyStar.BOTTOM_RIGHT],
+//         easystar,
+//         doorMap.get([position.x, position.z - 1, WALL_DIRECTION.HORIZONTAL])
+//           ? [EasyStar.BOTTOM]
+//           : []
+//       );
+
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x - 1,
+//         position.z - 1,
+//         [EasyStar.BOTTOM_RIGHT],
+//         easystar
+//       );
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x + 1,
+//         position.z - 1,
+//         [EasyStar.BOTTOM_LEFT],
+//         easystar
+//       );
+//     }
+//     if (directions.has(WALL_ACCESIBLE_DIRECTIONS.SOUTH)) {
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x,
+//         position.z,
+//         [EasyStar.BOTTOM, EasyStar.BOTTOM_LEFT, EasyStar.BOTTOM_RIGHT],
+//         easystar,
+//         doorMap.get([position.x, position.z, WALL_DIRECTION.HORIZONTAL])
+//           ? [EasyStar.BOTTOM]
+//           : []
+//       );
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x,
+//         position.z + 1,
+//         [EasyStar.TOP, EasyStar.TOP_LEFT, EasyStar.TOP_RIGHT],
+//         easystar,
+//         doorMap.get([position.x, position.z + 1, WALL_DIRECTION.HORIZONTAL])
+//           ? [EasyStar.TOP]
+//           : []
+//       );
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x - 1,
+//         position.z + 1,
+//         [EasyStar.TOP_RIGHT],
+//         easystar
+//       );
+//       setDirectionalCondition(
+//         directionMap,
+//         position.x + 1,
+//         position.z + 1,
+//         [EasyStar.TOP_LEFT],
+//         easystar
+//       );
+//     }
+//   });
+// }
+
+export function getWallConditions(
+  walls: Wall[]
+): ConditionDirectionsDescription[] {
   const preparedWalls = prepareWalls(walls);
 
   const doorMap = new ArrayKeyMap<
@@ -153,125 +302,143 @@ export function setWallConditions(walls: Wall[], easystar: EasyStar.js) {
     Set<EasyStar.Direction>
   >();
 
-  Array.from(preparedWalls.values()).forEach(({ position, directions }) => {
-    if (directions.has(WALL_ACCESIBLE_DIRECTIONS.WEST)) {
-      setDirectionalCondition(
-        directionMap,
-        position.x,
-        position.z,
-        [EasyStar.LEFT, EasyStar.TOP_LEFT, EasyStar.BOTTOM_LEFT],
-        easystar,
-        doorMap.get([position.x, position.z, WALL_DIRECTION.VERTICAL])
-          ? [EasyStar.LEFT]
-          : []
-      );
-      setDirectionalCondition(
-        directionMap,
-        position.x - 1,
-        position.z,
-        [EasyStar.RIGHT, EasyStar.TOP_RIGHT, EasyStar.BOTTOM_RIGHT],
-        easystar,
-        doorMap.get([position.x - 1, position.z, WALL_DIRECTION.VERTICAL])
-          ? [EasyStar.RIGHT]
-          : []
-      );
-    }
-    if (directions.has(WALL_ACCESIBLE_DIRECTIONS.EAST)) {
-      setDirectionalCondition(
-        directionMap,
-        position.x,
-        position.z,
-        [EasyStar.RIGHT, EasyStar.TOP_RIGHT, EasyStar.BOTTOM_RIGHT],
-        easystar,
-        doorMap.get([position.x, position.z, WALL_DIRECTION.VERTICAL])
-          ? [EasyStar.RIGHT]
-          : []
-      );
-      setDirectionalCondition(
-        directionMap,
-        position.x + 1,
-        position.z,
-        [EasyStar.LEFT, EasyStar.TOP_LEFT, EasyStar.BOTTOM_LEFT],
-        easystar,
-        doorMap.get([position.x + 1, position.z, WALL_DIRECTION.VERTICAL])
-          ? [EasyStar.LEFT]
-          : []
-      );
-    }
-    if (directions.has(WALL_ACCESIBLE_DIRECTIONS.NORTH)) {
-      setDirectionalCondition(
-        directionMap,
-        position.x,
-        position.z,
-        [EasyStar.TOP, EasyStar.TOP_LEFT, EasyStar.TOP_RIGHT],
-        easystar,
-        doorMap.get([position.x, position.z, WALL_DIRECTION.HORIZONTAL])
-          ? [EasyStar.TOP]
-          : []
-      );
-      setDirectionalCondition(
-        directionMap,
-        position.x,
-        position.z - 1,
-        [EasyStar.BOTTOM, EasyStar.BOTTOM_LEFT, EasyStar.BOTTOM_RIGHT],
-        easystar,
-        doorMap.get([position.x, position.z - 1, WALL_DIRECTION.HORIZONTAL])
-          ? [EasyStar.BOTTOM]
-          : []
-      );
+  return Array.from(preparedWalls.values())
+    .map(({ position, directions }) => {
+      const result: ConditionDirectionsDescription[] = [];
+      if (directions.has(WALL_ACCESIBLE_DIRECTIONS.WEST)) {
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x,
+            position.z,
+            [EasyStar.LEFT, EasyStar.TOP_LEFT, EasyStar.BOTTOM_LEFT],
+            doorMap.get([position.x, position.z, WALL_DIRECTION.VERTICAL])
+              ? [EasyStar.LEFT]
+              : []
+          )
+        );
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x - 1,
+            position.z,
+            [EasyStar.RIGHT, EasyStar.TOP_RIGHT, EasyStar.BOTTOM_RIGHT],
+            doorMap.get([position.x - 1, position.z, WALL_DIRECTION.VERTICAL])
+              ? [EasyStar.RIGHT]
+              : []
+          )
+        );
+      }
+      if (directions.has(WALL_ACCESIBLE_DIRECTIONS.EAST)) {
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x,
+            position.z,
+            [EasyStar.RIGHT, EasyStar.TOP_RIGHT, EasyStar.BOTTOM_RIGHT],
+            doorMap.get([position.x, position.z, WALL_DIRECTION.VERTICAL])
+              ? [EasyStar.RIGHT]
+              : []
+          )
+        );
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x + 1,
+            position.z,
+            [EasyStar.LEFT, EasyStar.TOP_LEFT, EasyStar.BOTTOM_LEFT],
+            doorMap.get([position.x + 1, position.z, WALL_DIRECTION.VERTICAL])
+              ? [EasyStar.LEFT]
+              : []
+          )
+        );
+      }
+      if (directions.has(WALL_ACCESIBLE_DIRECTIONS.NORTH)) {
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x,
+            position.z,
+            [EasyStar.TOP, EasyStar.TOP_LEFT, EasyStar.TOP_RIGHT],
+            doorMap.get([position.x, position.z, WALL_DIRECTION.HORIZONTAL])
+              ? [EasyStar.TOP]
+              : []
+          )
+        );
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x,
+            position.z - 1,
+            [EasyStar.BOTTOM, EasyStar.BOTTOM_LEFT, EasyStar.BOTTOM_RIGHT],
+            doorMap.get([position.x, position.z - 1, WALL_DIRECTION.HORIZONTAL])
+              ? [EasyStar.BOTTOM]
+              : []
+          )
+        );
 
-      setDirectionalCondition(
-        directionMap,
-        position.x - 1,
-        position.z - 1,
-        [EasyStar.BOTTOM_RIGHT],
-        easystar
-      );
-      setDirectionalCondition(
-        directionMap,
-        position.x + 1,
-        position.z - 1,
-        [EasyStar.BOTTOM_LEFT],
-        easystar
-      );
-    }
-    if (directions.has(WALL_ACCESIBLE_DIRECTIONS.SOUTH)) {
-      setDirectionalCondition(
-        directionMap,
-        position.x,
-        position.z,
-        [EasyStar.BOTTOM, EasyStar.BOTTOM_LEFT, EasyStar.BOTTOM_RIGHT],
-        easystar,
-        doorMap.get([position.x, position.z, WALL_DIRECTION.HORIZONTAL])
-          ? [EasyStar.BOTTOM]
-          : []
-      );
-      setDirectionalCondition(
-        directionMap,
-        position.x,
-        position.z + 1,
-        [EasyStar.TOP, EasyStar.TOP_LEFT, EasyStar.TOP_RIGHT],
-        easystar,
-        doorMap.get([position.x, position.z + 1, WALL_DIRECTION.HORIZONTAL])
-          ? [EasyStar.TOP]
-          : []
-      );
-      setDirectionalCondition(
-        directionMap,
-        position.x - 1,
-        position.z + 1,
-        [EasyStar.TOP_RIGHT],
-        easystar
-      );
-      setDirectionalCondition(
-        directionMap,
-        position.x + 1,
-        position.z + 1,
-        [EasyStar.TOP_LEFT],
-        easystar
-      );
-    }
-  });
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x - 1,
+            position.z - 1,
+            [EasyStar.BOTTOM_RIGHT]
+          )
+        );
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x + 1,
+            position.z - 1,
+            [EasyStar.BOTTOM_LEFT]
+          )
+        );
+      }
+      if (directions.has(WALL_ACCESIBLE_DIRECTIONS.SOUTH)) {
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x,
+            position.z,
+            [EasyStar.BOTTOM, EasyStar.BOTTOM_LEFT, EasyStar.BOTTOM_RIGHT],
+
+            doorMap.get([position.x, position.z, WALL_DIRECTION.HORIZONTAL])
+              ? [EasyStar.BOTTOM]
+              : []
+          )
+        );
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x,
+            position.z + 1,
+            [EasyStar.TOP, EasyStar.TOP_LEFT, EasyStar.TOP_RIGHT],
+
+            doorMap.get([position.x, position.z + 1, WALL_DIRECTION.HORIZONTAL])
+              ? [EasyStar.TOP]
+              : []
+          )
+        );
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x - 1,
+            position.z + 1,
+            [EasyStar.TOP_RIGHT]
+          )
+        );
+        result.push(
+          getDirectionalCondition(
+            directionMap,
+            position.x + 1,
+            position.z + 1,
+            [EasyStar.TOP_LEFT]
+          )
+        );
+      }
+      return result;
+    })
+    .flat();
 }
 
 export function prepareWalls(walls: Wall[]) {
@@ -366,26 +533,45 @@ export interface DirectionWallDescription {
   position: Vector3;
 }
 
-function setDirectionalCondition(
+function getDirectionalCondition(
   directionMap: ArrayKeyMap<[number, number], Set<EasyStar.Direction>>,
   x: number,
   y: number,
   directions: EasyStar.Direction[],
-  easystar: EasyStar.js,
   ignoredDirections: EasyStar.Direction[] = []
-) {
+): ConditionDirectionsDescription {
   const d = directionMap.get([x, y]) ?? new Set<EasyStar.Direction>();
   directions = directions.filter(d_ => !ignoredDirections.includes(d_));
   if (directions.length) {
     directions.forEach(d_ => d.add(d_));
   }
-  directionMap.set([x, y], d);
-  easystar.setDirectionalCondition(
-    x,
-    y,
-    defaultDirections.filter(d_ => !d.has(d_))
-  );
+
+  return {
+    position: new Vector3(x, 0, y),
+    directions: defaultDirections.filter(d_ => !d.has(d_)) as DIRECTION[]
+  };
 }
+
+// function setDirectionalCondition(
+//   directionMap: ArrayKeyMap<[number, number], Set<EasyStar.Direction>>,
+//   x: number,
+//   y: number,
+//   directions: EasyStar.Direction[],
+//   easystar: EasyStar.js,
+//   ignoredDirections: EasyStar.Direction[] = []
+// ) {
+//   const d = directionMap.get([x, y]) ?? new Set<EasyStar.Direction>();
+//   directions = directions.filter(d_ => !ignoredDirections.includes(d_));
+//   if (directions.length) {
+//     directions.forEach(d_ => d.add(d_));
+//   }
+//   directionMap.set([x, y], d);
+//   easystar.setDirectionalCondition(
+//     x,
+//     y,
+//     defaultDirections.filter(d_ => !d.has(d_))
+//   );
+// }
 
 export function findNeighborWallEdges(
   wall: WallDescription,

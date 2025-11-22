@@ -5,9 +5,11 @@ import type Unit from '../Unit';
 import SlotUnitModule, {
   type SlotObervables,
   type SlotUnitModuleOptions,
-  type SlotState
+  type SlotState,
+  SLOT_TYPE
 } from './Slot';
 import { Vector2 } from 'three';
+import { ANIMATION_ACTION } from '../../types/animation';
 
 declare module '../../types/unit' {
   interface UnitType {
@@ -49,10 +51,12 @@ export default class BenchUnitModule extends SlotUnitModule<
       ...options,
       slots: options.slots ?? [
         {
+          type: SLOT_TYPE.SEAT,
           position: new Vector2(0, 0),
           blocked: false
         },
         {
+          type: SLOT_TYPE.SEAT,
           position: new Vector2(0, 1),
           blocked: false
         }
@@ -66,5 +70,9 @@ export default class BenchUnitModule extends SlotUnitModule<
     context.unit.addType(UNIT_TYPE.BENCH);
     context.unit.root.userData[OBJECT_NAME.BENCH] = true;
     return root;
+  }
+
+  override getAnimationAction() {
+    return ANIMATION_ACTION.SITTING_IDLE;
   }
 }

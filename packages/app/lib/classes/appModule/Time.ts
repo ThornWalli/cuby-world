@@ -5,10 +5,12 @@ import { concatMap, ReplaySubject } from 'rxjs';
 
 interface Observables extends AppModuleObservables {
   dayTime$: ReplaySubject<number>;
-  timezone$: ReplaySubject<string | null>;
+  timezone$: ReplaySubject<Timezone>;
   speed$: ReplaySubject<number>;
   paused$: ReplaySubject<boolean>;
 }
+
+export type Timezone = Intl.DateTimeFormat | string | null;
 
 interface State extends AppModuleState {
   paused: boolean;
@@ -16,7 +18,8 @@ interface State extends AppModuleState {
   auto: boolean;
   dayTime: number;
   speed: number;
-  timezone: string | null;
+  timezone: Timezone;
+  dayTimeOverride?: Date;
 }
 
 const DAY_LENGTH_SECONDS = 24 * 60 * 60; // 5 Minuten
@@ -37,10 +40,14 @@ export default class TimeAppModule extends AppModule<State, Observables> {
     super(app);
     //#region observables
     this.observables.dayTime$ = new ReplaySubject<number>(1);
-    this.observables.timezone$ = new ReplaySubject<string | null>(1);
+    this.observables.timezone$ = new ReplaySubject<Timezone>(1);
     this.observables.speed$ = new ReplaySubject<number>(1);
     this.observables.paused$ = new ReplaySubject<boolean>(1);
     //#endregion
+
+    if (app.config.debug?.dayytime) {
+      this.state.dayTimeOverride = new Date(app.config.debug.dayytime);
+    }
   }
 
   override setup(): void {
@@ -49,7 +56,7 @@ export default class TimeAppModule extends AppModule<State, Observables> {
         .pipe(concatMap(this.onUpdate.bind(this)))
         .subscribe(void 0)
     );
-    this.state.dayTime = this.getTimeInTimezone(this.state.timezone);
+    this.setDayTime(this.getTimeInTimezone(this.state.timezone));
   }
 
   setSpeed(speed: number) {
@@ -93,37 +100,38 @@ export default class TimeAppModule extends AppModule<State, Observables> {
     }
   }
 
-  setTimezone(tz: string | null) {
+  setTimezone(tz: Timezone) {
     this.state.timezone = tz;
-
-    this.state.dayTime = this.getTimeInTimezone(tz);
     this.observables.timezone$.next(this.state.timezone);
-    this.observables.dayTime$.next(this.state.dayTime);
+    this.setDayTime(this.getTimeInTimezone(tz));
   }
 
-  private getTimeInTimezone(tz: string | null): number {
-    const date = new Date();
-
+  private getTimeInTimezone(tz: Timezone): number {
     let hours: number;
     let minutes: number;
-
-    if (tz) {
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: tz,
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false
-      });
-
-      const parts = formatter.formatToParts(date);
-      hours = Number(parts.find(p => p.type === 'hour')?.value);
-      minutes = Number(parts.find(p => p.type === 'minute')?.value);
+    if (this.state.dayTimeOverride) {
+      hours = this.state.dayTimeOverride.getHours();
+      minutes = this.state.dayTimeOverride.getMinutes();
     } else {
-      // local fallback
-      hours = date.getHours();
-      minutes = date.getMinutes();
-    }
+      const date = new Date();
 
+      if (tz) {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: String(tz || 'UTC'),
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: false
+        });
+
+        const parts = formatter.formatToParts(date);
+        hours = Number(parts.find(p => p.type === 'hour')?.value);
+        minutes = Number(parts.find(p => p.type === 'minute')?.value);
+      } else {
+        // local fallback
+        hours = date.getHours();
+        minutes = date.getMinutes();
+      }
+    }
     return (hours * 60 + minutes) / (24 * 60);
   }
 }

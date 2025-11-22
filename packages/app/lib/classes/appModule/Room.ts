@@ -28,12 +28,9 @@ import type { IntersectionListener } from '../rendererModule/Intersection';
 import CharacterUnitModule from '../unitModule/Character';
 import type TeleporterUnit from '../unit/Teleporter';
 import type { UnitIdentifier } from '../../types/unit';
-import BedUnitModule from '../unitModule/Bed';
-import ChairUnitModule from '../unitModule/Chair';
 import TeleporterUnitModule, {
   TELEPORTER_TYPE
 } from '../unitModule/Teleporter';
-import BenchUnitModule from '../unitModule/Bench';
 import SlotUnitModule from '../unitModule/Slot';
 
 interface Observables extends AppModuleObservables {
@@ -161,9 +158,8 @@ export default class RoomAppModule extends AppModule<State, Observables> {
             .filter(unit => unit.hasModuleType(TeleporterUnitModule))
             .find(
               teleporterUnit =>
-                teleporterUnit.getModuleByType<TeleporterUnitModule>(
-                  TeleporterUnitModule
-                ).state.type == TELEPORTER_TYPE.ENTRANCE
+                teleporterUnit.getModuleByType(TeleporterUnitModule)!.state
+                  .type == TELEPORTER_TYPE.ENTRANCE
             ) as TeleporterUnit;
 
           unitTeleporter = entranceTeleporter;
@@ -528,9 +524,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
           !usedUnit?.getPosition().equals(worldPosition)
         ) {
           const units = room.modules.units.getUnitsByPosition(worldPosition);
-          const slotUnit = units.find(u =>
-            u.getModuleByType<SlotUnitModule>(SlotUnitModule)
-          );
+          const slotUnit = units.find(u => u.hasModuleType(SlotUnitModule));
 
           unit = slotUnit || unit;
           app.modules.selection.setSelectedUnit(null);
@@ -538,7 +532,7 @@ export default class RoomAppModule extends AppModule<State, Observables> {
           if (unit) {
             const position =
               unit
-                .getModuleByType<SlotUnitModule>(SlotUnitModule)
+                .getModuleByType(SlotUnitModule)
                 ?.findFreeSlotPosition(worldPosition) || unit.position;
 
             await playerUnit.modules.movement.resolveMoveTo(
@@ -547,7 +541,6 @@ export default class RoomAppModule extends AppModule<State, Observables> {
               position
             );
           } else {
-            console.log('FFFFF', !!unit);
             await playerUnit.modules.movement.resolveMoveTo(
               worldPosition!,
               unit
@@ -562,25 +555,13 @@ export default class RoomAppModule extends AppModule<State, Observables> {
           !usedUnit?.getPosition().equals(worldPosition)
         ) {
           const units = room.modules.units.getUnitsByPosition(worldPosition);
-          const unit = units.find(u => {
-            console.log(
-              u,
-              BenchUnitModule.TYPE,
-              u.modules,
-              BenchUnitModule.TYPE in u.modules
-            );
-            return (
-              BedUnitModule.TYPE in u.modules ||
-              ChairUnitModule.TYPE in u.modules ||
-              BenchUnitModule.TYPE in u.modules
-            );
-          });
+          const unit = units.find(u => u.hasModuleType(SlotUnitModule));
 
           app.modules.selection.setSelectedUnit(null);
           if (unit) {
             let position = unit
-              .getModuleByType<SlotUnitModule>(SlotUnitModule)
-              .findFreeSlotPosition(worldPosition);
+              .getModuleByType(SlotUnitModule)
+              ?.findFreeSlotPosition(worldPosition);
             if (!position) {
               throw new Error('No free slot position found');
             }

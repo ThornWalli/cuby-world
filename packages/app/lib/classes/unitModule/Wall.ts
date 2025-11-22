@@ -9,7 +9,7 @@ import { concatMap, ReplaySubject } from 'rxjs';
 import type Unit from '../Unit';
 
 interface Obervables extends UnitModuleObservables {
-  hasWall: ReplaySubject<boolean>;
+  hasWall$: ReplaySubject<boolean>;
 }
 
 type Options = {
@@ -31,8 +31,8 @@ export default class WallUnitModule extends UnitModule<
   constructor(unit: Unit, options: Options, state: State, debug: boolean) {
     super(unit, options, state, debug);
     //#region observables
-    this.observables.hasWall = new ReplaySubject<boolean>();
-    this.observables.hasWall.next(false);
+    this.observables.hasWall$ = new ReplaySubject<boolean>();
+    this.observables.hasWall$.next(false);
     //#endregion
   }
 
@@ -71,7 +71,7 @@ export default class WallUnitModule extends UnitModule<
         obj.position.set(0, 0, 0);
       }
       this.hasWall = !!wall;
-      this.observables.hasWall.next(this.hasWall);
+      this.observables.hasWall$.next(this.hasWall);
     }
   }
   getHasWall() {

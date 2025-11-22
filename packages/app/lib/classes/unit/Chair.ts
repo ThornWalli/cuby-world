@@ -7,6 +7,10 @@ import Unit, {
 } from '@cuby-world/app/lib/classes/Unit';
 import ChairUnitModule from '@cuby-world/app/lib/classes/unitModule/Chair';
 import { AnimationUnitModule } from '@cuby-world/app/lib/classes/unitModule/Animation';
+import {
+  getEntryConditionDirections,
+  RELATIVE_ENTRY
+} from '../../utils/pathfindng';
 
 export interface ChairUnitOptions extends UnitOptions {
   offset: Vector3;
@@ -29,5 +33,13 @@ export default class ChairUnit<
     moduleList.push(ChairUnitModule);
     moduleList.push(AnimationUnitModule);
     super(options, moduleList);
+  }
+
+  override getConditionDirections() {
+    return getEntryConditionDirections(
+      this.getPosition().clone(),
+      this.getRotation(),
+      [RELATIVE_ENTRY.LEFT, RELATIVE_ENTRY.RIGHT, RELATIVE_ENTRY.FRONT]
+    );
   }
 }

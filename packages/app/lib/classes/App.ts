@@ -77,6 +77,9 @@ export enum APP_MODE {
 
 export interface AppConfig {
   mode?: APP_MODE;
+  debug?: {
+    dayytime?: string | null;
+  };
 }
 
 export class BaseApp<

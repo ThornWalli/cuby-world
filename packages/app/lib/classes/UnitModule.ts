@@ -12,6 +12,7 @@ export type UnitModuleObservables = {
 export type UnitModuleState = Record<string, unknown>;
 
 export interface UnitModuleSetupContext extends SetupContext {
+  root: Object3D;
   mesh: Object3D;
 }
 

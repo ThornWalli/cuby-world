@@ -7,19 +7,20 @@ import type {
 import LightUnitModule from '../unitModule/Light';
 import Unit from '../Unit';
 
-export type LightUnitModules = UnitModules & {
+export type Options = UnitOptions;
+export type Modules = UnitModules & {
   light: LightUnitModule;
 };
-export type LightUnitModuleList = (typeof LightUnitModule)[] & UnitModuleList;
+export type ModuleList = (typeof LightUnitModule)[] & UnitModuleList;
 
 export default class LightUnit<
-  Options extends UnitOptions = UnitOptions,
-  Modules extends LightUnitModules = LightUnitModules,
-  ModuleList extends LightUnitModuleList = LightUnitModuleList
-> extends Unit<Options, Modules, ModuleList> {
+  O extends UnitOptions = UnitOptions,
+  M extends Modules = Modules,
+  ML extends ModuleList = ModuleList
+> extends Unit<O, M, ML> {
   constructor(
-    options: UnitConstructorOptions<Options>,
-    moduleList: ModuleList = [] as unknown as ModuleList
+    options: UnitConstructorOptions<O>,
+    moduleList: ML = [] as unknown as ML
   ) {
     moduleList.push(LightUnitModule);
     super(

@@ -239,7 +239,5 @@ export default class PlacementAppModule extends AppModule<State, Observables> {
 }
 
 function getUsedUnit(unit: Unit) {
-  return (
-    unit.getModuleByType<SlotUnitModule>(SlotUnitModule)?.getUsedUnits() || []
-  );
+  return unit.getModuleByType(SlotUnitModule)?.getUsedUnits() || [];
 }

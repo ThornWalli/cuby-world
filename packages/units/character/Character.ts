@@ -54,6 +54,7 @@ export default class Character extends CharacterUnit<CharacterOptions> {
 
   override async setup(context: SetupContext) {
     this.modules.character.offsets.sitting_idle = new Vector3(-0.075, 0, 0);
+    this.modules.character.offsets.shelf_idle = new Vector3(-0.075, 0, 0);
 
     await super.setup(context);
 

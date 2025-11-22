@@ -36,11 +36,7 @@ import CharacterUnitModule from './Character';
 import BedUnitModule, { type BedOptions } from './Bed';
 import type TeleporterUnit from '../unit/Teleporter';
 import { ANIMATION_ACTION } from '../../types/animation';
-import SlotUnitModule from './Slot';
-import type { BenchUnitOptions } from '../unit/Bench';
-import type { ChairUnitOptions } from '../unit/Chair';
-import ChairUnitModule from './Chair';
-import BenchUnitModule from './Bench';
+import SlotUnitModule, { SLOT_TYPE } from './Slot';
 
 interface MoveOptions {
   startDuration: number; // Startzeitpunkt der Bewegung
@@ -236,11 +232,11 @@ export default class MovementUnitModule extends UnitModule<
       if (!this.canAbort) {
         resolve(true);
       } else if (this.abortMovement(force)) {
-        this.observables.moveAbort$.next();
         const subscription = this.observables.moveEnd$.subscribe(() => {
           subscription.unsubscribe();
           resolve(true);
         });
+        this.observables.moveAbort$.next();
         if (force) {
           this.canAbort = true;
           this.observables.moveEnd$.next(this.unit.getPosition());
@@ -256,9 +252,10 @@ export default class MovementUnitModule extends UnitModule<
     targetUnit?: Unit,
     targetPosition?: Vector3
   ) {
-    if (await this.abortMoveTo()) {
-      return;
-    }
+    // if (await this.abortMoveTo()) {
+    //   return;
+    // }
+    await this.abortMoveTo();
 
     const characterModule = this.unit.getModule<CharacterUnitModule>(
       CharacterUnitModule.TYPE
@@ -332,10 +329,10 @@ export default class MovementUnitModule extends UnitModule<
     targetUnit =
       targetUnit ||
       units.find(
-        u =>
-          BedUnitModule.TYPE in u.modules ||
-          ChairUnitModule.TYPE in u.modules ||
-          BenchUnitModule.TYPE in u.modules
+        u => u.hasModuleType(SlotUnitModule)
+        // BedUnitModule.TYPE in u.modules ||
+        // ChairUnitModule.TYPE in u.modules ||
+        // BenchUnitModule.TYPE in u.modules
       );
 
     // const units =
@@ -350,9 +347,8 @@ export default class MovementUnitModule extends UnitModule<
     if (
       targetUnit &&
       targetUnit.hasModuleType(TeleporterUnitModule) &&
-      targetUnit
-        .getModuleByType<TeleporterUnitModule>(TeleporterUnitModule)
-        .getType() === TELEPORTER_TYPE.TELEPORTER
+      targetUnit.getModuleByType(TeleporterUnitModule)?.getType() ===
+        TELEPORTER_TYPE.TELEPORTER
     ) {
       const teleporterUnit = targetUnit as TeleporterUnit;
       characterModule.useTeleporter(teleporterUnit);
@@ -369,16 +365,24 @@ export default class MovementUnitModule extends UnitModule<
     //#endregion
 
     //#region slot unit
-    // debugger;
     if (
       targetUnit &&
       targetUnit.hasModuleType(SlotUnitModule) &&
+      targetUnit.getModuleByType(SlotUnitModule)?.isType(SLOT_TYPE.SEAT) &&
       (targetPosition?.equals(position) ?? true)
     ) {
-      characterModule.useSitSlot(
-        targetUnit as Unit<BenchUnitOptions | ChairUnitOptions>,
+      characterModule.useSeatSlot(
+        targetUnit as Unit,
         targetPosition || position
       );
+      return;
+    } else if (
+      targetUnit &&
+      targetUnit.hasModuleType(SlotUnitModule) &&
+      targetUnit.getModuleByType(SlotUnitModule)?.isType(SLOT_TYPE.STAND) &&
+      (targetPosition?.equals(position) ?? true)
+    ) {
+      characterModule.useStandSlot(targetUnit, targetPosition || position);
       return;
     }
     //#endregion

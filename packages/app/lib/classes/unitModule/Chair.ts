@@ -3,8 +3,9 @@ import type { UnitModuleSetupContext } from '../UnitModule';
 import { UNIT_TYPE } from '../../types/unit';
 import type Unit from '../Unit';
 import type { SlotObervables, SlotUnitModuleOptions, SlotState } from './Slot';
-import SlotUnitModule from './Slot';
+import SlotUnitModule, { SLOT_TYPE } from './Slot';
 import { Vector2 } from 'three';
+import { ANIMATION_ACTION } from '../../types/animation';
 
 declare module '../../types/unit' {
   interface UnitType {
@@ -46,6 +47,7 @@ export default class ChairUnitModule extends SlotUnitModule<
       ...options,
       slots: options.slots ?? [
         {
+          type: SLOT_TYPE.SEAT,
           position: new Vector2(0, 0)
         }
       ]
@@ -58,5 +60,9 @@ export default class ChairUnitModule extends SlotUnitModule<
     context.unit.addType(UNIT_TYPE.CHAIR);
     context.unit.root.userData[OBJECT_NAME.CHAIR] = true;
     return root;
+  }
+
+  override getAnimationAction() {
+    return ANIMATION_ACTION.SITTING_IDLE;
   }
 }

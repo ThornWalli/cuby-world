@@ -2,15 +2,24 @@ import type { Mesh } from 'three';
 import { MeshStandardMaterial, Object3D, PointLight, Vector3 } from 'three';
 import type {
   SetupContext,
-  UnitConstructorOptions,
-  UnitOptions
+  UnitConstructorOptions
 } from '@cuby-world/app/lib/classes/Unit';
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/wall_lamp_1.glb?url';
 import { skinsMap } from './skins';
 import WallLightUnit from '@cuby-world/app/lib/classes/unit/wall/Light';
+import WallUnitModule from '@cuby-world/app/lib/classes/unitModule/Wall';
+import type {
+  Options as LightUnitOptions,
+  Modules as LightUnitModules,
+  ModuleList as LightUnitModuleList
+} from '@cuby-world/app/lib/classes/unit/Light';
 
-export interface WallLampBoxOptions extends UnitOptions {
+export type Modules = LightUnitModules & {
+  wall: WallUnitModule;
+};
+export type ModuleList = LightUnitModuleList & (typeof WallUnitModule)[];
+export interface WallLampBoxOptions extends LightUnitOptions {
   color: number | string;
 }
 export default class WallLamp_1 extends WallLightUnit<WallLampBoxOptions> {
@@ -24,23 +33,28 @@ export default class WallLamp_1 extends WallLightUnit<WallLampBoxOptions> {
     options: Omit<
       UnitConstructorOptions<WallLampBoxOptions>,
       'name' | 'selectable'
-    > = {}
+    > = {},
+    moduleList: ModuleList = [] as unknown as ModuleList
   ) {
-    super({
-      ...options,
-      name: 'WallLamp_1',
-      wallOnly: true,
-      accessible: true,
-      selectable: true,
-      placeable: true,
-      rotateable: false,
-      size: new Vector3(1, 0.1, 1),
-      moduleOptions: {
-        wall: {
-          offset: new Vector3(-0.4, 1.4, 0)
+    moduleList.push(WallUnitModule);
+    super(
+      {
+        ...options,
+        name: 'WallLamp_1',
+        wallOnly: true,
+        accessible: true,
+        selectable: true,
+        placeable: true,
+        rotateable: false,
+        size: new Vector3(1, 0.1, 1),
+        moduleOptions: {
+          wall: {
+            offset: new Vector3(-0.4, 1.4, 0)
+          }
         }
-      }
-    });
+      },
+      moduleList
+    );
   }
 
   override setup(context: SetupContext): Promise<void> {

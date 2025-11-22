@@ -28,12 +28,15 @@ export default class UnitChunkManager {
   }
 
   getChunkKey(position: Vector3) {
-    return position
-      .clone()
-      .floor()
-      .divide(new Vector3(this.size, this.size, this.size))
-      .toArray()
-      .toString();
+    return (
+      position
+        .clone()
+        // .floor()
+        .divide(new Vector3(this.size, this.size, this.size))
+        .round()
+        .toArray()
+        .toString()
+    );
   }
 
   assignToChunk(unit: Unit) {
@@ -100,14 +103,14 @@ export default class UnitChunkManager {
     return positions;
   }
 
+  frustum = new Frustum();
+  projScreenMatrix = new Matrix4();
   findVisibleChunks(camera: Camera) {
-    const frustum = new Frustum();
-    const projScreenMatrix = new Matrix4();
-    projScreenMatrix.multiplyMatrices(
+    this.projScreenMatrix.multiplyMatrices(
       camera.projectionMatrix,
       camera.matrixWorldInverse
     );
-    frustum.setFromProjectionMatrix(projScreenMatrix);
+    this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
 
     const visibleChunkKeys = new Set<string>();
     const allChunkPositions = this.getChunkPositions();
@@ -122,7 +125,7 @@ export default class UnitChunkManager {
         new Vector3(this.size, this.size, this.size)
       );
 
-      if (frustum.intersectsBox(chunkBox)) {
+      if (this.frustum.intersectsBox(chunkBox)) {
         const chunkKey = this.getChunkKey(pos);
         visibleChunkKeys.add(chunkKey);
       }

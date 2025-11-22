@@ -15,13 +15,20 @@ import {
 import { Subject } from 'rxjs';
 import { removeMesh } from '@cuby-world/units/utils/mesh';
 import type { ROTATION } from '../../utils/rotation';
+import type { ANIMATION_ACTION } from '../../types/animation';
 
+export enum SLOT_TYPE {
+  LIE = 'lie',
+  SEAT = 'seat',
+  STAND = 'stand'
+}
 export interface SlotObervables extends UnitModuleObservables {
-  addUnit$: Subject<Unit>;
-  removeUnit$: Subject<Unit>;
+  addUnit$: Subject<{ slot: SlotDescription | null; unit: Unit }>;
+  removeUnit$: Subject<{ slot: SlotDescription | null; unit: Unit }>;
 }
 
 export interface SlotOptions<Position = Vector2> {
+  type: SLOT_TYPE;
   position: Position;
   blocked?: boolean;
   rotation?: ROTATION;
@@ -49,8 +56,14 @@ export default abstract class SlotUnitModule<
     super(unit, options, state, debug);
 
     //#region observables
-    this.observables.addUnit$ = new Subject<Unit>();
-    this.observables.removeUnit$ = new Subject<Unit>();
+    this.observables.addUnit$ = new Subject<{
+      slot: SlotDescription | null;
+      unit: Unit;
+    }>();
+    this.observables.removeUnit$ = new Subject<{
+      slot: SlotDescription | null;
+      unit: Unit;
+    }>();
     //#endregion
   }
 
@@ -88,6 +101,11 @@ export default abstract class SlotUnitModule<
     this.debugMeshes.forEach(removeMesh);
     super.destroy();
   }
+
+  isType(type: SLOT_TYPE) {
+    return this.options.slots.some(slot => slot.type === type);
+  }
+
   getSlots(): SlotDescription[] {
     const matrixPositionMap = this.unit.getMatrixPositionMap();
     console.log(
@@ -103,6 +121,7 @@ export default abstract class SlotUnitModule<
           return unit.getPosition().equals(matrixPosition!);
         }) || slot.blocked;
       return {
+        type: slot.type,
         origin: slot.position,
         worldPosition: matrixPosition
           ?.clone()
@@ -125,6 +144,13 @@ export default abstract class SlotUnitModule<
 
   findFreeSlotPosition(position: Vector3): Vector3 | null {
     return this.findFreeSlot(position)?.worldPosition || null;
+  }
+
+  getSlotByPosition(position: Vector3): SlotDescription | null {
+    const slot = this.getSlots().find(
+      ({ worldPosition }) => worldPosition && position.equals(worldPosition)
+    );
+    return slot || null;
   }
 
   findFreeSlot(position: Vector3): SlotDescription | null {
@@ -158,8 +184,12 @@ export default abstract class SlotUnitModule<
 
   addUsedUnit(unit: Unit) {
     if (this.canUsed()) {
+      unit.observables.destroy$!.subscribe(() => {
+        this.removeUsedUnit(unit);
+      });
       this.usedUnits.push(unit);
-      this.observables.addUnit$.next(unit);
+      const slot = this.getSlotByPosition(unit.getPosition());
+      this.observables.addUnit$.next({ slot, unit });
       return true;
     } else {
       return false;
@@ -168,6 +198,14 @@ export default abstract class SlotUnitModule<
 
   removeUsedUnit(unit: Unit) {
     this.usedUnits = this.usedUnits.filter(u => u !== unit);
-    this.observables.removeUnit$.next(unit);
+    const slot = this.getSlotByPosition(unit.getPosition());
+    this.observables.removeUnit$.next({ slot, unit });
+  }
+
+  /**
+   * override to provide specific animation action for the slot usage
+   */
+  getAnimationAction(): ANIMATION_ACTION {
+    throw new Error('Method not implemented.');
   }
 }

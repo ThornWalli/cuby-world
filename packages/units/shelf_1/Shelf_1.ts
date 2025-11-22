@@ -1,4 +1,3 @@
-import type { UnitOptions } from './../../app/lib/classes/Unit';
 import { MATERIAL_NAME } from './../../app/lib/utils/material';
 import { DoubleSide, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import type {
@@ -9,38 +8,72 @@ import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/shelf_1.glb?url';
 import { replaceMaterialByName } from '@cuby-world/app/lib/utils/material';
 import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
-import WallUnit from '@cuby-world/app/lib/classes/unit/Wall';
 import { skinsMap } from './skins';
+import {
+  getEntryConditionDirections,
+  RELATIVE_ENTRY
+} from '@cuby-world/app/lib/utils/pathfindng';
+import WallUnitModule from '@cuby-world/app/lib/classes/unitModule/Wall';
+import type {
+  Options as ShelfUnitOptions,
+  Modules as ShelfUnitModules,
+  ModuleList as SinkUnitModuleList
+} from '@cuby-world/app/lib/classes/unit/Shelf';
+import ShelfUnit from '@cuby-world/app/lib/classes/unit/Shelf';
 
-export type ShelfOptions = UnitOptions & {
+export type Modules = ShelfUnitModules & {
+  wall: WallUnitModule;
+};
+export type ModuleList = (typeof WallUnitModule)[] & SinkUnitModuleList;
+export type Options = ShelfUnitOptions & {
   color: number | string;
 };
 
-export default class Shelf_1<
-  Options extends ShelfOptions = ShelfOptions
-> extends WallUnit<Options> {
+export default class Shelf_1 extends ShelfUnit<Options, Modules, ModuleList> {
   static override KEY = 'shelf_1';
   static override NAME = 'Shelf_1';
+  private meshRoot?: Object3D;
 
   constructor(
-    options: Omit<UnitConstructorOptions<Options>, 'name' | 'selectable'> = {}
+    options: Omit<UnitConstructorOptions<Options>, 'name' | 'selectable'> = {},
+    moduleList: ModuleList = [] as unknown as ModuleList
   ) {
-    super({
-      ...options,
-      name: 'Shelf_1',
-      size: new Vector3(1, 1.8, 1),
-      wallOnly: false,
-      selectable: true,
-      placeable: true,
-      moduleOptions: {
-        wall: {
-          offset: new Vector3(-0.275, 0, 0)
+    moduleList.push(WallUnitModule);
+    super(
+      {
+        ...options,
+        name: 'Shelf_1',
+        size: new Vector3(1, 1.8, 1),
+        accessible: true,
+        wallOnly: false,
+        selectable: true,
+        placeable: true,
+        moduleOptions: {
+          wall: {
+            offset: new Vector3(-0.275, 0, 0)
+          }
         }
-      }
-    });
+      },
+      moduleList
+    );
   }
+
+  override setup(context: SetupContext) {
+    this.subscription.add(
+      this.modules.wall.observables.hasWall$.subscribe(hasWall => {
+        if (hasWall) {
+          this.meshRoot?.position.set(0, 0, 0);
+        } else {
+          this.meshRoot?.position.set(-0.375, 0, 0);
+        }
+      })
+    );
+    return super.setup(context);
+  }
+
   override async createMesh(_context: SetupContext) {
     const meshRoot = new Object3D();
+    this.meshRoot = meshRoot;
 
     const { object } = await loadGltf(glbBase);
     const obj = object.getObjectByName('empty')!;
@@ -70,5 +103,13 @@ export default class Shelf_1<
     });
 
     return meshRoot;
+  }
+
+  override getConditionDirections() {
+    return getEntryConditionDirections(
+      this.getPosition().clone(),
+      this.getRotation(),
+      [RELATIVE_ENTRY.FRONT, RELATIVE_ENTRY.LEFT, RELATIVE_ENTRY.RIGHT]
+    );
   }
 }

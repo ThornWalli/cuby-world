@@ -5,6 +5,7 @@ import AppModule, {
 } from '../AppModule';
 import type Unit from '../Unit';
 import type App from '../App';
+import CharacterUnitModule from '../unitModule/Character';
 
 interface Observables extends AppModuleObservables {
   selectUnit$: ReplaySubject<Unit | null>;
@@ -67,7 +68,10 @@ export default class SelectionAppModule extends AppModule<State, Observables> {
       unit.modules.selection?.select();
       this.state.selectedUnit = unit;
 
-      playerUnit.setRotationByUnit(unit);
+      const characterModule = playerUnit.getModuleByType(CharacterUnitModule);
+      if (!characterModule?.isSlotted()) {
+        playerUnit.setRotationByUnit(unit);
+      }
       this.app.renderer.registerOutlineObject(unit.root);
     } else {
       this.state.selectedUnit = null;
