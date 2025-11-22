@@ -1,1 +1,0 @@
-import{a as t,j as o,k as r}from"./CdgESyRu.js";const s={xmlns:"http://www.w3.org/2000/svg",viewBox:"0 0 64 64"};function a(l,e){return o(),t("svg",s,[...e[0]||(e[0]=[r("path",{d:"M13 31.12a6 6 0 0 1 1.823-4.216l26-25.212A6 6 0 0 1 51 6v52a6 6 0 0 1-10.306 4.178l-26-26.788-.202-.218A6 6 0 0 1 13 31.12"},null,-1)])])}const c={render:a};export{c as default,a as render};
