@@ -74,21 +74,28 @@ export default class UnitChunkManager {
 
   updateVisibility(camera: Camera) {
     const visibleChunks = this.findVisibleChunks(camera); // Finde alle sichtbaren Chunks
-    const visibleUnits = new Set<Unit>();
+    const visibleUnits: Unit[] = [];
 
+    const hideUnits: Unit[] = [];
     Array.from(this.chunks.entries()).forEach(([key, chunk]) => {
       if (visibleChunks.has(key)) {
         chunk.visible = true;
-        chunk.units.forEach(unit => {
-          unit.setChunkVisible(true);
-          visibleUnits.add(unit);
-        });
+        visibleUnits.push(...Array.from(chunk.units.values()));
       } else {
+        hideUnits.push(...Array.from(chunk.units.values()));
         chunk.visible = false;
-        Array.from(chunk.units.values())
-          .filter(unit => !unit.modules.player.player?.client)
-          .forEach(unit => unit.setChunkVisible(false));
       }
+    });
+
+    new Set(hideUnits).forEach(unit => {
+      if (!unit.modules.player.player?.client) {
+        unit.setChunkVisible(false);
+      }
+    });
+
+    const visibleUnitsSet = new Set(visibleUnits);
+    visibleUnitsSet.forEach(unit => {
+      unit.setChunkVisible(true);
     });
 
     return visibleUnits;

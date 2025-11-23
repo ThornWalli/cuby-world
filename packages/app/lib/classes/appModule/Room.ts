@@ -134,6 +134,18 @@ export default class RoomAppModule extends AppModule<State, Observables> {
      */
 
     this.roomSubscription?.add(
+      player.observables.unit$
+        .pipe(
+          switchMap(({ unit }) => {
+            return unit.observables.destroy$ || EMPTY;
+          })
+        )
+        .subscribe(unit => {
+          room.modules.units.remove(unit);
+        })
+    );
+
+    this.roomSubscription?.add(
       player.observables.unit$.subscribe(async ({ unit, lastUnit }) => {
         if (lastUnit) {
           await room.modules.units.remove(lastUnit);

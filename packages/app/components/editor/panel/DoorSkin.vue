@@ -13,7 +13,7 @@
         <icon-button
           icon-size="very-small"
           style-type="round"
-          icon="arrow_navigation_default_left"
+          :icon="ICON.ARROW_NAVIGATION_DEFAULT_LEFT"
           @click="onClickBack" />
         <cw-editor-skin-filter v-model="tag" :skins="skins" />
       </template>
@@ -37,6 +37,7 @@ import type { WallSelectItem } from '../catalog/WallItemSelect.vue';
 import type { DoorWallExtensionItem } from '@cuby-world/app/lib/types/wall/extension/catalog';
 import type WallExtension from '@cuby-world/app/lib/classes/WallExtension';
 import type { WallType } from '@cuby-world/app/lib/types/wall/catalog';
+import { ICON } from '@cuby-world/app/utils/icons';
 
 const extensionTypes = await getWallExtensionMap<DoorWallExtensionItem>(
   Array.from(doorCatalog.values())

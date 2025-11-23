@@ -12,7 +12,7 @@ import {
   MeshBasicMaterial,
   Vector3
 } from 'three';
-import { Subject } from 'rxjs';
+import { ReplaySubject, Subject } from 'rxjs';
 import { removeMesh } from '@cuby-world/units/utils/mesh';
 import type { ROTATION } from '../../utils/rotation';
 import type { ANIMATION_ACTION } from '../../types/animation';
@@ -25,6 +25,7 @@ export enum SLOT_TYPE {
 export interface SlotObervables extends UnitModuleObservables {
   addUnit$: Subject<{ slot: SlotDescription | null; unit: Unit }>;
   removeUnit$: Subject<{ slot: SlotDescription | null; unit: Unit }>;
+  usedUnits$: ReplaySubject<Unit[]>;
 }
 
 export interface SlotOptions<Position = Vector2> {
@@ -64,6 +65,7 @@ export default abstract class SlotUnitModule<
       slot: SlotDescription | null;
       unit: Unit;
     }>();
+    this.observables.usedUnits$ = new ReplaySubject<Unit[]>(1);
     //#endregion
   }
 
@@ -188,6 +190,7 @@ export default abstract class SlotUnitModule<
         this.removeUsedUnit(unit);
       });
       this.usedUnits.push(unit);
+      this.observables.usedUnits$.next(this.usedUnits);
       const slot = this.getSlotByPosition(unit.getPosition());
       this.observables.addUnit$.next({ slot, unit });
       return true;
@@ -198,6 +201,7 @@ export default abstract class SlotUnitModule<
 
   removeUsedUnit(unit: Unit) {
     this.usedUnits = this.usedUnits.filter(u => u !== unit);
+    this.observables.usedUnits$.next(this.usedUnits);
     const slot = this.getSlotByPosition(unit.getPosition());
     this.observables.removeUnit$.next({ slot, unit });
   }

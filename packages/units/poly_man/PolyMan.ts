@@ -46,7 +46,8 @@ export default class PolyMan extends CharacterUnit<Options> {
           stairStepDuration: 1100,
           rotationDuration: 125
         },
-        color: skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options.color,
+        color: skinsMap.get(options.skin || DEFAULT_PLAYER_SKIN_ID)!.options
+          .color,
         ...options.options
       }
     });
@@ -54,6 +55,7 @@ export default class PolyMan extends CharacterUnit<Options> {
 
   override async setup(context: SetupContext) {
     this.modules.character.offsets.sitting_idle = new Vector3(-0.075, -0.06, 0);
+    this.modules.character.offsets.toilet_idle = new Vector3(-0.075, -0.06, 0);
 
     await super.setup(context);
 
@@ -82,8 +84,10 @@ export default class PolyMan extends CharacterUnit<Options> {
 
     obj.traverse(mesh => {
       if (mesh instanceof Mesh) {
-        (mesh.material as MeshStandardMaterial).color.set(this.options.color);
+        const material = mesh.material as MeshStandardMaterial;
+        material.color.set(this.options.color);
         mesh.userData[OBJECT_USER_DATA.IGNORE_INTERSECTION_HOVER] = true;
+        mesh.castShadow = true;
       }
     });
 

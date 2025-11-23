@@ -19,6 +19,7 @@
 import { computed, type FunctionalComponent } from 'vue';
 import BaseButton from '../base/Button.vue';
 import BaseIcon from '../base/Icon.vue';
+import type { ICON } from '../../utils/icons';
 import icons from '../../utils/icons';
 import type { IconSize } from '@cuby-world/app/lib/types/icon';
 
@@ -26,7 +27,7 @@ const $props = defineProps<{
   hideLabel?: boolean;
   label?: string;
   labelDirection?: 'right' | 'left' | 'top' | 'bottom';
-  icon: keyof typeof icons | FunctionalComponent;
+  icon: ICON | keyof typeof icons | FunctionalComponent;
   iconSize?: IconSize | `${IconSize}`;
   selected?: boolean;
   styleType?: 'default' | 'round';

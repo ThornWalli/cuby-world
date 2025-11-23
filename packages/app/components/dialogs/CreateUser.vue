@@ -97,8 +97,8 @@ const previewUnits = computed(() => [
     skin: DEFAULT_PLAYER_SKIN_ID
   },
   {
-    key: CHARACHTER_TYPE.POLY_CHARACTER,
-    selected: characterType.value === CHARACHTER_TYPE.POLY_CHARACTER,
+    key: CHARACHTER_TYPE.POLY_MAN,
+    selected: characterType.value === CHARACHTER_TYPE.POLY_MAN,
     skin: DEFAULT_PLAYER_SKIN_ID
   }
 ]);

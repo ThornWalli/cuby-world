@@ -8,6 +8,7 @@ import {
 } from 'three';
 import Unit, {
   type PreviewOptions,
+  type SettingControlItem,
   type SetupContext,
   type UnitConstructorOptions,
   type UnitModuleList,
@@ -85,11 +86,11 @@ export default class TeleporterUnit<
     // can be overridden
   }
 
-  override getSettingControls() {
+  override getSettingControls(): SettingControlItem[] {
     return [
       {
         title: 'Teleporter Settings',
-        component: () =>
+        dialogComponent: () =>
           import('../../../components/unitSettings/Teleporter.vue')
       }
     ];

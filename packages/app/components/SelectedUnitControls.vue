@@ -65,16 +65,32 @@ const canDelete = computed(() => selectedUnit.value?.canDelete());
 const canPlaced = computed(() => selectedUnit.value?.canPlace());
 const canRotate = computed(() => selectedUnit.value?.canRotate());
 
+let controlSubscription: Subscription | null = null;
 const items = computed<StickyControlItem[]>(() => {
+  controlSubscription?.unsubscribe();
+  controlSubscription = new Subscription();
+
   const unitControls =
-    selectedUnit.value?.getSettingControls().map(control => ({
-      label: control.title || 'Settings',
-      icon: 'settings',
-      action: async () => {
-        const component = await control.component();
-        dialogComponent.value = component.default;
+    selectedUnit.value?.getSettingControls().map(control => {
+      let icon = 'settings';
+      if (typeof control.icon === 'object' && 'subscription' in control.icon) {
+        controlSubscription?.add(control.icon.subscription);
+        icon = control.icon.ref.value;
       }
-    })) || [];
+
+      return {
+        label: control.title || 'Settings',
+        icon,
+        action:
+          control.action ??
+          (async () => {
+            if (control.dialogComponent) {
+              const component = await control.dialogComponent();
+              dialogComponent.value = component.default;
+            }
+          })
+      };
+    }) || [];
 
   return [
     canDelete.value && {

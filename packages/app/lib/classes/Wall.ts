@@ -770,7 +770,7 @@ async function setupMaterial(
     geometry!.setAttribute('uv', new BufferAttribute(uv, 2));
 
     prepareTexture(texture, { pixelrated: true });
-
+    texture.flipY = true;
     const material = new MeshStandardMaterial({
       map: texture,
       aoMap: ambientMap,

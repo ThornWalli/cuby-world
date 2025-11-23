@@ -10,7 +10,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import type { StickyControlItem } from '../../StickyControls.vue';
 import CwStickyControls from '../../StickyControls.vue';
-import icons from '@cuby-world/app/utils/icons';
+import { ICON } from '@cuby-world/app/utils/icons';
 import type { Vector3 } from 'three';
 import type MasonController from '@cuby-world/app/lib/classes/appModule/editor/wall/MasonController';
 import { Subscription } from 'rxjs';
@@ -33,14 +33,14 @@ const items = computed(() => {
   const items: StickyControlItem[] = [
     {
       label: 'Abort',
-      icon: icons.abort,
+      icon: ICON.ABORT,
       action: async () => {
         await controller.value?.abort();
       }
     },
     {
       label: 'Apply',
-      icon: icons.apply,
+      icon: ICON.APPLY,
       action: async () => {
         await controller.value?.apply();
       }
@@ -50,7 +50,7 @@ const items = computed(() => {
   items.push({
     disabled: currentStatus.value !== MASON_STATUS.PLACED,
     label: 'Edit',
-    icon: icons.edit,
+    icon: ICON.EDIT,
     action: () => {
       controller.value?.edit();
     }

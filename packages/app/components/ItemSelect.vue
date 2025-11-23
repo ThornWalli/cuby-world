@@ -10,7 +10,7 @@
         :disabled="currentIndex < 1"
         class="navigation"
         @click="onClickPrev">
-        <base-icon size="small" name="arrow_navigation_filled_left" />
+        <base-icon size="small" :name="ICON.ARROW_NAVIGATION_FILLED_LEFT" />
       </base-button>
       <div ref="itemsEl" class="items">
         <base-button
@@ -33,7 +33,7 @@
         :disabled="currentIndex >= maxIndex"
         class="navigation"
         @click="onClickNext">
-        <base-icon size="small" name="arrow_navigation_filled_right" />
+        <base-icon size="small" :name="ICON.ARROW_NAVIGATION_FILLED_RIGHT" />
       </base-button>
     </div>
   </div>
@@ -46,6 +46,7 @@ import type { ObjectPreview } from './ObjectPreview.vue';
 
 import BaseIcon from './base/Icon.vue';
 import { computed, ref } from 'vue';
+import { ICON } from '../utils/icons';
 
 const itemsEl = ref<HTMLDivElement | null>(null);
 

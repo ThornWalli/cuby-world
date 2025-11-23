@@ -13,7 +13,7 @@
         <icon-button
           icon-size="very-small"
           style-type="round"
-          icon="arrow_navigation_default_left"
+          :icon="ICON.ARROW_NAVIGATION_DEFAULT_LEFT"
           @click="onClickBack" />
         <cw-editor-skin-filter v-model="tag" :skins="skins" />
       </template>
@@ -33,6 +33,7 @@ import type { StairSkinIdentifier } from '@cuby-world/app/lib/types/stair/skins'
 import type { StairSelectItem } from '../catalog/StairItemSelect.vue';
 import type { SKIN_TAG, SkinDescription } from '@cuby-world/app/lib/types/skin';
 import type { StairIdentifier } from '@cuby-world/app/lib/types/stair';
+import { ICON } from '@cuby-world/app/utils/icons';
 
 const tag = ref<SKIN_TAG | 'all'>('all');
 

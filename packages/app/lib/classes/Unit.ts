@@ -8,6 +8,7 @@ import {
   ReplaySubject,
   Subject,
   Subscription,
+  type Observable,
   type SubscriptionLike
 } from 'rxjs';
 import { type Object3D, Vector2, type MeshStandardMaterial } from 'three';
@@ -47,6 +48,8 @@ import type { TextureMaps } from '../types/textures';
 import type { ConditionDirectionsDescription } from '../utils/pathfindng';
 import { rotateVector2 } from '../utils/vector';
 import { prepareTexture } from '../utils/texture';
+import { ref, type Ref } from 'vue';
+import type { ICON } from '@cuby-world/app/utils/icons';
 
 declare module '../../lib/utils/object' {
   interface ObjectUserData {
@@ -130,7 +133,7 @@ export interface UnitObservables {
   position$: ReplaySubject<Vector3>;
   rotate$: ReplaySubject<ROTATION>;
   visible$: ReplaySubject<boolean>;
-  destroy$?: Subject<void>;
+  destroy$?: Subject<Unit>;
 }
 
 export default class Unit<
@@ -296,7 +299,7 @@ export default class Unit<
     this.observables.position$ = new ReplaySubject<Vector3>(1);
     this.observables.rotate$ = new ReplaySubject<ROTATION>(1);
     this.observables.visible$ = new ReplaySubject<boolean>(1);
-    this.observables.destroy$ = new Subject<void>();
+    this.observables.destroy$ = new Subject<Unit>();
     //#endregion
 
     this.id = id || crypto.randomUUID();
@@ -378,7 +381,7 @@ export default class Unit<
     if (this.destroyed) return;
     this.destroyed = true;
 
-    this.observables.destroy$?.next();
+    this.observables.destroy$?.next(this);
     Object.values(this.observables).forEach(o =>
       (o as SubscriptionLike).unsubscribe()
     );
@@ -733,7 +736,15 @@ export default class Unit<
     this.setRootVisible();
   }
 
-  private setRootVisible(visible = this.visible && this.chunkVisible) {
+  getVisible() {
+    return this.visible;
+  }
+
+  getChunkVisible() {
+    return this.chunkVisible;
+  }
+
+  setRootVisible(visible = this.visible && this.chunkVisible) {
     this.root.visible = visible;
   }
   //#endregion
@@ -789,7 +800,7 @@ export default class Unit<
       const material = mesh.material as MeshStandardMaterial;
       material.map = colorMap;
       if (normalMap) {
-        // material.normalMap = normalMap;
+        material.normalMap = normalMap;
       }
       if (ambientMap) {
         material.aoMap = ambientMap;
@@ -817,8 +828,13 @@ export default class Unit<
 
 export interface SettingControlItem {
   title: string;
+  icon?:
+    | string
+    | ICON
+    | { ref: Ref<string | ICON>; subscription: Subscription };
   description?: string;
-  component: CallableFunction;
+  dialogComponent?: CallableFunction;
+  action?: CallableFunction;
 }
 
 function getRotationFromVector(direction: Vector3, diagonal = true) {
@@ -844,3 +860,18 @@ function getRotationFromVector(direction: Vector3, diagonal = true) {
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AbstractConstructor<T = any> = abstract new (...args: any[]) => T;
+
+export function reactiveValueToggle(
+  observable: Observable<boolean>,
+  primaryValue: string,
+  secondaryValue: string,
+  defaultValue?: string
+) {
+  const icon = ref<string>(defaultValue || secondaryValue);
+  return {
+    ref: icon,
+    subscription: observable.subscribe(value => {
+      icon.value = value ? primaryValue : secondaryValue;
+    })
+  };
+}

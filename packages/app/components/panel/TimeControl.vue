@@ -13,7 +13,7 @@
         {{ availableSpeeds[lastSpeedIndex]?.title }}
       </cw-button>
       <cw-button @click="onClickTogglePlayPause">
-        <base-icon size="very-small" :name="paused ? 'play' : 'pause'" />
+        <base-icon size="very-small" :name="paused ? ICON.PLAY : ICON.PAUSE" />
       </cw-button>
     </div>
     <div class="timezone">{{ timezone }}</div>
@@ -28,6 +28,7 @@ import { concatMap, Subscription } from 'rxjs';
 import type App from '../../lib/classes/App';
 import { detectHour12 } from '@cuby-world/app/lib/utils/date';
 import BaseIcon from '../base/Icon.vue';
+import { ICON } from '@cuby-world/app/utils/icons';
 
 const speed = ref(1);
 const availableSpeeds = [

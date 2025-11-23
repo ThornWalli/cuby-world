@@ -36,6 +36,7 @@ import type { StairIdentifier } from '@cuby-world/app/lib/types/stair';
 import { stairCatalog } from '@cuby-world/stairs';
 import type { StairItem } from '@cuby-world/app/lib/types/stair/catalog';
 import type App from '@cuby-world/app/lib/classes/App';
+import { ICON } from '@cuby-world/app/utils/icons';
 
 const stair = ref<StairIdentifier | null>(null);
 const skin = ref<StairSkinIdentifier | null>(null);
@@ -80,28 +81,28 @@ const controlItems = ref<StickyControlItem[]>([
   {
     color: 'red',
     label: 'Remove',
-    icon: 'trash',
+    icon: ICON.TRASH,
     action: async () => {
       await controller.value.remove();
     }
   },
   {
     label: 'Move',
-    icon: 'move',
+    icon: ICON.MOVE,
     action: async () => {
       await controller.value.move();
     }
   },
   {
     label: 'Rotate',
-    icon: 'rotate',
+    icon: ICON.ROTATE,
     action: async () => {
       await controller.value.rotate();
     }
   },
   {
     label: 'Abort',
-    icon: 'abort',
+    icon: ICON.ABORT,
     action: async () => {
       await controller.value.abort();
     }
@@ -109,7 +110,7 @@ const controlItems = ref<StickyControlItem[]>([
   {
     color: 'green',
     label: 'Apply',
-    icon: 'apply',
+    icon: ICON.APPLY,
     action: async () => {
       await controller.value.apply();
     }

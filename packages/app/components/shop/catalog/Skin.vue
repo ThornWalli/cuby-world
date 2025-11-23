@@ -8,7 +8,7 @@
       <icon-button
         icon-size="very-small"
         style-type="round"
-        icon="arrow_navigation_default_left"
+        :icon="ICON.ARROW_NAVIGATION_DEFAULT_LEFT"
         @click="onClickBack" />
       <cw-skin-filter v-model="tag" :skins="skins" />
     </template>
@@ -27,6 +27,7 @@ import type { UnitSkinIdentifier } from '@cuby-world/app/lib/utils/unit/skins';
 import type { CatalogItemIdentifier } from '@cuby-world/app/lib/types/catalog';
 import CwSkinFilter from '../../CatalogItemSkinFilter.vue';
 import IconButton from '../../button/IconButton.vue';
+import { ICON } from '@cuby-world/app/utils/icons';
 
 const tag = ref<SKIN_TAG | 'all'>('all');
 

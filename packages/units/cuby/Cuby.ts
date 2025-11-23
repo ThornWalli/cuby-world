@@ -82,7 +82,8 @@ export default class Cuby extends CharacterUnit<CubyOptions> {
           stairStepDuration: 1100,
           rotationDuration: 125
         },
-        color: skinsMap.get(DEFAULT_PLAYER_SKIN_ID)!.options.color,
+        color: skinsMap.get(options.skin || DEFAULT_PLAYER_SKIN_ID)!.options
+          .color,
         state: CUBY_STATE.DEFAULT,
         ...options.options
       }

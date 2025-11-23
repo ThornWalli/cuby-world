@@ -7,14 +7,13 @@ import Unit, {
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/table_1.glb?url';
 
-export type DoormateOptions = UnitOptions;
-export default class Table_1 extends Unit<DoormateOptions> {
+export default class Table_1 extends Unit<UnitOptions> {
   static override KEY = 'table_1';
   static override NAME = 'Table_1';
 
   constructor(
     options: Omit<
-      UnitConstructorOptions<DoormateOptions>,
+      UnitConstructorOptions<UnitOptions>,
       'name' | 'selectable'
     > = {}
   ) {

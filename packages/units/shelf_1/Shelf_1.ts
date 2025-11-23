@@ -1,5 +1,5 @@
 import { MATERIAL_NAME } from './../../app/lib/utils/material';
-import { DoubleSide, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import type {
   SetupContext,
   UnitConstructorOptions
@@ -88,9 +88,7 @@ export default class Shelf_1 extends ShelfUnit<Options, Modules, ModuleList> {
       new MeshStandardMaterial({
         roughness: 1.0,
         metalness: 0.0,
-        color: skin.options.color,
-        side: DoubleSide,
-        shadowSide: DoubleSide
+        color: skin.options.color
       })
     );
 
@@ -99,6 +97,7 @@ export default class Shelf_1 extends ShelfUnit<Options, Modules, ModuleList> {
     meshRoot.add(obj);
 
     meshRoot.traverse(child => {
+      child.receiveShadow = true;
       child.castShadow = true;
     });
 

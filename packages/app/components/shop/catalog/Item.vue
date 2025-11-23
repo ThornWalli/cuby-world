@@ -8,7 +8,7 @@
       <icon-button
         icon-size="very-small"
         style-type="round"
-        icon="arrow_navigation_default_left"
+        :icon="ICON.ARROW_NAVIGATION_DEFAULT_LEFT"
         disabled />
       <cw-catalog-item-filter v-model="tag" :items="catalogItems" />
     </template>
@@ -25,6 +25,7 @@ import type { CatalogItemIdentifier } from '@cuby-world/app/lib/types/catalog';
 import CwCatalogItemFilter from '../../CatalogItemFilter.vue';
 import IconButton from '../../button/IconButton.vue';
 import type { CATALOG_TAG } from '@cuby-world/app/lib/utils/catalog';
+import { ICON } from '@cuby-world/app/utils/icons';
 
 const tag = ref<CATALOG_TAG | 'all'>('all');
 const unit = ref<CatalogItemIdentifier | null>(null);

@@ -29,7 +29,6 @@ export default class BillboardLarge_1 extends LightUnit<BillboardLargeOptions> {
   static override KEY = 'billboard_large_1';
   static override NAME = 'Billboard Large 1';
 
-  lightActive = false;
   lights: { mesh: Mesh; spot: SpotLight; defect: boolean }[] = [];
   flickerTimer = 0;
 
@@ -53,22 +52,36 @@ export default class BillboardLarge_1 extends LightUnit<BillboardLargeOptions> {
     });
   }
 
-  override setup(context: SetupContext): Promise<void> {
-    this.subscription.add(
-      this.modules.light.observables.active$.subscribe((active: boolean) => {
-        console.log('Billboard Large 1 light active:', active);
-        this.lights.forEach(({ spot, mesh }) => {
-          this.lightActive = active;
-          spot.visible = active;
+  setLightActive(active: boolean) {
+    this.lights.forEach(({ spot, mesh }) => {
+      const intensity = this.getIntensity();
+      const material = mesh.material as MeshStandardMaterial;
+      material.emissiveIntensity = intensity;
+      material.needsUpdate = active;
+      spot.intensity = intensity;
+    });
+  }
 
-          (mesh.material as MeshStandardMaterial).emissiveIntensity = active
-            ? 1
-            : 0;
-        });
-      })
-    );
+  getIntensity() {
+    return this.modules.light.getIntensity() * 8;
+  }
 
-    return super.setup(context);
+  override onActive() {
+    this.setLightActive(true);
+  }
+
+  override onInactive() {
+    this.setLightActive(false);
+  }
+
+  override onIntensity(_intensity: number) {
+    this.lights.forEach(({ spot, mesh }) => {
+      const intensity = this.getIntensity();
+      const material = mesh.material as MeshStandardMaterial;
+      material.emissiveIntensity = intensity;
+      material.needsUpdate = true;
+      spot.intensity = intensity;
+    });
   }
 
   override async createMesh(_context: SetupContext) {
@@ -89,6 +102,7 @@ export default class BillboardLarge_1 extends LightUnit<BillboardLargeOptions> {
       texture.flipY = false;
     }
 
+    this._objectRoot = object;
     meshRoot.add(object);
     const lamp_1 = meshRoot.getObjectByName('lamp_1_empty')! as Mesh;
     const lamp_2 = meshRoot.getObjectByName('lamp_2_empty')! as Mesh;
@@ -130,8 +144,9 @@ export default class BillboardLarge_1 extends LightUnit<BillboardLargeOptions> {
       lamp.getWorldPosition(worldPos);
       spot.position.copy(worldPos.clone().add(new Vector3(0, 0, 0)));
       spot.target.position.set(-2, 4, worldPos.z);
+      spot.shadow.mapSize.set(64, 64);
 
-      spot.visible = this.lightActive;
+      spot.intensity = this.getIntensity();
       (mesh.material as MeshStandardMaterial).emissiveIntensity = 0;
 
       meshRoot.add(spot.target);
@@ -152,17 +167,38 @@ export default class BillboardLarge_1 extends LightUnit<BillboardLargeOptions> {
     const seconds = 0.05;
     const flackerMax = 0.3;
     this.flickerTimer += delta;
-    if (this.flickerTimer > seconds && this.lightActive) {
+    if (this.flickerTimer > seconds && this.modules.light.isActive()) {
       this.flickerTimer = 0;
       this.lights
         .filter(({ defect }) => defect)
         .forEach(({ mesh: inner, spot }) => {
           if (Math.random() < flackerMax) {
             const material = inner.material as MeshStandardMaterial;
-            spot.intensity = Math.random() < 0.5 ? 0 : 8;
+            spot.intensity = Math.random() < 0.5 ? 0 : this.getIntensity();
             material.emissiveIntensity = spot.intensity;
           }
         });
     }
   }
+
+  //#region visibility
+  _lastRootVisible?: boolean;
+  _objectRoot?: Object3D;
+  override setVisible(visible: boolean) {
+    super.setVisible(visible);
+  }
+  override setRootVisible(
+    visible = this.getVisible() && this.getChunkVisible()
+  ) {
+    if (this._lastRootVisible !== visible) {
+      if (this._objectRoot) {
+        this._objectRoot.visible = visible;
+      }
+      this.lights.forEach(({ spot }) => {
+        spot.intensity = visible ? this.getIntensity() : 0;
+      });
+    }
+    this._lastRootVisible = visible;
+  }
+  //#endregion
 }

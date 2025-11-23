@@ -1,162 +1,158 @@
-import type { CubeTexture } from 'three';
 import {
-  LoopPingPong,
-  Mesh,
-  MeshPhysicalMaterial,
-  MeshStandardMaterial,
   PointLight,
-  SphereGeometry
+  type MeshStandardMaterial,
+  type Mesh,
+  type Texture
 } from 'three';
-
-import { OBJECT_NAME } from '@cuby-world/app/lib/utils/object';
-import Unit, {
-  type SetupContext,
-  type UnitConstructorOptions,
-  type UnitModules,
-  type UnitOptions
+import { Color, Object3D, Vector3 } from 'three';
+import type {
+  SetupContext,
+  UnitConstructorOptions
 } from '@cuby-world/app/lib/classes/Unit';
-import { getHoverClip } from '@cuby-world/app/lib/utils/animation';
-import type { UnitModuleSetupContext } from '@cuby-world/app/lib/classes/UnitModule';
-import { AnimationUnitModule } from '@cuby-world/app/lib/classes/unitModule/Animation';
-
-import image_sky_box_1_nx from './assets/sky_box_1/nx.png';
-import image_sky_box_1_ny from './assets/sky_box_1/ny.png';
-import image_sky_box_1_nz from './assets/sky_box_1/nz.png';
-import image_sky_box_1_px from './assets/sky_box_1/px.png';
-import image_sky_box_1_py from './assets/sky_box_1/py.png';
-import image_sky_box_1_pz from './assets/sky_box_1/pz.png';
-import { defaultMaterial } from '../utils/material';
-import type AssetLoader from '@cuby-world/app/lib/classes/AssetLoader';
+import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
+import glbBase from './assets/lamp_1.glb?url';
+import { skinsMap } from './skins';
+import type {
+  Options as LightUnitOptions,
+  Modules as LightUnitModules,
+  ModuleList as LightUnitModuleList
+} from '@cuby-world/app/lib/classes/unit/Light';
+import LightUnit from '@cuby-world/app/lib/classes/unit/Light';
+import assetLoader from '@cuby-world/app/services/assetLoader';
+import { prepareTexture } from '@cuby-world/app/lib/utils/texture';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
-import type { AnimationLoopValue } from '@cuby-world/app/lib/classes/Renderer';
 
-export interface LampOptions extends UnitOptions {
-  size: number;
+export type Modules = LightUnitModules & {};
+export type ModuleList = LightUnitModuleList;
+export interface LampOptions extends LightUnitOptions {
+  color: number | string;
 }
-
-export default class Lamp_1 extends Unit<
-  LampOptions,
-  UnitModules & { animation: UnitAnimation }
-> {
+export default class Lamp_1 extends LightUnit<LampOptions> {
   static override KEY = 'lamp_1';
-  static override NAME = 'Lamp 1';
+  static override NAME = 'Lamp_1';
+
+  private light?: PointLight;
+  private lightBulb?: Mesh;
+  private texture: Texture | null = null;
 
   constructor(
     options: Omit<
       UnitConstructorOptions<LampOptions>,
       'name' | 'selectable'
-    > = {}
+    > = {},
+    moduleList: ModuleList = [] as unknown as ModuleList
   ) {
     super(
       {
         ...options,
-        name: 'Lamp 1',
+        name: 'Lamp_1',
+        accessible: false,
         selectable: true,
         placeable: true,
-        options: {
-          size: 0.5,
-          ...options.options
-        }
+        rotateable: false,
+        size: new Vector3(1, 0.6, 1)
       },
-      [UnitAnimation]
+      moduleList as ModuleList
     );
   }
 
-  override async createMesh({ assetLoader }: SetupContext) {
-    const geometry = new SphereGeometry(0.3, 32, 16);
-    // const material = new MeshBasicMaterial({ color: 0xffff00 });
+  setLightActive(active: boolean) {
+    if (this.light && this.lightBulb) {
+      const intensity = this.modules.light.getIntensity();
+      const material = this.lightBulb.material as MeshStandardMaterial;
+      material.emissiveIntensity = intensity;
+      material.map = !active ? this.texture! : null;
+      material.emissiveMap = active ? this.texture! : null;
+      material.needsUpdate = true;
+      this.light.intensity = intensity;
+    }
+  }
 
-    const mesh = new Mesh(geometry, defaultMaterial());
+  override onActive() {
+    this.setLightActive(true);
+  }
 
-    // const lampGeometry = new SphereGeometry(0.1, 32, 16);
-    // const lampMaterial = new MeshBasicMaterial({ color: 0xffff00 });
+  override onInactive() {
+    this.setLightActive(false);
+  }
 
-    // const light = new PointLight(0xffffff, 1, 8);
-    // light.position.set(0, 0, 0);
-    // light.castShadow = true;
+  override onIntensity(intensity: number) {
+    if (this.light && this.lightBulb) {
+      const material = this.lightBulb.material as MeshStandardMaterial;
+      material.emissiveIntensity = intensity;
+      material.needsUpdate = true;
+      this.light.intensity = intensity;
+    }
+  }
 
-    // light.shadow.mapSize.width = 128;
-    // light.shadow.mapSize.height = 128;
-    // light.shadow.camera.near = 1;
-    // light.shadow.camera.far = 50;
-    // light.shadow.camera.updateProjectionMatrix();
+  override async createMesh(_context: SetupContext) {
+    const meshRoot = new Object3D();
 
-    // mesh.add(light);
+    const { object } = await loadGltf(glbBase);
 
-    const lampGeometry = new SphereGeometry(0.1, 32, 16);
-    const lampMaterial = new MeshStandardMaterial({
-      emissive: 0xffff99,
-      emissiveIntensity: 2
+    const lightBulb = object.getObjectByName('light_bulb')! as Mesh;
+    this.lightBulb = lightBulb;
+
+    const skin = skinsMap.get(this.getSkin())!;
+
+    const material = lightBulb.material as MeshStandardMaterial;
+
+    material.emissive = new Color(skin.options.color);
+    material.emissiveIntensity = this.modules.light.getIntensity();
+
+    const [texture]: Texture[] = await Promise.all([
+      assetLoader.add<Texture>({
+        loader: LOADER.TEXTURE,
+        value: skin.options.texture!
+      })
+    ]);
+
+    prepareTexture(texture!, { pixelrated: true });
+    this.texture = texture!;
+    material.map = texture!;
+
+    this.setMaterialReady();
+
+    meshRoot.traverse(child => {
+      child.receiveShadow = false;
+      child.castShadow = true;
     });
-    const innerMesh = new Mesh(lampGeometry, lampMaterial);
-    mesh.add(innerMesh);
 
-    mesh.name = OBJECT_NAME.MESH;
-    mesh.position.set(0, 0.5, 0);
+    const light = new PointLight(skin.options.color, 3, 3);
+    this.light = light;
+    light.decay = 0;
+    light.intensity = this.modules.light.getIntensity();
 
-    setupMaterials(assetLoader, mesh, () => {
-      this.setMaterialReady();
-    });
-
-    const light = new PointLight(0xffeeaa, 1, 2);
-    light.decay = 2;
     light.castShadow = true;
-    light.shadow.mapSize.set(128, 128);
-    light.shadow.radius = 4;
+    // light.shadow.bias = -0.001;
+    light.shadow.mapSize.set(64, 64);
+    light.shadow.radius = 2;
+    light.position.set(0, 0, 0);
 
-    mesh.add(light);
-    return mesh;
+    lightBulb.add(light);
+
+    meshRoot.add(object);
+
+    this._meshRoot = meshRoot;
+    // _context.room?.app.renderer.scene.add(new PointLightHelper(light, 0.1));
+
+    return meshRoot;
   }
-}
 
-async function setupMaterials(
-  assetLoader: AssetLoader,
-  mesh: Mesh,
-  cb?: CallableFunction
-) {
-  await assetLoader
-    .add<CubeTexture>({
-      loader: LOADER.CUBE_TEXTURE,
-      value: [
-        image_sky_box_1_px,
-        image_sky_box_1_nx,
-        image_sky_box_1_py,
-        image_sky_box_1_ny,
-        image_sky_box_1_pz,
-        image_sky_box_1_nz
-      ]
-    })
-    .then(textures => {
-      mesh.material = new MeshPhysicalMaterial({
-        color: 0xffffff,
-        metalness: 0,
-        roughness: 0,
-        transparent: true,
-        transmission: 1, // Wichtig für die Lichtdurchlässigkeit wie bei Glas
-        thickness: 0.1, // Dicke des Glases für Lichtbrechungseffekte
-        envMap: textures
-      });
-    });
-  if (cb) {
-    cb();
+  //#region visibility
+  private _meshRoot?: Object3D;
+  private _lastRootVisible: boolean | null = null;
+  override setVisible(visible: boolean) {
+    super.setVisible(visible);
   }
-}
-
-class UnitAnimation extends AnimationUnitModule {
-  override async setup(context: UnitModuleSetupContext) {
-    const mesh = await super.setup(context);
-
-    const hoverClip = getHoverClip(0.03);
-    const action = this.mixer.clipAction(hoverClip);
-    action.setLoop(LoopPingPong, Infinity);
-
-    window.setTimeout(() => {
-      action.play();
-    }, Math.random() * 1000);
-
-    return mesh;
+  override setRootVisible(
+    visible = this.getVisible() && this.getChunkVisible()
+  ) {
+    if (this._lastRootVisible !== visible && this.light && this._meshRoot) {
+      this._meshRoot.visible = visible;
+      this.light.intensity = visible ? this.modules.light.getIntensity() : 0;
+    }
+    this._lastRootVisible = visible;
   }
-  override update({ delta }: AnimationLoopValue) {
-    this.mixer?.update(delta);
-  }
+  //#endregion
 }

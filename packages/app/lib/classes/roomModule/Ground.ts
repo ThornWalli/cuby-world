@@ -14,11 +14,14 @@ import RoomModule, {
 } from '../RoomModule';
 import type Room from '../Room';
 import {
+  concatAll,
   concatMap,
   debounceTime,
   distinctUntilChanged,
+  EMPTY,
   filter,
   map,
+  merge,
   Subject,
   switchMap
 } from 'rxjs';
@@ -55,6 +58,8 @@ export enum GRID_TYPE {
   UNIT = 2,
   GROUND = 1000
 }
+
+const GROUND_CHUNK_SIZE = 32;
 
 interface Observables extends RoomModuleObservables {
   hover$: Subject<Vector3>;
@@ -146,8 +151,9 @@ export default class GroundModule extends RoomModule<State, Observables> {
       })
     );
     this.subscription.add(
-      listener.clickIntersect$
+      listener.clickIntersects$
         .pipe(
+          concatAll(),
           filter(intersection => {
             return (
               !intersection.object.userData[
@@ -165,6 +171,11 @@ export default class GroundModule extends RoomModule<State, Observables> {
           )
         )
         .subscribe(this.onClick.bind(this))
+    );
+    this.subscription.add(
+      listener.clickIntersects$.subscribe(list =>
+        console.log('click list', list)
+      )
     );
     this.subscription.add(
       listener.hoverIntersect$
@@ -221,6 +232,20 @@ export default class GroundModule extends RoomModule<State, Observables> {
     this.subscription.add(
       listener.pointerout$.subscribe(this.onPointerOut.bind(this))
     );
+
+    this.subscription.add(
+      merge(
+        this.room.app.renderer.observables.controlsChange$,
+        this.room.app.modules.player.observables.currentPlayer$.pipe(
+          switchMap(player => player?.observables.unit$ || EMPTY),
+          switchMap(({ unit }) => unit.observables.position$)
+        )
+      )
+        .pipe(debounceTime(20))
+        .subscribe(() => {
+          this.updateVisibility(this.room.app.renderer.camera);
+        })
+    );
   }
 
   //#region getters/setters
@@ -259,14 +284,6 @@ export default class GroundModule extends RoomModule<State, Observables> {
   }
 
   //#endregion
-
-  override updateThrottle500ms(
-    _time: number,
-    options: { camera: Camera }
-  ): void {
-    this.updateVisibility(options.camera);
-  }
-
   private setupGround() {
     const groundMesh = new Object3D();
     groundMesh.name = 'ground';
@@ -377,7 +394,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
         this.room.gridSize,
         floor,
         this.state.groundStyleMap,
-        16,
+        GROUND_CHUNK_SIZE,
         this.isEditMode(),
         {
           tileChecker: tileChecker(floor),
@@ -421,6 +438,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
     }, new Map<string, TileCostDescription>());
   }
 
+  _updateVisibilityBox = new Box3();
   private updateVisibility(camera: Camera) {
     this.projScreenMatrix.multiplyMatrices(
       camera.projectionMatrix,
@@ -428,7 +446,7 @@ export default class GroundModule extends RoomModule<State, Observables> {
     );
     this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
     this.state.groundChunks.forEach(chunk => {
-      const box = new Box3().setFromObject(chunk.mesh);
+      const box = this._updateVisibilityBox.setFromObject(chunk.mesh);
       chunk.mesh.visible = this.frustum.intersectsBox(box);
     });
   }

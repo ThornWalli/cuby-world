@@ -9,6 +9,7 @@ import type Unit from '../Unit';
 
 interface Obervables extends UnitModuleObservables {
   active$: ReplaySubject<boolean>;
+  intensity$: ReplaySubject<number>;
 }
 
 interface Options extends UnitModuleOptions {
@@ -17,7 +18,8 @@ interface Options extends UnitModuleOptions {
 }
 
 interface State extends UnitModuleState {
-  active?: boolean;
+  active: boolean;
+  intensity: number;
 }
 export default class LightUnitModule extends UnitModule<
   Options,
@@ -25,14 +27,24 @@ export default class LightUnitModule extends UnitModule<
   Obervables
 > {
   static override TYPE = 'light';
-
-  private active: boolean = false;
+  private _active: boolean = true;
 
   constructor(unit: Unit, options: Options, state: State, debug: boolean) {
-    super(unit, options, state, debug);
+    super(
+      unit,
+      options,
+      {
+        ...state,
+        active: state.active ?? true,
+        intensity: state.intensity ?? 1
+      },
+      debug
+    );
     //#region observables
     this.observables.active$ = new ReplaySubject<boolean>();
-    this.observables.active$.next(this.active);
+    this.observables.active$.next(this.isActive());
+    this.observables.intensity$ = new ReplaySubject<number>();
+    this.observables.intensity$.next(this.getIntensity());
     //#endregion
   }
 
@@ -40,15 +52,12 @@ export default class LightUnitModule extends UnitModule<
     this.subscription.add(
       context.room?.app.modules.time.observables.dayTime$.subscribe(
         (dayTime: number) => {
-          const isOn =
-            dayTime >= (this.options.onTime ?? 0.7) ||
-            dayTime <= (this.options.offTime ?? 0.25);
-          if (isOn !== this.isOn()) {
-            this.active = isOn;
-            if (isOn) {
-              this.on();
-            } else {
-              this.off();
+          if (this.state.active) {
+            const isOn =
+              dayTime >= (this.options.onTime ?? 0.7) ||
+              dayTime <= (this.options.offTime ?? 0.25);
+            if (isOn !== this.isActive()) {
+              this.setInternalActive(isOn);
             }
           }
         }
@@ -58,15 +67,27 @@ export default class LightUnitModule extends UnitModule<
     return context.mesh;
   }
 
-  isOn() {
-    return this.state.active ?? this.active;
+  getIntensity() {
+    return this.isActive() ? (this.state.intensity ?? 1) : 0;
+  }
+  setIntensity(intensity: number) {
+    this.state.intensity = intensity;
+    this.observables.intensity$.next(this.getIntensity());
   }
 
-  on() {
-    this.observables.active$.next(true);
+  isActive() {
+    return this.state.active && this._active;
   }
 
-  off() {
-    this.observables.active$.next(false);
+  private setInternalActive(active: boolean) {
+    this._active = active;
+    this.observables.active$.next(this.state.active && this._active);
+    this.observables.intensity$.next(this.getIntensity());
+  }
+
+  setActive(active: boolean) {
+    this.state.active = active;
+    this.observables.active$.next(this.state.active && this._active);
+    this.observables.intensity$.next(this.getIntensity());
   }
 }

@@ -72,13 +72,23 @@ const skins: DefaultSkinDescription[] = [
     }
   },
   {
-    id: 'default_tile_small_1',
-    name: 'Tile Small 1',
+    id: 'bathroom_tile_small_1',
+    name: 'Bathroom Tile Small 1',
     tags: [SKIN_TAG.TEXTURE],
     options: {
       cost: GROUND_COST.NORMAL,
       color: '#ffffff',
-      texture: { id: 'tile_small_1' }
+      texture: { id: 'bathroom_tile_small_1' }
+    }
+  },
+  {
+    id: 'bathroom_tile_medium_1',
+    name: 'Bathroom Tile Medium 1',
+    tags: [SKIN_TAG.TEXTURE],
+    options: {
+      cost: GROUND_COST.NORMAL,
+      color: '#ffffff',
+      texture: { id: 'bathroom_tile_medium_1' }
     }
   },
   {

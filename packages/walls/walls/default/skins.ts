@@ -7,12 +7,13 @@ import type {
 import texture_stripes_horizontal_bw from './assets/texture/stripes_horizontal_bw.jpg?url';
 import texture_stripes_vertical_bw from './assets/texture/stripes_vertical_bw.jpg?url';
 
-import texture_brick_1 from './assets/texture/brick_1/brick_1.png?url';
-import texture_brick_1_normal from './assets/texture/brick_1/brick_1_normal.png?url';
-import texture_brick_1_specular from './assets/texture/brick_1/brick_1_specular.png?url';
+import texture_brick_1 from './assets/texture/brick_1.png?url';
 
 import texture_bubble_green_purple from './assets/texture/bubble_green_purple.jpg?url';
 import texture_stars from './assets/texture/stars.jpg?url';
+
+import texture_bathroom_tile_small_1 from './assets/texture/bathroom_tile_small_1.jpg?url';
+import texture_bathroom_tile_medium_1 from './assets/texture/bathroom_tile_medium_1.jpg?url';
 
 const colors = {
   very_light: '#F5F5F5',
@@ -62,9 +63,7 @@ const skins: DefaultWallSkinDescription[] = [
     options: {
       color: '#ffffff',
       texture: {
-        path: texture_brick_1,
-        normal: texture_brick_1_normal,
-        specular: texture_brick_1_specular
+        path: texture_brick_1
       }
     }
   },
@@ -86,6 +85,27 @@ const skins: DefaultWallSkinDescription[] = [
       texture: { path: texture_stars }
     }
   },
+  {
+    id: 'texture_bathroom_tile_small_1',
+    name: 'Bathroom Tile Small 1',
+    tags: [SKIN_TAG.TEXTURE],
+    options: {
+      color: '#ffffff',
+      texture: { path: texture_bathroom_tile_small_1 }
+    }
+  },
+  {
+    id: 'texture_bathroom_tile_medium_1',
+    name: 'Bathroom Tile Medium 1',
+    tags: [SKIN_TAG.TEXTURE],
+    options: {
+      color: '#ffffff',
+      texture: {
+        path: texture_bathroom_tile_medium_1
+      }
+    }
+  },
+
   {
     id: 'default_color_blue',
     name: 'Blue',

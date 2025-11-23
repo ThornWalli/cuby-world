@@ -21,13 +21,14 @@
 </template>
 
 <script setup lang="ts">
-import type { Icon } from '@cuby-world/app/lib/types/icon';
 import BaseStickyWrapper, {
   type StickyWrapperValue
 } from './base/StickyWrapper.vue';
 import { computed } from 'vue';
 import type App from '@cuby-world/app/lib/classes/App';
 import CwIconButton from './button/IconButton.vue';
+import type { ICON } from '../utils/icons';
+import type icons from '../utils/icons';
 
 const $props = defineProps<{
   app: App;
@@ -58,7 +59,7 @@ export interface StickyControlItem {
   disabled?: boolean;
   group?: string | 'default';
   label: string;
-  icon: Icon;
+  icon: ICON | keyof typeof icons;
   action: CallableFunction;
 }
 </script>

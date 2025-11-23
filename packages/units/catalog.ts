@@ -7,6 +7,7 @@ import { skinsMap as polyManSkinMap } from './poly_man/skins';
 import { skinsMap as shelf_1_skinMap } from './shelf_1/skins';
 import { skinsMap as wallLamp_1_skinMap } from './wall_lamp_1/skins';
 import { skinsMap as doormate_1_skinMap } from './doormate_1/skins';
+import { skinsMap as lamp_test_skinMap } from './lamp_test/skins';
 import { skinsMap as lamp_1_skinMap } from './lamp_1/skins';
 import { skinsMap as cardboardBox_1_skinMap } from './cardboard_box_1/skins';
 import { skinsMap as sign_protest_1_skinMap } from './sign_protest_1/skins';
@@ -76,6 +77,18 @@ export const items: UnitItem[] = [
     skinMap: lamp_1_skinMap,
     instance: () =>
       import('./lamp_1/Lamp_1').then(m => m.default as typeof Unit),
+    options: {}
+  },
+  {
+    id: 'lamp_test',
+    name: 'Lamp Testtest',
+    description: 'A stylish lamp to light up your space.',
+    tags: [CATALOG_TAG.LIGHT],
+    skins: Array.from(lamp_test_skinMap.values()),
+    defaultSkinId: lamp_test_skinMap.get('default')!.id,
+    skinMap: lamp_test_skinMap,
+    instance: () =>
+      import('./lamp_test/Lamp_Test').then(m => m.default as typeof Unit),
     options: {}
   },
   {
@@ -233,8 +246,8 @@ export const items: UnitItem[] = [
   },
   {
     hide: true,
-    id: 'poly_character',
-    name: 'Poly Character',
+    id: 'poly_man',
+    name: 'Poly Man',
     description: 'Base character unit for players.',
     skins: Array.from(cubySkinMap.values()),
     defaultSkinId: polyManSkinMap.get('default')!.id,

@@ -626,6 +626,19 @@ export default class MovementUnitModule extends UnitModule<
 
       //#region Door Check
       if (
+        !moveOptions.lastPosition &&
+        moveOptions.nextPosition &&
+        nextDoor &&
+        !nextDoor.open(
+          (nextDoor.wall.direction === WALL_DIRECTION.VERTICAL &&
+            nextDoor.wall.position.x > moveOptions.nextPosition.position.x) ||
+            (nextDoor.wall.direction === WALL_DIRECTION.HORIZONTAL &&
+              nextDoor.wall.position.z < moveOptions.nextPosition.position.z)
+        )
+      ) {
+        // Wenn Tür verschlossen oder nicht geöffnet werden kann, Abbruch der Bewegung
+        moveOptions.nextPosition = null;
+      } else if (
         moveOptions.lastPosition &&
         moveOptions.nextPosition &&
         nextDoor &&
@@ -795,7 +808,9 @@ function createRoomGrid(unit: Unit) {
         gridType = GRID_TYPE.UNIT;
       }
 
-      grid.set(pos.x, pos.y, pos.z, gridType);
+      if (grid.get(pos.x, pos.y, pos.z) !== GRID_TYPE.BLOCKED) {
+        grid.set(pos.x, pos.y, pos.z, gridType);
+      }
     });
   });
 

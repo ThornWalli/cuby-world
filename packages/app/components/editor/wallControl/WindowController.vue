@@ -32,7 +32,7 @@ import CwPanelEditorWindowSkin from '../panel/WindowSkin.vue';
 import CwStickyControls, {
   type StickyControlItem
 } from '../../StickyControls.vue';
-import icons from '@cuby-world/app/utils/icons';
+import { ICON } from '@cuby-world/app/utils/icons';
 import { Subscription } from 'rxjs';
 import { windowCatalog } from '@cuby-world/walls';
 import type {
@@ -98,7 +98,7 @@ const controlItems = computed(() => {
     {
       color: 'red',
       label: 'Remove',
-      icon: icons.trash,
+      icon: ICON.TRASH,
       action: async () => {
         await controller.value?.remove();
       }

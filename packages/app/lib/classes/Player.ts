@@ -17,7 +17,7 @@ export const DEFAULT_PLAYER_SKIN_ID: PlayerSkinIdentifier = 'default';
 export enum CHARACHTER_TYPE {
   CUBY = 'cuby',
   DEFAULT = 'character',
-  POLY_CHARACTER = 'poly_character'
+  POLY_MAN = 'poly_man'
 }
 
 export enum PLAYER_STATE {
@@ -126,9 +126,9 @@ export default class Player {
     let UnitClass: typeof Unit;
     let skinMap;
     switch (this.state.characterType) {
-      case CHARACHTER_TYPE.POLY_CHARACTER:
-        UnitClass = await catalog.get('poly_character')!.instance()!;
-        skinMap = catalog.get('poly_character')!.skinMap;
+      case CHARACHTER_TYPE.POLY_MAN:
+        UnitClass = await catalog.get('poly_man')!.instance()!;
+        skinMap = catalog.get('poly_man')!.skinMap;
         break;
       case CHARACHTER_TYPE.CUBY:
         UnitClass = await catalog.get('cuby')!.instance()!;

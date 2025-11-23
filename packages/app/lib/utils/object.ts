@@ -55,7 +55,7 @@ export function disposeObject3D(object: Object3D): void {
   }
 }
 
-function disposeMaterial(material: Material): void {
+export function disposeMaterial(material: Material): void {
   for (const value of Object.values(material)) {
     const texture = value as Texture;
     if (texture && texture.isTexture) {

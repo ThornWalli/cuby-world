@@ -363,35 +363,30 @@ export default class CharacterUnitModule extends UnitModule<
 
   cancelBed() {
     this.root.position.set(0, 0, 0);
-    this.state.lying = false;
     this.state.usedUnit
       ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
       ?.removeUsedUnit(this.unit);
-    this.state.usedUnit = null;
-    this.observables.lying$.next(null);
-    console.log('Standing up');
+    this.setLying(null);
+    this.setUsedUnit(null);
   }
 
   cancelStand() {
     this.root!.position.set(0, 0, 0);
-    this.state.sitting = false;
+
     this.state.usedUnit
       ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
       ?.removeUsedUnit(this.unit);
-    this.state.usedUnit = null;
-    this.observables.standing$.next(null);
-    console.log('Standing up');
+    this.setStanding(null);
+    this.setUsedUnit(null);
   }
 
   cancelSit() {
     this.root!.position.set(0, 0, 0);
-    this.state.sitting = false;
     this.state.usedUnit
       ?.getModuleByType<SlotUnitModule>(SlotUnitModule)
       ?.removeUsedUnit(this.unit);
-    this.state.usedUnit = null;
-    this.observables.sitting$.next(null);
-    console.log('Standing up');
+    this.setSitting(null);
+    this.setUsedUnit(null);
   }
 }
 

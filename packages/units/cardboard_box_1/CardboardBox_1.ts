@@ -6,9 +6,6 @@ import Unit, {
 import { loadGltf } from '@cuby-world/app/lib/utils/gltf';
 import glbBase from './assets/cardboardBox.glb?url';
 import image_cuby_post from './assets/uv/cuby_post.png?url';
-import image_cuby_post_normal from './assets/uv/cuby_post_normal.png?url';
-import image_cuby_post_ambient from './assets/uv/cuby_post_ambient.png?url';
-import image_cuby_post_specular from './assets/uv/cuby_post_specular.png?url';
 import assetLoader from '@cuby-world/app/services/assetLoader';
 import { LOADER } from '@cuby-world/app/lib/classes/AssetLoader';
 import type { Texture } from 'three';
@@ -46,25 +43,11 @@ export default class CardboardBox_1 extends Unit<CardboardBoxOptions> {
       assetLoader.add<Texture>({
         loader: LOADER.TEXTURE,
         value: image_cuby_post
-      }),
-      assetLoader.add<Texture>({
-        loader: LOADER.TEXTURE,
-        value: image_cuby_post_normal
-      }),
-      assetLoader.add<Texture>({
-        loader: LOADER.TEXTURE,
-        value: image_cuby_post_ambient
-      }),
-      assetLoader.add<Texture>({
-        loader: LOADER.TEXTURE,
-        value: image_cuby_post_specular
       })
-    ]).then(([colorMap, normalMap, ambientMap]) => {
+    ]).then(([colorMap]) => {
       this.setTexture(
         {
-          colorMap,
-          normalMap,
-          ambientMap
+          colorMap
         },
         meshRoot
       );

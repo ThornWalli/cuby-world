@@ -6,7 +6,7 @@
     style-type="none">
     <cw-toggle-icon
       :model-value="modelValue === ACTION.EDITOR"
-      :icon="'editor'"
+      :icon="ICON.EDITOR"
       icon-size="very-large"
       label-direction="right"
       @update:model-value="
@@ -14,7 +14,7 @@
       " />
     <cw-toggle-icon
       :model-value="modelValue === ACTION.SHOP"
-      :icon="'cart'"
+      :icon="ICON.CART"
       icon-size="very-large"
       label-direction="right"
       @update:model-value="
@@ -50,6 +50,7 @@ import CwShopCatalog from '../shop/Catalog.vue';
 import type App from '../../lib/classes/App';
 import { onMounted, ref } from 'vue';
 import { ACTION } from '../app/Playground.vue';
+import { ICON } from '@cuby-world/app/utils/icons';
 
 const inventoryOpened = ref(false);
 

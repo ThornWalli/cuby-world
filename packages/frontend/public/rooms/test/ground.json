@@ -1,0 +1,3286 @@
+{
+  "id": "3c62ff9e-b1fd-4cf9-8481-d178e454d5ad",
+  "info": {
+    "name": "Default Room",
+    "description": "This is the default room. You can edit it to create your own room.",
+    "timezone": "Pacific/Efate"
+  },
+  "gridSize": {
+    "type": "Vector2",
+    "value": [
+      20,
+      20
+    ]
+  },
+  "walls": [],
+  "units": [
+    {
+      "id": "5bba9599-be16-48bb-a18d-657c936b9704",
+      "unit": "teleporter_default",
+      "options": {
+        "skin": "default",
+        "position": {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            19
+          ]
+        },
+        "rotation": "north",
+        "moduleStates": {
+          "player": {},
+          "room": {},
+          "movement": {},
+          "teleporter": {
+            "type": "entrance",
+            "targetRoomId": "",
+            "targetRoomTeleporterId": ""
+          },
+          "animation": {},
+          "selection": {},
+          "placement": {}
+        }
+      }
+    }
+  ],
+  "groundStyles": [
+    {
+      "type": "default",
+      "skinId": "default_base",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            0,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            4,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            8,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            9,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            10,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            14,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            18,
+            0,
+            19
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            1
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            2
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            4
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            11
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            18
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            19,
+            0,
+            19
+          ]
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "skinId": "default_grass_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            1,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            2,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            3,
+            0,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "skinId": "bathroom_tile_small_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            5,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            6,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            7,
+            0,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "skinId": "default_tile_large_terracota_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            10
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            6
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            7
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            8
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            9
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "skinId": "default_stone_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            11,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            12,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            13,
+            0,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "type": "default",
+      "skinId": "default_wood_laminate_1",
+      "positions": [
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            15,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            16,
+            0,
+            17
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            12
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            13
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            14
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            15
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            16
+          ]
+        },
+        {
+          "type": "Vector3",
+          "value": [
+            17,
+            0,
+            17
+          ]
+        }
+      ]
+    }
+  ],
+  "stairs": []
+}

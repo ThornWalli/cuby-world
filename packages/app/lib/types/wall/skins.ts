@@ -21,6 +21,7 @@ export interface WallStyleTexture {
    */
   path: string;
   normal?: string;
+  ambient?: string;
   displacement?: string;
   specular?: string;
   options?: {

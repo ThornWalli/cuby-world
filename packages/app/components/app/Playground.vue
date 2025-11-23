@@ -33,7 +33,7 @@
           <cw-button-icon
             label="Settings"
             label-direction="right"
-            icon="settings"
+            :icon="ICON.SETTINGS"
             @click="onClickSettings" />
         </template>
       </cw-panel-editor-actions>
@@ -98,7 +98,7 @@ import CwButtonIcon from '../button/IconButton.vue';
 import CwRoomEditorDialogRoomSettings from '../editor/dialog/RoomSettings.vue';
 import { EDITOR_ACTION } from '@cuby-world/app/lib/types/editor';
 
-import icons from '@cuby-world/app/utils/icons';
+import icons, { ICON } from '@cuby-world/app/utils/icons';
 import { APP_MODE } from '../../lib/classes/App';
 
 const $props = defineProps<{
